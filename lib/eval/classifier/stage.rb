@@ -23,7 +23,12 @@
 #   3. THE WORLD DOES NOT MOVE UNDERNEATH IT. `WorldMechanic` runs on
 #      `MAX(scenes.story_timestamp)`, no-model mode writes no Scene, and the
 #      bench writes none either -- so a position is the same position on the
-#      hundredth line as on the first.
+#      hundredth line as on the first. Setup lines also engage
+#      `Playthrough::Volition.hold`, so somebody the seed file gave a pursuit
+#      cannot walk out of a labelled room or pick something up before the
+#      measured line: the guarantee is the stage's, and the hold is the
+#      engine-level switch it turns. The live game and `EngineSweep::Walk` never
+#      enter that hold -- a living world keeps acting between typed lines.
 #
 # WHY THE SETUP IS TYPED LINES AND NOT ATTRIBUTES. A position built by writing
 # `items.playthrough_id` directly would be a position the engine cannot reach,
@@ -149,11 +154,18 @@ class Eval::Classifier::Stage
     playthrough = new_playthrough(story)
     mechanics = Playthrough::Mechanics.new(playthrough, model: false)
 
-    position.setup.each do |typed|
-      report = mechanics.run(typed)
-      next unless report.refused?
+    # HOLD VOLITION FOR THE SETUP ONLY. Guarantee 3 above: a position rebuilt
+    # from typed lines has to be the same position every time, and a pursuit on
+    # a seeded person would otherwise let them walk out or take something on
+    # those lines. The measured turn -- when a bench plays one -- is outside
+    # this block and keeps the living world's answer.
+    Playthrough::Volition.hold do
+      position.setup.each do |typed|
+        report = mechanics.run(typed)
+        next unless report.refused?
 
-      raise Unstageable, "#{position.id}: setup line #{typed.inspect} was refused offline -- #{report.refusal}"
+        raise Unstageable, "#{position.id}: setup line #{typed.inspect} was refused offline -- #{report.refusal}"
+      end
     end
 
     playthrough.reload

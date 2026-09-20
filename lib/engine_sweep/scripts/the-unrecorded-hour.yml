@@ -21,12 +21,17 @@
 # expectation is the stub, said out loud -- and `nothing_was_written` asserts it
 # again over the whole world after the walk. What the sweep can therefore not
 # check is what the generator writes; that is `Location::GeneratorTest`'s.
+#
+# A LIVING CAST. Seeded people now carry pursuits, so after a drop or a
+# move somebody else may claim what was on the floor. This walk pins the
+# player's own transfers and refusals; it does not require the floor to
+# stay still between typed lines.
 story: The Unrecorded Hour
 why: the item half of the engine, and the four ways a line can be refused
 steps:
 - id: the-records-as-seeded
-  type: look
-  why: the starting state, so a failure later has a known beginning
+  type: stats
+  why: the starting state before anybody acts, so a failure later has a known beginning
   expect:
     location: Ward Office 12 (realized)
     exits: [The Supply Closet (realized), The Long Hallway (stub)]
@@ -37,6 +42,8 @@ steps:
     # Perrin Lasco is nowhere on purpose (this world is about him having been
     # removed from it), so he is in no room's `present` anywhere in this file.
     present: [Halkett Rowe]
+    volitions: 0
+    acts: 0
     changed: false
     refused: false
 
@@ -46,7 +53,6 @@ steps:
   expect:
     changed: true
     understood: take -> ward stamp
-    here: [filing press]
     carrying: [Ward Office 12 daybook, ward stamp]
     drifts: 0
 
@@ -86,57 +92,60 @@ steps:
   expect:
     changed: true
     location: The Supply Closet (realized)
-    present: []
     exits: [Ward Office 12 (realized)]
-    here: [Perrin's private index, copy-room apron]
     carrying: [Ward Office 12 daybook, ward stamp]
 
-- id: drop-it-somewhere-else
-  type: drop the ward stamp
-  why: the drop lands in the room the player is standing in, not the one it came from
-  expect:
-    changed: true
-    change: now lying in The Supply Closet
-    here: [Perrin's private index, copy-room apron, ward stamp]
-    carrying: [Ward Office 12 daybook]
-
-- id: take-something-by-a-fragment
+- id: secure-the-apron
   type: take the apron
-  why: an unambiguous fragment of "copy-room apron", with an article in front of it
+  why: get the loose floor items into hand before a pursuing cast can claim them
   expect:
     changed: true
     understood: take -> copy-room apron
-    here: [Perrin's private index, ward stamp]
+    carrying: [Ward Office 12 daybook, ward stamp, copy-room apron]
+
+- id: drop-it-somewhere-else
+  type: drop the ward stamp
+  why: the drop lands in the room the player is standing in, not the one it came from.
+    A pursuing cast may pick the stamp up on the same turn.
+  expect:
+    changed: true
+    understood: drop -> ward stamp
     carrying: [Ward Office 12 daybook, copy-room apron]
 
-- id: read-what-is-lying-on-the-floor
-  type: read Perrin's private index
+- id: take-something-by-a-fragment
+  type: take the apron
+  why: already holding it -- refused against the floor, and the fragment still resolves the name
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no thing lying here]
+    carrying: [Ward Office 12 daybook, copy-room apron]
+
+- id: read-what-is-in-hand
+  type: read the daybook
   why: |-
-    The other half of the closed set an `examine` resolves against: a thing
-    lying in the room, not carried. Same branch, same records, and the index is
-    still on the floor afterwards -- reading something moves nothing.
+    Reading out of the hands -- the half a living cast cannot empty by taking
+    from the floor. The text is the seed file's, word for word.
   expect:
     changed: false
     refused: false
-    understood: examine -> Perrin's private index
-    note: ["1188/12 — amended. Same hand as 0714 and 0902."]
+    understood: examine -> Ward Office 12 daybook
+    note: ["reads: Ward Office 12 daybook"]
     inscription:
-      Perrin's private index: "19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open"
-    here: [Perrin's private index, ward stamp]
+      Ward Office 12 daybook: "3.40 — Levee boundary, Marchmain acre 7."
+    carrying: [Ward Office 12 daybook, copy-room apron]
 
 - id: read-it-again-and-it-says-the-same-thing
-  type: x the private index
+  type: x the daybook
   why: |-
     THE WHOLE POINT, in one step. The words came out of the records the first
     time, so the second reading is the same string and not another guess at it.
-    This is the step that fails the day anything starts regenerating an
-    inscription.
   expect:
     changed: false
     refused: false
-    understood: examine -> Perrin's private index
+    understood: examine -> Ward Office 12 daybook
     inscription:
-      Perrin's private index: "19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open"
+      Ward Office 12 daybook: "3.40 — Levee boundary, Marchmain acre 7."
 
 - id: inventory
   type: inventory
@@ -148,11 +157,10 @@ steps:
 
 - id: back-through-the-door-it-came-in-by
   type: go to Ward Office 12
-  why: exits are bidirectional; the office is where the stamp is NOT any more
+  why: exits are bidirectional
   expect:
     changed: true
     location: Ward Office 12 (realized)
-    here: [filing press]
     carrying: [Ward Office 12 daybook, copy-room apron]
 
 - id: take-what-is-not-here
@@ -184,10 +192,10 @@ steps:
 
 - id: leave-the-apron-in-the-office
   type: drop the copy-room apron
-  why: the apron ends the walk in a room it did not start in, which is the state that persists
+  why: the apron ends the walk in a room it did not start in; a pursuing cast may claim it on the same turn
   expect:
     changed: true
-    here: [copy-room apron, filing press]
+    understood: drop -> copy-room apron
     carrying: [Ward Office 12 daybook]
 
 - id: walk-into-the-unwritten-room
@@ -197,7 +205,6 @@ steps:
     changed: true
     change: a stub -- nobody has written this room
     location: The Long Hallway (stub)
-    present: []
     exits: [Ward Office 12 (realized)]
     exits_exclude: [The Supply Closet]
     here: []

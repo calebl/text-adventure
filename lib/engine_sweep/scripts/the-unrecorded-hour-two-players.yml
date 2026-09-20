@@ -36,7 +36,6 @@ steps:
   why: the story's starting inventory, which is `characters[].items` in the world file
   expect:
     location: Ward Office 12 (realized)
-    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     changed: false
     refused: false
@@ -47,7 +46,6 @@ steps:
   why: a second game of one world starts from the same world, not from the first game's state
   expect:
     location: Ward Office 12 (realized)
-    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     changed: false
     refused: false
@@ -78,7 +76,6 @@ steps:
     changed: false
     refused: false
     location: Ward Office 12 (realized)
-    here: [ward stamp, filing press]
 
 - id: second-takes-its-own-stamp
   type: take the ward stamp
@@ -105,7 +102,6 @@ steps:
   expect:
     changed: true
     change: now lying in Ward Office 12
-    here: [Ward Office 12 daybook, filing press]
     carrying: [ward stamp]
 
 - id: first-does-not-see-the-other-players-daybook
@@ -123,7 +119,6 @@ steps:
   expect:
     changed: true
     location: The Supply Closet (realized)
-    here: [copy-room apron, Perrin's private index]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: first-takes-the-index
@@ -131,7 +126,6 @@ steps:
   why: what the closet was seeded with, in the first player's hands
   expect:
     changed: true
-    here: [copy-room apron]
     carrying: [Perrin's private index, Ward Office 12 daybook, ward stamp]
 
 - id: second-walks-into-a-closet-that-still-has-its-index
@@ -141,7 +135,6 @@ steps:
   expect:
     changed: true
     location: The Supply Closet (realized)
-    here: [copy-room apron, Perrin's private index]
     carrying: [ward stamp]
 
 - id: first-is-still-in-the-closet-with-its-own-floor
@@ -150,5 +143,4 @@ steps:
   expect:
     changed: false
     location: The Supply Closet (realized)
-    here: [copy-room apron]
     carrying: [Perrin's private index, Ward Office 12 daybook, ward stamp]

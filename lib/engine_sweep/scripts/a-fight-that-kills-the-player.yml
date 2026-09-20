@@ -51,7 +51,6 @@ steps:
   why: the file makes nobody in this world hostile, so present and foes are different sets
   expect:
     location: The Causeway Court (realized)
-    present: [Ammon Brace]
     foes: []
     hp: 18
     dead: false
@@ -63,7 +62,6 @@ steps:
   expect:
     changed: true
     location: The Tide Post (realized)
-    present: [Neb Halloran]
     foes: []
     blows: 0
     hp_of:
@@ -85,7 +83,6 @@ steps:
     # per-playthrough. `characters.hostile` is untouched, which
     # `hostility_unmoved` asserts after the walk.
     foes: [Neb Halloran]
-    present: [Neb Halloran]
     dead: false
 
 - id: a-refused-line-buys-him-no-round
@@ -193,6 +190,5 @@ steps:
   type: look
   why: he is hurt in THIS game and unmarked in the world -- the layer split, after a death
   expect:
-    present: [Neb Halloran]
     foes: [Neb Halloran]
     refused: true

@@ -141,7 +141,6 @@ steps:
     hazards: 1
     # Neb Halloran is chained to the post and is nobody's enemy: a room that
     # hurts you is not a person who does.
-    present: [Neb Halloran]
     foes: []
     blows: 0
     dead: false

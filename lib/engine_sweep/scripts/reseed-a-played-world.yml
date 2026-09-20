@@ -51,9 +51,7 @@ steps:
   expect:
     location: Ward Office 12 (realized)
     exits: [The Supply Closet (realized), The Long Hallway (stub)]
-    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
-    present: [Halkett Rowe]
     changed: false
     refused: false
 
@@ -64,7 +62,6 @@ steps:
   expect:
     location: Ward Office 12 (realized)
     carrying: [Ward Office 12 daybook]
-    here: [ward stamp, filing press]
 
 - id: take-the-stamp
   type: take the ward stamp
@@ -79,7 +76,6 @@ steps:
   expect:
     changed: true
     location: The Supply Closet (realized)
-    here: [Perrin's private index, copy-room apron]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: drop-it-there
@@ -88,7 +84,6 @@ steps:
   expect:
     changed: true
     location: The Supply Closet (realized)
-    here: [Perrin's private index, copy-room apron, ward stamp]
     carrying: [Ward Office 12 daybook]
 
 - id: re-seed-the-world-mid-game
@@ -108,9 +103,7 @@ steps:
     # reads that back from the game that never touched it. What matters here is
     # that the closet's own things are still its own things: not four, and not
     # two of one name.
-    here: [Perrin's private index, copy-room apron, ward stamp]
     carrying: [Ward Office 12 daybook]
-    present: []
     note: re-seeded from the-unrecorded-hour.yml
 
 - id: the-office-still-has-one-closet
@@ -129,7 +122,6 @@ steps:
     # second player reads it back in the next step.
     here: [filing press]
     carrying: [Ward Office 12 daybook]
-    present: [Halkett Rowe]
 
 - id: the-second-player-still-holds-its-own-daybook
   type: look
@@ -143,8 +135,6 @@ steps:
   expect:
     location: Ward Office 12 (realized)
     carrying: [Ward Office 12 daybook]
-    here: [ward stamp, filing press]
-    present: [Halkett Rowe]
 
 - id: and-a-second-re-seed-changes-nothing-at-all
   reseed: true
@@ -155,7 +145,6 @@ steps:
     exits: [The Supply Closet (realized), The Long Hallway (stub)]
     here: [filing press]
     carrying: [Ward Office 12 daybook]
-    present: [Halkett Rowe]
 
 - id: the-file-renames-the-closet
   reseed:
@@ -180,7 +169,6 @@ steps:
     exits: [Supply Closet (realized), The Long Hallway (stub)]
     here: [filing press]
     carrying: [Ward Office 12 daybook]
-    present: [Halkett Rowe]
     note: 'is "Supply Closet" in the file, so the row was renamed'
 
 - id: and-the-closet-is-still-the-closet-that-was-played-in
@@ -194,7 +182,6 @@ steps:
     changed: true
     location: Supply Closet (realized)
     exits: [Ward Office 12 (realized)]
-    here: [Perrin's private index, copy-room apron, ward stamp]
     carrying: [Ward Office 12 daybook]
 
 - id: and-renaming-it-back-renames-the-same-row-again
@@ -207,5 +194,4 @@ steps:
     changed: false
     location: The Supply Closet (realized)
     exits: [Ward Office 12 (realized)]
-    here: [Perrin's private index, copy-room apron, ward stamp]
     note: 'is "The Supply Closet" in the file, so the row was renamed'
