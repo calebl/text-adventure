@@ -142,18 +142,18 @@ class Playthrough::Volition
     return [] if playthrough.nil? || location.nil? || playthrough.over? || held?
 
     fighting = playthrough.foes_in(location).map(&:id).to_set
+    cast = playthrough.cast_in(location).sort_by(&:id).select do |who|
+      who != playthrough.character && !who.is_protagonist? && !fighting.include?(who.id) && Playthrough::Volition::Weights.weighted?(who.desire_pursuit)
+    end
+    typed = Playthrough::Volition::SystemOne.new(playthrough, cast, location: location).decisions
 
-    playthrough.cast_in(location).sort_by(&:id).filter_map do |who|
-      next if who == playthrough.character || who.is_protagonist?
-      next if fighting.include?(who.id)
-      # AND ANYBODY THE WORLD HAS NOT SAID WHAT THEY WANT. No pursuit, no
-      # weight table, no die and no row -- see
-      # `Playthrough::Volition::Weights.row_for`. It is the line that makes
-      # this feature opt-in per person, so a world nobody has backfilled
-      # behaves exactly as it did before the columns existed.
-      next unless Playthrough::Volition::Weights.weighted?(who.desire_pursuit)
-
-      new(playthrough, who, location: location, round: round).decide!
+    cast.filter_map do |who|
+      chosen = typed&.fetch(who.id, nil)
+      if chosen
+        new(playthrough, who, location: location, round: round).apply!(chosen)
+      else
+        new(playthrough, who, location: location, round: round).decide!
+      end
     end
   end
 
