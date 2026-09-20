@@ -804,6 +804,8 @@ class Location::Generator
         spoken for above
 
       #{slot_details(wanted)}
+
+      #{Character::Desires.instructions(several_people: wanted > 1).rstrip}
     PROMPT
   end
 

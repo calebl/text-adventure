@@ -493,6 +493,64 @@ namespace :game do
     end
   end
 
+  # DRY BY DEFAULT AND WRITING ONLY WHEN TOLD, which is the opposite way round
+  # from `game:backfill_stat_blocks` one task up -- so the difference is worth
+  # a sentence. That one rolls, deterministically, so its rehearsal IS its
+  # result and `DRY_RUN=1` is a convenience. This one asks a model, so two
+  # calls about one person come back different and a rehearsal can only ever
+  # be an EXAMPLE of the answer. A task whose preview is not its result should
+  # not be the one that runs when somebody forgets a flag.
+  #
+  # AND IT SPENDS MONEY, which is the second half of the same argument: one
+  # call per character with no want, on whatever `BaseAgent` resolves to. The
+  # dry run is how you find out how many that is before you buy them.
+  desc "Write the four objects of desire for everybody who has none. " \
+       "Usage: rake game:backfill_desires, WRITE=1 to actually write (dry by default)"
+  task :backfill_desires, [ :story_id ] => :environment do |t, args|
+    scope = args[:story_id] ? Story.where(id: Helpers.story!(args[:story_id]).id) : Story.all
+    writing = ENV["WRITE"].present?
+
+    puts "A WANT FOR EVERYBODY WHO WAS WRITTEN BEFORE THERE WERE WANTS."
+    puts "The four objects of desire are written from now on -- by a seed file, by Character::Registry"
+    puts "and by Character::Generator. This asks for one set for every character older than the columns."
+    puts "A character who already has all four is left exactly as they are."
+    puts
+    if writing
+      puts "WRITING. One model call per character below, and the answers are saved."
+    else
+      puts "DRY RUN: nothing is written. Re-run with WRITE=1 to keep the answers."
+      puts "A model call is still made for each line below, and what it shows is an EXAMPLE of"
+      puts "the answer rather than the answer -- two calls about one person come back different."
+    end
+    puts
+
+    written = 0
+    waiting = 0
+    scope.order(:created_at, :id).each do |story|
+      backfill = Character::DesireBackfill.new(story)
+      answers = backfill.run(dry_run: !writing)
+      next if answers.empty?
+
+      waiting += answers.size
+      written += answers.count(&:written)
+      puts format("  %-40s %3d", story.title.truncate(40), answers.size)
+      answers.each { |answer| puts "      #{answer}" }
+    end
+
+    puts
+    if waiting.zero?
+      puts "Nothing to do: everybody in the database already knows what they want."
+    elsif writing
+      puts "#{written} of #{waiting} character(s) written."
+      puts "`Playthrough::Volition` weights what they do on a turn off `desire_pursuit`; until then"
+      puts "they were weighted by Playthrough::Volition::Weights::NO_PURSUIT and mostly stood still."
+      puts "A seeded world's own desires re-assert themselves over these on the next `bin/rails db:seed`,"
+      puts "which is the file being the decision it always is."
+    else
+      puts "#{waiting} character(s) would be written. Re-run with WRITE=1 to keep the answers."
+    end
+  end
+
   desc "Refresh the frozen corpus from the verdicts in this database. Usage: rake game:corpus, DRY_RUN=1 to see it first"
   task corpus: :environment do
     dry = ENV["DRY_RUN"].present?

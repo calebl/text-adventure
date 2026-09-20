@@ -376,6 +376,21 @@ class Playthrough::Mechanics
 
     blows = Playthrough::Riposte.new(playthrough, turn: turn).run!(location: from, round: round)
 
+    # AND EVERYBODY ELSE IN THAT ROOM GETS THEIR TURN, in exactly the place and
+    # on exactly the terms `Playthrough::Turn#play` gives them: after the foes,
+    # before the place, on the room the turn began in.
+    #
+    # HERE AS WELL AS THERE, OR THE BROWSER AND THIS MODE DISAGREE ABOUT
+    # WHETHER THE WORLD MOVED -- the note `Playthrough::Arc`'s header makes
+    # about itself, and the reason this method exists at all. A walk that
+    # asserts somebody left the room has to be asserting the same engine the
+    # play page runs.
+    #
+    # AND IT IS THE WHOLE FEATURE IN THIS MODE, not a reduced one: the decision
+    # is a seeded die off this game's own records and makes no model call, so
+    # an offline walk reaches every branch a played turn reaches.
+    volitions = Playthrough::Volition.run!(playthrough, location: from, round: round)
+
     # AND THE PLACE ITSELF GETS ITS TURN, beside the foes and after them, on the
     # room the turn began in -- the same call `Playthrough::Turn#play` makes in
     # the same place, so a hazard in this mode and a hazard in the browser
@@ -411,9 +426,16 @@ class Playthrough::Mechanics
     # a game that was already over when this line was typed has an ending too,
     # and the read-out must say so either way.
     ended = playthrough.over? ? arc.ending : nil
-    return report if blows.empty? && closing.nil? && taken.empty? && beats.empty? && ended.nil?
+    acts = volitions.select(&:applied?)
+    return report if blows.empty? && closing.nil? && taken.empty? && beats.empty? && ended.nil? && acts.empty?
 
     notes = blows.map { |blow| "answered: #{blow}" }
+    # WHAT THE PEOPLE IN THE ROOM DID, said in the read-out beside what the
+    # foes and the place did, and for that line's reason: a record that changed
+    # and printed nothing is a record nobody walking a script can see. Only the
+    # acts that MOVED something -- a roomful standing still is the ordinary
+    # turn and printing it would bury the turns that are not.
+    notes.concat(acts.map { |act| "someone here: #{act.fact}" })
     notes.concat(taken.map { |toll| "the world: #{toll}" })
     # WHAT THE ARC DID, said in the read-out beside what the foes and the place
     # did, and for the same reason: a record that changed and printed nothing is

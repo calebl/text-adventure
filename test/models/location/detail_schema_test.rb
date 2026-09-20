@@ -173,9 +173,46 @@ class Location::DetailSchemaTest < ActiveSupport::TestCase
   test "a person carries the sheet a Character is validated on, and nothing the engine decides" do
     fields = schema_properties(SCHEMA).dig("people", "items", "properties")
 
-    assert_equal %w[fullname nickname appearance personality backstory likes dislikes fears], fields.keys
+    assert_equal %w[fullname nickname appearance personality backstory likes dislikes fears
+                    conscious_desire unconscious_desire recognized_need unrecognized_need
+                    desire_pursuit need_pursuit], fields.keys
     assert_equal [], %w[race age sex] & fields.keys
     assert_equal [], Character::Registry::SHEET.map(&:to_s) - fields.keys
+  end
+
+  # THE SAME SIX THE WHOLE-SHEET CALL ASKS FOR, AND THE SAME WORDS FOR THEM.
+  # Two generation boundaries that came to mean different things by a conscious
+  # desire would make one world inconsistent with itself, which is why both
+  # read their descriptions out of `Character::Desires`.
+  test "a person's four objects of desire are described exactly as the whole-sheet call describes them" do
+    riding = schema_properties(SCHEMA).dig("people", "items", "properties")
+    alone = schema_properties(Character::Schema)
+
+    (Character::DESIRES + Character::PURSUIT_COLUMNS).each do |field|
+      assert_equal alone.fetch(field.to_s)["description"], riding.fetch(field.to_s)["description"]
+    end
+  end
+
+  # AN ENUM IS THE SAME LIST WHEREVER IT IS ASKED FOR, and it carries no cap on
+  # either path: an enum has no length for a provider to cut off.
+  test "the two pursuit picks are the one closed list, on both paths" do
+    riding = schema_properties(SCHEMA).dig("people", "items", "properties")
+
+    Character::PURSUIT_COLUMNS.each do |field|
+      assert_equal Character::PURSUIT_NAMES, riding.fetch(field.to_s)["enum"]
+      assert_nil riding.fetch(field.to_s)["maxLength"]
+    end
+  end
+
+  # AND THE FOUR SENTENCES ARE CAPPED SHORTER HERE, for the reason every length
+  # on this path is shorter: this call rides on a room's own description.
+  test "a person's desires are capped shorter than a generated character's" do
+    riding = schema_properties(SCHEMA).dig("people", "items", "properties")
+
+    Character::DESIRES.each do |field|
+      assert_operator riding.fetch(field.to_s)["maxLength"], :<, Character::DESIRE_LIMIT,
+                      "#{field} is not shorter than Character::Schema's"
+    end
   end
 
   # Shorter than `Character::Schema`'s equivalents, every one of them: this

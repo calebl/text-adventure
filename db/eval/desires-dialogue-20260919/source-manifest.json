@@ -1,0 +1,37 @@
+{
+  "package_schema": 1,
+  "producer_commit": "8e6d7e2d9b1e01e184c265dc6aa00fd1abf83a24",
+  "source_files": {
+    "app/models/character.rb": "62dc4fae14cf9e9f4ef48fbfc4137c91cf061aa93f77f27c44f18ebe2c5e6740",
+    "app/models/playthrough/moment.rb": "e504ea7888723f8e9544e3c69ee99fca0c6ec03df8b45a54ceae93e1b9cb1d29",
+    "app/models/playthrough/npc_action.rb": "080304dccee536b5ad2c3fe78c54a8d38ac90cd361fa477d7d477c918ee5f67b",
+    "app/agents/InteractionAgent.rb": "6f51b5d1e599a7278d635782fdf16f6663fba48a0c3357cd730459c3b3265e28",
+    "app/agents/BaseAgent.rb": "5c76dc2701047e7fdc907d1aa2d73152a441bc888d28ad8197cc403686d625c0",
+    "lib/eval/dialogue.rb": "223e8d844dc85a9310f33017febfbe8617743c38fc39e7ee8af06cc4913f612b",
+    "lib/eval/dialogue/bench.rb": "744d0d31b7b3995cfcd81eaee75f53f012b766c9b59d2bf94ad108c4221d6084",
+    "lib/eval/dialogue/result.rb": "3b499ede67f36de150d40ebc50ffe2f82a25f112b3c0cc39126fc505d8fe5f67",
+    "lib/eval/dialogue/stage.rb": "16cea4931d84575e96f77c75a37189d58a3112e0d8ed89548fe70f3b733a57fa",
+    "lib/eval/dialogue/version.rb": "05a37655e8aaa0a3e4c001374ef0258cda5154bca7084c3a941b39bec12a0ac2",
+    "test/fixtures/files/dialogue_corpus.json": "ab81a46be7bc735df9001a22d2dac1f27f47272f3d559c5392066c27db384d19",
+    "Gemfile.lock": "08c261bdbb71ae7069f948042b8070cb8722f90d317ebe84f7f06a8a1023e3bb"
+  },
+  "source_measurement": {
+    "set": "desires-after",
+    "sha256": "ae0dc63a1655d271d5d44f18cfb3a6904d00e05037cf171dc070aab245afc389"
+  },
+  "corpus_digest": "ab81a46be7bc735df9001a22d2dac1f27f47272f3d559c5392066c27db384d19",
+  "request_bundle_digest": "0e9a03a7c1e78a569fe95c17e407f56d371b6638f31ba775ee2967cbaf5bad6b",
+  "prompt_digest": "b854bf290f358835df593c33e211850a609777ddd977787df637b630972e9160",
+  "schema_digest": "eea53ea13232082c65f527e81c3aadcdb1f17781a5a9503ebf7e6e8fa09c8af4",
+  "model_pin": {
+    "model": "mistralai/mistral-medium-3.1",
+    "provider": "openrouter",
+    "fallbacks": false
+  },
+  "gems": {
+    "ruby": "3.4.10",
+    "rails": "8.1.3.1",
+    "ruby_llm": "1.16.0",
+    "sqlite3": "2.9.6"
+  }
+}

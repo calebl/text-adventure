@@ -223,6 +223,41 @@
 #                        real teeth on every re-seed script, where
 #                        `WorldSeed::Loader` writes rows against a played
 #                        world.
+#   desires_unmoved      what every character WANTS is what the world file says
+#                        they want -- the four sentences and the two pursuit
+#                        labels, and somebody the file leaves without them
+#                        still has none. `stat_blocks_unmoved`'s statement one
+#                        set of columns over, and on exactly its layer: the
+#                        four objects of desire are world data written by a
+#                        seed file and by the two generators, and no typed line
+#                        may write one. What a walk IS supposed to write is
+#                        `playthrough_volitions`, which is what somebody DID
+#                        about what they want -- a different table on the other
+#                        side of the layer split, so a whole game of people
+#                        walking out of rooms leaves this unmoved.
+#                        IT IS SEPARATE FROM `hostility_unmoved` even though
+#                        both are world columns on a character, for that
+#                        check's own stated reason: two of `hostility_unmoved`'s
+#                        four are not columns on a character at all, and a
+#                        reader sent to the wrong table by a heading is the
+#                        thing these separations exist to prevent.
+#   volitions_moved_what_they_named
+#                        every act somebody took on their own moved the row
+#                        their token NAMED, and nothing else. A `move:412` row
+#                        means that person is in 412 and not in the room they
+#                        left; a `take:77` row means item 77 is in their hands;
+#                        a `give:` row means it is in the player's. It is the
+#                        one invariant here stated against the RECEIPTS rather
+#                        than against the file, and it has to be: a walk is
+#                        SUPPOSED to move these rows, so "unmoved" would fail on
+#                        the ordinary case. What it watches is the gap between
+#                        what a receipt says happened and what the records say
+#                        -- `Playthrough::Volition` writes the row and the
+#                        effect in one transaction, and this is the assertion
+#                        that they stayed one thing.
+#                        A REJECTED ROW AND A `wait` ARE IN IT TOO, and they are
+#                        the cheaper half: both claim to have moved nothing, so
+#                        both are checked by naming no row at all.
 #   nothing_was_written  no room changed detail level. This is the offline
 #                        mode's own premise: with no model there is nothing to
 #                        write a room WITH, so a stub walked into stays a stub.
@@ -262,6 +297,7 @@ class EngineSweep::Invariants
     [ doors_unchanged, exit_cap, items_accounted, world_items_unmoved, cast_unmoved, stat_blocks_unmoved,
       hostility_unmoved, hazards_unmoved, geometry_unmoved, positions_in_bounds, room_names_unique,
       place_names_unique,
+      desires_unmoved, volitions_moved_what_they_named,
       quest_unmoved, nothing_was_written ].flatten.compact
   end
 
@@ -799,6 +835,91 @@ class EngineSweep::Invariants
   #
   # A WORLD WITH NO ARC ASSERTS NOTHING AND COSTS ONE `Array()`, which is every
   # world in the repository but one.
+  # `{ fullname => { "conscious_desire" => .., "desire_pursuit" => .., ... } }`
+  # out of the file, with nil for a key it does not write -- so somebody who
+  # ACQUIRED a want during the walk fails exactly as loudly as somebody who
+  # lost one, which is `#stat_blocks_in_file`'s shape and its reason.
+  def desires_in_file
+    Array(seed["characters"]).to_h do |row|
+      [ row["fullname"], desire_keys.to_h { |key| [ key, row[key] ] } ]
+    end
+  end
+
+  def desire_keys
+    @desire_keys ||= (Character::DESIRES + Character::PURSUIT_COLUMNS).map(&:to_s)
+  end
+
+  def desires_unmoved
+    wanted = desires_in_file
+
+    moved = story.characters.order(:id).filter_map do |character|
+      declared = wanted[character.fullname] || {}
+      off = desire_keys.reject { |key| character.public_send(key).to_s == declared[key].to_s }
+      next if off.empty?
+
+      "#{character.fullname}'s #{off.join(", ")} #{off.one? ? "is" : "are"} not what the file says"
+    end
+    return nil if moved.empty?
+
+    broken("desires_unmoved", moved.join("; "))
+  end
+
+  # WHAT A RECEIPT CLAIMS AND WHAT THE RECORDS SAY, ROW BY ROW.
+  #
+  # Read over every playthrough of this story, because a script may walk more
+  # than one and a receipt is only true of the game that wrote it.
+  #
+  # ONLY THE LAST ROW PER (person, token) IS ASKED ABOUT, and that is the one
+  # subtlety worth stating. A walk is a sequence: somebody can walk out of a
+  # room on turn 3 and be walked back into it by the player's follower logic on
+  # turn 6, and an invariant that held every historical receipt true forever
+  # would be asserting that nothing ever happened afterwards. What these rows
+  # have to be true of is the world the walk LEFT BEHIND, which is what every
+  # other invariant in this file is stated against.
+  def volitions_moved_what_they_named
+    broken_rows = Playthrough.where(story: story).flat_map { |game| volition_faults(game) }
+    return nil if broken_rows.empty?
+
+    broken("volitions_moved_what_they_named", broken_rows.join("; "))
+  end
+
+  def volition_faults(game)
+    latest = game.volitions.includes(:character, :location).order(:id).each_with_object({}) do |row, seen|
+      seen[[ row.character_id, row.chosen ]] = row
+    end
+
+    latest.each_value.filter_map { |row| volition_fault(game, row) }
+  end
+
+  def volition_fault(game, row)
+    who = row.character
+    claim = "#{who.fullname}'s #{row.chosen.inspect} receipt says #{row.status}"
+
+    case [ row.status, row.chosen ]
+    in [ "applied", Playthrough::Volition::MOVE ]
+      wanted = Regexp.last_match(1).to_i
+      standing = game.location_of(who)&.id
+      "#{claim} and they are #{standing ? "in ##{standing}" : "nowhere"}" unless standing == wanted
+    in [ "applied", Playthrough::Volition::TAKE ]
+      item = Item.find_by(id: Regexp.last_match(1))
+      "#{claim} and the thing is #{item ? item.whereabouts : "gone"}" unless item&.character_id == who.id
+    in [ "applied", Playthrough::Volition::GIVE ]
+      item = Item.find_by(id: Regexp.last_match(1))
+      "#{claim} and the thing is #{item ? item.whereabouts : "gone"}" unless item && item.character_id.nil? && item.location_id.nil?
+    in [ "applied", "follow" | "stop_following" ]
+      state = game.npc_states.find_by(character: who)
+      "#{claim} and there is no travel agreement on record" if state.nil?
+    in [ "none" | "rejected", _ ]
+      # A CHOICE THAT MOVED NOTHING IS CHECKED BY NAMING NOTHING. The fact is
+      # the whole of what these rows claim, so the only way one can be wrong is
+      # by carrying an id -- which is what a `rejected` row that had quietly
+      # gone through would look like.
+      "#{claim} and names #{row.chosen.inspect}, which is a token that moves a row" if row.chosen.include?(":")
+    else
+      nil
+    end
+  end
+
   def quest_unmoved
     wanted = quests_in_file
     return nil if wanted.empty? && story.quests.none?

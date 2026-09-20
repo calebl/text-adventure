@@ -14,6 +14,30 @@ FactoryBot.define do
     dislikes { "Cruelty, injustice, unnecessary conflict" }
     fears { "Failing those who depend on them" }
     backstory { "A person with a mysterious past who has seen both joy and hardship" }
+    # THE FOUR OBJECTS OF DESIRE AND THE TWO LABELS, DEFAULTED, on exactly the
+    # stat block's reasoning below: having none is a state the game is written
+    # to REPORT (`rake game:doctor` -> `character_without_desires`), and every
+    # character the app itself writes from today has them. A factory with none
+    # would make every fixture look like a database older than the columns.
+    #
+    # FIXED VALUES AND NEVER A SAMPLE, which is this file's standing rule and
+    # matters more here than almost anywhere else: `desire_pursuit` is what
+    # `Playthrough::Volition::Weights` reads to weight a die, so a factory that
+    # picked a label at random would make every test that asserts what somebody
+    # DID a lottery, and land the failure on whoever ran the suite next.
+    #
+    # THE TWO LABELS ARE DELIBERATELY *NOT* DEFAULTED, which is the opposite
+    # decision from the four above and is the more important half.
+    # `desire_pursuit` is what `Playthrough::Volition` weights a die with, and
+    # a label answers no pursuit at all until somebody sets one -- so a fixture
+    # NPC stands still exactly as they did before the feature existed, and a
+    # test about a room's contents is not quietly sharing that room with
+    # somebody who picks things up. `:driven` is the trait for a fixture whose
+    # whole subject is acting on their own.
+    conscious_desire { "To be paid what they are owed before the week is out" }
+    unconscious_desire { "To be asked their opinion by somebody who waits for the answer" }
+    recognized_need { "To keep their word, because it is the only thing they have never broken" }
+    unrecognized_need { "To walk into the one room they have been going around for years" }
     is_companion { false }
     is_protagonist { false }
     # THE STAT BLOCK IS DEFAULTED, and it is the opposite decision from the
@@ -94,11 +118,49 @@ FactoryBot.define do
       will { nil }
     end
 
+    # A DATABASE OLDER THAN THE DESIRE COLUMNS, and what a world file that
+    # leaves somebody without them loads as. A SEPARATE trait from the two
+    # above for their reason: `Character#desires?` is its own predicate, and a
+    # fixture has to be able to hold a person with a whole body and nothing
+    # they want -- which is exactly what a database looks like between the
+    # migration and `rake game:backfill_desires`.
+    #
+    # THE LABELS GO WITH THEM, because the two arrive in one generated answer
+    # and there is no state in which a row got one half and not the other from
+    # a generator. A file may still write a label alone; set it by hand where
+    # a test wants that.
+    trait :without_desires do
+      conscious_desire { nil }
+      unconscious_desire { nil }
+      recognized_need { nil }
+      unrecognized_need { nil }
+      desire_pursuit { nil }
+      need_pursuit { nil }
+    end
+
+    # SOMEBODY THE ENGINE HAS SOMETHING TO WEIGHT A DIE WITH: the state a
+    # generated or seeded person is in, and the one a test about
+    # `Playthrough::Volition` wants. `obtain` and `reach` deliberately differ,
+    # because a character whose two labels agree is a character not in conflict
+    # and the case worth a fixture is the one where they pull apart.
+    trait :driven do
+      desire_pursuit { "obtain" }
+      need_pursuit { "reach" }
+    end
+
+    # SOMEBODY WHOSE CONSCIOUS DESIRE AND UNRECOGNIZED NEED HAVE THE SAME
+    # SHAPE: a character not in conflict, which some people should be.
+    trait :undivided do
+      desire_pursuit { "keep" }
+      need_pursuit { "keep" }
+    end
+
     # THE WHOLE SHEET MISSING: what every character in a database older than
     # both migrations has.
     trait :without_a_sheet do
       without_a_stat_block
       without_abilities
+      without_desires
     end
 
     # A MONSTER, and it is an ordinary character with one column set -- which is

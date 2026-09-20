@@ -163,6 +163,7 @@ class EngineSweep::Expectation
   KEYS = %w[
     location storey exits exits_include exits_exclude here carrying present foes inscription
     hp hp_of abilities dead changed change refused offers understood resolved_by note drifts blows hazards quest
+    volitions acts
     ending ending_words scheduled fired elapsed_minutes shown
   ].freeze
 
@@ -204,7 +205,7 @@ class EngineSweep::Expectation
   # EVERY UNMET EXPECTATION, not the first: a step that moved to the wrong room
   # is usually holding the wrong things too, and seeing both is how the cause
   # gets found in one pass instead of three.
-  def check(report, drifts:, blows: 0, hazards: 0, elapsed_minutes: 0, shown: nil)
+  def check(report, drifts:, blows: 0, hazards: 0, elapsed_minutes: 0, shown: nil, volitions: 0, acts: 0)
     state = report.state
 
     [
@@ -234,6 +235,16 @@ class EngineSweep::Expectation
       check_equals("fired", state.fired),
       check_equals("drifts", drifts),
       check_equals("blows", blows),
+      # HOW MANY PEOPLE IN THE ROOM GOT A TURN, and how many of those MOVED
+      # something. Two numbers and not one, because they answer two different
+      # questions: `volitions` is whether the slot ran at all -- a refused line
+      # and an engine read-out both have to leave it at nought -- and `acts` is
+      # whether anything actually happened, which is what a script asserting a
+      # person walked out is asking about. A script that conflated them could
+      # not tell "nobody acted" from "the slot never ran", which is precisely
+      # the distinction a refused line turns on.
+      check_equals("volitions", volitions),
+      check_equals("acts", acts),
       check_equals("hazards", hazards),
       check_equals("elapsed_minutes", elapsed_minutes),
       check_shown(shown)

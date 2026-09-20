@@ -110,6 +110,14 @@ module Roll
   # axis. A kind of its own is what makes that impossible -- see the header on
   # why an axis beats a convention.
   POPULATION = 6
+  # WHAT ONE PERSON DECIDES TO DO ON ONE TURN (`Playthrough::Volition`). Its
+  # identity is WHICH PERSON, which is a `characters.id` -- and a character id
+  # is already spoken for on the `sequence` axis by `CHARACTER_POSITION`, which
+  # keys where in a room somebody stands on exactly that number. Two rolls of
+  # different kinds are different dice whatever either one counts, so a kind is
+  # what keeps where somebody is standing and what they decide to do from being
+  # the same number twice.
+  VOLITION = 7
 
   # THE SEED, FROM FIVE INTEGERS AND NOTHING ELSE. Public because it is the part
   # worth asserting on its own: `RollTest` pins that the same inputs give the
@@ -157,5 +165,41 @@ module Roll
     raise ArgumentError, "nothing to choose from" if choices.empty?
 
     choices[rng.rand(choices.size)]
+  end
+
+  # ONE OF A CLOSED LIST WHERE THE ENTRIES ARE NOT EQUALLY LIKELY. `#one_of`
+  # with a thumb on the scale, and it is here rather than in its caller for
+  # `#one_of`'s own reason: one place in the app throws a die.
+  #
+  # WHAT THE WEIGHTS ARE IS NEVER THIS FILE'S BUSINESS. The caller supplies a
+  # number per choice out of a table it owns (`Playthrough::Volition::Weights`
+  # is the first); this only walks them. That is the same division `#pool` and
+  # `#one_of` already keep -- the dice are here, the decision about which dice
+  # to throw is not.
+  #
+  # ONE `rand` AND NOT A LOOP OF THEM, because a caller that threw one die per
+  # entry until something hit would consume a different number of values
+  # depending on the answer, and every later roll from the same generator would
+  # move with it. One draw off the total, walked down the list in the order it
+  # was given, keeps the generator's position a function of how many decisions
+  # were made rather than of what they came out as.
+  #
+  # A NON-POSITIVE TOTAL FALLS BACK TO AN EVEN DRAW rather than raising: a
+  # table that weighted everything at nought is a table saying it has no
+  # opinion, and having no opinion is not an error.
+  def self.weighted_one_of(choices, weights, rng:)
+    choices = Array(choices)
+    raise ArgumentError, "nothing to choose from" if choices.empty?
+
+    weights = Array(weights).first(choices.size).map { |weight| [ weight.to_i, 0 ].max }
+    total = weights.sum
+    return one_of(choices, rng: rng) if total <= 0
+
+    target = rng.rand(1..total)
+    choices.each_with_index do |choice, index|
+      target -= weights[index].to_i
+      return choice if target <= 0
+    end
+    choices.last
   end
 end

@@ -141,6 +141,7 @@ class Character::Generator
         their goals. Write it in third person, referencing the character by name,
         and keep it consistent with where they were born and who raised them
 
+      #{Character::Desires.instructions}
       You are a character generator for the above fictional story.
       Generate all of the character details for a new character that will be added to the story.
 
@@ -227,6 +228,23 @@ class Character::Generator
     character.dislikes = sanitize_string(content["dislikes"])
     character.fears = sanitize_string(content["fears"])
     character.backstory = sanitize_string(content["backstory"])
+    # THE SIX, ASSIGNED BESIDE THE EIGHT and sanitized on the same terms. The
+    # four prose fields carry `Character::DESIRE_LIMIT` -- the cap the schema
+    # gave the model -- so a field the provider cut off AT its cap raises
+    # inside `BaseAgent#ask`'s `verify:` seam and the call rotates, rather than
+    # a half-sentence being stored as somebody's whole reason for being here.
+    #
+    # THE TWO LABELS ARE NOT SANITIZED UNDER A CAP, because an enum has no
+    # length and there is nothing for a provider to truncate. They are still
+    # passed through `#sanitize_string` for the discarded-character pass every
+    # generated value in this app gets, and `Character` refuses one outside
+    # `PURSUITS` if a provider ignores its own schema.
+    Character::DESIRES.each do |field|
+      character.public_send(:"#{field}=", sanitize_string(content[field.to_s], max_length: Character::DESIRE_LIMIT))
+    end
+    Character::PURSUIT_COLUMNS.each do |field|
+      character.public_send(:"#{field}=", sanitize_string(content[field.to_s]).presence)
+    end
 
     character
   end

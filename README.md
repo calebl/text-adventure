@@ -601,11 +601,14 @@ flowchart TD
         N2 --> N3["Persists the completed response and sets the scene itself<br/>Nobody has to be watching: the job outlives the tab<br/>Never touches the location: moving is not its job"]
     end
 
-    I3 --> A0
-    P3 --> A0
-    M8 --> A0
-    T7 --> A0
-    N3 --> A0
+    I3 --> V0
+    P3 --> V0
+    M8 --> V0
+    T7 --> V0
+    N3 --> V0
+
+    V0["Playthrough::Volition, NO MODEL CALL<br/>everybody standing in the room the turn BEGAN in,<br/>who is not the player and is not fighting you,<br/>picks one token off a set the app just built from<br/>records: wait, walk out, pick something up, hand<br/>something over. The pick is a seeded die weighted by<br/>characters.desire_pursuit -- a word out of a closed<br/>list, whose meaning is a table in code. No pursuit,<br/>no die and no row. The narrator is told WHAT HAPPENED<br/>and never what anybody wants"]
+    V0 --> A0
 
     A0["Playthrough::Arc#run!, NO MODEL CALL<br/>four record predicates against the story's own arc:<br/>standing in the room, the interaction this turn wrote,<br/>this game's copy in the party's hands, the clock<br/>a beat REACHED is a playthrough_beats row, and the<br/>arc itself is never written by a typed line"]
     A0 --> A1{"every beat of the main arc reached?"}
@@ -623,10 +626,29 @@ flowchart TD
     classDef io fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#ffffff
 
     class C2,M3,M4,M6,T1,T2,P3,I2,N2,A3 llm
-    class W0,C1,C3,G1,M1,M3N,M3A,M3B,M3C,M5,M7,M8,TE,T5,T6,T7,P2,I1,I3,N3,X1,A0,A2 rec
+    class W0,C1,C3,G1,M1,M3N,M3A,M3B,M3C,M5,M7,M8,TE,T5,T6,T7,P2,I1,I3,N3,X1,V0,A0,A2 rec
     class N1 gap
     class IN,SSE,OUT,OUT2,D,R,G0,G2,P1,A1 io
 ```
+
+**The teal box above the arc is everybody else in the room, and it is teal for
+the reason it matters most.** Before it, a peaceful person standing in a room
+was inert: the world's whole repertoire between two typed lines was one hostile
+swing. Now every present character picks one token off a set the app rebuilt
+from this game's own records a millisecond earlier, and the app applies it —
+which means a clerk can walk out while you read a docket. **What a person is
+after is world data with two halves, and only one of them is a branch.** The
+four sentences (`conscious_desire`, `unconscious_desire`, `recognized_need`,
+`unrecognized_need`) are prose that reaches exactly one prompt — the
+character's own sheet — and nothing in the app ever parses one. The two labels
+(`desire_pursuit`, `need_pursuit`) are picked from a closed list of seven, and
+what a label *does* is a table in code (`Playthrough::Volition::Weights`) — a
+world supplying a parameter and never a behaviour. **Where the world supplies
+no label there is no behaviour**, so every story written before the columns
+existed plays exactly as it did. And a walk writes
+`playthrough_npc_states.location`, never `characters.location_id`: the world
+layer does not move, which `rake game:sweep` asserts after every script
+(`cast_unmoved`, `desires_unmoved`, `volitions_moved_what_they_named`).
 
 **The two teal boxes at the bottom are the arc, and they are teal for the
 reason every other teal box is.** Where the story is going is records — `Quest`,
@@ -835,6 +857,7 @@ Five things write a whereabouts, and prose is not one of them:
 | `Character#move_to!` | the explicit engine call, for a mechanic that means to move a person, and it clears a deliberate absence. Nothing invokes it yet |
 | `Character#absent!` | nowhere, and meant: what a seed file asserts and what `rake game:repair` writes for a world seeded before the marker existed |
 | `rake game:backfill_whereabouts` | once, from the arrival casts still on disk, and it **refuses to guess** when two rooms recorded somebody at the same moment |
+| `rake game:backfill_desires` | writes the four objects of desire for everybody who has none. **Dry by default** — it asks a model, so a rehearsal is an example of the answer rather than the answer; `WRITE=1` keeps them |
 
 The **party** is the deliberate exception and stays derived: the protagonist and
 anyone `is_companion` are wherever the *playthrough* is, because two people

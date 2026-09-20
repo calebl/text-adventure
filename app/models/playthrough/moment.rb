@@ -38,6 +38,10 @@ class Playthrough::Moment
   # the bare-resolution reader. The experience corpus measures this addition;
   # it does not widen the durable chat's verbatim replay.
   MEMORIES_BUDGET = 1_200
+  # THE THREE-BLOW CAP THAT USED TO BE SPENT IN `#personal_facts`, kept as the
+  # number `Playthrough::Ledger::ROWS` was sized against and read by nothing
+  # else. It is here rather than deleted because the ledger's own header names
+  # it, and a constant a header points at should be findable.
   PERSONAL_BLOWS = 3
 
   # WHAT CHANGED HANDS THIS TURN, AS DISTINCT FROM WHAT IS.
@@ -218,6 +222,12 @@ class Playthrough::Moment
     # folded into them, because they are two different facts and the prose has
     # to be able to say which: somebody hit you, or the world did.
     parts << toll_fact if toll_fact
+    # AND WHAT EVERYBODY ELSE IN THE ROOM DID, out of `playthrough_volitions` --
+    # the acts the engine chose for them and then carried out. Beside the blows
+    # and the tolls and never folded into them, because they are three
+    # different facts and the prose has to be able to say which: somebody hit
+    # you, the world did, or somebody simply walked out while you were reading.
+    parts << volition_fact if volition_fact
     parts << "Lying here, and takeable: #{floor_names.presence || "nothing"}."
     parts << "The player is carrying: #{carried_names.presence || "nothing"}."
 
@@ -319,11 +329,17 @@ class Playthrough::Moment
     elsif playthrough.npc_states.find_by(character: character)&.ceasefire_holds?
       lines << "You have a ceasefire with #{protagonist.fullname}; it still holds."
     end
-    experienced = playthrough.blows.where(attacker: character).or(playthrough.blows.where(target: character))
-    experienced.order(id: :desc).limit(PERSONAL_BLOWS).to_a.reverse_each do |blow|
-      lines << "You experienced this recorded blow: #{blow.attacker.fullname} struck #{blow.target.fullname} " \
-               "for #{blow.damage} hit points in #{blow.location.name}. This is a past event; your condition above is current."
-    end
+    # WHAT THIS PERSON HAS SEEN HAPPEN, out of the engine's own rows and
+    # bounded twice (`Playthrough::Ledger`).
+    #
+    # IT USED TO BE THREE BLOW LINES ASSEMBLED HERE, rebuilt from scratch on
+    # every prompt -- a hand-rolled event ledger over one of the three kinds of
+    # event the engine records. The ledger is that query given a name, a
+    # budget, and the other two sources: what this person DID
+    # (`playthrough_volitions`) and what the room took in front of them
+    # (`playthrough_tolls`). Same rule as before -- every line is a record, and
+    # none of it is prose a model wrote.
+    lines.concat(Playthrough::Ledger.new(playthrough, character).recall(location: location))
     lines
   end
 
@@ -407,6 +423,40 @@ class Playthrough::Moment
       blows.map { |blow| one_blow(blow) }.join(" ") +
       " Those are the numbers and they do not change. Do not decide who lives, " \
       "who dies, or how much anything hurt."
+  end
+
+  # WHAT THE OTHER PEOPLE IN THE ROOM DID, IN THE ENGINE'S OWN WORDS.
+  #
+  # `#struck_fact`'s counterpart for the third source of change on a turn, and
+  # written to the same two rules: the sentence comes off the row that moved
+  # (`playthrough_volitions.fact`, written by `Playthrough::Volition` from the
+  # record it wrote a moment earlier), and the paragraph is asked to decide
+  # nothing.
+  #
+  # WHAT IT DOES NOT SAY, AND THIS IS THE LOAD-BEARING HALF: WHY. Nothing about
+  # anybody's conscious desire, unconscious desire, recognized need or
+  # unrecognized need reaches this method or any other prompt the narrator
+  # sees. The narrator is told that Grenn Ollivar walked out to the stairwell;
+  # it is never told that he has been avoiding the third floor for thirty
+  # years. Three consequences, all wanted: the prose cannot railroad toward a
+  # desire the engine has not acted on, a paragraph that keeps somebody in the
+  # room contradicts a STATED fact rather than an unstated one, and the whole
+  # feature costs zero extra model calls because these fold into the one
+  # narration the turn was already paying for.
+  #
+  # ONLY THE ACTS NO PARAGRAPH HAS CARRIED YET, which is `#toll_fact`'s rule
+  # with the right word for this table: `Playthrough::Turn#claim_volitions!`
+  # stamps them with the Scene that told the player, so one act reaches the
+  # prose once. Bounded by the cast of one room
+  # (`Character::Registry::MAX_PER_ROOM` plus whoever travelled in), and only
+  # the rows that MOVED something -- see `Playthrough::Volition::Record.untold`.
+  def volition_fact
+    return @volition_fact if defined?(@volition_fact)
+
+    acts = playthrough.untold_volitions.to_a
+    return @volition_fact = nil if acts.empty?
+
+    @volition_fact = "What else happened here, recorded by the game: " + acts.map(&:fact).join(" ")
   end
 
   # WHAT THE WORLD ITSELF TOOK, AND WHETHER THE BODY GOT CLEAR OF IT.

@@ -189,6 +189,24 @@ class Location::DetailSchema < RubyLLM::Schema
         string :likes, description: "A comma separated list of 2 or 3 things they enjoy.", max_length: Character::Registry::PERSON_LIMITS[:likes]
         string :dislikes, description: "A comma separated list of 2 or 3 things they cannot stand.", max_length: Character::Registry::PERSON_LIMITS[:dislikes]
         string :fears, description: "A comma separated list of 1 or 2 things they are afraid of.", max_length: Character::Registry::PERSON_LIMITS[:fears]
+        # THE FOUR OBJECTS OF DESIRE AND THE TWO LABELS, on this call too.
+        # `Character::Schema` asks for the same six with the same descriptions
+        # (`Character::Desires`), because the two generation boundaries must not
+        # come to mean different things by a conscious desire.
+        #
+        # THE CAPS ARE THE REGISTRY'S, like every other length here and for that
+        # table's stated reason: the bound the model is given and the bound the
+        # sheet is checked against cannot be allowed to disagree. They are
+        # tighter than the whole-sheet path's because this call is riding on a
+        # room's own description rather than paying for itself.
+        string :conscious_desire, description: Character::Desires::CONSCIOUS, max_length: Character::Registry::PERSON_LIMITS[:conscious_desire]
+        string :unconscious_desire, description: Character::Desires::UNCONSCIOUS, max_length: Character::Registry::PERSON_LIMITS[:unconscious_desire]
+        string :recognized_need, description: Character::Desires::RECOGNIZED, max_length: Character::Registry::PERSON_LIMITS[:recognized_need]
+        string :unrecognized_need, description: Character::Desires::UNRECOGNIZED, max_length: Character::Registry::PERSON_LIMITS[:unrecognized_need]
+        # NO CAP ON EITHER LABEL: an enum has no length, so `PERSON_LIMITS`
+        # carries no entry for one and there is nothing for a provider to cut.
+        string :desire_pursuit, enum: Character::PURSUIT_NAMES, description: Character::Desires::DESIRE_PURSUIT
+        string :need_pursuit, enum: Character::PURSUIT_NAMES, description: Character::Desires::NEED_PURSUIT
       end
     end
   end

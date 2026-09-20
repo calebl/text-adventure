@@ -336,7 +336,18 @@ class Eval::Realization::BenchTest < ActiveSupport::TestCase
                       "personality" => "Talks to a stranger the way she talks to a form.",
                       "backstory" => "Vessa Kirn was sent up from filing an hour ago and nobody has told her why.",
                       "likes" => "carbon paper, quiet", "dislikes" => "the seventh bell",
-                      "fears" => "being asked what she saw" } ]
+                      "fears" => "being asked what she saw",
+                      # THE FOUR OBJECTS OF DESIRE AND THE TWO LABELS, on the
+                      # fixture answer too: `Location::DetailSchema` requires
+                      # them of a person now, so an answer without them is an
+                      # INCOMPLETE one and the bench is right to say so. A
+                      # fixture that left them out would make every clean run
+                      # in this file report six missing fields.
+                      "conscious_desire" => "Vessa Kirn wants to be told what the folders are for before she has to put them down.",
+                      "unconscious_desire" => "Vessa Kirn wants one person in this building to treat her as somebody rather than as a stage of a process.",
+                      "recognized_need" => "Vessa Kirn needs to carry the folders to the room she was sent to, because being sent is the whole of her standing here.",
+                      "unrecognized_need" => "Vessa Kirn needs to open one of the folders and read what is in it, and to say so afterwards.",
+                      "desire_pursuit" => "obtain", "need_pursuit" => "reach" } ]
     }.freeze
 
     EXITS = {

@@ -138,7 +138,17 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
   the description. `bin/update` is the one command after a pull. No step may
   make a model call; `Update::Step.model_calls?` is the gate.
 - **A world supplies parameters, never behaviour.** A seed file may say which
-  key and which die; what that key *does* is a table in code.
+  key and which die; what that key *does* is a table in code. Where a world
+  supplies *no* parameter there is no behaviour either: a new per-row parameter
+  ships inert until somebody sets one, or every stored world changes how it
+  plays on the day of the migration. `Playthrough::Volition::Weights` carries
+  the worked example.
+- **Adding a parameter to a checked-in world changes every sweep script that
+  walks it.** `db/seeds/worlds/*.yml` is walked by `lib/engine_sweep/scripts/`
+  to pin mechanisms that have nothing to do with the parameter, so turning one
+  on there is its own change with its own expectations — not a line added in
+  passing. A script that needs new behaviour gets its own world under
+  `lib/engine_sweep/worlds/`.
 - **Restyling is `ta-api-iface`, a stage of its own** — do not do it in passing.
 - **The rake tasks build worlds; the browser plays them and never builds one.**
   There is no `rake game:play` and there is not meant to be — the loop lives in
@@ -163,6 +173,9 @@ Read the header of the file named, not a summary of it.
 | How many people a room is born with, and who picks | `app/models/location/population.rb` |
 | How much is left of one body in one game | `app/models/playthrough/vitals.rb` |
 | A fight, a round, and who strikes back | `app/models/playthrough/fight.rb`, `riposte.rb`, `blow.rb` |
+| What somebody who is not fighting you does while you do something else | `app/models/playthrough/volition.rb`, `volition/weights.rb` |
+| What a person is after, and which part of it the engine may read | `app/models/character.rb`, `character/desires.rb` |
+| What one character has seen happen in one game | `app/models/playthrough/ledger.rb`, `playthrough/memory.rb` |
 | A place or a doorway that costs hit points | `app/models/playthrough/hazards.rb`, `toll.rb` |
 | Where a room is, how big it is, and what a storey is | `app/models/location/box.rb` |
 | How the inside of a place is laid out, and by what roll | `app/models/location/interior.rb` |

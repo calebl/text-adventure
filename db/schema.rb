@@ -10,13 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_17_133823) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_19_202606) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
     t.text "backstory"
+    t.text "conscious_desire"
     t.datetime "created_at", null: false
     t.boolean "deliberately_absent", default: false, null: false
+    t.string "desire_pursuit"
     t.integer "dexterity"
     t.text "dislikes"
     t.text "fears"
@@ -28,12 +30,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_17_133823) do
     t.integer "level"
     t.text "likes"
     t.integer "location_id"
+    t.string "need_pursuit"
     t.string "nickname"
     t.text "personality"
     t.integer "race_id", null: false
+    t.text "recognized_need"
     t.string "sex"
     t.integer "story_id", null: false
     t.integer "strength"
+    t.text "unconscious_desire"
+    t.text "unrecognized_need"
     t.datetime "updated_at", null: false
     t.integer "will"
     t.integer "x"
@@ -457,6 +463,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_17_133823) do
     t.index ["playthrough_id"], name: "index_playthrough_vitals_on_playthrough_id"
   end
 
+  create_table "playthrough_volitions", force: :cascade do |t|
+    t.integer "character_id", null: false
+    t.string "chosen", null: false
+    t.datetime "created_at", null: false
+    t.text "fact", null: false
+    t.integer "location_id", null: false
+    t.integer "playthrough_id", null: false
+    t.integer "round", null: false
+    t.integer "scene_id"
+    t.string "serves", null: false
+    t.string "status", null: false
+    t.datetime "updated_at", null: false
+    t.index ["character_id"], name: "index_playthrough_volitions_on_character_id"
+    t.index ["location_id"], name: "index_playthrough_volitions_on_location_id"
+    t.index ["playthrough_id", "scene_id", "id"], name: "index_playthrough_volitions_on_playthrough_and_scene"
+    t.index ["playthrough_id"], name: "index_playthrough_volitions_on_playthrough_id"
+    t.index ["scene_id"], name: "index_playthrough_volitions_on_scene_id"
+  end
+
   create_table "playthroughs", force: :cascade do |t|
     t.integer "character_id"
     t.datetime "created_at", null: false
@@ -684,6 +709,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_17_133823) do
   add_foreign_key "playthrough_tolls", "scenes"
   add_foreign_key "playthrough_vitals", "characters"
   add_foreign_key "playthrough_vitals", "playthroughs"
+  add_foreign_key "playthrough_volitions", "characters"
+  add_foreign_key "playthrough_volitions", "locations"
+  add_foreign_key "playthrough_volitions", "playthroughs"
+  add_foreign_key "playthrough_volitions", "scenes"
   add_foreign_key "playthroughs", "characters"
   add_foreign_key "playthroughs", "locations", column: "current_location_id"
   add_foreign_key "playthroughs", "scenes", column: "current_scene_id"
