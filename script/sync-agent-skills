@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Symlink every skill under .agents/skills/ into agent-specific project dirs,
+# the same shape `npx skills` uses: one canonical copy, many symlinks.
+set -euo pipefail
+root="$(cd "$(dirname "$0")/.." && pwd)"
+canonical="$root/.agents/skills"
+
+# Project skill dirs that are NOT .agents/skills (those agents already read the
+# canonical path). Keep this list short and local to agents this repo uses.
+providers=(
+  ".claude/skills"
+)
+
+if [[ ! -d "$canonical" ]]; then
+  echo "missing $canonical" >&2
+  exit 1
+fi
+
+shopt -s nullglob
+skills=("$canonical"/*/)
+if [[ ${#skills[@]} -eq 0 ]]; then
+  echo "no skills in .agents/skills/"
+  exit 0
+fi
+
+for provider in "${providers[@]}"; do
+  dest_root="$root/$provider"
+  mkdir -p "$dest_root"
+  for skill_dir in "${skills[@]}"; do
+    name="$(basename "$skill_dir")"
+    [[ -f "$skill_dir/SKILL.md" ]] || continue
+    link="$dest_root/$name"
+    target="$(python3 -c "import os.path; print(os.path.relpath('$skill_dir', '$dest_root'))")"
+    if [[ -L "$link" || -e "$link" ]]; then
+      rm -rf "$link"
+    fi
+    ln -s "$target" "$link"
+    echo "linked $provider/$name -> $target"
+  done
+done

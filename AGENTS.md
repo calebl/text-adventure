@@ -191,6 +191,7 @@ Read the header of the file named, not a summary of it.
 | What is written on a thing that has writing on it | `app/models/item.rb`, `item/inscriber.rb` |
 | How items and people come to exist in a room | `app/models/item/registry.rb`, `character/registry.rb` |
 | What `rake game:new` builds, in what order | `app/models/story/first_screen.rb` |
+| How to package a playthrough for a GitHub issue | `.agents/skills/package-playthrough/SKILL.md` (`rake game:dump_playthrough`) |
 | Story time, a world that moves on its own, and a thing due later | `app/models/story.rb`, `app/models/world_mechanic.rb`, `app/models/world_event.rb` |
 | Where a story is going, and why a beat is a record and not a name | `app/models/quest.rb`, `quest/step.rb` |
 | Who may bind a beat to a row, and when the engine places one itself | `app/models/quest/binder.rb`, `quest/deadline.rb` |

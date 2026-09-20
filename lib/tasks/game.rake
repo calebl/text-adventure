@@ -193,6 +193,50 @@ namespace :game do
     puts "check it loads with: bin/rails db:seed"
   end
 
+  desc "Export one playthrough to JSON (names, not ids). Usage: rake 'game:export_playthrough[3]' or rake 'game:export_playthrough[3,/tmp/out.json]'"
+  task :export_playthrough, [ :playthrough_id, :path ] => :environment do |_t, args|
+    raise ArgumentError, "usage: rake 'game:export_playthrough[PLAYTHROUGH_ID]'" if args[:playthrough_id].blank?
+
+    playthrough = Playthrough.find(args[:playthrough_id])
+    exporter = Playthrough::Exporter.new(playthrough)
+    path = exporter.write!(path: args[:path].presence)
+
+    inside_app = path.to_s.start_with?(Rails.root.to_s)
+    puts "Exported playthrough ##{playthrough.id} of #{playthrough.story.title.inspect}"
+    puts "  -> #{inside_app ? path.relative_path_from(Rails.root) : path}"
+    puts "  turns: #{playthrough.scene_chain.size}  commands: #{playthrough.commands.count}  "          "locations: #{playthrough.story.locations.count}  conversations: #{playthrough.chats.count}"
+
+    if exporter.warnings.any?
+      puts
+      puts "Warnings:"
+      exporter.warnings.each { |warning| puts "  - #{warning}" }
+    end
+  end
+
+  desc "Package one playthrough as a miniature primary SQLite DB. Usage: rake 'game:dump_playthrough[3]' or rake 'game:dump_playthrough[3,/tmp/out.sqlite3]'"
+  task :dump_playthrough, [ :playthrough_id, :path ] => :environment do |_t, args|
+    raise ArgumentError, "usage: rake 'game:dump_playthrough[PLAYTHROUGH_ID]'" if args[:playthrough_id].blank?
+
+    playthrough = Playthrough.find(args[:playthrough_id])
+    package = Playthrough::SqlitePackage.new(playthrough)
+    path = package.write!(args[:path].presence)
+
+    inside_app = path.to_s.start_with?(Rails.root.to_s)
+    shown = inside_app ? path.relative_path_from(Rails.root) : path
+    puts "Packaged playthrough ##{playthrough.id} of #{playthrough.story.title.inspect}"
+    puts "  -> #{shown}"
+    puts "  meta -> #{Playthrough::SqlitePackage.metadata_path(path).basename}"
+    puts "  story locations: #{playthrough.story.locations.count}  "          "turns: #{playthrough.scene_chain.size}  chats: #{playthrough.chats.count}"
+    if package.warnings.any?
+      puts
+      puts "Warnings:"
+      package.warnings.each { |warning| puts "  - #{warning}" }
+    end
+    puts
+    puts "This file IS a primary database (that story + this playthrough only). Open it with:"
+    puts "  DATABASE_URL=sqlite3:#{shown} bin/rails runner 'p Playthrough.find(#{playthrough.id}).current_location.name'"
+  end
+
   desc "List generated stories"
   task list: :environment do
     stories = Story.includes(:universe).order(:created_at)
