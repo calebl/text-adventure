@@ -298,6 +298,31 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
     end
   end
 
+  # THE OPENROUTER TRANSPORT READING -- same cascade request as CASCADE_KEPT,
+  # answered through OpenRouter Decisions. The arm suffix names the Jev
+  # transport; the escalation target is still Mistral.
+  CASCADE_OPENROUTER = "classifier-cascade-openrouter-20260919".freeze
+
+  test "the OpenRouter cascade set pins the Decisions transport and keeps every reading" do
+    result = load_kept(CASCADE_OPENROUTER)
+
+    assert result.cascade
+    assert_equal FROZEN_DIGEST, result.corpus_digest
+    assert_equal [ "mistralai/mistral-medium-3.1+openrouter-decisions" ], result.arms
+    assert_equal Eval::Noise::MIN_RUNS, result.reps
+    assert_operator result.passes.sum { |pass| pass.rows.size }, :>=, Eval::Classifier.corpus.size * Eval::Noise::MIN_RUNS
+    transports = result.passes.flat_map(&:rows).map { |row| row["system_one_transport"] }.uniq
+    assert_equal [ "openrouter_decisions" ], transports
+    assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{CASCADE_OPENROUTER}/classifier.json"
+    assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{CASCADE_OPENROUTER}/README.md"
+  end
+
+  test "the OpenRouter cascade set's floor can be recomputed offline" do
+    floor = JSON.parse(Eval.kept_root.join(CASCADE_OPENROUTER, "offline.json").read)
+    assert_equal Eval::Classifier.digest, floor.fetch("corpus_digest")
+    assert_equal JSON.parse(Eval::Classifier::Offline.new.summary.to_h.to_json), floor.fetch("floor")
+  end
+
   test "the current classifier floor can be recomputed offline" do
     floor = JSON.parse(Eval.kept_root.join(CURRENT, "offline.json").read)
     assert_equal Eval::Classifier.digest, floor.fetch("corpus_digest")

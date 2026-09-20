@@ -584,23 +584,34 @@ namespace :eval do
 
     # CASCADE=1 measures `Playthrough::Classifier::Cascade` in front of the
     # arm instead of pinning it off -- the same reader a live turn gets where
-    # `TYPESAFE_API_KEY` is in the environment. There is no separate arm or
-    # provider for it: the arm named is still the escalation target
-    # (`MODELS=`, default `mistralai/mistral-medium-3.1`), so
-    # `rake eval:classifier_compare` pairs a cascade set against the kept
-    # Mistral-alone set on that arm with nothing else to wire up. Requires the
-    # key for the reason its own name states -- a cascade run with no key would
-    # silently measure the Mistral-only path and record itself as the cascade,
-    # which is exactly the kind of mistake this bench exists to make loud
-    # instead of quiet.
-    def cascade? = ENV["CASCADE"] == "1"
+    # either System One credential is in the environment. An arm may also pin
+    # the Jev transport with `+typesafe-direct` or `+openrouter-decisions`,
+    # which implies a cascade measurement without CASCADE=1. The arm named is
+    # still the escalation target (`MODELS=`, default
+    # `mistralai/mistral-medium-3.1`), so `rake eval:classifier_compare` pairs
+    # a cascade set against the kept Mistral-alone set on that arm with nothing
+    # else to wire up. Requires the selected transport's credential -- a
+    # cascade run with no key would silently measure the Mistral-only path and
+    # record itself as the cascade, which is exactly the kind of mistake this
+    # bench exists to make loud instead of quiet.
+    def cascade? = ENV["CASCADE"] == "1" || arms.any?(&:pins_system_one_transport?)
 
     def abort_without_a_cascade_key
       return unless cascade?
 
-      abort "CASCADE=1 needs #{SystemOneAgent::API_KEY_VARIABLE} in the environment -- without it there is no " \
-            "cascade to measure and this run would silently score the Mistral-only path under the cascade's " \
-            "name." unless SystemOneAgent.configured?
+      arms.each do |arm|
+        variable = arm.system_one_credential_variable
+        if variable
+          abort "arm #{arm.id} needs #{variable} in the environment -- without it there is no " \
+                "cascade to measure and this run would silently score the Mistral-only path under the cascade's " \
+                "name." unless ENV[variable].present?
+        else
+          abort "CASCADE=1 needs a System One credential (#{SystemOneAgent::TYPESAFE_API_KEY_VARIABLE} or " \
+                "#{SystemOneAgent::OPENROUTER_API_KEY_VARIABLE}) in the environment -- without it there is no " \
+                "cascade to measure and this run would silently score the Mistral-only path under the cascade's " \
+                "name." unless SystemOneAgent.configured?
+        end
+      end
     end
 
     def run!
@@ -617,8 +628,10 @@ namespace :eval do
       puts "Local arms (#{arms.select(&:local?).map(&:id).join(", ")}) cost nothing and are not in that figure; " \
            "they are slow instead." if arms.any?(&:local?)
       if cascade?
-        puts "CASCADE=1: every line also pays for a System One request, unpriced by the registry above -- " \
+        puts "CASCADE: every line also pays for a System One request, unpriced by the registry above -- " \
              "read the receipted total off this run's own output, not the estimate."
+        pinned = arms.select(&:pins_system_one_transport?)
+        puts "System One transport pinned on #{pinned.map(&:id).join(", ")}." if pinned.any?
       end
       abort_without_a_key(arms)
       abort_without_a_cascade_key

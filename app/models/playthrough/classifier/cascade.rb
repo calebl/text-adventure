@@ -117,6 +117,13 @@ class Playthrough::Classifier::Cascade
   # actually read could never reconcile a composition question line by line.
   attr_reader :target_present, :named_more_than_one
 
+  # WHICH SYSTEM ONE TRANSPORT ANSWERED THIS LINE, as `SystemOneAgent#transport_name`
+  # reports it. Nil until `#read` has run. Kept here rather than as a new
+  # `scenes` column: `scenes.resolved_by` already names the typed path family,
+  # a typed call leaves no chat receipt, and a replay's kept rows are where a
+  # transport comparison is actually read.
+  attr_reader :system_one_transport
+
   # `agent` is the seam a test and the offline engine sweep stand a fixture in
   # at. Nil is the real provider.
   def initialize(classifier, agent: nil)
@@ -133,7 +140,9 @@ class Playthrough::Classifier::Cascade
   # turn.
   def read(command)
     state = Playthrough::Classifier::State.new(classifier, command)
-    answers = agent.ask_questions(state: state.to_h,
+    asked = agent
+    @system_one_transport = asked.respond_to?(:transport_name) ? asked.transport_name : nil
+    answers = asked.ask_questions(state: state.to_h,
                                   questions: Playthrough::Classifier::Request.new(state).to_h)
     compose(state, answers)
   rescue SystemOneAgent::Unavailable => e

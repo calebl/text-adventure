@@ -103,16 +103,20 @@ class Eval::Classifier::Bench
   # the schema build and the resolution back to records -- which is what a turn
   # actually waits for, and both are microseconds beside a provider round trip.
   Reading = Data.define(:line, :arm, :rep, :answer, :answered_by, :raw, :seconds, :error, :resolved_by,
-                        :target_present, :named_more_than_one, :out_of_set) do
+                        :target_present, :named_more_than_one, :out_of_set, :system_one_transport) do
     # `resolved_by`, `target_present` AND `named_more_than_one` DEFAULT TO NIL,
     # so every call site that predates the cascade -- and every fixture in this
     # test suite -- keeps working with no change. They are only ever non-nil
     # on a `cascade: true` bench run, and the two Noul readings are nil even
     # then on a `typed_model_unavailable` line, which never got an answer to
     # read them off. `out_of_set` DEFAULTS TO NIL THE SAME WAY, for a fixture
-    # or an old reading built before the counter existed.
-    def initialize(resolved_by: nil, target_present: nil, named_more_than_one: nil, out_of_set: nil, **rest) =
-      super(resolved_by:, target_present:, named_more_than_one:, out_of_set:, **rest)
+    # or an old reading built before the counter existed. `system_one_transport`
+    # is which Jev HTTP route answered on a cascade line -- kept on the reading
+    # rather than as a new `scenes` column, because a typed call leaves no chat
+    # receipt and `scenes.resolved_by` already names the path family.
+    def initialize(resolved_by: nil, target_present: nil, named_more_than_one: nil, out_of_set: nil,
+                   system_one_transport: nil, **rest) =
+      super(resolved_by:, target_present:, named_more_than_one:, out_of_set:, system_one_transport:, **rest)
 
     def id = line.id
     def shape = line.shape
@@ -303,7 +307,8 @@ class Eval::Classifier::Bench
         also_fn: reading.also_false_negative?, also_omitted: reading.also_named_omitted?,
         answered_by: reading.answered_by, seconds: reading.seconds&.round(4), error: reading.error,
         resolved_by: reading.resolved_by, target_present: reading.target_present,
-        named_more_than_one: reading.named_more_than_one }
+        named_more_than_one: reading.named_more_than_one,
+        system_one_transport: reading.system_one_transport }
     end
   end
 
@@ -366,11 +371,14 @@ class Eval::Classifier::Bench
   # true` lifts it to `system_one: nil` -- the environment decides, exactly as
   # a live turn does -- so the arm still names the ESCALATION model (unchanged:
   # `mistralai/mistral-medium-3.1`) while the cascade itself answers whatever
-  # it composes. There is no separate "Jev arm": the cascade reads the same
-  # `TYPESAFE_API_KEY` a live turn reads, and a run started with `cascade: true`
-  # but no key in the environment measures the model-only path, which is a
-  # setup mistake this class cannot see -- `rake eval:classifier` aborts on it
-  # so the mistake is caught before a call is made.
+  # it composes. An arm that names `+typesafe-direct` or
+  # `+openrouter-decisions` also lifts the pin, and constructs a
+  # `SystemOneAgent` with that transport pinned so the two Jev routes can be
+  # measured like for like; ambient `CASCADE=1` still lets the live preference
+  # choose. A run started with the cascade on but no credential for the
+  # selected transport measures the model-only path, which is a setup mistake
+  # this class cannot see -- `rake eval:classifier` aborts on it so the mistake
+  # is caught before a call is made.
   def initialize(corpus: Eval::Classifier.corpus, arms: nil, reps: Eval::Noise::MIN_RUNS, io: $stdout,
                  concurrency: Eval::Concurrency.requested, cascade: false)
     @corpus = corpus
@@ -379,6 +387,20 @@ class Eval::Classifier::Bench
     @io = io
     @concurrency = [ concurrency.to_i, 1 ].max
     @cascade = cascade
+  end
+
+  # Whether this arm's lines may reach the cascade. True for an ambient
+  # `cascade: true` bench and for any arm that pinned a System One transport.
+  def cascade_for?(arm) = @cascade || arm.pins_system_one_transport?
+
+  # Which `system_one:` value `#read` passes. `false` pins the reader off;
+  # `nil` is ambient preference; a `SystemOneAgent` is a pinned transport.
+  def system_one_for(arm)
+    return false unless cascade_for?(arm)
+    return SystemOneAgent.new(purpose: "classifier",
+                              transport: SystemOneAgent.build_transport(arm.system_one_transport)) if arm.pins_system_one_transport?
+
+    nil
   end
 
   # HOW MANY CALLS THIS ARM MAY HAVE IN FLIGHT. A LOCAL ARM IS ALWAYS ONE: it is
@@ -427,7 +449,8 @@ class Eval::Classifier::Bench
     Eval::Classifier::Result.new(corpus_size: corpus.size, corpus_digest: Eval::Classifier.digest(corpus),
       request_identity: request_identity,
                                  arms: arms.map(&:id), reps: reps, passes: passes, warmups: warmups,
-                                 concurrency: concurrency, cascade: @cascade)
+                                 concurrency: concurrency,
+                                 cascade: @cascade || arms.any?(&:pins_system_one_transport?))
   end
 
   private
@@ -487,11 +510,10 @@ class Eval::Classifier::Bench
     # association cache is not thread-safe, and the staged object is shared by
     # every worker on that position. One indexed read against a 0.6s call.
     # `system_one:` PINS WHICH READER MAY ANSWER, the way `Arm#pinned` pins
-    # which model does -- `false` unless this bench was built `cascade: true`,
-    # in which case it is `nil` and the environment decides, exactly as a live
-    # turn does. See `#initialize`.
+    # which model does -- `false` unless this arm's cascade is on, in which
+    # case it is `nil` (ambient) or a pinned `SystemOneAgent`. See `#initialize`.
     classifier = Playthrough::Classifier.new(Playthrough.find(standing.playthrough.id),
-                                             system_one: @cascade ? nil : false)
+                                             system_one: system_one_for(arm))
     prepare_agent!(classifier, arm)
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
@@ -504,6 +526,7 @@ class Eval::Classifier::Bench
                   raw: raw_answer(classifier), resolved_by: classifier.resolved_by,
                   target_present: classifier.target_present, named_more_than_one: classifier.named_more_than_one,
                   out_of_set: intent.reached_for_nothing?,
+                  system_one_transport: classifier.system_one_transport,
                   answer: Eval::Classifier::Corpus::Answer.from_intent(intent))
     rescue StandardError => error
       # A FAILED CALL HAS NO LATENCY, deliberately: how long it took to fail is
@@ -512,7 +535,8 @@ class Eval::Classifier::Bench
       # flaky. The failure count and its error classes are the figure for it.
       Reading.new(line: line, arm: arm.id, rep: rep, answer: nil, answered_by: nil, raw: nil,
                   seconds: nil, error: "#{error.class}: #{error.message}", resolved_by: classifier.resolved_by,
-                  target_present: classifier.target_present, named_more_than_one: classifier.named_more_than_one)
+                  target_present: classifier.target_present, named_more_than_one: classifier.named_more_than_one,
+                  system_one_transport: classifier.system_one_transport)
     end
   end
 

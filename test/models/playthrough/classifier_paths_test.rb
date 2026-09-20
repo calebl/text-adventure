@@ -3,8 +3,9 @@ require "test_helper"
 # WHICH READER ANSWERED, AND WHAT HAPPENS WHEN THE FIRST ONE CANNOT.
 #
 # `Playthrough::Classifier` has two model readers now and no feature flag: the
-# presence of `TYPESAFE_API_KEY` is the whole of the switch. So the two things
-# this file exists to hold still are the two that would be silent if they broke.
+# presence of either System One credential is the whole of the switch. So the
+# two things this file exists to hold still are the two that would be silent if
+# they broke.
 #
 #   * WITH NO KEY THE CLASS IS WHAT IT ALWAYS WAS. Same instructions, same closed
 #     enum, same prompt, same resolution, one call -- and nothing of the cascade

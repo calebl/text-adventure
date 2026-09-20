@@ -23,13 +23,13 @@
 # changes `INSTRUCTIONS` below is a change to judge with
 # `rake eval:classifier_compare`, not by reading one turn.
 #
-# THERE ARE TWO MODEL READERS HERE NOW, AND THE KEY IS THE SWITCH. Where
-# `TYPESAFE_API_KEY` is in the environment a line is read first by
-# `Playthrough::Classifier::Cascade` -- one System One request of ten typed
-# questions, composed into an `Intent` by the engine -- and the call below is
-# what an escalated or a failed line falls to, unchanged. Where the key is
-# absent there is no cascade and this class is byte for byte what it has always
-# been, which is what every test run and every keyless machine exercises.
+# THERE ARE TWO MODEL READERS HERE NOW, AND THE KEY IS THE SWITCH. Where either
+# `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` is in the environment a line is
+# read first by `Playthrough::Classifier::Cascade` -- one System One request of
+# ten typed questions, composed into an `Intent` by the engine -- and the call
+# below is what an escalated or a failed line falls to, unchanged. Where neither
+# key is present there is no cascade and this class is byte for byte what it has
+# always been, which is what every test run and every keyless machine exercises.
 # `#resolved_by` is which of them answered; see `PATHS`.
 class Playthrough::Classifier
   # What one line of player input turned out to be.
@@ -302,16 +302,18 @@ class Playthrough::Classifier
   # and the composed `Intent`.
   def target_present = @cascade&.target_present
   def named_more_than_one = @cascade&.named_more_than_one
+  def system_one_transport = @cascade&.system_one_transport
 
   # `system_one` HAS THREE POSITIONS, and the third is the one worth explaining.
   #
   #   nil      the environment decides, which is the shipped behaviour:
-  #            `SystemOneAgent.configured?` and nothing else
+  #            `SystemOneAgent.configured?` and nothing else (either
+  #            `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY`)
   #   false    NO CASCADE, whatever this shell has in it. The model call alone
   #   <object> that fixture, for a test and for the offline engine sweep
   #
   # `false` exists because `Eval::Classifier` MEASURES THIS CLASS. A maintainer
-  # with `TYPESAFE_API_KEY` in their shell would otherwise have `rake
+  # with a System One credential in their shell would otherwise have `rake
   # eval:classifier` quietly scoring a different reader against the corpus and
   # `rake eval:classifier_digest` describing a request that was never sent --
   # both of them silently, and both of them the sort of thing a bench exists to
@@ -510,9 +512,9 @@ class Playthrough::Classifier
   # THE TYPED READER, OR NOTHING AT ALL. Nil means "the model call answers this
   # line", for one of three reasons this method's two lines cover:
   #
-  #   * no cascade in this environment -- no `TYPESAFE_API_KEY`, or a caller that
-  #     pinned it off. Nothing is built, nothing is asked, and `resolved_by` is
-  #     `model`, which is what every test run and every keyless checkout does;
+  #   * no cascade in this environment -- no System One credential, or a caller
+  #     that pinned it off. Nothing is built, nothing is asked, and `resolved_by`
+  #     is `model`, which is what every test run and every keyless checkout does;
   #   * the cascade read the line and one of its two flags fired;
   #   * the cascade was tried and could not be believed.
   #
