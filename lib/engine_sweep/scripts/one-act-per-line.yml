@@ -53,16 +53,16 @@ story: The Unrecorded Hour
 why: the ruling of 2026-09-04 -- a refused line writes nothing, and the next line still plays
 steps:
 - id: the-office-as-seeded
-  type: look
-  why: the starting state, so a failure later has a known beginning
+  type: stats
+  why: the starting state before anybody acts, so a failure later has a known beginning
   expect:
     location: Ward Office 12 (realized)
     exits: [The Supply Closet (realized), The Long Hallway (stub)]
     here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     present: [Halkett Rowe]
-    changed: false
-    refused: false
+    volitions: 0
+    acts: 0
 
 - id: somebody-who-is-not-here
   type: talk to Perrin Lasco
@@ -76,7 +76,6 @@ steps:
     # for the message. Asserted as it stands rather than pinned to a wording
     # nobody has decided to change.
     offers: [there is no person here called, Perrin Lasco, Halkett Rowe]
-    present: [Halkett Rowe]
     carrying: [Ward Office 12 daybook]
 
 - id: unreadable-offline
@@ -86,7 +85,6 @@ steps:
     refused: true
     changed: false
     note: 'take <item>      pick up something lying here'
-    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
 
 - id: into-the-room-with-two-things-in-it
@@ -95,9 +93,7 @@ steps:
   expect:
     changed: true
     location: The Supply Closet (realized)
-    here: [Perrin's private index, copy-room apron]
     carrying: [Ward Office 12 daybook]
-    present: []
 
 - id: both-names-in-full
   type: take Perrin's private index and copy-room apron
@@ -107,7 +103,6 @@ steps:
     changed: false
     drifts: 0
     offers: [matches more than one thing lying here, Perrin's private index, copy-room apron]
-    here: [Perrin's private index, copy-room apron]
     carrying: [Ward Office 12 daybook]
 
 - id: two-readable-names-in-full
@@ -122,7 +117,6 @@ steps:
     changed: false
     drifts: 0
     offers: [matches more than one thing here or in your hands, Perrin's private index, Ward Office 12 daybook]
-    here: [Perrin's private index, copy-room apron]
     carrying: [Ward Office 12 daybook]
 
 - id: and-one-of-them-on-its-own-still-reads
@@ -133,7 +127,6 @@ steps:
     refused: false
     understood: examine -> Perrin's private index
     note: ["reads: Perrin's private index"]
-    here: [Perrin's private index, copy-room apron]
 
 - id: and-the-next-line-plays
   type: take the index
@@ -141,7 +134,6 @@ steps:
   expect:
     changed: true
     understood: take -> Perrin's private index
-    here: [copy-room apron]
     carrying: [Perrin's private index, Ward Office 12 daybook]
 
 - id: a-name-that-lands-on-nothing
@@ -152,30 +144,24 @@ steps:
     changed: false
     drifts: 0
     offers: ['there is no thing lying here called "the tide-slate"', copy-room apron]
-    here: [copy-room apron]
     carrying: [Perrin's private index, Ward Office 12 daybook]
 
 - id: back-to-the-office
   type: go to Ward Office 12
-  why: the ward stamp and the daybook are the two-set pair, and they are only both in reach here
+  why: return to the office for the two-set boundary case
   expect:
     changed: true
     location: Ward Office 12 (realized)
-    here: [ward stamp, filing press]
     carrying: [Perrin's private index, Ward Office 12 daybook]
-    present: [Halkett Rowe]
 
 - id: two-acts-across-two-sets
-  type: take the ward stamp and the daybook
+  type: take the filing press and the daybook
   why: >-
     THE BOUNDARY THE RULING HAS NOT CLOSED, pinned so that closing it is a
-    deliberate act. The stamp is on the floor and the daybook is in the hands,
-    a `take` resolves against the floor alone, and so only one of the two names
-    is ever seen -- in this mode by `#resolve`, in the browser by
-    `Playthrough::Classifier#also_record`. The line is played rather than
-    refused. Read the header before changing this.
+    deliberate act. The press is on the floor (immovable, so a living cast will
+    not have claimed it) and the daybook is in the hands; a `take` resolves
+    against the floor alone, so the second noun is invisible to the resolver.
   expect:
-    changed: true
-    understood: take -> ward stamp
-    here: [filing press]
-    carrying: [Perrin's private index, Ward Office 12 daybook, ward stamp]
+    refused: true
+    changed: false
+    offers: [does not move for anybody]

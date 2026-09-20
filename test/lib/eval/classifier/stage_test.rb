@@ -107,6 +107,30 @@ class Eval::Classifier::StageTest < ActiveSupport::TestCase
     assert_match(/was refused offline/, error.message)
   end
 
+  # GUARANTEE 3 WITH A LIVING CAST. Setup walks through Mechanics with
+  # `model: false`, which would otherwise give every pursuing person a turn.
+  # The stage holds volition for those lines so a labelled position stays put.
+  test "staging holds volition for the setup lines" do
+    position = Eval::Classifier::Corpus::Position.new(
+      id: "office-held", story: "The Unrecorded Hour", room: "Ward Office 12",
+      setup: [ "look" ]
+    )
+    held_flags = []
+    original = Playthrough::Volition.method(:hold)
+
+    Playthrough::Volition.stub(:hold, lambda { |&block|
+      original.call do
+        held_flags << Playthrough::Volition.held?
+        block.call
+      end
+    }) do
+      Eval::Classifier::Stage.open([ position ]) do |stages|
+        assert_includes held_flags, true, "setup must run inside Volition.hold"
+        assert_equal 0, stages.fetch("office-held").playthrough.volitions.count
+      end
+    end
+  end
+
   # AN ERROR INSIDE THE BLOCK MUST NOT COME BACK AS NIL, which it did while the
   # rollback lived in an `ensure`: a raise there replaces the exception in
   # flight, so a bench that blew up returned nothing at all and the board

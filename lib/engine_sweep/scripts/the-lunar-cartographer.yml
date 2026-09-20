@@ -20,13 +20,15 @@ story: The Lunar Cartographer
 why: the graph on its own -- a world with no items and one written room
 steps:
 - id: the-one-written-room
-  type: look
-  why: Room 3 leads three ways out and every one of them is unwritten
+  type: stats
+  why: Room 3 leads three ways out and every one of them is unwritten -- read before anybody acts
   expect:
     location: Grenn's Boarding House, Room 3 (realized)
     # Placed by `characters[].location` in the world file, and read straight
     # back out of `Character.present_in` -- no scene involved.
     present: [Grenn Ollivar]
+    volitions: 0
+    acts: 0
     exits:
     - Mournwell Lane (stub)
     - Grenn's Boarding House hallway (stub)
@@ -44,10 +46,10 @@ steps:
     exits:
     - "Grenn's Boarding House, Room 3 (realized)"
     - Sovereign's Circle (stub)
-    # Walking out of Room 3 does not bring Grenn along. Nothing in a walk
-    # writes a whereabouts; `cast_unmoved` asserts it again over the whole
-    # world after the script.
-    present: []
+    # Walking out of Room 3 does not bring Grenn along as a follower. He may
+    # walk the same exit on his own turn (volition runs on the room the turn
+    # began in), so presence here is not pinned empty. `cast_unmoved` holds the
+    # world layer still.
 
 - id: two-rooms-deep
   type: go to Sovereign's Circle
@@ -95,11 +97,12 @@ steps:
 
 - id: back-to-the-room-that-is-written
   type: go to Room 3
-  why: a fragment of a long name, and the one room in this world with a description
+  why: a fragment of a long name, and the one room in this world with a description.
+    Grenn may have walked out on his own (obtain); presence is not pinned still --
+    cast_unmoved still holds the world layer, and the graph below is the point.
   expect:
     changed: true
     location: Grenn's Boarding House, Room 3 (realized)
-    present: [Grenn Ollivar]
     exits:
     - Mournwell Lane (stub)
     - Grenn's Boarding House hallway (stub)

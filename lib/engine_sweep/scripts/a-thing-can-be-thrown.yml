@@ -75,9 +75,7 @@ steps:
   why: three bulks in one room -- what is carried, what is lying here, and what does not move
   expect:
     location: Ward Office 12 (realized)
-    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
-    present: [Halkett Rowe]
     foes: []
     hp: 18
     changed: false
@@ -93,7 +91,6 @@ steps:
     - Ward Office 12 daybook
     - ward stamp
     changed: false
-    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
 
 - id: a-throw-with-no-aim-names-both-aim-sets
@@ -138,9 +135,7 @@ steps:
     - filing press is immovable and does not move for anybody
     - no die was thrown for it
     changed: false
-    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
-    present: [Halkett Rowe]
     hp: 18
     blows: 0
 
@@ -154,7 +149,6 @@ steps:
     - filing press is immovable and does not move for anybody
     - cannot be picked up
     changed: false
-    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     hp: 18
     blows: 0
@@ -166,7 +160,6 @@ steps:
     refused: true
     offers: does not move for anybody
     changed: false
-    here: [ward stamp, filing press]
     hp: 18
     blows: 0
 
@@ -186,9 +179,7 @@ steps:
     - 'threw: ward stamp at Halkett Rowe'
     - 'strength -> d20('
     - '<= 9 '
-    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
-    present: [Halkett Rowe]
 
 - id: and-one-through-a-doorway
   type: throw the daybook at the supply closet
@@ -204,4 +195,3 @@ steps:
     - 'threw: Ward Office 12 daybook at The Supply Closet'
     - 'strength -> d20('
     - '<= 7 '
-    present: [Halkett Rowe]

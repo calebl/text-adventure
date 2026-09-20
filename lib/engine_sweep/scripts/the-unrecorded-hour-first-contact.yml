@@ -29,7 +29,6 @@ steps:
   why: a playthrough takes its opening room's snapshot when it is created, not on its first turn
   expect:
     location: Ward Office 12 (realized)
-    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     changed: false
     refused: false
@@ -58,7 +57,6 @@ steps:
   expect:
     changed: true
     location: The Supply Closet (realized)
-    here: [copy-room apron, Perrin's private index]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: put-the-stamp-down-somewhere-it-was-never-seeded
@@ -67,7 +65,6 @@ steps:
   expect:
     changed: true
     change: now lying in The Supply Closet
-    here: [copy-room apron, Perrin's private index, ward stamp]
     carrying: [Ward Office 12 daybook]
 
 - id: walk-back-to-an-office-that-is-still-empty
@@ -85,7 +82,6 @@ steps:
   expect:
     changed: true
     location: The Supply Closet (realized)
-    here: [copy-room apron, Perrin's private index, ward stamp]
     carrying: [Ward Office 12 daybook]
 
 - id: the-index-is-still-takeable-after-all-that
@@ -94,5 +90,4 @@ steps:
   expect:
     changed: true
     understood: take -> Perrin's private index
-    here: [copy-room apron, ward stamp]
     carrying: [Perrin's private index, Ward Office 12 daybook]

@@ -50,15 +50,12 @@ steps:
   expect:
     changed: true
     location: The Supply Closet (realized)
-    present: []
-    here: [Perrin's private index, copy-room apron]
 
 - id: put-the-daybook-down-too
   type: drop the daybook
   why: three on the floor, so an empty set cannot be what a refusal is about
   expect:
     changed: true
-    here: [Perrin's private index, copy-room apron, Ward Office 12 daybook]
     carrying: []
 
 - id: collective-words
@@ -69,7 +66,6 @@ steps:
     changed: false
     drifts: 0
     offers: [Perrin's private index, copy-room apron, Ward Office 12 daybook]
-    here: [Perrin's private index, copy-room apron, Ward Office 12 daybook]
 
 - id: collective-words-against-the-hands
   type: drop everything
@@ -87,7 +83,6 @@ steps:
     refused: true
     changed: false
     offers: [Perrin's private index, copy-room apron]
-    here: [Perrin's private index, copy-room apron, Ward Office 12 daybook]
     carrying: []
 
 - id: one-noun-at-a-time

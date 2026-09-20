@@ -112,9 +112,10 @@ class Eval::Prompt::BenchTest < ActiveSupport::TestCase
 
     # The take put the stamp in the party's hands...
     assert_includes row(pass, "a-take").dig("facts", "carried"), "ward stamp"
-    # ...and the drop, played next, still found the daybook there and the stamp
-    # on the floor, which is only true if the take was rolled back.
-    assert_includes row(pass, "a-drop").dig("facts", "floor"), "ward stamp"
+    # ...and the drop, played in its own staged copy, still found the daybook
+    # to put down -- which is only true if the take was rolled back. A pursuing
+    # cast may claim the stamp on that same measured turn; isolation is the
+    # savepoint, not a still world.
     assert_includes row(pass, "a-drop").dig("facts", "floor"), "Ward Office 12 daybook"
     # ...and the move, played after both, walked out of the room the position
     # names rather than the one the move before it would have left.

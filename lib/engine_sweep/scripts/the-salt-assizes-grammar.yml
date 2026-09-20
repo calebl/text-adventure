@@ -15,30 +15,38 @@
 # code as it stood before that was fixed, which is what this file is for: stash
 # the fix and this script goes red while the rest of the sweep stays green.
 #
+# A LIVING CAST. Seeded people now carry pursuits, so after a drop the Justicar
+# may pick the slate up on the same turn. This script pins the name-matching
+# defects (understood / refused correctly) and does not require the slate to
+# stay on the floor afterwards. Exit matching is asserted on its own steps.
+#
 # THE WORLD IS THE HELD-OUT ONE and that is fine here. `Eval::HELD_OUT` is about
 # not tuning narration checks on prose nobody has read; this file reads no prose.
-# It walks the same rooms the review scout walked, because reproducing a defect
+# It walks the same rooms the review walked, because reproducing a defect
 # where it was found is worth more than tidiness about which world it was.
 story: The Salt Assizes
 why: the two one-directional name-matching defects, typed as they were found
 steps:
 - id: the-slate-is-in-the-hand
-  type: look
-  why: the starting state the two refusals contradicted
+  type: stats
+  why: the starting state the two refusals contradicted, read without anybody acting
   expect:
     location: The Causeway Court (realized)
     exits: [The Tide Post (realized), The Vestry Hulk (stub)]
     here: []
     carrying: [Assize tide-slate]
+    volitions: 0
+    acts: 0
 
 - id: drop-the-tide-slate
   type: drop the tide-slate
-  why: DEFECT ONE -- an article in front of a fragment, and the fragment is the tail of the name
+  why: DEFECT ONE -- an article in front of a fragment, and the fragment is the tail of the name.
+    The slate may leave the floor on the same turn if somebody takes it; the
+    resolve is what this step pins.
   expect:
     changed: true
     refused: false
     understood: drop -> Assize tide-slate
-    here: [Assize tide-slate]
     carrying: []
 
 - id: go-to-the-tide-post
@@ -51,21 +59,28 @@ steps:
     location: The Tide Post (realized)
     exits: [The Causeway Court (realized)]
 
-- id: pick-it-up-again-with-a-preposition
+- id: back-to-the-court
   type: go into the Causeway Court
   why: every word in LEADING_WORDS, not just the two the defects happened to use
   expect:
     changed: true
     location: The Causeway Court (realized)
 
-- id: take-it-back-in-a-whole-sentence
-  type: take the Assize tide-slate
-  why: the name typed in full with an article in front of it
+- id: into-the-vestry-with-a-preposition
+  type: go into the Vestry Hulk
+  why: every word in LEADING_WORDS on an exit name -- independent of where the slate went
   expect:
     changed: true
-    understood: take -> Assize tide-slate
-    here: []
-    carrying: [Assize tide-slate]
+    refused: false
+    understood: move -> The Vestry Hulk
+    location: The Vestry Hulk (stub)
+
+- id: back-from-the-vestry
+  type: go into the Causeway Court
+  why: return before the bare-article case, so the exit set is the court's again
+  expect:
+    changed: true
+    location: The Causeway Court (realized)
 
 - id: an-article-on-its-own-still-names-nothing
   type: go the
@@ -78,9 +93,8 @@ steps:
 
 - id: a-name-this-world-does-not-have
   type: drop the ledger
-  why: an unknown name is still refused, and still says what would have worked
+  why: an unknown name is still refused against whatever the hands actually hold
   expect:
     refused: true
     changed: false
-    offers: [there is no thing you are carrying, Assize tide-slate]
-    carrying: [Assize tide-slate]
+    offers: [there is no thing you are carrying]
