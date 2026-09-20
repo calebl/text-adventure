@@ -127,6 +127,12 @@ characters:
   likes: A slate that agrees with the water, the ten minutes before a turn, the sound of a court rising on time
   dislikes: A figure given without a source, being asked to round, anyone standing between her and the flats
   fears: Ringing a court up and finding afterwards that the water had not turned
+  conscious_desire: Coraith Vell wants to keep the tide-slate true through the day's high water.
+  unconscious_desire: Coraith Vell wants to reach the source of the hand that altered her figure.
+  recognized_need: Coraith Vell needs to attend the bell and ring the court on time.
+  unrecognized_need: Coraith Vell needs to reach the flats and measure the water herself.
+  desire_pursuit: keep
+  need_pursuit: reach
   items:
   - name: Assize tide-slate
     description: |-
@@ -159,6 +165,12 @@ characters:
   likes: A court that sits when it says it will, a witness who answers the question, being given a figure
   dislikes: Adjournments, the smell of the flats, being asked to wait without a reason
   fears: Signing off on a delay that turns out to have been a sentence
+  conscious_desire: Ammon Brace wants to reach the hearing before the tide closes the causeway.
+  unconscious_desire: Ammon Brace wants to obtain certainty that the law has not failed the accused.
+  recognized_need: Ammon Brace needs to attend every witness until the hearing is complete.
+  unrecognized_need: Ammon Brace needs to reach a judgment that accounts for the water beyond the law.
+  desire_pursuit: reach
+  need_pursuit: attend
 - fullname: Neb Halloran
   race: Shorefolk
   location: The Tide Post
@@ -182,6 +194,12 @@ characters:
   likes: A tide that comes in slow, being called by his name, an argument he can win
   dislikes: Being counted with the marsh, questions about his cousins, the sound of the bell
   fears: Drowning at the post while the court is still deciding whether to hear him
+  conscious_desire: Neb Halloran wants to obtain a hearing before the water reaches the tide post.
+  unconscious_desire: Neb Halloran wants to avoid naming the five cousins who paid for his mother's roof.
+  recognized_need: Neb Halloran needs to keep his mother's roof secure through the trial.
+  unrecognized_need: Neb Halloran needs to reach the truth without leaving his cousins to drown in his place.
+  desire_pursuit: obtain
+  need_pursuit: avoid
 locations:
 - name: The Causeway Court
   detail_level: realized

@@ -124,6 +124,12 @@ characters:
   likes: Fresh bearings, strong tea, the hour before the city moves
   dislikes: Sovereign paperwork, being told a street has always been there
   fears: The memory loss. She has started writing down what she did yesterday.
+  conscious_desire: Isbet Marrow wants to reach a complete map of the city's nightly rearrangements.
+  unconscious_desire: Isbet Marrow wants to keep the one measurement that proves the Sovereigns are lying.
+  recognized_need: Isbet Marrow needs to keep her survey notes in order across every night.
+  unrecognized_need: Isbet Marrow needs to reach the memory of what she has begun to lose.
+  desire_pursuit: reach
+  need_pursuit: keep
 - fullname: Grenn Ollivar
   race: Lunar Sovereigns
   location: Grenn's Boarding House, Room 3
@@ -147,6 +153,12 @@ characters:
   likes: His own foundations, being right about the plaster, a settled ledger
   dislikes: The Sovereign's Circle, tenants who talk to the walls
   fears: That the house will crack after all, and that his family was right
+  conscious_desire: Grenn Ollivar wants to obtain the overdue rent before the Bell of Saint Aravel rings again.
+  unconscious_desire: Grenn Ollivar wants to reach someone who will ask him about the foundations.
+  recognized_need: Grenn Ollivar needs to keep his boarding-house ledger settled.
+  unrecognized_need: Grenn Ollivar needs to reach the third floor after dark and inspect his house.
+  desire_pursuit: obtain
+  need_pursuit: reach
 - fullname: Marek Sollen
   race: Nocturna-Blighted
   location: The Bell of Saint Aravel
@@ -171,6 +183,12 @@ characters:
   likes: The hour. The rope. The weight coming back up the line
   dislikes: Anything that says a name out loud in his tower
   fears: Nothing at all, and that is the whole of what is wrong with him
+  conscious_desire: Marek Sollen wants to keep the bell ringing at the appointed hour.
+  unconscious_desire: Marek Sollen wants to avoid every name spoken in the tower.
+  recognized_need: Marek Sollen needs to attend the rope until the city hears its hour.
+  unrecognized_need: Marek Sollen needs to reach the person he was before the bell took his name.
+  desire_pursuit: keep
+  need_pursuit: avoid
   items:
   - name: bell-rope tally
     description: |-

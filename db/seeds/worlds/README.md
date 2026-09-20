@@ -551,8 +551,8 @@ locations:
   afraid of, because a monster you can talk to is a feature. The file is the
   decision, so it may also hold a *tame* beast of a monstrous race, or a hostile
   person of a people.
-- **The four objects of desire are optional, and none of the three worlds
-  checked in here writes them yet.** `conscious_desire` is what this person
+- **The four objects of desire are optional, and the three checked-in worlds
+  author them for every character.** `conscious_desire` is what this person
   would say if you asked them what they want; `unconscious_desire` is what they are actually after and
   would deny; `recognized_need` is the obligation they hold themselves to; and
   `unrecognized_need` is what they cannot see. One sentence each, third person,
