@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "kind": "primary_sqlite_dump",
+  "dumped_at": "2026-09-20T19:01:01Z",
+  "rails_env": "development",
+  "source": "storage/development.sqlite3",
+  "playthrough": {
+    "id": 3,
+    "story": "Cold Deck Running",
+    "protagonist": "Kael Veyra",
+    "current_location": "Core Access Chamber room 1"
+  }
+}

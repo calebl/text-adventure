@@ -34,7 +34,8 @@
 #     the receipts that explain why a room came out the way it did
 #
 # WHAT IT IS NOT. It is not a seed file and it will not load back into a
-# database. Re-playing from one is a different tool; this one is for reading.
+# database. For a restoreable capture of the primary SQLite file that still
+# holds this playthrough, see `DatabaseDump` / `rake game:dump_playthrough`.
 class Playthrough::Exporter
   FORMAT = 1
   DIRECTORY = Rails.root.join("tmp/playthrough-exports")

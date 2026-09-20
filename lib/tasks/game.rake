@@ -213,6 +213,43 @@ namespace :game do
     end
   end
 
+  desc "Dump the primary SQLite DB (restoreable). Usage: rake 'game:dump_playthrough[3]' or rake 'game:dump_playthrough[3,/tmp/out.sqlite3]'"
+  task :dump_playthrough, [ :playthrough_id, :path ] => :environment do |_t, args|
+    raise ArgumentError, "usage: rake 'game:dump_playthrough[PLAYTHROUGH_ID]'" if args[:playthrough_id].blank?
+
+    playthrough = Playthrough.find(args[:playthrough_id])
+    path = Pathname.new(args[:path].presence || DatabaseDump.default_path(playthrough))
+    dump = DatabaseDump.new.dump!(path, playthrough: playthrough)
+
+    inside_app = dump.to_s.start_with?(Rails.root.to_s)
+    puts "Dumped primary database containing playthrough ##{playthrough.id} of #{playthrough.story.title.inspect}"
+    puts "  -> #{inside_app ? dump.relative_path_from(Rails.root) : dump}"
+    puts "  meta -> #{DatabaseDump.metadata_path(dump).basename}"
+    puts
+    puts "This is the WHOLE primary database (not a row slice). Restore with:"
+    puts "  rake 'game:restore_dump[#{inside_app ? dump.relative_path_from(Rails.root) : dump}]'"
+    puts "Quit Puma and bin/jobs first; pass FORCE=1 to overwrite storage/development.sqlite3."
+  end
+
+  desc "Restore a primary SQLite dump. Usage: rake 'game:restore_dump[path]' FORCE=1 to overwrite"
+  task :restore_dump, [ :path ] => :environment do |_t, args|
+    raise ArgumentError, "usage: rake 'game:restore_dump[PATH]'" if args[:path].blank?
+
+    path = Pathname.new(args[:path])
+    path = Rails.root.join(path) unless path.absolute?
+    force = ENV["FORCE"].present?
+
+    destination = DatabaseDump.new.restore!(path, force: force)
+    inside_app = destination.to_s.start_with?(Rails.root.to_s)
+    puts "Restored primary database from #{path}"
+    puts "  -> #{inside_app ? destination.relative_path_from(Rails.root) : destination}"
+    if Pathname.new("#{destination}.before-restore").exist?
+      puts "  previous file kept as #{Pathname.new("#{destination}.before-restore").basename}"
+    end
+    puts
+    puts "Reconnect: restart Puma / bin/jobs, or open a fresh rails console."
+  end
+
   desc "List generated stories"
   task list: :environment do
     stories = Story.includes(:universe).order(:created_at)
