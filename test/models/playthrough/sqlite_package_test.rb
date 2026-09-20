@@ -58,20 +58,29 @@ class Playthrough::SqlitePackageTest < ActiveSupport::TestCase
     connection.execute("PRAGMA foreign_keys = ON")
   end
 
-  test "the package is a primary DB holding only this story and playthrough" do
-    path = @dir.join("package.sqlite3")
-    Playthrough::SqlitePackage.new(@playthrough).write!(path)
+  test "the package is a gzipped primary DB holding only this story and playthrough" do
+    requested = @dir.join("package.sqlite3")
+    archive = Playthrough::SqlitePackage.new(@playthrough).write!(requested)
 
-    assert path.exist?
-    assert Playthrough::SqlitePackage.metadata_path(path).exist?
+    assert_equal Pathname("#{requested}.gz"), archive
+    assert archive.exist?
+    assert_not requested.exist?, "bare sqlite should be removed after gzip"
+    assert Playthrough::SqlitePackage.metadata_path(archive).exist?
 
-    meta = JSON.parse(Playthrough::SqlitePackage.metadata_path(path).read)
+    meta = JSON.parse(Playthrough::SqlitePackage.metadata_path(archive).read)
     assert_equal "playthrough_sqlite_package", meta.fetch("kind")
     assert_equal "Package Fixture Story", meta.dig("playthrough", "story")
+    assert meta.fetch("compressed")
+    assert meta.dig("git", "sha").present?
+    assert_equal `git rev-parse HEAD`.strip, meta.dig("git", "sha")
+    assert_includes [ true, false ], meta.dig("git", "dirty")
+
+    sqlite = Playthrough::SqlitePackage.expand!(archive)
+    assert sqlite.exist?
 
     original = ActiveRecord::Base.connection_db_config
     begin
-      ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: path.to_s,
+      ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: sqlite.to_s,
                                               timeout: 5_000, pool: 5)
 
       assert_equal 1, Story.count

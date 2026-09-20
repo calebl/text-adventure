@@ -154,6 +154,10 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
   There is no `rake game:play` and there is not meant to be — the loop lives in
   `Playthrough::Turn`, so a rake front end would be a second UI for no new
   capability. `README.md` carries the command surface in full.
+- **A GitHub issue names the git SHA of the code that was running** when the
+  behaviour was observed (`git rev-parse HEAD`, and note if the working tree was
+  dirty). Without a SHA the report cannot be tied to a version. Playthrough
+  bugs also follow `.agents/skills/package-playthrough/SKILL.md`.
 
 ## Where the decisions live
 
