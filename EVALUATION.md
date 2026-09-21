@@ -355,26 +355,33 @@ rake eval:classifier_compare BEFORE=a AFTER=b
 
 Every set above pins the reader OFF (`system_one: false`), so the figures are
 the Mistral call alone whatever the maintainer has in their shell — without that
-pin, a shell holding `TYPESAFE_API_KEY` would quietly score a different reader
-against the corpus and the board would print an arm's name over another reader's
-answers.
+pin, a shell holding either System One credential would quietly score a
+different reader against the corpus and the board would print an arm's name over
+another reader's answers.
 
 `CASCADE=1` lifts that pin to "the environment decides", which is what a live
-turn gets. It does **not** name a different arm: the arm is still the escalation
-target, so a cascade set and the kept Mistral-alone set pair on that arm and
-`rake eval:classifier_compare` judges them with nothing else to wire up. The
-`cascade` field on the set is the only thing that tells them apart, and the
-board labels the column `(cascade)` so a cross-model table cannot show two
-identical headers over two different things. The task refuses to start without
-the key, because a cascade run with no key measures the Mistral-only path and
-files itself under the cascade's name.
+turn gets. An arm may also pin the Jev transport with `+typesafe-direct` or
+`+openrouter-decisions` (same suffix style as `+tool` / `+tools`), which implies
+a cascade measurement and constructs a `SystemOneAgent` for that route so the
+two transports can be compared like for like. It does **not** name a different
+escalation model: the arm is still the escalation target, so a cascade set and
+the kept Mistral-alone set pair on that arm and `rake eval:classifier_compare`
+judges them with nothing else to wire up. The `cascade` field on the set is the
+only thing that tells them apart, and the board labels the column `(cascade)` so
+a cross-model table cannot show two identical headers over two different things.
+The task refuses to start without the selected transport's credential, because a
+cascade run with no key measures the Mistral-only path and files itself under
+the cascade's name.
 
 **A cascade set keeps its per-line rows, and no other kept classifier set does.**
-Each row carries `resolved_by` and the two probabilities the cascade acted on,
-`target_present` and `named_more_than_one`. This is not a preference: the
-questions a cascade raises are *which flag fired on which lines*, and four
-aggregate numbers a side can never answer one. `Result#summary(keep_rows: true)`
-is the escape hatch that keeps them.
+Each row carries `resolved_by`, the two probabilities the cascade acted on
+(`target_present` and `named_more_than_one`), and `system_one_transport` naming
+which Jev HTTP route answered. No new `scenes` column is needed: typed calls
+leave no chat receipt, `scenes.resolved_by` already names the path family, and
+a transport comparison is read off the kept bench rows. This is not a
+preference: the questions a cascade raises are *which flag fired on which
+lines*, and four aggregate numbers a side can never answer one.
+`Result#summary(keep_rows: true)` is the escape hatch that keeps them.
 
 **Two things a cascade set cannot tell you, stated so they are not assumed:**
 
