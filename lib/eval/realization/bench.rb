@@ -421,13 +421,11 @@ class Eval::Realization::Bench
     end
   end
 
-  # AND HALF TWO: A FIELD THAT ARRIVED AT ITS CAP, which is the provider cutting
-  # the answer off rather than the model finishing it
-  # (`SanitizesGeneratedText::TruncatedTextError`, and its header for why an
-  # exact hit is truncation rather than a coincidence). It costs a person their
-  # whole sheet here -- `Character::Registry#create_one` rescues the truncation
-  # and refuses the row -- so it is worth its own figure rather than being read
-  # off the refusals.
+  # AND HALF TWO: A FIELD THAT ARRIVED AT ITS CAP, which is evidence the
+  # provider cut the answer rather than the model finishing it
+  # (`SanitizesGeneratedText::TruncatedTextError`). Character admission can
+  # salvage complete sentence prefixes, but the hit remains a generation cost
+  # worth measuring independently from whether the engine retained the person.
   def cap_hits(call, message)
     schema = schema_for(call)
     body = raw_answer(message)

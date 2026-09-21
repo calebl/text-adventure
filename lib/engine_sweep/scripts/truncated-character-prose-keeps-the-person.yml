@@ -1,0 +1,47 @@
+# A provider can finish one sentence and then reach a character field's cap in
+# the next. Realizing the room must keep both people, store only safe sentence
+# prefixes, and finish the same room rather than retrying its paid detail.
+story: The Unfinished Workshop
+steps:
+- id: capped-character-fields-keep-the-cast
+  type: /move Workshop
+  browser:
+    token: capped-character-fields
+    realizes: Workshop
+    replies:
+    - purpose: location
+      content:
+        description: Sella and Ammon stand together at the workbench.
+        lore: The town's oldest workshop still teaches the lock trade.
+        people:
+        - fullname: Sella Reed
+          nickname: Sella
+          appearance: A patched apron hangs neatly from her shoulders. An unfinished thought xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+          personality: Patient and careful.
+          backstory: Sella Reed learned the trade in this workshop.
+          likes: Honest work.
+          dislikes: Waste.
+          fears: Fire.
+        - fullname: Ammon Brace
+          nickname: Ammon
+          appearance: A leather tool roll hangs from his belt.
+          personality: Quiet and exacting.
+          backstory: Ammon Brace learned the lock trade from his mother. An unfinished thought xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+          likes: Well-cut keys.
+          dislikes: Bent pins.
+          fears: A locked exit.
+    - purpose: location
+      content:
+        exits:
+        - name: Market
+          teaser: The market waits outside the low door.
+          distance: adjacent
+          travel_method: walking
+    - purpose: arrival
+      unavailable: true
+  expect:
+    location: Workshop (realized)
+    exits: [Market (realized)]
+    present: [Sella Reed, Ammon Brace]
+    changed: true
+    note: completed

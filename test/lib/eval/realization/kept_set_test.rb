@@ -212,11 +212,26 @@ class Eval::Realization::KeptSetTest < ActiveSupport::TestCase
     end
   end
 
-  test "quest receipts distinguish model admission from deadline placement" do
+  # This package is historical evidence and is never rewritten after an engine
+  # correction. Replaying its structured answers through today's admission
+  # path changes exactly the capped personality that used to drop Mara Quill;
+  # every unrelated quest receipt must remain identical.
+  test "quest receipts preserve the one admission changed by sentence salvage" do
     rows = full_rows.select { |row| row.dig("facts", "quest_request") }
-    rows.each do |row|
-      assert_equal Eval::Realization::Admissions.replay(row), row.fetch("after").fetch("quest_admitted")
+    differences = rows.filter_map do |row|
+      replayed = Eval::Realization::Admissions.replay(row)
+      recorded = row.fetch("after").fetch("quest_admitted")
+      next if replayed == recorded
+
+      { "id" => row.fetch("id"), "rep" => row.fetch("rep"),
+        "recorded" => recorded, "replayed" => replayed, "cap_hits" => row.fetch("cap_hits") }
     end
+
+    assert_equal [ {
+      "id" => "branch-quest-speak-to", "rep" => 2,
+      "recorded" => false, "replayed" => true,
+      "cap_hits" => [ "detail.people[0].personality" ]
+    } ], differences
   end
 
   def full_rows

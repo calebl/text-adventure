@@ -451,12 +451,55 @@ class Character::RegistryTest < ActiveSupport::TestCase
     end
   end
 
-  # A HALF-WRITTEN PERSON IS WORSE THAN NO PERSON. Elsewhere a truncated field
-  # is a failed call that reaches the model rotation; here it must not be,
-  # because the call it would fail is the room's own description -- already
-  # saved, and the expensive half of the realization. The first live
-  # realization under this schema came back with `appearance` cut mid-word.
-  test "a sheet the provider cut off is refused rather than written" do
+  # A CUT SENTENCE IS NOT STORED, but it no longer costs the room a person when
+  # the provider finished something before it. The retained realization sets
+  # contain complete prefixes for every capped appearance, personality and
+  # backstory they recorded, so this is the recovery those real answers need.
+  test "truncated appearance and backstory keep the person with complete sentences only" do
+    appearance = "A patched apron hangs neatly from her shoulders."
+    backstory = "Ammon Brace learned the lock trade from his mother."
+    proposals = [
+      sheet(fullname: "Neb Halloran").merge("appearance" => capped(:appearance, appearance)),
+      sheet(fullname: "Ammon Brace").merge("backstory" => capped(:backstory, backstory))
+    ]
+
+    people = registry.admit!(proposals)
+
+    assert_equal [ "Neb Halloran", "Ammon Brace" ], people.map(&:fullname)
+    assert_equal appearance, people.first.appearance
+    assert_equal backstory, people.second.backstory
+  end
+
+  test "truncated personality keeps its complete sentence prefix too" do
+    personality = %(Patient with strangers. "Careful with promises!")
+    proposal = sheet(fullname: "Neb Halloran").merge("personality" => capped(:personality, personality))
+
+    person = registry.admit!([ proposal ]).sole
+
+    assert_equal personality, person.personality
+  end
+
+  test "a sentence ending exactly at the cap is complete rather than discarded" do
+    appearance = ("x" * (Character::Registry::PERSON_LIMITS[:appearance] - 1)) + "."
+
+    person = registry.admit!([ sheet(fullname: "Neb Halloran").merge("appearance" => appearance) ]).sole
+
+    assert_equal appearance, person.appearance
+  end
+
+  test "a truncated nullable desire is omitted without losing the person" do
+    proposal = sheet(fullname: "Neb Halloran").merge(
+      "conscious_desire" => capped(:conscious_desire, "Neb wants to repair the tide clock.")
+    )
+
+    person = registry.admit!([ proposal ]).sole
+
+    assert_nil person.conscious_desire
+  end
+
+  # With no complete sentence there is still nothing safe to store. Refusing
+  # this proposal keeps the strict fallback and never writes a fragment.
+  test "sentence prose cut before its first full stop is refused" do
     cut = sheet(fullname: "Neb Halloran").merge(
       "appearance" => "x" * Character::Registry::PERSON_LIMITS[:appearance]
     )
@@ -466,7 +509,7 @@ class Character::RegistryTest < ActiveSupport::TestCase
     end
   end
 
-  test "a truncated sheet does not raise, and does not lose the room's other person" do
+  test "an unsafe truncated sheet does not raise or lose the room's other person" do
     cut = sheet(fullname: "Neb Halloran").merge(
       "backstory" => "x" * Character::Registry::PERSON_LIMITS[:backstory]
     )
@@ -646,6 +689,13 @@ class Character::RegistryTest < ActiveSupport::TestCase
     place = create(:location, :stub, :with_a_footprint, story: @story, name: "The Custom House")
     create(:location, story: @story, parent_location: place, name: "The Long Room",
                       x: 0, y: 0, z: 0, width: 7, depth: 4)
+  end
+
+  # A provider-shaped value with one complete sentence and an unfinished tail
+  # cut at this field's exact schema limit.
+  def capped(field, complete)
+    (complete + " An unfinished thought " + ("x" * Character::Registry::PERSON_LIMITS.fetch(field)))
+      .first(Character::Registry::PERSON_LIMITS.fetch(field))
   end
 
   # One entry of `Location::DetailSchema`'s `people` array, as a realization
