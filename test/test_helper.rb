@@ -21,14 +21,17 @@ ENV["RAILS_ENV"] ||= "test"
 #   TA_CHAT_KEEP_TURNS         both are read into `Chat` constants at class-load
 #   TA_CHAT_HISTORY_EXCHANGES  time, which is why the first pass is BEFORE the
 #                              require.
-#   TYPESAFE_API_KEY           `SystemOneAgent.configured?` is the whole of the
-#                              System One cascade's switch, so a worker with the
-#                              key in their shell would run every classifier
-#                              test through a second model reader and a live
-#                              network call. The keyless path is the one the
-#                              suite asserts; a test that wants the cascade sets
-#                              this itself and puts it back (see
+#   TYPESAFE_API_KEY           together with `OPENROUTER_API_KEY`,
+#                              `SystemOneAgent.configured?` is the whole of the
+#                              System One cascade's switch, so a worker with
+#                              either key in their shell would run every
+#                              classifier test through a second model reader and
+#                              a live network call. The keyless path is the one
+#                              the suite asserts; a test that wants the cascade
+#                              sets a key itself and puts it back (see
 #                              `Playthrough::Classifier::CascadeTest#with_key`).
+#                              `OPENROUTER_API_KEY` is already cleared above for
+#                              BaseAgent; both must stay cleared for System One.
 #
 # It takes TWO passes, and the second one is not belt-and-braces. `dotenv-rails`
 # is in the `:development, :test` group, so it loads `.env` while

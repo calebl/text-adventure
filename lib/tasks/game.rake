@@ -193,6 +193,73 @@ namespace :game do
     puts "check it loads with: bin/rails db:seed"
   end
 
+  desc "Export one playthrough to JSON (names, not ids). Usage: rake 'game:export_playthrough[3]' or rake 'game:export_playthrough[3,/tmp/out.json]'"
+  task :export_playthrough, [ :playthrough_id, :path ] => :environment do |_t, args|
+    raise ArgumentError, "usage: rake 'game:export_playthrough[PLAYTHROUGH_ID]'" if args[:playthrough_id].blank?
+
+    playthrough = Playthrough.find(args[:playthrough_id])
+    exporter = Playthrough::Exporter.new(playthrough)
+    path = exporter.write!(path: args[:path].presence)
+
+    inside_app = path.to_s.start_with?(Rails.root.to_s)
+    puts "Exported playthrough ##{playthrough.id} of #{playthrough.story.title.inspect}"
+    puts "  -> #{inside_app ? path.relative_path_from(Rails.root) : path}"
+    puts "  turns: #{playthrough.scene_chain.size}  commands: #{playthrough.commands.count}  "          "locations: #{playthrough.story.locations.count}  conversations: #{playthrough.chats.count}"
+
+    if exporter.warnings.any?
+      puts
+      puts "Warnings:"
+      exporter.warnings.each { |warning| puts "  - #{warning}" }
+    end
+  end
+
+  desc "Package one playthrough as a gzipped miniature primary SQLite DB (tmp/ only; drag-drop onto the issue). Usage: rake 'game:dump_playthrough[3]'"
+  task :dump_playthrough, [ :playthrough_id, :path ] => :environment do |_t, args|
+    raise ArgumentError, "usage: rake 'game:dump_playthrough[PLAYTHROUGH_ID]'" if args[:playthrough_id].blank?
+
+    playthrough = Playthrough.find(args[:playthrough_id])
+    package = Playthrough::SqlitePackage.new(playthrough)
+    requested = args[:path].presence
+    if requested
+      resolved = Pathname.new(requested)
+      resolved = Rails.root.join(resolved) unless resolved.absolute?
+      doc_root = Rails.root.join("doc").expand_path
+      if resolved.expand_path.to_s.start_with?(doc_root.to_s + File::SEPARATOR) || resolved.expand_path == doc_root
+        raise ArgumentError,
+              "playthrough packages stay out of the repo — omit the path (writes tmp/playthrough-packages/) " \
+              "then drag-and-drop the .sqlite3.gz onto the GitHub issue"
+      end
+    end
+    path = package.write!(requested)
+
+    inside_app = path.to_s.start_with?(Rails.root.to_s)
+    shown = inside_app ? path.relative_path_from(Rails.root) : path
+    size = ActiveSupport::NumberHelper.number_to_human_size(path.size)
+    git = Playthrough::SqlitePackage.git_revision
+    puts "Packaged playthrough ##{playthrough.id} of #{playthrough.story.title.inspect}"
+    puts "  -> #{shown}  (#{size})"
+    puts "  absolute -> #{path.expand_path}"
+    puts "  meta -> #{Playthrough::SqlitePackage.metadata_path(path).basename}"
+    if git["sha"]
+      dirty = git["dirty"] ? " (dirty working tree)" : ""
+      puts "  git -> #{git["sha"]}#{dirty}"
+    end
+    puts "  story locations: #{playthrough.story.locations.count}  " \
+         "turns: #{playthrough.scene_chain.size}  chats: #{playthrough.chats.count}"
+    if package.warnings.any?
+      puts
+      puts "Warnings:"
+      package.warnings.each { |warning| puts "  - #{warning}" }
+    end
+    sqlite = Playthrough::SqlitePackage.sqlite_path(path)
+    relative_sqlite = inside_app ? sqlite.relative_path_from(Rails.root) : sqlite
+    puts
+    puts "Do NOT commit this file. Drag-and-drop #{path.basename} onto the GitHub issue comment box."
+    puts "Then open a downloaded copy with:"
+    puts "  gunzip -k #{shown}"
+    puts "  DATABASE_URL=sqlite3:#{relative_sqlite} bin/rails runner 'p Playthrough.find(#{playthrough.id}).current_location.name'"
+  end
+
   desc "List generated stories"
   task list: :environment do
     stories = Story.includes(:universe).order(:created_at)

@@ -132,8 +132,14 @@ class Playthrough::Volition
   #
   # IT STOPS THE MOMENT THE GAME IS OVER, which is `Playthrough::Riposte`'s
   # rule: a game that is over is a game nothing will ever change again.
+  #
+  # AND IT STOPS WHILE A CALLER HAS ASKED IT TO HOLD. `hold` is the engine-level
+  # switch evaluation staging engages so a typed setup line can rebuild a
+  # labelled position without anybody walking out of the room underneath it --
+  # see `Eval::Classifier::Stage`. The live game and `EngineSweep::Walk` never
+  # enter it; a global constant or environment flag would reach them.
   def self.run!(playthrough, location:, round: 1)
-    return [] if playthrough.nil? || location.nil? || playthrough.over?
+    return [] if playthrough.nil? || location.nil? || playthrough.over? || held?
 
     fighting = playthrough.foes_in(location).map(&:id).to_set
 
@@ -150,6 +156,21 @@ class Playthrough::Volition
       new(playthrough, who, location: location, round: round).decide!
     end
   end
+
+  # HOLD THE ROOM STILL FOR THE DURATION OF THE BLOCK. Nested holds nest: the
+  # outer caller's setting is restored when the inner block returns, so a stage
+  # that holds while another helper also holds cannot leak "held" into the live
+  # game afterwards. Thread-local because a bench may stage on several workers
+  # and one worker's still room must not quiet another's.
+  def self.hold
+    previous = Thread.current[:playthrough_volition_held]
+    Thread.current[:playthrough_volition_held] = true
+    yield
+  ensure
+    Thread.current[:playthrough_volition_held] = previous
+  end
+
+  def self.held? = Thread.current[:playthrough_volition_held] == true
 
   # WHAT THE TOKEN IS A TOKEN OF: `move:412` is a `move`. Public because
   # `Playthrough::Volition::Weights` reads it, and one spelling of a token

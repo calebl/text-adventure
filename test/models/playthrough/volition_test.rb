@@ -245,4 +245,27 @@ class Playthrough::VolitionTest < ActiveSupport::TestCase
 
     assert_equal [ @clerk.id ], @game.volitions.pluck(:character_id)
   end
+
+  # --- hold -----------------------------------------------------------------
+
+  # Evaluation staging engages this so a typed setup line cannot walk a
+  # labelled position out from under a measured line. The live game never
+  # enters it; see `Eval::Classifier::Stage`.
+  test "hold skips the room loop for the duration of the block" do
+    Playthrough::Volition.hold do
+      assert_predicate Playthrough::Volition, :held?
+      assert_empty Playthrough::Volition.run!(@game, location: @room, round: 1)
+    end
+
+    refute_predicate Playthrough::Volition, :held?
+    assert_not_empty Playthrough::Volition.run!(@game, location: @room, round: 1)
+  end
+
+  test "nested holds restore the outer setting when the inner block returns" do
+    Playthrough::Volition.hold do
+      Playthrough::Volition.hold { assert_predicate Playthrough::Volition, :held? }
+      assert_predicate Playthrough::Volition, :held?
+    end
+    refute_predicate Playthrough::Volition, :held?
+  end
 end

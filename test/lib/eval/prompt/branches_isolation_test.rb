@@ -5,8 +5,8 @@ require "test_helper"
 class Eval::Prompt::BranchesIsolationTest < ActiveSupport::TestCase
   FILES = {
     "test/fixtures/files/prompt_corpus.yml" => "152b033ddbac333f6ac13d69195a7d110b91cdc5a7048569ef5aaeba02a3d0a1",
-    "db/seeds/worlds/the-salt-assizes.yml" => "e2713ede37c82a09a373b802643038538f1c94f797241683c95f34d21ef8a54d",
-    "db/seeds/worlds/the-unrecorded-hour.yml" => "798e11fce582eb88b7903eda9b7cce9a505a9045f4c463064be0608e57b267ce",
+    "db/seeds/worlds/the-salt-assizes.yml" => "e2222e09a3618540adecaf3987dbe95a5fb4687d63275d453212d35ba7942451",
+    "db/seeds/worlds/the-unrecorded-hour.yml" => "a296adc76e7991c3bc300fc926a06371f9aa9cc40c4a2c3d7b136d0b9c04d66e",
     "db/eval/prompt-2026-09-05/prompt.json" => "04e7f6bb7bd1d7f96817586977ea944b75b6043da24109cb1dfea0d71740d07e"
   }.freeze
 

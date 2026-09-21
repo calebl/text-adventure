@@ -154,6 +154,10 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
   There is no `rake game:play` and there is not meant to be — the loop lives in
   `Playthrough::Turn`, so a rake front end would be a second UI for no new
   capability. `README.md` carries the command surface in full.
+- **A GitHub issue names the git SHA of the code that was running** when the
+  behaviour was observed (`git rev-parse HEAD`, and note if the working tree was
+  dirty). Without a SHA the report cannot be tied to a version. Playthrough
+  bugs also follow `.agents/skills/package-playthrough/SKILL.md`.
 
 ## Where the decisions live
 
@@ -191,6 +195,7 @@ Read the header of the file named, not a summary of it.
 | What is written on a thing that has writing on it | `app/models/item.rb`, `item/inscriber.rb` |
 | How items and people come to exist in a room | `app/models/item/registry.rb`, `character/registry.rb` |
 | What `rake game:new` builds, in what order | `app/models/story/first_screen.rb` |
+| How to package a playthrough for a GitHub issue | `.agents/skills/package-playthrough/SKILL.md` (`rake game:dump_playthrough`) |
 | Story time, a world that moves on its own, and a thing due later | `app/models/story.rb`, `app/models/world_mechanic.rb`, `app/models/world_event.rb` |
 | Where a story is going, and why a beat is a record and not a name | `app/models/quest.rb`, `quest/step.rb` |
 | Who may bind a beat to a row, and when the engine places one itself | `app/models/quest/binder.rb`, `quest/deadline.rb` |
@@ -238,10 +243,12 @@ bin/brakeman --no-pager    # CI fails on a warning; a new view is where they com
 - `OPENROUTER_API_KEY` (in a gitignored `.env` via `dotenv-rails`, or `.envrc`
   for direnv) is strongly preferred for interactive work. `BaseAgent` works down
   `BaseAgent::REMOTE_MODEL_IDS`; `OPENROUTER_MODEL` overrides the front of it.
-- **`TYPESAFE_API_KEY` is a switch and not a credential detail.** Its presence
-  alone turns the classifier's System One cascade on — there is no feature flag
-  — so a shell that has it reads every typed line through a second model reader,
-  and anything measured there is measured on a different path.
+- **Either System One credential is a switch and not a credential detail.**
+  `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` present alone turns the classifier's
+  System One cascade on — there is no feature flag — so a shell that has either
+  reads every typed line through a second model reader, and anything measured
+  there is measured on a different path. TypeSafe direct wins when its key is
+  present; otherwise OpenRouter Decisions answers.
   `scenes.resolved_by` is where that is visible; `SystemOneAgent.configured?` is
   the whole of the switch.
 - **Start the app with `bin/dev`**, not `bin/rails server` alone: a turn is a

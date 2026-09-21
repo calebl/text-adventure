@@ -193,4 +193,54 @@ class Eval::Classifier::ArmTest < ActiveSupport::TestCase
     assert_not_equal schema.hash, tool.hash
     assert_equal tool, Eval::Classifier::Arm.parse("mistralai/mistral-medium-3.1+tool")
   end
+
+  # THE SYSTEM ONE TRANSPORT AXIS, beside the request-shape axis: pin which Jev
+  # route the cascade measures, same suffix style as `+tool` / `+tools`.
+  test "a bare spec leaves the System One transport ambient" do
+    arm = Eval::Classifier::Arm.parse("mistralai/mistral-medium-3.1")
+
+    assert_equal :ambient, arm.system_one_transport
+    assert_not_predicate arm, :pins_system_one_transport?
+    assert_nil arm.system_one_credential_variable
+  end
+
+  test "+typesafe-direct and +openrouter-decisions pin the cascade's Jev transport" do
+    direct = Eval::Classifier::Arm.parse("mistralai/mistral-medium-3.1+typesafe-direct")
+    openrouter = Eval::Classifier::Arm.parse("mistralai/mistral-medium-3.1+openrouter-decisions")
+
+    assert_equal :typesafe_direct, direct.system_one_transport
+    assert_predicate direct, :pins_system_one_transport?
+    assert_equal "TYPESAFE_API_KEY", direct.system_one_credential_variable
+    assert_equal "mistralai/mistral-medium-3.1+typesafe-direct", direct.id
+
+    assert_equal :openrouter_decisions, openrouter.system_one_transport
+    assert_predicate openrouter, :pins_system_one_transport?
+    assert_equal "OPENROUTER_API_KEY", openrouter.system_one_credential_variable
+    assert_equal "mistralai/mistral-medium-3.1+openrouter-decisions", openrouter.id
+  end
+
+  test "a transport suffix composes with shape and thinking suffixes" do
+    arm = Eval::Classifier::Arm.parse("ollama:qwen3:4b+tools+openrouter-decisions+nothink")
+
+    assert_equal :ollama, arm.provider
+    assert_equal "qwen3:4b", arm.model
+    assert_equal :tools, arm.shape
+    assert_equal :openrouter_decisions, arm.system_one_transport
+    assert_predicate arm, :thinking_off?
+    assert_equal "ollama:qwen3:4b+tools+openrouter-decisions+nothink", arm.id
+  end
+
+  test "an unknown System One transport is refused rather than read as ambient" do
+    assert_raises(Eval::Classifier::Arm::UnknownProvider) do
+      Eval::Classifier::Arm.new(provider: :openrouter, model: "x", system_one_transport: :chat)
+    end
+  end
+
+  test "arms differ by System One transport as well as by model" do
+    ambient = Eval::Classifier::Arm.parse("mistralai/mistral-medium-3.1")
+    openrouter = Eval::Classifier::Arm.parse("mistralai/mistral-medium-3.1+openrouter-decisions")
+
+    assert_not_equal ambient, openrouter
+    assert_not_equal ambient.hash, openrouter.hash
+  end
 end

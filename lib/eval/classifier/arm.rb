@@ -96,7 +96,18 @@ class Eval::Classifier::Arm
   TOOL_SUFFIX = "+tool".freeze
   TOOLS_SUFFIX = "+tools".freeze
 
-  attr_reader :provider, :model, :provider_params, :shape
+  # THE SYSTEM ONE TRANSPORT AXIS, beside the request-shape axis: a cascade
+  # measurement can pin which Jev transport answered, so TypeSafe direct and
+  # OpenRouter Decisions are comparable like for like. `:ambient` (no suffix)
+  # leaves the live preference alone -- TypeSafe when its key is present,
+  # otherwise OpenRouter. Neither suffix is ever reached by a live turn; only
+  # the bench constructs a pinned `SystemOneAgent`.
+  SYSTEM_ONE_TRANSPORTS = %i[ambient typesafe_direct openrouter_decisions].freeze
+
+  TYPESAFE_DIRECT_SUFFIX = "+typesafe-direct".freeze
+  OPENROUTER_DECISIONS_SUFFIX = "+openrouter-decisions".freeze
+
+  attr_reader :provider, :model, :provider_params, :shape, :system_one_transport
 
   # `"ollama:qwen3:8b"` -> ollama, `qwen3:8b`. Anything with no known provider
   # prefix is OpenRouter, which is what the app's own ids are.
@@ -105,11 +116,22 @@ class Eval::Classifier::Arm
   # read off the end BEFORE `+nothink`, so a spec may carry both (`+tools`
   # checked first: the two suffixes never collide, since `"...+tools"` does not
   # end with the five characters of `"+tool"`).
+  # `"mistralai/mistral-medium-3.1+openrouter-decisions"` pins the cascade's
+  # Jev transport the same way; transport suffixes are read before shape ones.
   def self.parse(spec)
     text = spec.to_s.strip
     nothink = text.end_with?(NOTHINK_SUFFIX)
     text = text.delete_suffix(NOTHINK_SUFFIX) if nothink
     params = nothink ? NO_THINKING : {}
+
+    system_one_transport = :ambient
+    if text.end_with?(OPENROUTER_DECISIONS_SUFFIX)
+      system_one_transport = :openrouter_decisions
+      text = text.delete_suffix(OPENROUTER_DECISIONS_SUFFIX)
+    elsif text.end_with?(TYPESAFE_DIRECT_SUFFIX)
+      system_one_transport = :typesafe_direct
+      text = text.delete_suffix(TYPESAFE_DIRECT_SUFFIX)
+    end
 
     shape = :schema
     if text.end_with?(TOOLS_SUFFIX)
@@ -123,17 +145,19 @@ class Eval::Classifier::Arm
     prefix, rest = text.split(":", 2)
 
     if rest.present? && PROVIDERS.include?(prefix.to_sym)
-      return new(provider: prefix.to_sym, model: rest, provider_params: params, shape: shape)
+      return new(provider: prefix.to_sym, model: rest, provider_params: params, shape: shape,
+                 system_one_transport: system_one_transport)
     end
 
-    new(provider: :openrouter, model: text, provider_params: params, shape: shape)
+    new(provider: :openrouter, model: text, provider_params: params, shape: shape,
+        system_one_transport: system_one_transport)
   end
 
   # Accepts specs OR arms, so a caller that already has arms does not have to
   # remember which it is holding.
   def self.all(specs) = Array(specs).map { |spec| spec.is_a?(self) ? spec : parse(spec) }
 
-  def initialize(provider:, model:, provider_params: {}, shape: :schema)
+  def initialize(provider:, model:, provider_params: {}, shape: :schema, system_one_transport: :ambient)
     unless PROVIDERS.include?(provider.to_sym)
       raise UnknownProvider, "#{provider.inspect} is not one of #{PROVIDERS.inspect}"
     end
@@ -141,11 +165,15 @@ class Eval::Classifier::Arm
     unless SHAPES.include?(shape.to_sym)
       raise UnknownProvider, "#{shape.inspect} is not one of #{SHAPES.inspect}"
     end
+    unless SYSTEM_ONE_TRANSPORTS.include?(system_one_transport.to_sym)
+      raise UnknownProvider, "#{system_one_transport.inspect} is not one of #{SYSTEM_ONE_TRANSPORTS.inspect}"
+    end
 
     @provider = provider.to_sym
     @model = model.to_s.strip
     @provider_params = provider_params.to_h
     @shape = shape.to_sym
+    @system_one_transport = system_one_transport.to_sym
     if @provider_params.any? && !local?
       raise UnknownProvider, "provider params are only for a local arm; #{id} is hosted, and changing " \
                              "the shape of a remote request is not what the seam is for"
@@ -157,7 +185,8 @@ class Eval::Classifier::Arm
   # otherwise be one row in a cross-model table -- an arm with the thinking off
   # keeps that in the label too, and a tool-shaped arm keeps its suffix, all for
   # the same reason: each is a different measurement of the same model.
-  def id = [ local? ? "#{provider}:#{model}" : model, shape_suffix, thinking_off? ? NOTHINK_SUFFIX : nil ]
+  def id = [ local? ? "#{provider}:#{model}" : model, shape_suffix, system_one_suffix,
+             thinking_off? ? NOTHINK_SUFFIX : nil ]
              .compact.join
 
   def shape_suffix
@@ -167,11 +196,22 @@ class Eval::Classifier::Arm
     end
   end
 
+  def system_one_suffix
+    case system_one_transport
+    when :typesafe_direct then TYPESAFE_DIRECT_SUFFIX
+    when :openrouter_decisions then OPENROUTER_DECISIONS_SUFFIX
+    end
+  end
+
   def thinking_off? = provider_params == NO_THINKING
 
   def shape_schema? = shape == :schema
   def shape_tool? = shape == :tool
   def shape_tools? = shape == :tools
+
+  # Whether this arm pins a System One transport rather than leaving the live
+  # preference alone. A pinned arm implies a cascade measurement.
+  def pins_system_one_transport? = system_one_transport != :ambient
 
   def local? = provider == :ollama
 
@@ -181,12 +221,23 @@ class Eval::Classifier::Arm
     { provider: provider, model: model, assume_model_exists: true }
   end
 
+  # The credential variable this arm's System One transport needs, or nil when
+  # the arm does not pin one (ambient cascade still needs whichever key the
+  # environment will actually use).
+  def system_one_credential_variable
+    case system_one_transport
+    when :typesafe_direct then SystemOneAgent::TYPESAFE_API_KEY_VARIABLE
+    when :openrouter_decisions then SystemOneAgent::OPENROUTER_API_KEY_VARIABLE
+    end
+  end
+
   def ==(other)
     other.is_a?(self.class) && other.provider == provider && other.model == model &&
-      other.provider_params == provider_params && other.shape == shape
+      other.provider_params == provider_params && other.shape == shape &&
+      other.system_one_transport == system_one_transport
   end
   alias eql? ==
-  def hash = [ provider, model, provider_params, shape ].hash
+  def hash = [ provider, model, provider_params, shape, system_one_transport ].hash
 
   # WHAT IT COSTS PER CALL. A local model costs nothing -- it is the captain's
   # own hardware and his own electricity -- and saying "unpriced" for it would

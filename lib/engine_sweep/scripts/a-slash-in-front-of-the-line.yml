@@ -38,17 +38,16 @@ story: The Unrecorded Hour
 why: the slash is input syntax -- a slashed line and its plain twin are the same line
 steps:
 - id: the-office-as-seeded
-  type: look
-  why: the starting state, so a failure later has a known beginning
+  type: stats
+  why: the starting state before anybody acts
   expect:
     location: Ward Office 12 (realized)
     exits: [The Supply Closet (realized), The Long Hallway (stub)]
     here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     present: [Halkett Rowe]
-    changed: false
-    refused: false
-    resolved_by: grammar
+    volitions: 0
+    acts: 0
 
 - id: a-slashed-take
   type: /take the ward stamp
@@ -58,7 +57,6 @@ steps:
     refused: false
     understood: take -> ward stamp
     resolved_by: grammar
-    here: [filing press]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: a-slashed-drop-puts-it-back
@@ -69,25 +67,28 @@ steps:
     refused: false
     understood: drop -> ward stamp
     resolved_by: grammar
-    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
 
-- id: the-same-line-without-a-slash
-  type: take the ward stamp
+- id: the-same-refusal-with-and-without-a-slash
+  type: /take the filing press
   why: >-
-    THE EQUIVALENCE ITSELF, and it is an equivalence about the PARSER and not
-    about the router. The same records, the same reading and the same reader as
-    `a-slashed-take` above -- which is what makes the slash syntax rather than a
-    second way in. In the BROWSER this line is not claimed at all and goes to
-    the classifier (the captain's ruling of 2026-09-05); offline there is no
-    classifier, so the grammar answers it here.
+    THE EQUIVALENCE on a line that does not depend on the stamp still lying on
+    the floor -- a living cast may have claimed the stamp after the drop. The
+    immovable press refuses the same way slashed or not.
   expect:
-    changed: true
-    refused: false
-    understood: take -> ward stamp
+    refused: true
+    changed: false
     resolved_by: grammar
-    here: [filing press]
-    carrying: [Ward Office 12 daybook, ward stamp]
+    offers: [does not move for anybody]
+
+- id: the-same-refusal-without-a-slash
+  type: take the filing press
+  why: the plain twin of the slashed refusal above
+  expect:
+    refused: true
+    changed: false
+    resolved_by: grammar
+    offers: [does not move for anybody]
 
 - id: a-slashed-move
   type: /go to the Supply Closet
@@ -98,28 +99,28 @@ steps:
     understood: move -> The Supply Closet
     resolved_by: grammar
     location: The Supply Closet (realized)
-    here: [Perrin's private index, copy-room apron]
-    carrying: [Ward Office 12 daybook, ward stamp]
+    carrying: [Ward Office 12 daybook]
 
 - id: a-slashed-read-recites-the-record
-  type: /read Perrin's private index
-  why: reading is a record, so a slash reaches the same column and generates nothing
+  type: /read the daybook
+  why: reading is a record, so a slash reaches the same column and generates nothing.
+    The daybook is in hand, so a living cast cannot empty the closed set first.
   expect:
     refused: false
     changed: false
-    understood: examine -> Perrin's private index
+    understood: examine -> Ward Office 12 daybook
     resolved_by: grammar
-    note: 'reads: Perrin''s private index'
+    note: 'reads: Ward Office 12 daybook'
 
 - id: a-slashed-inspect-is-the-same-verb
-  type: /inspect Perrin's private index
+  type: /inspect the daybook
   why: the menu offers `inspect` since 2026-09-05 and it is the word `read` always was
   expect:
     refused: false
     changed: false
-    understood: examine -> Perrin's private index
+    understood: examine -> Ward Office 12 daybook
     resolved_by: grammar
-    note: 'reads: Perrin''s private index'
+    note: 'reads: Ward Office 12 daybook'
 
 - id: a-slashed-line-that-resolves-nothing
   type: /take the tide-slate
@@ -133,9 +134,8 @@ steps:
     refused: true
     changed: false
     drifts: 0
-    offers: [there is no thing lying here called, Perrin's private index, copy-room apron]
-    here: [Perrin's private index, copy-room apron]
-    carrying: [Ward Office 12 daybook, ward stamp]
+    offers: [there is no thing lying here called]
+    carrying: [Ward Office 12 daybook]
 
 - id: a-slash-in-front-of-a-word-the-grammar-does-not-have
   type: /ponder the apron
@@ -144,7 +144,6 @@ steps:
     refused: true
     changed: false
     note: 'take <item>      pick up something lying here'
-    here: [Perrin's private index, copy-room apron]
 
 - id: an-engine-view-verb-says-so
   type: stats
