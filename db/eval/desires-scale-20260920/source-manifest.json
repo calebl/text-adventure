@@ -1,0 +1,66 @@
+{
+  "package_schema": 1,
+  "producer_commit": "7370b973a452a0e577ca80afaa554e50f5d95e21",
+  "source_files": {
+    "app/models/location/generator.rb": "bc98dc93bbab8e26ffa44a1f69489b59ca8e152b007fe0b068f4e6472268d1d3",
+    "app/models/location/detail_schema.rb": "0c72f6c436689965b11bce45aff360de5ef8d7a2c1e0c7229c839ecafbec2695",
+    "app/models/location/place_schema.rb": "dc880208195094e480e2d4ab672d1085370a6bfa73348c1ac8baa428f2fbeafd",
+    "app/models/location/exits_schema.rb": "3f56590e38c1173381f5ec96964511931db80b43c0df9a42561aa23b3a74a7a8",
+    "app/models/character.rb": "62dc4fae14cf9e9f4ef48fbfc4137c91cf061aa93f77f27c44f18ebe2c5e6740",
+    "app/models/character/schema.rb": "616f1b53f13af1e4cbe84f9ed67f6cdffb22f98f596b4a50e3ecf75838d3771c",
+    "app/models/character/desires.rb": "f0a875a5a947071fba5e5d111d99ea0ab6d92963018f45508d0bed5202efe9d6",
+    "app/models/character/registry.rb": "213f4fd0bfd5466ce4afb9e8ec274977d4b2feab172c4c559377b13b715f353a",
+    "app/models/item/registry.rb": "dd7d1268377003b88b2f9e044dda16bc14863a234ad45af7213ccd5d747761e9",
+    "app/agents/BaseAgent.rb": "5c76dc2701047e7fdc907d1aa2d73152a441bc888d28ad8197cc403686d625c0",
+    "lib/eval/realization.rb": "e0fa2ac18ebfa313a4ad4788b265a9e46c39ca0fffdc865f4980d59e404b4e28",
+    "lib/eval/realization/bench.rb": "ce3838c1bb971d2f01d85579c4bfecedb917cf97a012c1ac102731b42f8fff23",
+    "lib/eval/realization/result.rb": "19f800373ccc9a921a7f812843ff4c03bc566e5156acfa6b8d24f8881b0f77a3",
+    "lib/eval/realization/scorer.rb": "b15b9d45b1ddcf80186d33bac283c7555e69ec779cde51cf9cdf51d67eefed05",
+    "lib/eval/realization/stage.rb": "dc5c7a0b13ef1a554921cf2138b57e0d33d90b3f4f8a7c40f0a7235868f965d5",
+    "lib/eval/realization/version.rb": "06d150901fa8d5c373ed8fc00924289e1f98520dfb88f1ee095b3a63e401a687",
+    "lib/eval/realization/request_version.rb": "b6fedbb3d790a42c2eb18524107df786c947e5ac06227a66350c2d38e6c51abe",
+    "lib/eval/realization/branch_requests.rb": "ad351f6cab4e5f9bfabc7ce2c38d4918f5ae0a31a4bc1b30923082f7a00f51b0",
+    "test/fixtures/files/realization_corpus.yml": "9ba68ae02eca84d99b4b10cc1b7e93abeabda3640dbd9caeba521bf588470b5f",
+    "Gemfile.lock": "08c261bdbb71ae7069f948042b8070cb8722f90d317ebe84f7f06a8a1023e3bb"
+  },
+  "prompt_digest": "f37b7fe9bac265ed",
+  "instructions_digest": "d43b9ecd17181013",
+  "prompt_shapes": {
+    "dangerous": "87b57fc0b4f3d7eb",
+    "dead-end": "d05dea1a55af0485",
+    "descent": "59f7209877ecd3ca",
+    "interior-room": "8363738b18a05f4e",
+    "landmark": "8dd21f076dfc35a4",
+    "place": "d95b7c398a4def63",
+    "two-ways-out": "f3b1a97fef3ad5a8",
+    "unwritten-neighbour": "13fd8258ae2e2745",
+    "written-neighbour": "a0638d87f77a5e2b"
+  },
+  "schema_request_identity": {
+    "version": 1,
+    "digest": "4e8f0c4c9c8dfe2e"
+  },
+  "branch_request_identity": {
+    "version": 1,
+    "digest": "4536c9cd93c39e2a"
+  },
+  "corpus_digest": "de57509aa1da1a37",
+  "corpus_size": 29,
+  "model_pin": {
+    "model": "mistralai/mistral-medium-3.1",
+    "provider": "openrouter",
+    "fallbacks": false
+  },
+  "gems": {
+    "ruby": "3.4.10",
+    "rails": "8.1.3.1",
+    "ruby_llm": "1.16.0",
+    "sqlite3": "2.9.6"
+  },
+  "source_measurement": {
+    "set": "desires-realization-20260919",
+    "realization_sha256": "bbbaec0773af6b66bf3820ae925ef1f213c33f099027fb4912faaab8f9926320",
+    "requests_sha256": "cfa6bea9431677e8c926db3ec4e99ce6696bef9bd8e9b337db5c229f25e4dcbf"
+  },
+  "purchase_path": "rake eval:realization SET=desires-scale-20260920 REPS=4"
+}

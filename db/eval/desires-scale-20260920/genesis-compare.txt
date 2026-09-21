@@ -1,0 +1,91 @@
+All genesis:
+required_fields: NOISE (inside the 0.000 the unchanged runs already spanned)
+outside_schema: NOISE (inside the 0.000 the unchanged runs already spanned)
+schema_shape: NOISE (inside the 0.000 the unchanged runs already spanned)
+engine_owned: NOISE (inside the 0.000 the unchanged runs already spanned)
+race_outside_universe: NOISE (inside the 0.000 the unchanged runs already spanned)
+name_taken: NOISE (inside the 0.000 the unchanged runs already spanned)
+retry_not_distinct: NOISE (inside the 0.000 the unchanged runs already spanned)
+quest_bounds: NOISE (inside the 0.000 the unchanged runs already spanned)
+quest_default: NOISE (inside the 0.000 the unchanged runs already spanned)
+quest_labels: NOISE (inside the 0.000 the unchanged runs already spanned)
+quest_admission: NOISE (inside the 0.000 the unchanged runs already spanned)
+failures: NOISE (inside the 0.000 the unchanged runs already spanned)
+character:
+required_fields: NOISE (inside the 0.000 the unchanged runs already spanned)
+outside_schema: NOISE (inside the 0.000 the unchanged runs already spanned)
+schema_shape: NOISE (inside the 0.000 the unchanged runs already spanned)
+engine_owned: NOISE (inside the 0.000 the unchanged runs already spanned)
+race_outside_universe: NOISE (inside the 0.000 the unchanged runs already spanned)
+name_taken: NOISE (inside the 0.000 the unchanged runs already spanned)
+retry_not_distinct: unavailable
+quest_bounds: unavailable
+quest_default: unavailable
+quest_labels: unavailable
+quest_admission: unavailable
+failures: NOISE (inside the 0.000 the unchanged runs already spanned)
+physical:
+required_fields: NOISE (inside the 0.000 the unchanged runs already spanned)
+outside_schema: NOISE (inside the 0.000 the unchanged runs already spanned)
+schema_shape: NOISE (inside the 0.000 the unchanged runs already spanned)
+engine_owned: unavailable
+race_outside_universe: unavailable
+name_taken: unavailable
+retry_not_distinct: unavailable
+quest_bounds: unavailable
+quest_default: unavailable
+quest_labels: unavailable
+quest_admission: unavailable
+failures: NOISE (inside the 0.000 the unchanged runs already spanned)
+quest:
+required_fields: NOISE (inside the 0.000 the unchanged runs already spanned)
+outside_schema: NOISE (inside the 0.000 the unchanged runs already spanned)
+schema_shape: NOISE (inside the 0.000 the unchanged runs already spanned)
+engine_owned: unavailable
+race_outside_universe: unavailable
+name_taken: unavailable
+retry_not_distinct: unavailable
+quest_bounds: NOISE (inside the 0.000 the unchanged runs already spanned)
+quest_default: NOISE (inside the 0.000 the unchanged runs already spanned)
+quest_labels: NOISE (inside the 0.000 the unchanged runs already spanned)
+quest_admission: NOISE (inside the 0.000 the unchanged runs already spanned)
+failures: NOISE (inside the 0.000 the unchanged runs already spanned)
+retry:
+required_fields: NOISE (inside the 0.000 the unchanged runs already spanned)
+outside_schema: NOISE (inside the 0.000 the unchanged runs already spanned)
+schema_shape: NOISE (inside the 0.000 the unchanged runs already spanned)
+engine_owned: NOISE (inside the 0.000 the unchanged runs already spanned)
+race_outside_universe: NOISE (inside the 0.000 the unchanged runs already spanned)
+name_taken: NOISE (inside the 0.000 the unchanged runs already spanned)
+retry_not_distinct: NOISE (inside the 0.000 the unchanged runs already spanned)
+quest_bounds: unavailable
+quest_default: unavailable
+quest_labels: unavailable
+quest_admission: unavailable
+failures: NOISE (inside the 0.000 the unchanged runs already spanned)
+societal:
+required_fields: NOISE (inside the 0.000 the unchanged runs already spanned)
+outside_schema: NOISE (inside the 0.000 the unchanged runs already spanned)
+schema_shape: NOISE (inside the 0.000 the unchanged runs already spanned)
+engine_owned: unavailable
+race_outside_universe: unavailable
+name_taken: unavailable
+retry_not_distinct: unavailable
+quest_bounds: unavailable
+quest_default: unavailable
+quest_labels: unavailable
+quest_admission: unavailable
+failures: NOISE (inside the 0.000 the unchanged runs already spanned)
+story:
+required_fields: NOISE (inside the 0.000 the unchanged runs already spanned)
+outside_schema: NOISE (inside the 0.000 the unchanged runs already spanned)
+schema_shape: NOISE (inside the 0.000 the unchanged runs already spanned)
+engine_owned: unavailable
+race_outside_universe: unavailable
+name_taken: unavailable
+retry_not_distinct: unavailable
+quest_bounds: unavailable
+quest_default: unavailable
+quest_labels: unavailable
+quest_admission: unavailable
+failures: NOISE (inside the 0.000 the unchanged runs already spanned)

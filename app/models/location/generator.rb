@@ -798,7 +798,8 @@ class Location::Generator
       ## Who Is Here
       Write EXACTLY #{wanted} #{"person".pluralize(wanted)} who #{wanted == 1 ? "is" : "are"} in this place right now.
       - Anyone you write is somebody the player can walk up to and talk to, so they
-        have to have a reason to be standing here and something they want
+        have to have a reason to be standing here and an enduring aim that today's
+        reason serves, threatens or exposes
       - Do not write the player, and do not write somebody passing through
       - Never give them the name of a place, of a thing, or any name already
         spoken for above

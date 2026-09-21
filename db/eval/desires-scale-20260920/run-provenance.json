@@ -1,0 +1,32 @@
+{
+  "completed_at": "2026-09-20T19:32:01Z",
+  "producer_commit": "7370b973a452a0e577ca80afaa554e50f5d95e21",
+  "source_manifest_sha256": "a8e07557d286471cea366a7738a4dec142b73c9615927dcfff8676d845ca696d",
+  "repetitions": 4,
+  "cases": 29,
+  "successful_readings": 116,
+  "provider_calls": 188,
+  "interrupted_attempts": [],
+  "estimate_usd": 0.27338880000000004,
+  "allocation_usd": {
+    "genesis": 0.6334768,
+    "realization": 0.2733888,
+    "sample": 0.122,
+    "task_ceiling": 1.5
+  },
+  "actual_usd": 0.3853572,
+  "genesis_actual_usd": 0.0671556,
+  "package_scripts": {
+    "run.rb": "fb1150dbb73dc17794975d77128fa3ddfdc38aa31c5cfcd334d895eab19c7d87",
+    "payload_gate.rb": "9247590498fe171157fe40cf7c4b87350569bdd542edcca88d295ff0b10a3bd9",
+    "finalize.rb": "a62c9dfc887fff8fd11c0442bed496e406ac1b83b24948de427e8c4cd7b5fbb3",
+    "replay.rb": "7035e823a2e18c03aa64c36d8553a024523c6d02459f03d5af63f9b98f6f6d23"
+  },
+  "limitations": [
+    "Blind life-scale rubric scores on the sample board never arrived; the owner authorized the four-repetition purchase and accepted the compare costs.",
+    "Warm-up token counts were not retained by rake eval:realization; the warm-up receipt is a stand-in priced from the first measured reading of the warm-up case.",
+    "This package retains readings.json.gz from the rake path rather than a streamed provider-readings.jsonl.gz.",
+    "The broad realization rubric does not score whether the four desire fields are coherent or dramatically useful.",
+    "Output-token growth and the REAL rises in proposal_refused, cap_hits, and latency are accepted costs of the scale revision, not improvements."
+  ]
+}
