@@ -412,6 +412,21 @@ module Eval
     db/eval/desires-realization-20260919/run.rb
     db/eval/desires-realization-20260919/source-manifest.json
     db/eval/desires-realization-20260919/verdicts.json
+    db/eval/desires-scale-20260920/README.md
+    db/eval/desires-scale-20260920/comparison.txt
+    db/eval/desires-scale-20260920/finalize.rb
+    db/eval/desires-scale-20260920/genesis.json
+    db/eval/desires-scale-20260920/matched-verdicts.json
+    db/eval/desires-scale-20260920/payload_gate.rb
+    db/eval/desires-scale-20260920/readings.json.gz
+    db/eval/desires-scale-20260920/realization.json
+    db/eval/desires-scale-20260920/receipts.json
+    db/eval/desires-scale-20260920/replay.rb
+    db/eval/desires-scale-20260920/requests.json
+    db/eval/desires-scale-20260920/run-provenance.json
+    db/eval/desires-scale-20260920/run.rb
+    db/eval/desires-scale-20260920/source-manifest.json
+    db/eval/desires-scale-20260920/verdicts.json
     db/eval/desires-dialogue-20260919/README.md
     db/eval/desires-dialogue-20260919/after-board.json
     db/eval/desires-dialogue-20260919/before-board.json

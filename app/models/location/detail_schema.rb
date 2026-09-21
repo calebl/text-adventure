@@ -185,7 +185,7 @@ class Location::DetailSchema < RubyLLM::Schema
         string :nickname, description: "What they are called to their face. 1 or 2 words.", max_length: Character::Registry::PERSON_LIMITS[:nickname]
         string :appearance, description: "What somebody walking in sees of them, consistent with the room you just wrote and with the race and age you were given for them. One or two sentences.", max_length: Character::Registry::PERSON_LIMITS[:appearance]
         string :personality, description: "How they behave and how they treat a stranger. One or two sentences.", max_length: Character::Registry::PERSON_LIMITS[:personality]
-        string :backstory, description: "Why they are in this place and what they want. Third person, by name. Two or three sentences.", max_length: Character::Registry::PERSON_LIMITS[:backstory]
+        string :backstory, description: "The life history that brought them here, the repeated choices it taught them, and why today's presence presses on an enduring aim. Third person, by name. Two or three sentences.", max_length: Character::Registry::PERSON_LIMITS[:backstory]
         string :likes, description: "A comma separated list of 2 or 3 things they enjoy.", max_length: Character::Registry::PERSON_LIMITS[:likes]
         string :dislikes, description: "A comma separated list of 2 or 3 things they cannot stand.", max_length: Character::Registry::PERSON_LIMITS[:dislikes]
         string :fears, description: "A comma separated list of 1 or 2 things they are afraid of.", max_length: Character::Registry::PERSON_LIMITS[:fears]

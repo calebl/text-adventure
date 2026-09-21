@@ -1232,9 +1232,11 @@ Its request identity certifies the scaffold, never identical generated prose.
 The generic prose checks still cannot assess whether an ending expresses its
 outcome faithfully or whether its prose is good.
 
-`desires-realization-20260919` is the current room-generation baseline. Its
-behavioral checks were all noise versus `physical-realization-20260910`; median
-output tokens rose from 22,357 to 27,885 per full pass (REAL, p=.028571).
+`desires-scale-20260920` is the current room-generation and genesis baseline
+(scale revision of the objects of desire). `desires-realization-20260919`
+remains the before side for that revision; against `physical-realization-20260910`
+its behavioral checks were all noise and median output tokens rose from 22,357
+to 27,885 per full pass (REAL, p=.028571).
 `desires-dialogue-20260919` is the current dialogue baseline; every available
 metric was noise versus `physical-dialogue-20260910`, and contradiction remains
 explicitly unavailable. Both older packages remain checked-in before sides.
