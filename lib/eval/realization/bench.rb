@@ -384,7 +384,7 @@ class Eval::Realization::Bench
   end
 
   # WHAT A STORED ANSWER CANNOT SHOW, HALF ONE: A REQUIRED FIELD THAT NEVER
-  # ARRIVED. Read off the provider's own JSON (`messages.content_raw`) against
+  # ARRIVED. Read off the provider's own stored JSON against
   # the schema's own `required` list. `BaseAgent#missing_schema_keys` fails the
   # call when a top-level field is truly absent, which is the claim this checks
   # rather than assumes -- and the nested fields it does NOT check are where a
@@ -460,10 +460,7 @@ class Eval::Realization::Bench
   end
 
   def raw_answer(message)
-    body = message&.content_raw
-    body = JSON.parse(body) if body.is_a?(String)
-    body.is_a?(Hash) ? body : nil
-  rescue JSON::ParserError
-    nil
+    body = message&.structured_content
+    body if body.is_a?(Hash)
   end
 end

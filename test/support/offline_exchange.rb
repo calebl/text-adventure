@@ -19,7 +19,7 @@
 module OfflineExchange
   # What one stubbed call answers with. `content` may be a String (prose, which
   # is streamed to the block a word at a time the way RubyLLM does) or a Hash (a
-  # schema'd answer, which RubyLLM stores in `content_raw` and never streams).
+  # schema'd answer, which RubyLLM stores as JSON content and never streams).
   Reply = Struct.new(:content, :input_tokens, :output_tokens, keyword_init: true)
 
   def self.reply(content, input: 120, output: 40)
@@ -81,8 +81,7 @@ module OfflineExchange
 
     message = chat.messages.create!(
       role: "assistant",
-      content: structured ? nil : content,
-      content_raw: structured ? content : nil
+      content: structured ? JSON.generate(content) : content
     )
     model = answering_model(chat)
     RubyLLM::ActiveRecord::Usage.create!(

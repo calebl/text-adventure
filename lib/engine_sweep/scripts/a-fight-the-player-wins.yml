@@ -51,7 +51,7 @@
 # something that raises for the length of a run, so a whole fight -- the
 # classifier's work done by `Playthrough::Grammar`, the dice by `Roll`, the
 # closing scene by `Playthrough::Fight` -- is arithmetic over records end to end.
-story: The Lunar Cartographer's Still Cast
+story: The Lunar Cartographer
 why: a fight resolves offline, the player wins it, and the body drops what it was holding
 steps:
 - id: nobody-to-fight-in-the-room-the-game-opens-in

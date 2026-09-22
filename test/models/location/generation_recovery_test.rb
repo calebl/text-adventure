@@ -383,7 +383,7 @@ class Location::GenerationRecoveryTest < ActiveSupport::TestCase
     conversation = Chat.find(@location.reload.generation_checkpoint.fetch("chat_id"))
     original_messages = conversation.exchange_messages.pluck(:id)
     assert_equal 2, original_messages.length
-    assert_equal detail, conversation.messages.where(role: "assistant").sole.content_raw
+    assert_equal detail, conversation.messages.where(role: "assistant").sole.structured_content
 
     OfflineExchange.with(EXITS) do
       Location::Generator.new(Location.find(@location.id), playthrough: second_game).realize!
@@ -394,7 +394,7 @@ class Location::GenerationRecoveryTest < ActiveSupport::TestCase
     assert_equal first_game, conversation.reload.playthrough
     assert_equal original_messages, conversation.exchange_messages.limit(2).pluck(:id)
     assert_equal 4, conversation.exchange_messages.count
-    assert_equal 1, conversation.messages.where(role: "assistant").filter_map { |message| message.content_raw&.fetch("description", nil) }.count
+    assert_equal 1, conversation.messages.where(role: "assistant").filter_map { |message| message.structured_content&.fetch("description", nil) }.count
     assert_includes conversation.messages.where(role: "user").last.content, "Now list the ways out of Workshop"
   end
 
@@ -408,7 +408,7 @@ class Location::GenerationRecoveryTest < ActiveSupport::TestCase
         Chat.define_method(:prune_history!, original)
       end
       assert_equal 4, conversation.exchange_messages.count
-      assert_equal DETAIL["description"], conversation.messages.where(role: "assistant").first.content_raw.fetch("description")
+      assert_equal DETAIL["description"], conversation.messages.where(role: "assistant").first.structured_content.fetch("description")
     end
   end
 
@@ -427,7 +427,7 @@ class Location::GenerationRecoveryTest < ActiveSupport::TestCase
       replacement = next_game.chats.where(purpose: "location").sole
       assert_equal original_prompt, replacement.messages.where(role: "user").first.content
       restored = replacement.messages.where(role: "assistant").first
-      assert_equal DETAIL["description"], restored.content_raw.fetch("description")
+      assert_equal DETAIL["description"], restored.structured_content.fetch("description")
       assert_nil restored.input_tokens
       assert_nil restored.output_tokens
       assert_equal 4, replacement.exchange_messages.count

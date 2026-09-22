@@ -89,7 +89,7 @@ class Eval::Classifier::Bench
   # attempt, because the corpus holds names rather than database-specific tokens.
   # `answered_by` is the model that really answered.
   #
-  # `raw` is THE PROVIDER'S OWN JSON, read back off `messages.content_raw` --
+  # `raw` is THE PROVIDER'S OWN JSON, read back off the stored response --
   # the column PR 97 stopped pruning. It is here for one reason: PR 102's review
   # finding F4 worried that `also_named`, a REQUIRED field on the commonest
   # model call in the app, would come back missing or null, and neither the
@@ -563,12 +563,17 @@ class Eval::Classifier::Bench
 
   # THE PROVIDER'S OWN JSON for the call just made. `#recorded_chat` is the
   # non-building reader on purpose -- looking for a conversation must not create
-  # one -- and `content_raw` is the column PR 97 kept.
+  # one.
   def raw_answer(classifier)
     stored = classifier.agent.recorded_chat&.messages&.where(role: "assistant")&.order(:id)&.last
-    body = stored&.content_raw
-    body.is_a?(String) ? JSON.parse(body) : body
-  rescue JSON::ParserError
-    nil
+    body = stored&.structured_content
+    return body if body
+
+    call = stored&.ruby_llm_tool_calls&.sole&.to_llm
+    return unless call
+
+    call.arguments.transform_keys(&:to_s).tap do |arguments|
+      arguments["intent"] = call.name unless call.name == Eval::Classifier::ToolShapes::SINGLE_NAME
+    end
   end
 end

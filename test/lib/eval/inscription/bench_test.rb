@@ -102,6 +102,20 @@ class Eval::Inscription::BenchTest < ActiveSupport::TestCase
     end
   end
 
+  test "a malformed rejected response retains its usage receipt" do
+    bench = Eval::Inscription::Bench.new(model: MODEL)
+    row = { "receipts" => [] }
+    message = RubyLLM::Message.new(role: :assistant, content: "not json", model: MODEL,
+                                   input_tokens: 100, output_tokens: 20,
+                                   cache_read_tokens: 7, cache_write_tokens: 3)
+
+    bench.send(:capture_message, row, message)
+
+    assert_equal "not json", row.fetch("raw")
+    assert_equal 100, row.fetch("receipts").sole.fetch("input_tokens")
+    assert_equal 20, row.fetch("receipts").sole.fetch("output_tokens")
+  end
+
   test "request identity covers system user and emitted schema independently" do
     request = { system: "rules", user: "facts", schema: { description: "words", maxLength: 400 } }
     identity = Eval::RequestIdentity.of(request)

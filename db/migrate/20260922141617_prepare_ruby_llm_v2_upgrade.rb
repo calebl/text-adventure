@@ -393,6 +393,7 @@ class PrepareRubyLlmV2Upgrade < ActiveRecord::Migration[8.1]
         model_ids << "legacy_message_models.#{quote_column(:model_id)}"
       end
     end
+    model_ids << message_value(:model_id_string) if column_exists?(:messages, :model_id_string)
 
     chat_model_column = first_existing_column(:chats, :model_id, :ruby_llm_model_id)
     if chat_model_column
@@ -415,7 +416,12 @@ class PrepareRubyLlmV2Upgrade < ActiveRecord::Migration[8.1]
     conditions = columns.filter_map do |column|
       "#{message_value(column)} IS NOT NULL" if column_exists?(:messages, column)
     end
-    conditions << "#{message_value(:role)} = 'assistant'" if column_exists?(:messages, :role)
+    identity = %i[model_id model_id_string].filter_map do |column|
+      "#{message_value(column)} IS NOT NULL" if column_exists?(:messages, column)
+    end
+    if column_exists?(:messages, :role) && identity.any?
+      conditions << "(#{message_value(:role)} = 'assistant' AND (#{identity.join(' OR ')}))"
+    end
     conditions
   end
 

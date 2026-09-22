@@ -160,6 +160,16 @@ class MessageTest < ActiveSupport::TestCase
     assert_match(/move/, message.text)
   end
 
+  test "structured content reads both persisted schema representations" do
+    current = create(:message, :assistant, content: JSON.generate("intent" => "move"), content_raw: nil)
+    legacy = create(:message, :assistant, content: nil, content_raw: { "intent" => "move" })
+    prose = create(:message, :assistant, content: "Walk north.", content_raw: nil)
+
+    assert_equal({ "intent" => "move" }, current.structured_content)
+    assert_equal({ "intent" => "move" }, legacy.structured_content)
+    assert_nil prose.structured_content
+  end
+
   test "text prefers the prose when there is prose" do
     assert_equal "A road, and then the sea.", create(:message, :assistant).text
   end

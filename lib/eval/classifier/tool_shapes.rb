@@ -21,15 +21,13 @@
 # cannot cross the wire at all -- the property the report's Version B measured
 # on an ordinary chat model, with no System One key.
 #
-# THE TOOLS EXECUTE NOTHING. Each one's `#execute` returns
-# `RubyLLM::Tool::Halt.new(args)`, which stops `RubyLLM::Chat`'s tool loop dead
-# and hands the arguments back as `response.content` -- the same shape
-# `Playthrough::Classifier#ask_the_model` already reads off a schema call
-# (`answer["intent"]`, `answer["target"]`, `answer["also_named"]`), so nothing
-# downstream of the read has to know which shape answered it. A shape C tool
-# has no `intent` field of its own, so `#execute` writes the tool's own name
-# into the answer -- the one place this module tells the engine anything the
-# provider did not.
+# THE TOOLS EXECUTE NOTHING. Each requires approval, which makes RubyLLM stop
+# after the provider's tool call instead of executing it and buying a second
+# generation. `ToolAgent` reads those arguments into the same response shape
+# `Playthrough::Classifier#ask_the_model` already consumes. A shape C tool has
+# no `intent` field of its own, so the agent writes the called tool's name into
+# the answer -- the one place this bench tells the engine anything the provider
+# did not.
 module Eval::Classifier::ToolShapes
   extend self
 
@@ -94,6 +92,7 @@ module Eval::Classifier::ToolShapes
     Class.new(RubyLLM::Tool) do
       description tool_description
       parameters(schema)
+      requires_approval
       define_method(:name) { label }
       define_method(:params_schema) { parameters_schema }
       define_method(:execute) do |**args|

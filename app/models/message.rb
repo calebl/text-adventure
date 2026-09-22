@@ -33,8 +33,16 @@ class Message < ApplicationRecord
     self.ruby_llm_parent_tool_call = tool_call
   end
 
-  # A schema'd answer is a Hash, and RubyLLM stores it in `content_raw` with
-  # `content` left nil. Two columns, one question, so read it through here.
+  def structured_content
+    value = content_raw.presence || content
+    value = JSON.parse(value) if value.is_a?(String)
+    value if value.is_a?(Hash) || value.is_a?(Array)
+  rescue JSON::ParserError
+    nil
+  end
+
+  # A schema'd answer may be legacy `content_raw` or JSON in `content`.
+  # Two columns, one question, so read display text through here.
   def text
     return content if content.present?
     return nil if content_raw.blank?

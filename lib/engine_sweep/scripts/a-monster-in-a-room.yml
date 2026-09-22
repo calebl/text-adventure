@@ -48,7 +48,7 @@
 # nothing in this script can produce a monster. That is the right side of the
 # line: the file is the decision for a hand-authored world, `Location::Danger`
 # rolls one for a generated one, and neither of them is a typed line.
-story: The Lunar Cartographer's Still Cast
+story: The Lunar Cartographer
 why: a world can contain an enemy, the engine shows it standing there, and nothing fights
 steps:
 - id: nobody-here-means-you-harm

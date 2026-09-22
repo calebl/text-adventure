@@ -78,12 +78,13 @@ class Eval::Classifier::ToolShapesTest < ActiveSupport::TestCase
                  take.params_schema.dig("properties", "target", "description")
   end
 
-  test "a shape C tool's execute halts immediately and injects its own name as the intent" do
+  test "a shape C tool waits for approval and injects its own name when called directly" do
     classifier = staffed_classifier
     move = Eval::Classifier::ToolShapes.per_intent(classifier)[:tools].find { |tool| tool.name == "move" }
 
     result = move.call("target" => "The Long Hallway", "also_named" => "nothing")
 
+    assert_predicate move, :requires_approval?
     assert_equal({ "target" => "The Long Hallway", "also_named" => "nothing", "intent" => "move" }, result)
   end
 

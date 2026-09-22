@@ -47,8 +47,7 @@ class Eval::Inscription::Bench
     llm.after_message do |message|
       next unless message.role.to_s == "assistant"
 
-      row["raw"] = message.content.is_a?(String) ? JSON.parse(message.content) : message.content
-      row.fetch("receipts") << receipt_for(message)
+      capture_message(row, message)
     end
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     begin
@@ -75,6 +74,17 @@ class Eval::Inscription::Bench
   end
 
   private
+
+  def capture_message(row, message)
+    row.fetch("receipts") << receipt_for(message)
+    row["raw"] = parse_content(message.content)
+  end
+
+  def parse_content(content)
+    content.is_a?(String) ? JSON.parse(content) : content
+  rescue JSON::ParserError
+    content
+  end
 
   # Live callbacks carry a RubyLLM::Message whose model is the provider ID.
   # The persisted fallback carries the application's Message record, whose

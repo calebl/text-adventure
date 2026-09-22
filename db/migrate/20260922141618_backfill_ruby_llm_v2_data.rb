@@ -213,6 +213,7 @@ class BackfillRubyLlmV2Data < ActiveRecord::Migration[8.1]
         models << "legacy_message_models.#{quote_column(:model_id)}"
       end
     end
+    models << message_value(:model_id_string) if column_exists?(:messages, :model_id_string)
 
     if column_exists?(:chats, :ruby_llm_model_id)
       chats = quote_table(:chats)
@@ -241,7 +242,12 @@ class BackfillRubyLlmV2Data < ActiveRecord::Migration[8.1]
       end
       conditions << "(#{costs.join(' OR ')})"
     end
-    conditions << "#{message_value(:role)} = 'assistant'" if column_exists?(:messages, :role)
+    identity = %i[model_id model_id_string].filter_map do |column|
+      "#{message_value(column)} IS NOT NULL" if column_exists?(:messages, column)
+    end
+    if column_exists?(:messages, :role) && identity.any?
+      conditions << "(#{message_value(:role)} = 'assistant' AND (#{identity.join(' OR ')}))"
+    end
     conditions
   end
 

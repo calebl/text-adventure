@@ -155,7 +155,12 @@ class FinishRubyLlmV2Upgrade < ActiveRecord::Migration[8.1]
       end
       conditions << "(#{costs.join(' OR ')})"
     end
-    conditions << "#{message_value(:role)} = 'assistant'" if column_exists?(:messages, :role)
+    identity = %i[model_id model_id_string].filter_map do |column|
+      "#{message_value(column)} IS NOT NULL" if column_exists?(:messages, column)
+    end
+    if column_exists?(:messages, :role) && identity.any?
+      conditions << "(#{message_value(:role)} = 'assistant' AND (#{identity.join(' OR ')}))"
+    end
     conditions
   end
 
