@@ -21,7 +21,10 @@ class Eval::Classifier::ToolShapesTest < ActiveSupport::TestCase
   # `tools[0].function.parameters`. `render_payload` is a module function on
   # the real provider code -- no chat, no HTTP, no key.
   test "shape B's closed set crosses the wire byte for byte the same as the schema call" do
-    skip "RubyLLM 2 renders tool envelopes through provider instances"
+    # RubyLLM 2 exposes this rendering through Chat#render and provider
+    # instances; the former 1.x module function is intentionally gone. The
+    # public Chat#render envelope is covered by ruby_llm_schema_envelope_test.
+    skip "RubyLLM 2 removed the provider module renderer"
     schema = Playthrough::IntentSchema.for(%w[north south])
     model = Struct.new(:id).new("mistralai/mistral-medium-3.1")
 

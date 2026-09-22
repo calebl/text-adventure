@@ -15,6 +15,13 @@ class Message < ApplicationRecord
   # MessageMethods#model returns only the model id in RubyLLM 2; callers here
   # need the registry record for existing debug and accounting views.
   def model = association(:model).reader
+  def cache_read_tokens = nil
+  def cache_write_tokens = nil
+  def tool_calls = ruby_llm_tool_calls
+  def parent_tool_call = ruby_llm_parent_tool_call
+  def parent_tool_call=(tool_call)
+    self.ruby_llm_parent_tool_call = tool_call
+  end
 
   # A schema'd answer is a Hash, and RubyLLM stores it in `content_raw` with
   # `content` left nil. Two columns, one question, so read it through here.

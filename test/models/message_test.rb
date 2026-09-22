@@ -162,7 +162,7 @@ class MessageTest < ActiveSupport::TestCase
   # `invalid message content type: map[string]interface {}`. If this ever fails,
   # the gem has fixed it and `Message#extract_content` can go.
   test "the ollama formatter still passes a raw payload through unencoded" do
-    raw = RubyLLM::Content::Raw.new({ "intent" => "move" })
+    raw = { "intent" => "move" }
 
     assert_kind_of Hash, RubyLLM::Providers::Ollama::Media.format_content(raw)
     assert_kind_of String, RubyLLM::Providers::OpenAI::Media.format_content(raw)
