@@ -46,7 +46,7 @@ class Eval::Inscription::Bench
     inscriber.agent.chat.to_llm.after_message do |message|
       next unless message.role.to_s == "assistant"
 
-      row["raw"] = message.content
+      row["raw"] = message.content.is_a?(String) ? JSON.parse(message.content) : message.content
       row.fetch("receipts") << { "model" => message.model_id, "input_tokens" => message.input_tokens.to_i,
                                  "output_tokens" => message.output_tokens.to_i, "cached_tokens" => message.cached_tokens.to_i,
                                  "cache_creation_tokens" => message.cache_creation_tokens.to_i }
