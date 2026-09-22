@@ -21,6 +21,10 @@
 class Chat < ApplicationRecord
   acts_as_chat
 
+  def with_tool(tool)
+    with_tools(tool)
+  end
+
   # Talking to somebody. The one conversation that is PICKED UP AGAIN rather
   # than started fresh, keyed by (playthrough, character): a character who
   # forgets the previous sentence the moment the turn ends is the conversation
