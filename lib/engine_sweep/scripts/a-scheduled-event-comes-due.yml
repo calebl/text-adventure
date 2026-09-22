@@ -40,7 +40,7 @@
 # and nothing else -- `WorldEvent` is an audit trail and never a narration
 # source -- so what a walk can see is a COUNT, which is why `scheduled:` and
 # `fired:` are numbers in the way `blows:` is.
-story: The Lunar Cartographer
+story: The Lunar Cartographer's Still Cast
 why: the story's clock reaches a scheduled event's hour and the engine fires it, once
 steps:
 - id: two-things-are-going-to-happen-and-neither-has
