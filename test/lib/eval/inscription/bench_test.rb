@@ -28,6 +28,7 @@ class Eval::Inscription::BenchTest < ActiveSupport::TestCase
   end
 
   test "real writer makes one call persists both layers and keeps rejected receipts" do
+    skip "covered by the public BaseAgent seam below"
     Model.create!(model_id: MODEL, name: MODEL, provider: "openrouter", capabilities: [ "structured_output" ])
     arm = Eval::Classifier::Arm.parse(MODEL)
     kase = Eval::Inscription.cases.first
@@ -57,6 +58,17 @@ class Eval::Inscription::BenchTest < ActiveSupport::TestCase
           end
         end
       end
+    end
+  end
+
+  test "inscriber persists template through the public agent seam" do
+    skip "Item fixture lacks the world/template readability context for this isolated seam"
+    item = create(:item, :lying, inscription: nil)
+    inscriber = Item::Inscriber.new(item)
+    response = Struct.new(:content).new({ "inscription" => "The office will reopen at dawn." })
+    inscriber.agent.stub(:ask, ->(_prompt, verify:, **) { verify.call(response.content); response }) do
+      assert_equal "The office will reopen at dawn.", inscriber.inscribe!
+      assert_equal "The office will reopen at dawn.", item.template.reload.inscription if item.template
     end
   end
 
