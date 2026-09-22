@@ -128,11 +128,7 @@ class RubyLLMSchemaEnvelopeTest < ActiveSupport::TestCase
   # way to see what a provider is sent without sending it. If a future RubyLLM
   # renames this, that is worth finding out about.
   def render_payload(chat)
-    chat.instance_variable_get(:@provider).send(
-      :render_payload,
-      chat.messages,
-      tools: {}, temperature: nil, model: chat.model, stream: false, schema: chat.schema
-    )
+    chat.render
   end
 
   # Building the OpenRouter provider needs its key present. Nothing here is

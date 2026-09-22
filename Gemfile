@@ -63,7 +63,7 @@ end
 
 
 
-gem "ruby_llm"
+gem "ruby_llm", "~> 2.0"
 # NEVER LET THIS RESOLVE TO 1.x. That release is a deprecation shim forwarding
 # to the renamed `schematist` gem, and taking it silently drags ruby_llm back to
 # 1.8.2, the last release with no such dependency. ruby_llm's own `~> 0` already
