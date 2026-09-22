@@ -312,6 +312,7 @@ class BaseAgent
       conversation = chat
       mark = conversation_mark
       response = conversation.ask(prompt, &block)
+      expose_parsed_schema_content!(response)
       verify_schema_honored!(response)
       # CRISIS BEFORE REFUSAL, and the order IS the decision rather than a
       # style choice. One response can be both -- the corpus has a resource
@@ -422,6 +423,20 @@ class BaseAgent
   end
 
   private
+
+  # RubyLLM 2 keeps the wire JSON in `Message#content` and exposes a schema'd
+  # answer through `#parsed`. The application predates that split: every
+  # generator consumes the Hash returned as `BaseAgent#ask(...).content`, and
+  # changing all of those public seams would be wider than this provider
+  # upgrade. Normalize only schema'd replies at our one model-call boundary;
+  # prose (including the streaming narrator) remains the original String.
+  def expose_parsed_schema_content!(response)
+    return response if @schema.nil? || !response.content.is_a?(String) || !response.respond_to?(:parsed)
+
+    content = response.parsed
+    response.define_singleton_method(:content) { content }
+    response
+  end
 
   # A conversation is a row, and this is where it becomes one: pointed at
   # `current_model`, filed under the game records that will need to find it, and

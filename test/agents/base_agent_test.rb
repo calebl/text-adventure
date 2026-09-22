@@ -271,6 +271,15 @@ class BaseAgentTest < ActiveSupport::TestCase
     assert_equal({ "name" => "Silas" }, agent.ask("hello").content)
   end
 
+  test "ask exposes RubyLLM 2 parsed schema content through the existing content seam" do
+    response = RubyLLM::Message.new(role: :assistant, content: JSON.generate(name: "Silas"))
+    agent = build_agent
+    agent.instance_variable_set(:@chat, ConstantResponseChat.new(response))
+    agent.instance_variable_set(:@schema, Object.new)
+
+    assert_equal({ "name" => "Silas" }, agent.ask("hello").content)
+  end
+
   test "ask leaves prose alone when no schema was requested" do
     agent = build_agent
     agent.instance_variable_set(:@chat, ConstantChat.new("just prose"))
@@ -653,6 +662,11 @@ class BaseAgentTest < ActiveSupport::TestCase
   class SequenceChat
     def initialize(*contents) = @contents = contents
     def ask(_prompt) = Struct.new(:content).new(@contents.shift)
+  end
+
+  class ConstantResponseChat
+    def initialize(response) = @response = response
+    def ask(_prompt) = @response
   end
 
   class UnauthorizedChat
