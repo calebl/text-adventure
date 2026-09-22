@@ -49,6 +49,24 @@ class MessageTest < ActiveSupport::TestCase
     assert_equal "gemma3:12b", message.answering_model_id
   end
 
+  test "aggregates token accounting across every provider attempt" do
+    message = create(:message, :assistant, input_tokens: 999, output_tokens: 999)
+    [
+      { status: "failed", input_tokens: 30, output_tokens: 4, cache_read_tokens: 5, cache_write_tokens: 2 },
+      { status: "succeeded", input_tokens: 70, output_tokens: 16, cache_read_tokens: 7, cache_write_tokens: 3 }
+    ].each do |usage|
+      RubyLLM::ActiveRecord::Usage.create!(
+        chat: message.chat, message: message, operation: "chat", provider: "ollama",
+        model: "gemma3:12b", **usage
+      )
+    end
+
+    assert_equal 100, message.input_tokens
+    assert_equal 20, message.output_tokens
+    assert_equal 12, message.cache_read_tokens
+    assert_equal 5, message.cache_write_tokens
+  end
+
   # RubyLLM 1.15 renormalised token accounting: `input_tokens` no longer folds
   # in prompt cache reads and writes, which are exposed separately. Nothing in
   # this app reads token counts, and there are no columns backing the cache
@@ -79,11 +97,21 @@ class MessageTest < ActiveSupport::TestCase
     assert_operator message.reload.cost.total, :>, 0
   end
 
-  test "has many tool calls" do
+  test "has many tool call records" do
     message = create(:message, :assistant)
     tool_call = create(:tool_call, message: message)
 
-    assert_equal [ tool_call ], message.tool_calls.to_a
+    assert_equal [ tool_call ], message.ruby_llm_tool_calls.to_a
+  end
+
+  test "converts persisted tool calls to RubyLLM protocol values" do
+    message = create(:message, :assistant)
+    tool_call = create(:tool_call, message: message, tool_call_id: "call_provider_123")
+
+    converted = message.reload.to_llm
+
+    assert_equal [ "call_provider_123" ], converted.tool_calls.keys
+    assert_instance_of RubyLLM::ToolCall, converted.tool_calls.fetch("call_provider_123")
   end
 
   test "destroying a message destroys its tool calls" do
@@ -97,10 +125,12 @@ class MessageTest < ActiveSupport::TestCase
 
   # A tool result is a message that points back at the call that produced it.
   test "links back to the tool call it answers" do
-    tool_call = create(:tool_call)
-    result = create(:message, parent_tool_call: tool_call)
+    tool_call = create(:tool_call, tool_call_id: "call_provider_123")
+    result = create(:message, ruby_llm_parent_tool_call: tool_call)
 
-    assert_equal tool_call, result.parent_tool_call
+    assert_equal tool_call, result.ruby_llm_parent_tool_call
+    assert_equal "call_provider_123", result.parent_tool_call.id
+    assert_equal "call_provider_123", result.to_llm.tool_call_id
     assert_equal result, tool_call.reload.result
   end
 
@@ -131,7 +161,7 @@ class MessageTest < ActiveSupport::TestCase
   end
 
   test "a message answering a tool call reports itself as a tool result" do
-    result = create(:message, parent_tool_call: create(:tool_call))
+    result = create(:message, ruby_llm_parent_tool_call: create(:tool_call))
 
     assert_predicate result, :tool_result?
   end

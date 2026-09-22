@@ -62,6 +62,17 @@ class Eval::Classifier::ToolAgentTest < ActiveSupport::TestCase
     assert_nil response.content
   end
 
+  test "a prose response reaches schema verification" do
+    agent = Eval::Classifier::ToolAgent.new(shape: :tool, model_options: MODEL_OPTIONS)
+    agent.with_schema(Playthrough::IntentSchema.for(%w[north]))
+    response = RubyLLM::Message.new(role: :assistant, content: "prose")
+
+    exposed = agent.send(:expose_parsed_schema_content, response)
+
+    assert_same response, exposed
+    assert_raises(BaseAgent::SchemaIgnoredError) { agent.send(:verify_schema_honored!, exposed) }
+  end
+
   # THE TWO PROSE-REFUSAL CHECKS ARE UNSCHEMA'D-CALL CHECKS -- `Scene::Narrator`'s
   # shape, not this one -- and a tool-shaped classifier call is closed exactly
   # as the schema call is, so it skips them the same way `@schema` present

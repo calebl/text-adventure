@@ -23,15 +23,10 @@ class Message < ApplicationRecord
     RubyLLM::ActiveRecord::Model.find_by(provider: receipt.provider, model_id: receipt.model)
   end
 
-  def input_tokens = usage_receipt&.input_tokens || self[:input_tokens]
-  def output_tokens = usage_receipt&.output_tokens || self[:output_tokens]
-  def cache_read_tokens = usage_receipt&.cache_read_tokens
-  def cache_write_tokens = usage_receipt&.cache_write_tokens
-  def tool_calls = ruby_llm_tool_calls
-  def parent_tool_call = ruby_llm_parent_tool_call
-  def parent_tool_call=(tool_call)
-    self.ruby_llm_parent_tool_call = tool_call
-  end
+  def input_tokens = ruby_llm_usages.any? ? tokens.input : self[:input_tokens]
+  def output_tokens = ruby_llm_usages.any? ? tokens.output : self[:output_tokens]
+  def cache_read_tokens = ruby_llm_usages.any? ? tokens.cache_read : nil
+  def cache_write_tokens = ruby_llm_usages.any? ? tokens.cache_write : nil
 
   def structured_content
     value = content_raw.presence || content

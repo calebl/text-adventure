@@ -46,9 +46,10 @@ class Eval::Classifier::ToolAgent < BaseAgent
   end
 
   def expose_parsed_schema_content(response)
-    return response unless response.respond_to?(:tool_calls) && response.tool_calls.one?
+    calls = response.tool_calls if response.respond_to?(:tool_calls)
+    return response unless calls&.one?
 
-    call = response.tool_calls.values.sole
+    call = calls.values.sole
     content = call.arguments.transform_keys(&:to_s)
     content["intent"] = call.name unless @shape == :tool
     response.dup.tap { _1.define_singleton_method(:content) { content } }
