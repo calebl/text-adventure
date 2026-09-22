@@ -151,8 +151,8 @@ class Chat < ApplicationRecord
   end
 
   # What this conversation has cost, as far as the provider reported it.
-  def input_tokens = messages.includes(:usage_receipt).sum { |message| message.input_tokens.to_i }
-  def output_tokens = messages.includes(:usage_receipt).sum { |message| message.output_tokens.to_i }
+  def input_tokens = messages.includes(:ruby_llm_usages).sum { |message| message.input_tokens.to_i }
+  def output_tokens = messages.includes(:ruby_llm_usages).sum { |message| message.output_tokens.to_i }
 
   # Which model actually answered. The chat's own `model_id` is what it was
   # pointed at; this is what replied, which differs the moment `BaseAgent`

@@ -127,7 +127,7 @@ class Playthrough::Feedback < ApplicationRecord
   # and lost them. `#receipts_kept?` tells a reader which of those they are
   # looking at, and the view says so rather than showing a blank.
   def self.provenance_for(scene)
-    messages = scene.messages.includes(:usage_receipt, :chat).sort_by(&:id)
+    messages = scene.messages.includes(:usage_receipt, :ruby_llm_usages, :chat).sort_by(&:id)
     answered = messages.select { |message| message.role.to_s == "assistant" }
     prose = answered.select { |message| PROSE_PURPOSES.include?(message.chat&.purpose) }
     # The LAST prose answer on the turn, because an arrival realizes the room

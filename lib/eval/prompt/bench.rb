@@ -361,7 +361,7 @@ class Eval::Prompt::Bench
   def receipts_for(scene)
     return { pass: nil, calls: 0, input_tokens: 0, output_tokens: 0 } if scene.nil?
 
-    messages = scene.messages.includes(:usage_receipt, :chat).sort_by(&:id)
+    messages = scene.messages.includes(:usage_receipt, :ruby_llm_usages, :chat).sort_by(&:id)
     answered = messages.select { |message| message.role.to_s == "assistant" }
     prose = answered.select { |message| Eval::Prompt::PASSES.include?(message.chat&.purpose) }
     kept = prose.last

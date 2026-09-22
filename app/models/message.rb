@@ -23,10 +23,18 @@ class Message < ApplicationRecord
     RubyLLM::ActiveRecord::Model.find_by(provider: receipt.provider, model_id: receipt.model)
   end
 
-  def input_tokens = ruby_llm_usages.any? ? tokens.input : self[:input_tokens]
-  def output_tokens = ruby_llm_usages.any? ? tokens.output : self[:output_tokens]
-  def cache_read_tokens = ruby_llm_usages.any? ? tokens.cache_read : nil
-  def cache_write_tokens = ruby_llm_usages.any? ? tokens.cache_write : nil
+  def input_tokens
+    accounted = usage_tokens
+    accounted ? accounted.input : self[:input_tokens]
+  end
+
+  def output_tokens
+    accounted = usage_tokens
+    accounted ? accounted.output : self[:output_tokens]
+  end
+
+  def cache_read_tokens = usage_tokens&.cache_read
+  def cache_write_tokens = usage_tokens&.cache_write
 
   def structured_content
     value = content_raw.presence || content
@@ -51,6 +59,11 @@ class Message < ApplicationRecord
   def answering_model_id = usage_receipt&.model || model&.model_id || model_id_string
 
   private
+
+  def usage_tokens
+    ruby_llm_usages.load
+    tokens if ruby_llm_usages.any?
+  end
 
   # A STORED STRUCTURED ANSWER GOES BACK AS THE JSON STRING THE MODEL WROTE.
   #

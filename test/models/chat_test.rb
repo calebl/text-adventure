@@ -185,6 +185,28 @@ class ChatTest < ActiveSupport::TestCase
     assert_equal [ "gemma3:12b" ], chat.answering_model_ids
   end
 
+  test "token totals load usage for all messages in one query" do
+    ollama = create(:model, :ollama)
+    chat = create(:chat, model: ollama)
+    3.times do
+      answer = create(:message, :assistant, chat: chat, input_tokens: nil, output_tokens: nil)
+      RubyLLM::ActiveRecord::Usage.create!(
+        chat: chat, message: answer, operation: "chat", provider: "ollama", model: ollama.model_id,
+        status: "succeeded", input_tokens: 100, output_tokens: 25
+      )
+    end
+    selects = []
+    callback = lambda do |_name, _start, _finish, _id, payload|
+      selects << payload.fetch(:sql) if !payload[:cached] && payload.fetch(:sql).match?(/\A\s*SELECT/i)
+    end
+
+    ActiveRecord::Base.connection.uncached do
+      ActiveSupport::Notifications.subscribed(callback, "sql.active_record") { assert_equal 300, chat.input_tokens }
+    end
+
+    assert_equal 2, selects.size
+  end
+
   private
 
   # Model resolution instantiates the provider, which refuses to build without

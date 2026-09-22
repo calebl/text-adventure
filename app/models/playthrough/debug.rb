@@ -683,7 +683,7 @@ class Playthrough::Debug
     ActiveRecord::Associations::Preloader.new(
       records: scenes,
       associations: [ :location, :characters, { interactions: :character },
-                      { messages: [ :model, :chat ] } ]
+                      { messages: [ :model, :chat, :usage_receipt, :ruby_llm_usages ] } ]
     ).call
   end
 end

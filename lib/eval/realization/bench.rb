@@ -363,7 +363,7 @@ class Eval::Realization::Bench
     return { answers: {}, calls: 0, input_tokens: 0, output_tokens: 0, prompts: {},
              missing_fields: [], cap_hits: [] } if chat.nil?
 
-    messages = chat.messages.includes(:usage_receipt).order(:id).to_a
+    messages = chat.messages.includes(:usage_receipt, :ruby_llm_usages).order(:id).to_a
     answered = messages.select { |message| message.role.to_s == "assistant" }
     asked = messages.select { |message| message.role.to_s == "user" }
     if retrying

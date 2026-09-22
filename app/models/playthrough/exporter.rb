@@ -354,7 +354,7 @@ class Playthrough::Exporter
   end
 
   def conversations_document(_turn_keys)
-    playthrough.chats.includes(:character, messages: :usage_receipt).order(:id).map do |chat|
+    playthrough.chats.includes(:character, messages: [ :usage_receipt, :ruby_llm_usages ]).order(:id).map do |chat|
       {
         "purpose" => chat.purpose,
         "character" => chat.character&.fullname,
