@@ -946,8 +946,9 @@ class Eval::Realization::Scorer
 
   # WHAT THE ROOM ACTUALLY LOST, read off the records after the admission rather
   # than inferred from the answer. The superset of every name collision above,
-  # plus the caps, plus a sheet that arrived cut off -- every reason
-  # `Item::Registry` and `Character::Registry` drop a proposal.
+  # plus placement caps and any cut field with no safe prefix -- every reason
+  # `Item::Registry` and `Character::Registry` drop a proposal. A cap hit that
+  # character admission salvaged is deliberately absent: the room lost nobody.
   #
   # COUNTED PER NAME AND NOT BY MEMBERSHIP, which is the difference between this
   # figure and a reading of the answer. A proposal off `Location::DetailSchema`

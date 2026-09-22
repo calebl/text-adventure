@@ -116,6 +116,13 @@ class Character::Registry
   # refuse them rather than write a row that cannot be talked to.
   SHEET = %i[appearance personality backstory likes dislikes fears].freeze
 
+  # THE SHEET FIELDS WRITTEN AS SENTENCES. When a provider reaches one of
+  # their caps, `#field` can keep the complete sentences before the cut rather
+  # than rejecting the person with the unfinished final sentence. Lists and
+  # names have no equally reliable completion boundary and stay strict.
+  SENTENCE_FIELDS = %i[appearance personality backstory].freeze
+  SENTENCE_END = /[.!?…](?:["'”’*_)\]»›])*(?=\s|\z)/
+
   # HOW LONG EACH OF THEM MAY BE, and this is the schema's caps rather than a
   # copy of them: `Location::DetailSchema` reads this table, so the bound the
   # model is given and the bound this class checks a sheet against cannot
@@ -465,13 +472,10 @@ class Character::Registry
       **pursuits(attributes)
     ).then { |person| place!(person) }
   rescue SanitizesGeneratedText::TruncatedTextError => e
-    # A HALF-WRITTEN PERSON IS WORSE THAN NO PERSON, and refusing one is what
-    # this class does with everything it will not take. Elsewhere in the app a
-    # truncated field is a FAILED CALL that reaches the rotation
-    # (`BaseAgent#ask`'s `verify:` seam) -- here it must not be, because the
-    # call it would fail is the room's own description, which is already saved
-    # and cost the expensive half of the realization. So the room keeps its
-    # description and loses a person, exactly as it does for a refused name.
+    # A FIELD WITH NO SAFE PREFIX still refuses the person. Sentence prose and
+    # nullable desire prose recover inside `#field`; reaching this rescue means
+    # the cut was in a name or list, or before the first sentence finished.
+    # The room keeps its paid description and every other valid proposal.
     refuse(attributes["fullname"], "the sheet was cut off: #{e.message}")
   end
 
@@ -497,8 +501,38 @@ class Character::Registry
   # One field of a proposed sheet, sanitized under the cap the model was given.
   # Passing the cap is what turns the truncation check on -- see
   # `SanitizesGeneratedText`.
+  #
+  # A CUT SENTENCE FIELD KEEPS ONLY WHAT THE ENGINE CAN PROVE FINISHED. The raw
+  # capped value is never stored: `#complete_sentence_prefix` discards the
+  # unfinished tail, or re-raises when the provider did not finish even one
+  # sentence. This is local to a realized person's short sheet because failing
+  # the shared room call would also discard its description, items and other
+  # people. Every other caller of `sanitize_string` keeps the ordinary strict
+  # rule.
+  #
+  # A CUT DESIRE BECOMES NIL. Those fields are nullable enrichment and no game
+  # branch reads their prose; `Story::Doctor` already reports a person missing
+  # them. Storing no claim is safer than storing half a claim, and it does not
+  # cost the room a person whose required conversational sheet is complete.
   def field(attributes, name)
-    sanitize_string(attributes[name.to_s].to_s, max_length: PERSON_LIMITS.fetch(name))
+    text = attributes[name.to_s].to_s
+    sanitize_string(text, max_length: PERSON_LIMITS.fetch(name))
+  rescue SanitizesGeneratedText::TruncatedTextError
+    return nil if Character::DESIRES.include?(name)
+    raise unless SENTENCE_FIELDS.include?(name)
+
+    complete_sentence_prefix(text) || raise
+  end
+
+  # Everything through the last sentence terminator, including closing quotes
+  # or brackets. Sanitization runs first without a cap so emoji and JSON
+  # envelope debris cannot survive through this recovery path.
+  def complete_sentence_prefix(text)
+    clean = sanitize_string(text)
+    boundary = nil
+    clean.scan(SENTENCE_END) { boundary = Regexp.last_match.end(0) }
+
+    clean[0...boundary].strip.presence if boundary
   end
 
   # THE TWO LABELS OFF A PROPOSED SHEET, and `nil` for one the answer did not
