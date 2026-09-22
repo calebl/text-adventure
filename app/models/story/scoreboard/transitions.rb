@@ -18,8 +18,8 @@
 #
 # THE RESOLVED ACTION IS RECOVERED, NOT ASSUMED. `Scene#resolved_action` did
 # not exist when these runs were played, so each row's action was read back out
-# of the classifier's own stored answer (`messages.content_raw`, kept by default
-# since PR 97) and confirmed against the closed set that same prompt offered --
+# of the classifier's own stored answer (the legacy `messages.content_raw`, kept
+# by default since PR 97) and confirmed against the closed set that same prompt offered --
 # `offered` on every row is that list. A row whose target was not on the list
 # the action reads against is not in this file.
 #

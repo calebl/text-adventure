@@ -60,6 +60,11 @@ dependency order; its header is how a PR adds one. `rake game:update` is the
 same steps without the git and bundler half (`DRY_RUN=1` first, `ONLY=<step>`
 for one, `VERBOSE=1` to see what each step is refusing to guess about).
 
+The RubyLLM 2 migration deliberately cannot be rolled back: it transfers
+ownership of persisted model, message and tool-call data to RubyLLM 2's schema.
+Back up a database you may need to restore before updating; recovery is from
+that backup, not `db:rollback`.
+
 ## Generate a world
 
 ```bash

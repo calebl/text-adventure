@@ -74,9 +74,9 @@ class RubyLLMSchemaEnvelopeTest < ActiveSupport::TestCase
   end
 
   # What `with_schema` stores is the provider envelope, not the bare JSON
-  # Schema: ruby_llm 1.16 keeps the wrapper (name + strict) and hands the whole
-  # thing to the provider. ruby_llm 1.8.2 unwrapped it and kept only the body.
-  # Pinned because it is the payload shape a provider actually receives.
+  # Schema: RubyLLM 2 keeps the wrapper (name + strict) and hands the whole
+  # thing to the provider. Pinned because it is the payload shape a provider
+  # actually receives.
   test "the delivered payload is the provider envelope, not a bare schema" do
     chat = RubyLLM::Chat.new(provider: :ollama, model: "gemma3:12b", assume_model_exists: true)
     chat.with_schema(Character::Schema)

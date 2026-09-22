@@ -949,7 +949,7 @@ PR 102's review finding **F4**: `also_named` is a **required** field on the
 commonest model call in the app, and the worry was that a provider would send it
 missing or null. Neither the resolved `Intent` nor a rate over it can tell an
 omitted field from an answer of `nothing`, so the bench reads the provider's own
-JSON back off `messages.content_raw` and counts.
+stored JSON through `Message#structured_content` and counts.
 
 It is reported on every bench run at no extra cost, over every call the run
 already paid for. `rake eval:classifier_omission` is the targeted probe — the
@@ -2008,8 +2008,8 @@ scores it and `rake game:score CORPUS=transitions` prints it.
 Each row carries the typed line, the resolved action, the item, **where that
 item was before the turn and after it**, the closed set the classifier was
 offered, and the prose. The action was recovered offline from the classifier's
-own stored answer (`messages.content_raw`, kept by default since PR 97) and
-confirmed against that same prompt's list — no generation, no spend. The
+own stored answer (the legacy `messages.content_raw`, kept by default since PR
+97) and confirmed against that same prompt's list — no generation, no spend. The
 position before and after needs no item history: `take` resolves against what
 is lying in the room and `drop` against what the player is carrying, so the
 action itself says where the row was.
