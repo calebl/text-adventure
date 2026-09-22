@@ -48,9 +48,7 @@ class Eval::Inscription::Bench
       next unless message.role.to_s == "assistant"
 
       row["raw"] = message.content.is_a?(String) ? JSON.parse(message.content) : message.content
-      row.fetch("receipts") << { "model" => message.model, "input_tokens" => message.tokens.input.to_i,
-                                 "output_tokens" => message.tokens.output.to_i, "cached_tokens" => message.tokens.cache_read.to_i,
-                                 "cache_creation_tokens" => message.tokens.cache_write.to_i }
+      row.fetch("receipts") << receipt_for(message)
     end
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     begin
@@ -63,13 +61,7 @@ class Eval::Inscription::Bench
       if row.fetch("receipts").empty?
         message = llm.messages.reverse.find { |candidate| candidate.role.to_s == "assistant" } ||
                   inscriber.agent.chat.messages.where(role: "assistant").order(:created_at, :id).last
-        if message
-          row.fetch("receipts") << { "model" => message.model,
-                                     "input_tokens" => message.tokens.input.to_i,
-                                     "output_tokens" => message.tokens.output.to_i,
-                                     "cached_tokens" => message.tokens.cache_read.to_i,
-                                     "cache_creation_tokens" => message.tokens.cache_write.to_i }
-        end
+        row.fetch("receipts") << receipt_for(message) if message
       end
       row["seconds"] = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
       # Price cached tokens as full input: conservative and reproducible from
@@ -80,5 +72,19 @@ class Eval::Inscription::Bench
       end
     end
     row
+  end
+
+  private
+
+  # Live callbacks carry a RubyLLM::Message whose model is the provider ID.
+  # The persisted fallback carries the application's Message record, whose
+  # compatibility association is not RubyLLM 2's attempt identity. Convert it
+  # back to the public message value so model and tokens both come from usage.
+  def receipt_for(message)
+    message = message.to_llm if message.is_a?(ActiveRecord::Base)
+    model = message.model
+    { "model" => model, "input_tokens" => message.tokens.input.to_i,
+      "output_tokens" => message.tokens.output.to_i, "cached_tokens" => message.tokens.cache_read.to_i,
+      "cache_creation_tokens" => message.tokens.cache_write.to_i }
   end
 end

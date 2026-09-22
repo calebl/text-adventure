@@ -9,6 +9,4 @@ RubyLLM.configure do |config|
   # Net::ReadTimeout looks exactly like a broken model. Generous here; hosted
   # models return long before it matters.
   config.request_timeout = ENV.fetch("LLM_REQUEST_TIMEOUT", 600).to_i
-
-
 end

@@ -16,34 +16,29 @@ class Eval::Classifier::ToolShapesTest < ActiveSupport::TestCase
   end
 
   # THE OFFLINE, BYTE-FOR-BYTE ASSERTION the report made from the installed
-  # gem (`ruby_llm-1.16.0`): the closed set crosses the wire IDENTICALLY
-  # whether it travels as `response_format.json_schema.schema` or as
-  # `tools[0].function.parameters`. `render_payload` is a module function on
-  # the real provider code -- no chat, no HTTP, no key.
+  # gem: the closed set crosses the wire IDENTICALLY whether it travels as
+  # `response_format.json_schema.schema` or as
+  # `tools[0].function.parameters`. Both requests use the public renderer --
+  # no chat is sent and the placeholder key never reaches the network.
   test "shape B's closed set crosses the wire byte for byte the same as the schema call" do
-    # RubyLLM 2 exposes this rendering through Chat#render and provider
-    # instances; the former 1.x module function is intentionally gone. The
-    # public Chat#render envelope is covered by ruby_llm_schema_envelope_test.
-    skip "RubyLLM 2 removed the provider module renderer"
     schema = Playthrough::IntentSchema.for(%w[north south])
-    model = Struct.new(:id).new("mistralai/mistral-medium-3.1")
-
-    schema_payload = RubyLLM::Protocols::ChatCompletions::Chat.render_payload(
-      [], tools: {}, tool_prefs: {}, temperature: 0.0, model: model, schema: schema.new.to_json_schema)
-
     built = Eval::Classifier::ToolShapes.single(schema)
-    tool_payload = RubyLLM::Protocols::ChatCompletions::Chat.render_payload(
-      [], tools: built[:tools].index_by { |tool| tool.name.to_sym }, tool_prefs: { choice: built[:choice] },
-      temperature: 0.0, model: model, schema: nil)
 
-    schema_closed_set = schema_payload.dig(:response_format, :json_schema, :schema)
-    tool_closed_set = tool_payload.dig(:tools, 0, :function, :parameters)
+    with_openrouter_key do
+      schema_chat = rendered_chat.with_schema(schema)
+      tool_chat = rendered_chat.with_tools(*built[:tools]).with_tool_options(choice: built[:choice])
+      schema_payload = schema_chat.render
+      tool_payload = tool_chat.render
 
-    assert_not_nil schema_closed_set
-    assert_not_nil tool_closed_set
-    %w[type properties required additionalProperties].each do |key|
-      assert_equal schema_closed_set.fetch(key.to_sym).as_json, tool_closed_set.fetch(key).as_json,
-                   "the `#{key}` of the closed set must cross the wire identically"
+      schema_closed_set = schema_payload.dig(:response_format, :json_schema, :schema)
+      tool_closed_set = tool_payload.dig(:tools, 0, :function, :parameters)
+
+      assert_not_nil schema_closed_set
+      assert_not_nil tool_closed_set
+      %w[type properties required additionalProperties].each do |key|
+        assert_equal schema_closed_set.fetch(key.to_sym).as_json, tool_closed_set.fetch(key).as_json,
+                     "the `#{key}` of the closed set must cross the wire identically"
+      end
     end
   end
 
@@ -93,6 +88,20 @@ class Eval::Classifier::ToolShapesTest < ActiveSupport::TestCase
   end
 
   private
+
+  def rendered_chat
+    chat = RubyLLM::Chat.new(provider: :openrouter, model: "mistralai/mistral-medium-3.1", assume_model_exists: true)
+    chat.add_message(role: :user, content: "classify this line")
+    chat
+  end
+
+  def with_openrouter_key
+    original = RubyLLM.config.openrouter_api_key
+    RubyLLM.config.openrouter_api_key = "offline-test-placeholder"
+    yield
+  ensure
+    RubyLLM.config.openrouter_api_key = original
+  end
 
   def staffed_classifier
     story = create(:story)

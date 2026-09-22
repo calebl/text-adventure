@@ -162,15 +162,14 @@ class MessageTest < ActiveSupport::TestCase
     assert_equal "A road, and then the sea.", create(:message, :assistant).to_llm.content
   end
 
-  # WHY THE ENCODING HAS TO BE OURS. OpenAI's formatter JSON-encodes a raw
-  # payload; ollama's hands the Hash straight to the wire, and ollama answers
+  # WHY THE ENCODING HAS TO BE OURS. RubyLLM's chat-completions formatter
+  # hands a raw Hash straight to the wire, and ollama answers
   # `invalid message content type: map[string]interface {}`. If this ever fails,
   # the gem has fixed it and `Message#extract_content` can go.
-  test "the ollama formatter still passes a raw payload through unencoded" do
-    skip "RubyLLM 2 removed provider media formatter constants"
+  test "the chat completions formatter still passes a raw payload through unencoded" do
     raw = { "intent" => "move" }
 
+    assert_kind_of Hash, RubyLLM::Protocols::ChatCompletions::Media.format_content(raw)
     assert_kind_of Hash, RubyLLM::Providers::Ollama::Media.format_content(raw)
-    assert_kind_of String, RubyLLM::Providers::OpenAI::Media.format_content(raw)
   end
 end

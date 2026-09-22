@@ -49,8 +49,7 @@ class ChatTest < ActiveSupport::TestCase
   end
 
   # Assigning `model_id` a string still works, but it is no longer a plain
-  # column write: a before_save hook resolves it against the registry and
-  # instantiates the provider, which needs that provider to be configured.
+  # column write: a before_save hook resolves it against the registry.
   test "assigning a model name resolves it against the registry on save" do
     create(:model, model_id: "minimax/minimax-m3", provider: "openrouter", name: "MiniMax M3")
 
@@ -62,11 +61,12 @@ class ChatTest < ActiveSupport::TestCase
     end
   end
 
-  test "resolving a model name needs the provider configured" do
-    skip "RubyLLM 2 resolves registry rows without provider credentials"
-    create(:model, model_id: "minimax/minimax-m3", provider: "openrouter", name: "MiniMax M3")
+  test "resolving a registry model does not require provider credentials before a call" do
+    model = create(:model, model_id: "minimax/minimax-m3", provider: "openrouter", name: "MiniMax M3")
+    chat = Chat.create!(model_id: "minimax/minimax-m3")
 
-    assert_raises(RubyLLM::ConfigurationError) { Chat.create!(model_id: "minimax/minimax-m3") }
+    assert_equal model, chat.model
+    assert_equal "minimax/minimax-m3", chat.model_id
   end
 
   # An unsaved model name still has to exist in the registry. The table is the

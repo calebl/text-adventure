@@ -41,7 +41,7 @@ class Eval::Classifier::ToolAgent < BaseAgent
     # `ToolShapes#build_tool` from the tool's own name, which cannot be missing
     # -- so only `target`/`also_named` are checked there.
     @required_keys = @shape == :tool ? %w[intent target also_named] : %w[target also_named]
-    conversation.with_tools(*built[:tools], choice: built[:choice])
+    conversation.with_tools(*built[:tools]).with_tool_options(choice: built[:choice])
     conversation
   end
 
