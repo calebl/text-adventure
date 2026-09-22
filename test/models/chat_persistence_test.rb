@@ -52,9 +52,9 @@ class ChatPersistenceTest < ActiveSupport::TestCase
     assert_equal 9, agent.recorded_chat.output_tokens
   end
 
-  # A schema'd answer is a Hash, and RubyLLM stores it in `content_raw` with
-  # `content` left nil. Without that column every schema'd call in the app --
-  # which is all but two -- persisted an empty assistant message.
+  # A schema'd answer is a Hash, and RubyLLM 2 stores its JSON envelope in
+  # `content`. The shared reader must recover the structured value after the
+  # row is reloaded, because every schema'd call in the app depends on it.
   test "a structured answer is kept whole, not dropped" do
     agent = BaseAgent.new(purpose: "arrival", playthrough: @playthrough, model_options: OPTIONS)
 
@@ -64,7 +64,7 @@ class ChatPersistenceTest < ActiveSupport::TestCase
 
     answer = agent.recorded_chat.messages.find_by(role: "assistant")
 
-    assert_equal({ "description" => "Rain.", "summary" => "It rains." }, answer.content_raw)
+    assert_equal({ "description" => "Rain.", "summary" => "It rains." }, answer.structured_content)
     assert_match "description", answer.text
     assert_match "Rain.", answer.text
   end
