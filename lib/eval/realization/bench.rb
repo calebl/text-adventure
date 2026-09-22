@@ -363,7 +363,7 @@ class Eval::Realization::Bench
     return { answers: {}, calls: 0, input_tokens: 0, output_tokens: 0, prompts: {},
              missing_fields: [], cap_hits: [] } if chat.nil?
 
-    messages = chat.messages.includes(:model).order(:id).to_a
+    messages = chat.messages.includes(:usage_receipt).order(:id).to_a
     answered = messages.select { |message| message.role.to_s == "assistant" }
     asked = messages.select { |message| message.role.to_s == "user" }
     if retrying
@@ -375,7 +375,7 @@ class Eval::Realization::Bench
     { answers: named.each_with_index.to_h { |call, index| [ call, raw_answer(answered[index]) ] }.compact,
       prompts: named.each_with_index.to_h { |call, index| [ call, asked[index]&.content ] }.compact,
       calls: answered.size,
-      answered_by: answered.last&.model&.model_id,
+      answered_by: answered.last&.answering_model_id,
       input_tokens: messages.sum { |message| message.input_tokens.to_i },
       output_tokens: messages.sum { |message| message.output_tokens.to_i },
       instructions: messages.find { |message| message.role.to_s == "system" }&.content,

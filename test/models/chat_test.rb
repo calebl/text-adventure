@@ -173,8 +173,12 @@ class ChatTest < ActiveSupport::TestCase
   test "reports what the conversation cost and which model actually answered" do
     ollama = create(:model, :ollama)
     chat = create(:chat, model: ollama)
-    create(:message, chat: chat, input_tokens: 100, output_tokens: 0)
-    create(:message, :assistant, chat: chat, model: ollama, input_tokens: 0, output_tokens: 25)
+    create(:message, chat: chat, input_tokens: nil, output_tokens: nil)
+    answer = create(:message, :assistant, chat: chat, model: nil, input_tokens: nil, output_tokens: nil)
+    RubyLLM::ActiveRecord::Usage.create!(
+      chat: chat, message: answer, operation: "chat", provider: "ollama", model: ollama.model_id,
+      status: "succeeded", input_tokens: 100, output_tokens: 25
+    )
 
     assert_equal 100, chat.input_tokens
     assert_equal 25, chat.output_tokens

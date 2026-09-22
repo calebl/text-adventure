@@ -354,7 +354,7 @@ class Playthrough::Exporter
   end
 
   def conversations_document(_turn_keys)
-    playthrough.chats.includes(:character, messages: :model).order(:id).map do |chat|
+    playthrough.chats.includes(:character, messages: :usage_receipt).order(:id).map do |chat|
       {
         "purpose" => chat.purpose,
         "character" => chat.character&.fullname,
@@ -362,7 +362,7 @@ class Playthrough::Exporter
           {
             "role" => message.role.to_s,
             "turn" => turn_keys_by_scene_id[message.scene_id],
-            "model" => message.model&.model_id,
+            "model" => message.answering_model_id,
             "input_tokens" => message.input_tokens,
             "output_tokens" => message.output_tokens,
             "content" => message.content,

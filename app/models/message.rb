@@ -11,12 +11,22 @@ class Message < ApplicationRecord
   # debug and cost views still read the persisted registry row.
   belongs_to :model, class_name: "RubyLLM::ActiveRecord::Model", foreign_key: :model_id, optional: true
   belongs_to :scene, optional: true
+  has_one :usage_receipt, -> { where(operation: "chat", status: "succeeded").order(id: :desc) },
+          as: :message, class_name: "RubyLLM::ActiveRecord::Usage"
 
   # MessageMethods#model returns only the model id in RubyLLM 2; callers here
   # need the registry record for existing debug and accounting views.
-  def model = association(:model).reader
-  def cache_read_tokens = nil
-  def cache_write_tokens = nil
+  def model
+    receipt = usage_receipt
+    return association(:model).reader unless receipt
+
+    RubyLLM::ActiveRecord::Model.find_by(provider: receipt.provider, model_id: receipt.model)
+  end
+
+  def input_tokens = usage_receipt&.input_tokens || self[:input_tokens]
+  def output_tokens = usage_receipt&.output_tokens || self[:output_tokens]
+  def cache_read_tokens = usage_receipt&.cache_read_tokens
+  def cache_write_tokens = usage_receipt&.cache_write_tokens
   def tool_calls = ruby_llm_tool_calls
   def parent_tool_call = ruby_llm_parent_tool_call
   def parent_tool_call=(tool_call)
@@ -35,7 +45,7 @@ class Message < ApplicationRecord
   # Which model wrote this. Only ever set on an assistant message -- a prompt is
   # not written by a model -- and it is the honest answer to "which model
   # actually answered", because `BaseAgent` rotates mid-conversation.
-  def answering_model_id = model&.model_id || model_id_string
+  def answering_model_id = usage_receipt&.model || model&.model_id || model_id_string
 
   private
 

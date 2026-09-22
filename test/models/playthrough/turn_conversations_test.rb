@@ -52,9 +52,9 @@ class Playthrough::TurnConversationsTest < ActiveSupport::TestCase
   test "the turn's cost and the model that answered are both recorded" do
     scene = play("look at the awnings", CLASSIFY_OTHER, OfflineExchange.reply("Canvas.", input: 90, output: 12))
 
-    assert_equal 210, scene.messages.sum(:input_tokens), "120 to classify, 90 to narrate"
-    assert_equal 52, scene.messages.sum(:output_tokens)
-    assert_equal [ "gemma3:12b" ], scene.messages.filter_map { |message| message.model&.model_id }.uniq
+    assert_equal 210, scene.messages.sum { |message| message.input_tokens.to_i }, "120 to classify, 90 to narrate"
+    assert_equal 52, scene.messages.sum { |message| message.output_tokens.to_i }
+    assert_equal [ "gemma3:12b" ], scene.messages.filter_map(&:answering_model_id).uniq
   end
 
   # The command is in the classifier's prompt, which runs on every turn -- so a

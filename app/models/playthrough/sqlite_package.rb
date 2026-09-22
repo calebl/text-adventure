@@ -125,7 +125,8 @@ class Playthrough::SqlitePackage
     quest_ids = story.quests.order(:id).pluck(:id)
     chat_ids = playthrough.chats.order(:id).pluck(:id)
     message_ids = message_ids_for(connection, chat_ids)
-    model_ids = model_ids_for(connection, message_ids)
+    usage_rows = usage_rows_for(connection, chat_ids, message_ids)
+    model_ids = model_ids_for(connection, chat_ids, message_ids, usage_rows)
     template_ids = Item.in_story(story).templates.order(:id).pluck(:id)
     playthrough_item_ids = playthrough.items.order(:id).pluck(:id)
     mechanic_ids = story.world_mechanics.order(:id).pluck(:id)
@@ -153,10 +154,11 @@ class Playthrough::SqlitePackage
       "playthrough_tables" => PLAYTHROUGH_TABLES.to_h do |table|
         [ table, rows_where(connection, table, "playthrough_id", [ playthrough.id ]) ]
       end,
-      "models" => rows_by_id(connection, "models", model_ids),
+      "ruby_llm_models" => rows_by_id(connection, "ruby_llm_models", model_ids),
       "chats" => rows_by_id(connection, "chats", chat_ids),
       "messages" => rows_by_id(connection, "messages", message_ids),
-      "tool_calls" => rows_where(connection, "tool_calls", "message_id", message_ids)
+      "ruby_llm_tool_calls" => polymorphic_rows(connection, "ruby_llm_tool_calls", "message", message_ids),
+      "ruby_llm_usages" => usage_rows
     }
   end
 
@@ -168,13 +170,56 @@ class Playthrough::SqlitePackage
     )
   end
 
-  def model_ids_for(connection, message_ids)
-    return [] if message_ids.empty?
+  def model_ids_for(connection, chat_ids, message_ids, usage_rows)
+    chat_model_ids = if chat_ids.empty?
+      []
+    else
+      connection.select_values(
+        "SELECT DISTINCT ruby_llm_model_id FROM chats WHERE id IN (#{quoted_list(connection, chat_ids)}) " \
+        "AND ruby_llm_model_id IS NOT NULL ORDER BY ruby_llm_model_id"
+      )
+    end
+    legacy_ids = if message_ids.empty?
+      []
+    else
+      connection.select_values(
+        "SELECT DISTINCT model_id FROM messages WHERE id IN (#{quoted_list(connection, message_ids)}) " \
+        "AND model_id IS NOT NULL ORDER BY model_id"
+      )
+    end
+    pairs = usage_rows.filter_map do |usage|
+      [ usage["provider"], usage["model"] ] if usage["provider"].present? && usage["model"].present?
+    end.uniq
+    return (chat_model_ids + legacy_ids).uniq if pairs.empty?
 
-    connection.select_values(
-      "SELECT DISTINCT model_id FROM messages WHERE id IN (#{quoted_list(connection, message_ids)}) " \
-      "AND model_id IS NOT NULL ORDER BY model_id"
+    pair_conditions = pairs.map do |provider, model|
+      "(provider = #{connection.quote(provider)} AND model_id = #{connection.quote(model)})"
+    end
+    receipt_ids = connection.select_values(
+      "SELECT id FROM ruby_llm_models WHERE #{pair_conditions.join(" OR ")} ORDER BY id"
     )
+    (chat_model_ids + legacy_ids + receipt_ids).uniq
+  end
+
+  def usage_rows_for(connection, chat_ids, message_ids)
+    conditions = []
+    conditions << "(chat_type = 'Chat' AND chat_id IN (#{quoted_list(connection, chat_ids)}))" if chat_ids.any?
+    conditions << "(message_type = 'Message' AND message_id IN (#{quoted_list(connection, message_ids)}))" if message_ids.any?
+    return [] if conditions.empty?
+
+    connection.exec_query(
+      "SELECT * FROM ruby_llm_usages WHERE #{conditions.join(" OR ")} ORDER BY id"
+    ).to_a
+  end
+
+  def polymorphic_rows(connection, table, association, ids)
+    ids = Array(ids).compact.uniq
+    return [] if ids.empty?
+
+    connection.exec_query(
+      "SELECT * FROM #{table} WHERE #{association}_type = #{connection.quote("Message")} " \
+      "AND #{association}_id IN (#{quoted_list(connection, ids)}) ORDER BY id"
+    ).to_a
   end
 
   def world_event_ids_for(connection, mechanic_ids)
@@ -290,10 +335,11 @@ class Playthrough::SqlitePackage
       bundle["playthrough_tables"].each do |table, rows|
         insert_table(connection, table, rows)
       end
-      insert_table(connection, "models", bundle["models"])
+      insert_table(connection, "ruby_llm_models", bundle["ruby_llm_models"])
       insert_table(connection, "chats", bundle["chats"])
       insert_table(connection, "messages", bundle["messages"])
-      insert_table(connection, "tool_calls", bundle["tool_calls"])
+      insert_table(connection, "ruby_llm_tool_calls", bundle["ruby_llm_tool_calls"])
+      insert_table(connection, "ruby_llm_usages", bundle["ruby_llm_usages"])
       connection.execute("PRAGMA foreign_keys = ON")
       # Compact before gzip: freelist pages compress poorly and cost bytes on
       # the evidence file for nothing.

@@ -66,9 +66,9 @@ module OfflineExchange
     Chat.define_method(:ask, original)
   end
 
-  # Writes the assistant message the way `RubyLLM::ActiveRecord::ChatMethods`
-  # does -- prose in `content`, a structured answer in `content_raw`, tokens and
-  # the answering model on the row -- and returns what `Chat#ask` returns.
+  # Writes the assistant message and its usage receipt the way
+  # `RubyLLM::ActiveRecord::ChatMethods` does, then returns what `Chat#ask`
+  # returns.
   def self.answering_model(chat)
     RubyLLM::ActiveRecord::Model.find_or_create_by!(model_id: chat.model_id, provider: "ollama") do |model|
       model.name = chat.model_id
@@ -79,14 +79,16 @@ module OfflineExchange
     content = answer.content
     structured = content.is_a?(Hash) || content.is_a?(Array)
 
-    chat.messages.create!(
+    message = chat.messages.create!(
       role: "assistant",
       content: structured ? nil : content,
-      content_raw: structured ? content : nil,
-      input_tokens: answer.input_tokens,
-      output_tokens: answer.output_tokens,
-      model_id: answering_model(chat).id,
-      model_id_string: chat.model_id
+      content_raw: structured ? content : nil
+    )
+    model = answering_model(chat)
+    RubyLLM::ActiveRecord::Usage.create!(
+      chat: chat, message: message, operation: "chat", provider: model.provider,
+      model: model.model_id, status: "succeeded", input_tokens: answer.input_tokens,
+      output_tokens: answer.output_tokens
     )
 
     content.to_s.scan(/\S+\s*/) { |part| yield Chunk.new(part) } if block_given? && !structured

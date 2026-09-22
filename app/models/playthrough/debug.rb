@@ -80,7 +80,7 @@ class Playthrough::Debug
     def durable? = chat.purpose == Chat::CHARACTER
     def input_tokens = messages.sum { |message| message.input_tokens.to_i }
     def output_tokens = messages.sum { |message| message.output_tokens.to_i }
-    def models = messages.filter_map { |message| message.model&.model_id }.uniq
+    def models = messages.filter_map(&:answering_model_id).uniq
 
     def sent = messages.select { |message| message.role.to_s == "user" }
     def answers = messages.select { |message| message.role.to_s == "assistant" }

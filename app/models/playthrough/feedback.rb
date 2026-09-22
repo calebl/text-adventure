@@ -127,7 +127,7 @@ class Playthrough::Feedback < ApplicationRecord
   # and lost them. `#receipts_kept?` tells a reader which of those they are
   # looking at, and the view says so rather than showing a blank.
   def self.provenance_for(scene)
-    messages = scene.messages.includes(:model, :chat).sort_by(&:id)
+    messages = scene.messages.includes(:usage_receipt, :chat).sort_by(&:id)
     answered = messages.select { |message| message.role.to_s == "assistant" }
     prose = answered.select { |message| PROSE_PURPOSES.include?(message.chat&.purpose) }
     # The LAST prose answer on the turn, because an arrival realizes the room
@@ -136,7 +136,7 @@ class Playthrough::Feedback < ApplicationRecord
     kept = prose.last
 
     {
-      prose_model: kept&.model&.model_id,
+      prose_model: kept&.answering_model_id,
       prose_purpose: kept&.chat&.purpose,
       # AND WHICH VERSION OF THE PROMPT IT WROTE UNDER, beside which model wrote
       # it, so his verdicts group by prompt as well as by model -- the
@@ -159,7 +159,7 @@ class Playthrough::Feedback < ApplicationRecord
   # keeps the set that was on the table: this is read by a person and grouped in
   # Ruby, and `#answering_model_ids` is the inverse.
   def self.model_ids(messages)
-    messages.filter_map { |message| message.model&.model_id }.uniq.join(", ")
+    messages.filter_map(&:answering_model_id).uniq.join(", ")
   end
   private_class_method :model_ids
 

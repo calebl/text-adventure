@@ -109,8 +109,8 @@ class ChatPersistenceTest < ActiveSupport::TestCase
       agent.attribute_to!(scene)
     end
 
-    assert_equal 25, first.messages.sum(:output_tokens)
-    assert_equal 25, second.messages.sum(:output_tokens)
+    assert_equal 25, first.messages.sum { |message| message.output_tokens.to_i }
+    assert_equal 25, second.messages.sum { |message| message.output_tokens.to_i }
     assert_equal 1, @playthrough.chats.durable.count, "one conversation, two turns"
   end
 

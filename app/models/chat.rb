@@ -151,13 +151,13 @@ class Chat < ApplicationRecord
   end
 
   # What this conversation has cost, as far as the provider reported it.
-  def input_tokens = messages.sum(:input_tokens)
-  def output_tokens = messages.sum(:output_tokens)
+  def input_tokens = messages.includes(:usage_receipt).sum { |message| message.input_tokens.to_i }
+  def output_tokens = messages.includes(:usage_receipt).sum { |message| message.output_tokens.to_i }
 
   # Which model actually answered. The chat's own `model_id` is what it was
   # pointed at; this is what replied, which differs the moment `BaseAgent`
   # rotates past a model that failed.
   def answering_model_ids
-    messages.where(role: "assistant").filter_map { |message| message.model&.model_id }.uniq
+    messages.where(role: "assistant").includes(:usage_receipt).filter_map(&:answering_model_id).uniq
   end
 end

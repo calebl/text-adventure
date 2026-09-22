@@ -34,6 +34,21 @@ class MessageTest < ActiveSupport::TestCase
     assert_equal 17, message.output_tokens
   end
 
+  test "reads model and token accounting from the RubyLLM usage receipt" do
+    message = create(:message, :assistant, model: nil, input_tokens: nil, output_tokens: nil)
+    RubyLLM::ActiveRecord::Usage.create!(
+      chat: message.chat, message: message, operation: "chat", provider: "ollama",
+      model: "gemma3:12b", status: "succeeded", input_tokens: 84,
+      output_tokens: 23, cache_read_tokens: 11, cache_write_tokens: 7
+    )
+
+    assert_equal 84, message.input_tokens
+    assert_equal 23, message.output_tokens
+    assert_equal 11, message.cache_read_tokens
+    assert_equal 7, message.cache_write_tokens
+    assert_equal "gemma3:12b", message.answering_model_id
+  end
+
   # RubyLLM 1.15 renormalised token accounting: `input_tokens` no longer folds
   # in prompt cache reads and writes, which are exposed separately. Nothing in
   # this app reads token counts, and there are no columns backing the cache
@@ -54,13 +69,14 @@ class MessageTest < ActiveSupport::TestCase
   # association -- another thing the acts_as migration made possible.
   test "costs the exchange from the registry's pricing" do
     message = create(:message, :assistant)
+    model = message.model
     RubyLLM::ActiveRecord::Usage.create!(
-      chat: message.chat, message: message, operation: "chat", provider: "ollama",
-      model: message.model.model_id, status: "succeeded", input_tokens: 42,
+      chat: message.chat, message: message, operation: "chat", provider: model.provider,
+      model: model.model_id, status: "succeeded", input_tokens: 42,
       output_tokens: 17, total_cost: 0.01
     )
 
-    assert_operator message.cost.total, :>, 0
+    assert_operator message.reload.cost.total, :>, 0
   end
 
   test "has many tool calls" do
