@@ -484,6 +484,7 @@ class BaseAgent
     return if mark.nil? || recorded_chat.nil?
 
     recorded_chat.messages.where("id > ?", mark).destroy_all
+    recorded_chat.reload
   end
 
   # What this agent has written, so `#attribute_to!` can find it later.

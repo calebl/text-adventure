@@ -172,6 +172,38 @@ class BaseAgentTest < ActiveSupport::TestCase
     assert_equal 2, chat.attempts
   end
 
+  test "retry removes a rejected tool call from persisted and in-memory history" do
+    models = OPTIONS.first(2).map do |option|
+      create(:model, :ollama, model_id: option.fetch(:model), name: option.fetch(:model))
+    end
+    chat = create(:chat, model: models.first, purpose: "classifier")
+    agent = Eval::Classifier::ToolAgent.new(shape: :tool, model_options: OPTIONS.first(2), chat: chat)
+             .with_schema(Playthrough::IntentSchema.for(%w[north]))
+    attempts = 0
+    chat.define_singleton_method(:ask) do |prompt|
+      attempts += 1
+      if attempts == 2 && to_llm.messages.any?(&:tool_call?)
+        raise RubyLLM::PendingToolCallsError, "rejected tool call remained pending"
+      end
+
+      add_message(role: :user, content: prompt)
+      arguments = { "intent" => "move", "target" => "north" }
+      arguments["also_named"] = "nothing" if attempts == 2
+      call = RubyLLM::ToolCall.new(id: "call-#{attempts}", name: "player_intent", arguments: arguments)
+      response = RubyLLM::Message.new(role: :assistant, content: nil,
+                                      tool_calls: { call.id => call }, finish_reason: :tool_calls)
+      add_message(response)
+      response
+    end
+
+    answer = agent.ask("go north")
+
+    assert_equal 2, attempts
+    assert_equal "nothing", answer.content.fetch("also_named")
+    assert_equal %w[user assistant], chat.reload.messages.order(:id).pluck(:role)
+    assert_equal [ "call-2" ], chat.messages.last.ruby_llm_tool_calls.pluck(:tool_call_id)
+  end
+
   test "ask raises once the attempts are exhausted" do
     agent = build_agent
     chat = FlakyChat.new(failures: 99)
@@ -374,7 +406,7 @@ class BaseAgentTest < ActiveSupport::TestCase
 
     assert_equal %w[system user assistant], chat.messages.reorder(:id).pluck(:role),
                  "the truncated exchange is not left in a conversation that gets picked up again"
-    assert_equal({ "pre_thought" => "Say something." }, chat.messages.find_by(role: "assistant").content_raw)
+    assert_equal({ "pre_thought" => "Say something." }, chat.messages.find_by(role: "assistant").structured_content)
   end
 
   # --- what persistence must not break --------------------------------------
@@ -401,8 +433,8 @@ class BaseAgentTest < ActiveSupport::TestCase
     assert_equal %w[system user assistant], chat.messages.reorder(:id).pluck(:role),
                  "the rejected attempt left nothing behind"
     assert_equal 1, chat.messages.where(role: "user").count, "the prompt was not asked twice"
-    assert_nil chat.messages.find_by(role: "assistant").content_raw&.dig("nope")
-    assert_equal({ "intent" => "move" }, chat.messages.find_by(role: "assistant").content_raw)
+    assert_nil chat.messages.find_by(role: "assistant").structured_content&.dig("nope")
+    assert_equal({ "intent" => "move" }, chat.messages.find_by(role: "assistant").structured_content)
   end
 
   test "a call that never succeeds leaves the conversation as it found it" do
