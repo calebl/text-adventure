@@ -79,7 +79,7 @@ module OfflineExchange
       content_raw: structured ? content : nil,
       input_tokens: answer.input_tokens,
       output_tokens: answer.output_tokens,
-      model: chat.model
+      model_id_string: chat.model_id
     )
 
     content.to_s.scan(/\S+\s*/) { |part| yield Chunk.new(part) } if block_given? && !structured

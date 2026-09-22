@@ -149,7 +149,7 @@ class BaseAgentTest < ActiveSupport::TestCase
   end
 
   # RubyLLM::Chat#with_model takes the id positionally and spells the flag
-  # `assume_exists`, so the MODEL_OPTIONS hash cannot be splatted into it.
+  # `assume_model_exists`, so the MODEL_OPTIONS hash cannot be splatted into it.
   test "with_model translates option keys for RubyLLM" do
     agent = build_agent
     chat = RecordingChat.new
@@ -157,7 +157,7 @@ class BaseAgentTest < ActiveSupport::TestCase
 
     agent.with_model(provider: :openrouter, model: "vendor/model", assume_model_exists: true)
 
-    assert_equal [ "vendor/model", { provider: :openrouter, assume_exists: true } ], chat.with_model_call
+    assert_equal [ "vendor/model", { provider: :openrouter, assume_model_exists: true } ], chat.with_model_call
   end
 
   test "ask rotates to the next model and retries when a call fails" do

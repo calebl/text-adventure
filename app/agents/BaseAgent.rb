@@ -379,7 +379,7 @@ class BaseAgent
   # Only ever applied to a chat that exists: a fresh one is built pointed at
   # `current_model` already, so rotating before the first ask has nothing to say.
   def with_model(model:, provider: nil, assume_model_exists: false)
-    @chat&.with_model(model, provider: provider, assume_exists: assume_model_exists)
+    @chat&.with_model(model, provider: provider, assume_model_exists: assume_model_exists)
     self
   end
 
