@@ -95,9 +95,9 @@ class BaseAgent
   # when a call fails.
   #
   # `assume_model_exists` is required, not optional: an ollama model is pulled
-  # onto the machine and listed by `ollama list`, and is in neither the registry
-  # the gem ships nor the `models` table seeded from it. Without the flag a
-  # local-only run -- no OPENROUTER_API_KEY -- raised
+  # onto the machine and listed by `ollama list`, and is in neither the
+  # registry the gem ships nor the `ruby_llm_models` table seeded from it.
+  # Without the flag a local-only run -- no OPENROUTER_API_KEY -- raised
   # `RubyLLM::ModelNotFoundError` before it ever reached ollama, so every one of
   # these entries was unreachable. Keep the list matching what is actually
   # pulled: nothing validates these names now except ollama itself.
@@ -312,7 +312,7 @@ class BaseAgent
       conversation = chat
       mark = conversation_mark
       response = conversation.ask(prompt, &block)
-      expose_parsed_schema_content!(response)
+      response = expose_parsed_schema_content(response)
       verify_schema_honored!(response)
       # CRISIS BEFORE REFUSAL, and the order IS the decision rather than a
       # style choice. One response can be both -- the corpus has a resource
@@ -430,12 +430,11 @@ class BaseAgent
   # changing all of those public seams would be wider than this provider
   # upgrade. Normalize only schema'd replies at our one model-call boundary;
   # prose (including the streaming narrator) remains the original String.
-  def expose_parsed_schema_content!(response)
+  def expose_parsed_schema_content(response)
     return response if @schema.nil? || !response.content.is_a?(String) || !response.respond_to?(:parsed)
 
     content = response.parsed
-    response.define_singleton_method(:content) { content }
-    response
+    response.dup.tap { _1.define_singleton_method(:content) { content } }
   end
 
   # A conversation is a row, and this is where it becomes one: pointed at

@@ -95,7 +95,8 @@ class BaseAgentTest < ActiveSupport::TestCase
 
   # WAS A BUG, and it made every local entry unreachable. An ollama model is
   # pulled onto the machine and is in neither the bundled registry nor the
-  # `models` table, so without the flag a run with no OPENROUTER_API_KEY raised
+  # `ruby_llm_models` table, so without the flag a run with no
+  # OPENROUTER_API_KEY raised
   # RubyLLM::ModelNotFoundError before it ever reached ollama.
   test "local models are marked as assumed to exist too" do
     assert BaseAgent::LOCAL_MODEL_OPTIONS.all? { |option| option[:assume_model_exists] },
@@ -278,6 +279,8 @@ class BaseAgentTest < ActiveSupport::TestCase
     agent.instance_variable_set(:@schema, Object.new)
 
     assert_equal({ "name" => "Silas" }, agent.ask("hello").content)
+    assert_equal JSON.generate(name: "Silas"), response.content,
+                 "the persisted response must stay wire-safe when a verifier triggers a retry"
   end
 
   test "ask leaves prose alone when no schema was requested" do

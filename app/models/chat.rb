@@ -79,7 +79,7 @@ class Chat < ApplicationRecord
   #   messages + chats, on disk       4.16 KB per turn
   #   => 100 turns                    0.41 MB
   #   => 1,000 turns                  4.1 MB
-  #   `models`, which SHIPS with the app   912 KB (1,166 rows)
+  #   `ruby_llm_models`, which SHIPS with the app   912 KB (1,166 rows)
   #
   # So the registry the app installs with outweighs a 200-turn playthrough's
   # entire audit trail, and a thousand-turn game costs four megabytes. The trail

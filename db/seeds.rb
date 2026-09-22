@@ -8,10 +8,9 @@
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
 
-# RubyLLM's model registry lives in the `ruby_llm_models` table, and RubyLLM
-# resolves model names out of that table rather than the
-# gem's bundled models.json. An empty table resolves nothing -- there is no
-# fallback -- so seeding it is not optional for a working app.
+# Persist RubyLLM's bundled model registry in `ruby_llm_models`. RubyLLM 2 can
+# resolve from its bundled registry when this table is empty, but application
+# pricing and evaluation read the persisted rows directly.
 #
 # Offline: reads the registry the gem ships with. No API key, no network.
 if defined?(RubyLLM)
