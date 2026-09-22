@@ -28,15 +28,16 @@ class Eval::Inscription::BenchTest < ActiveSupport::TestCase
   end
 
   test "real writer makes one call persists both layers and keeps rejected receipts" do
-    skip "RubyLLM 2 requires provider structured-response metadata unavailable to this offline stub"
     Model.create!(model_id: MODEL, name: MODEL, provider: "openrouter", capabilities: [ "structured_output" ])
     arm = Eval::Classifier::Arm.parse(MODEL)
     kase = Eval::Inscription.cases.first
     [ "The office will reopen at dawn.", "x" * Item::INSCRIPTION_LIMIT ].each do |words|
       arm.pinned do
         Eval::Inscription.stage(kase) do |inscriber|
-          response = RubyLLM::Message.new(role: :assistant, content: { inscription: words },
-                                          model_id: MODEL, input_tokens: 100, output_tokens: 20)
+          response = Struct.new(:role, :content, :model, :input_tokens, :output_tokens, :tokens).new(
+            :assistant, { inscription: words }, MODEL, 100, 20,
+            RubyLLM::Tokens.new(input: 100, output: 20)
+          )
           llm = inscriber.agent.chat.to_llm
           calls = 0
           llm.stub(:provider_completion, ->(**_args) { calls += 1; response }) do
