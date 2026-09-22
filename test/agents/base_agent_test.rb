@@ -414,7 +414,7 @@ class BaseAgentTest < ActiveSupport::TestCase
     chat = agent.chat
     chat.define_singleton_method(:ask) do |message = nil, **_options, &_block|
       add_message(role: :user, content: message)
-      raise RubyLLM::UnauthorizedError.new(nil, "Missing Authentication header")
+      raise RubyLLM::UnauthorizedError.new("Missing Authentication header")
     end
 
     rotations = 0
@@ -662,7 +662,7 @@ class BaseAgentTest < ActiveSupport::TestCase
 
     def ask(_prompt)
       @attempts += 1
-      raise RubyLLM::UnauthorizedError.new(nil, "Missing Authentication header")
+      raise RubyLLM::UnauthorizedError.new("Missing Authentication header")
     end
   end
 
@@ -692,7 +692,7 @@ class BaseAgentTest < ActiveSupport::TestCase
 
     def ask(_prompt)
       @attempts += 1
-      raise RubyLLM::Error.new(nil, "boom") if @attempts <= @failures
+      raise RubyLLM::Error.new("boom") if @attempts <= @failures
 
       Struct.new(:content).new(@content)
     end

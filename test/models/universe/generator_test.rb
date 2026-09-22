@@ -122,7 +122,7 @@ class Universe::GeneratorTest < ActiveSupport::TestCase
     failing = Object.new
     def failing.with_instructions(_) = self
     def failing.with_schema(_) = self
-    def failing.ask(_) = raise(RubyLLM::Error.new(nil, "boom"))
+    def failing.ask(_) = raise(RubyLLM::Error.new("boom"))
 
     assert_raises(RubyLLM::Error) { generate_with(failing) }
   end
