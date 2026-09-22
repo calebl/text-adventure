@@ -38,8 +38,8 @@ ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: path, time
 ActiveRecord::Schema.verbose = false
 load Rails.root.join("db/schema.rb")
 
-RubyLLM.models.load_from_json!
-Model.save_to_database
+RubyLLM.models.load_from_json
+RubyLLM::ActiveRecord::Model.save_to_database
 stories = WorldSeed::Loader.load_all(io: nil)
 
 missing = Eval::STORIES - stories.map(&:title)

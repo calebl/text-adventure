@@ -47,7 +47,7 @@ class Eval::BaseTest < ActiveSupport::TestCase
       build_usable(path, tables: [ "junk" ])
 
       assert_operator File.size(path), :>, 0, "the fixture is a real SQLite file, not an empty one"
-      assert_equal "it has no stories or models table", Eval::Base.unusable_reason(path)
+      assert_equal "it has no stories or ruby_llm_models table", Eval::Base.unusable_reason(path)
     end
   end
 
@@ -56,7 +56,7 @@ class Eval::BaseTest < ActiveSupport::TestCase
       path = directory.join("base.sqlite3")
       build_usable(path, tables: [ "stories" ])
 
-      assert_equal "it has no models table", Eval::Base.unusable_reason(path)
+      assert_equal "it has no ruby_llm_models table", Eval::Base.unusable_reason(path)
     end
   end
 

@@ -32,7 +32,7 @@ module Eval
     # real failure named, and `models` IS the RubyLLM registry since the
     # `acts_as` migration -- nothing resolves a model without it, so a base with
     # one and not the other is no more usable than an empty one.
-    REQUIRED_TABLES = %w[stories models].freeze
+    REQUIRED_TABLES = %w[stories ruby_llm_models].freeze
 
     # WHY THE BASE AT `path` CANNOT BE USED, or nil when it can.
     def self.unusable_reason(path)
