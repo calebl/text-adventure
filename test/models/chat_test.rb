@@ -49,8 +49,7 @@ class ChatTest < ActiveSupport::TestCase
   end
 
   # Assigning `model_id` a string still works, but it is no longer a plain
-  # column write: a before_save hook resolves it against the registry and
-  # instantiates the provider, which needs that provider to be configured.
+  # column write: a before_save hook resolves it against the registry.
   test "assigning a model name resolves it against the registry on save" do
     create(:model, model_id: "minimax/minimax-m3", provider: "openrouter", name: "MiniMax M3")
 
@@ -62,10 +61,12 @@ class ChatTest < ActiveSupport::TestCase
     end
   end
 
-  test "resolving a model name needs the provider configured" do
-    create(:model, model_id: "minimax/minimax-m3", provider: "openrouter", name: "MiniMax M3")
+  test "resolving a registry model does not require provider credentials before a call" do
+    model = create(:model, model_id: "minimax/minimax-m3", provider: "openrouter", name: "MiniMax M3")
+    chat = Chat.create!(model_id: "minimax/minimax-m3")
 
-    assert_raises(RubyLLM::ConfigurationError) { Chat.create!(model_id: "minimax/minimax-m3") }
+    assert_equal model, chat.model
+    assert_equal "minimax/minimax-m3", chat.model_id
   end
 
   # An unsaved model name still has to exist in the registry. The table is the
@@ -172,12 +173,38 @@ class ChatTest < ActiveSupport::TestCase
   test "reports what the conversation cost and which model actually answered" do
     ollama = create(:model, :ollama)
     chat = create(:chat, model: ollama)
-    create(:message, chat: chat, input_tokens: 100, output_tokens: 0)
-    create(:message, :assistant, chat: chat, model: ollama, input_tokens: 0, output_tokens: 25)
+    create(:message, chat: chat, input_tokens: nil, output_tokens: nil)
+    answer = create(:message, :assistant, chat: chat, model: nil, input_tokens: nil, output_tokens: nil)
+    RubyLLM::ActiveRecord::Usage.create!(
+      chat: chat, message: answer, operation: "chat", provider: "ollama", model: ollama.model_id,
+      status: "succeeded", input_tokens: 100, output_tokens: 25
+    )
 
     assert_equal 100, chat.input_tokens
     assert_equal 25, chat.output_tokens
     assert_equal [ "gemma3:12b" ], chat.answering_model_ids
+  end
+
+  test "token totals load usage for all messages in one query" do
+    ollama = create(:model, :ollama)
+    chat = create(:chat, model: ollama)
+    3.times do
+      answer = create(:message, :assistant, chat: chat, input_tokens: nil, output_tokens: nil)
+      RubyLLM::ActiveRecord::Usage.create!(
+        chat: chat, message: answer, operation: "chat", provider: "ollama", model: ollama.model_id,
+        status: "succeeded", input_tokens: 100, output_tokens: 25
+      )
+    end
+    selects = []
+    callback = lambda do |_name, _start, _finish, _id, payload|
+      selects << payload.fetch(:sql) if !payload[:cached] && payload.fetch(:sql).match?(/\A\s*SELECT/i)
+    end
+
+    ActiveRecord::Base.connection.uncached do
+      ActiveSupport::Notifications.subscribed(callback, "sql.active_record") { assert_equal 300, chat.input_tokens }
+    end
+
+    assert_equal 2, selects.size
   end
 
   private

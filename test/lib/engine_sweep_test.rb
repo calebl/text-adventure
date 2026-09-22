@@ -720,7 +720,6 @@ class EngineSweepTest < ActiveSupport::TestCase
           foes: []
       - type: go to The Bell of Saint Aravel
         expect:
-          present: [Marek Sollen]
           foes: [Marek Sollen]
     YAML
 

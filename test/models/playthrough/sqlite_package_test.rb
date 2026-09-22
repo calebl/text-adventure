@@ -29,6 +29,14 @@ class Playthrough::SqlitePackageTest < ActiveSupport::TestCase
                                  status: "completed", result_scene: opening_scene)
     create(:item, :lying, name: "brass key", location: @opening, playthrough: nil)
     create(:item, :carried, name: "brass key", playthrough: @playthrough, location: nil, character: nil)
+    model = create(:model, :ollama)
+    chat = create(:chat, playthrough: @playthrough, model: model)
+    answer = create(:message, :assistant, chat: chat, model: nil, input_tokens: nil, output_tokens: nil)
+    create(:tool_call, message: answer)
+    RubyLLM::ActiveRecord::Usage.create!(
+      chat: chat, message: answer, operation: "chat", provider: model.provider,
+      model: model.model_id, status: "succeeded", input_tokens: 120, output_tokens: 40
+    )
   end
 
   teardown do
@@ -42,6 +50,17 @@ class Playthrough::SqlitePackageTest < ActiveSupport::TestCase
         connection.execute("DELETE FROM #{table} WHERE playthrough_id = #{@playthrough.id}")
       end
       connection.execute("DELETE FROM items WHERE playthrough_id = #{@playthrough.id}")
+      chat_ids = connection.select_values("SELECT id FROM chats WHERE playthrough_id = #{@playthrough.id}")
+      if chat_ids.any?
+        list = chat_ids.join(",")
+        message_ids = connection.select_values("SELECT id FROM messages WHERE chat_id IN (#{list})")
+        connection.execute("DELETE FROM ruby_llm_usages WHERE chat_type = 'Chat' AND chat_id IN (#{list})")
+        if message_ids.any?
+          message_list = message_ids.join(",")
+          connection.execute("DELETE FROM ruby_llm_tool_calls WHERE message_type = 'Message' AND message_id IN (#{message_list})")
+          connection.execute("DELETE FROM messages WHERE id IN (#{message_list})")
+        end
+      end
       connection.execute("DELETE FROM chats WHERE playthrough_id = #{@playthrough.id}")
       connection.execute("DELETE FROM playthroughs WHERE id = #{@playthrough.id}")
     end
@@ -92,6 +111,12 @@ class Playthrough::SqlitePackageTest < ActiveSupport::TestCase
       assert_equal 1, Item.where(playthrough_id: nil).count
       assert_equal 1, Item.where(playthrough_id: @playthrough.id).count
       assert_equal "/look", Playthrough::Command.sole.command
+      assert_equal "gemma3:12b", RubyLLM::ActiveRecord::Model.sole.model_id
+      assert_equal 1, RubyLLM::ActiveRecord::ToolCall.count
+      usage = RubyLLM::ActiveRecord::Usage.sole
+      assert_equal "gemma3:12b", usage.model
+      assert_equal 120, usage.input_tokens
+      assert_equal 40, usage.output_tokens
     ensure
       ActiveRecord::Base.establish_connection(original)
     end

@@ -27,8 +27,8 @@
 #                         be wrong. A false positive refuses a line that should
 #                         have played; a false negative plays half a line.
 #   THE OMISSION RATE     how often the required field came back absent or null
-#                         in the provider's own JSON. F4's actual worry, read off
-#                         `messages.content_raw`.
+#                         in the provider's own stored JSON. F4's actual worry,
+#                         read through `Message#structured_content`.
 #   REFUSAL AGREEMENT     whether the line earned the refusal the ruling of
 #                         2026-09-04 gives it. The figure that turned the
 #                         classifier from a thing that could be a bit wrong into

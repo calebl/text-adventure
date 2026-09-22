@@ -29,10 +29,10 @@
 module Eval
   module Base
     # WHAT A RUN READS BEFORE IT WRITES ANYTHING. `stories` is the table the
-    # real failure named, and `models` IS the RubyLLM registry since the
-    # `acts_as` migration -- nothing resolves a model without it, so a base with
-    # one and not the other is no more usable than an empty one.
-    REQUIRED_TABLES = %w[stories models].freeze
+    # real failure named, and `ruby_llm_models` is the persisted registry the
+    # evaluation runners use for model identity and pricing. A base without
+    # either table cannot satisfy the runner's storage contract.
+    REQUIRED_TABLES = %w[stories ruby_llm_models].freeze
 
     # WHY THE BASE AT `path` CANNOT BE USED, or nil when it can.
     def self.unusable_reason(path)

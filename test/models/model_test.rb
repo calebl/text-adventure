@@ -51,11 +51,11 @@ class ModelTest < ActiveSupport::TestCase
     assert_predicate build(:model, model_id: "minimax/minimax-m3", provider: "ollama"), :valid?
   end
 
-  test "has many chats" do
+  test "is the registry row a chat belongs to" do
     model = create(:model)
     chat = create(:chat, model: model)
 
-    assert_equal [ chat ], model.chats.to_a
+    assert_equal model, chat.model
   end
 
   test "converts to a RubyLLM model info object" do
@@ -67,14 +67,13 @@ class ModelTest < ActiveSupport::TestCase
     assert_equal 200_000, info.context_window
   end
 
-  # This is the footgun of the new registry: RubyLLM resolves model names out
-  # of this table, and an empty table resolves nothing rather than falling back
-  # to the gem's bundled models.json. `bin/rails ruby_llm:load_models` fills it.
+  # RubyLLM 2 owns the registry table and configures it as the registry store.
+  # A row created there is therefore visible to the resolver without a second
+  # application model or a manual reload API.
   test "the registry RubyLLM reads is backed by this table" do
-    assert_equal "Model", RubyLLM.config.model_registry_class
+    assert_equal Model, RubyLLM.config.model_registry_store
 
     create(:model, model_id: "vendor/only-in-the-database", provider: "openrouter", name: "Only Here")
-    RubyLLM.models.load_from_database!
 
     assert_includes RubyLLM.models.all.map(&:id), "vendor/only-in-the-database"
   end

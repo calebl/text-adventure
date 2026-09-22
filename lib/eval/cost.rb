@@ -2,8 +2,9 @@
 #
 # Generation is the only part of this loop that spends money, and the rule is
 # the captain's: estimate before spending, report the actual figure. Both come
-# out of records the app already holds -- `models.pricing` is the RubyLLM
-# registry `db/seeds.rb` fills, and the token counts are the `messages` rows
+# out of records the app already holds -- `ruby_llm_models.pricing` is the
+# RubyLLM registry `db/seeds.rb` fills, and token counts come from persisted
+# usage receipts exposed through the application messages
 # every `BaseAgent` call writes. So neither number needs the network and
 # neither is a guess about what a provider charges.
 #

@@ -95,7 +95,8 @@ class BaseAgentTest < ActiveSupport::TestCase
 
   # WAS A BUG, and it made every local entry unreachable. An ollama model is
   # pulled onto the machine and is in neither the bundled registry nor the
-  # `models` table, so without the flag a run with no OPENROUTER_API_KEY raised
+  # `ruby_llm_models` table, so without the flag a run with no
+  # OPENROUTER_API_KEY raised
   # RubyLLM::ModelNotFoundError before it ever reached ollama.
   test "local models are marked as assumed to exist too" do
     assert BaseAgent::LOCAL_MODEL_OPTIONS.all? { |option| option[:assume_model_exists] },
@@ -149,7 +150,7 @@ class BaseAgentTest < ActiveSupport::TestCase
   end
 
   # RubyLLM::Chat#with_model takes the id positionally and spells the flag
-  # `assume_exists`, so the MODEL_OPTIONS hash cannot be splatted into it.
+  # `assume_model_exists`, so the MODEL_OPTIONS hash cannot be splatted into it.
   test "with_model translates option keys for RubyLLM" do
     agent = build_agent
     chat = RecordingChat.new
@@ -157,7 +158,7 @@ class BaseAgentTest < ActiveSupport::TestCase
 
     agent.with_model(provider: :openrouter, model: "vendor/model", assume_model_exists: true)
 
-    assert_equal [ "vendor/model", { provider: :openrouter, assume_exists: true } ], chat.with_model_call
+    assert_equal [ "vendor/model", { provider: :openrouter, assume_model_exists: true } ], chat.with_model_call
   end
 
   test "ask rotates to the next model and retries when a call fails" do
@@ -169,6 +170,38 @@ class BaseAgentTest < ActiveSupport::TestCase
     end
 
     assert_equal 2, chat.attempts
+  end
+
+  test "retry removes a rejected tool call from persisted and in-memory history" do
+    models = OPTIONS.first(2).map do |option|
+      create(:model, :ollama, model_id: option.fetch(:model), name: option.fetch(:model))
+    end
+    chat = create(:chat, model: models.first, purpose: "classifier")
+    agent = Eval::Classifier::ToolAgent.new(shape: :tool, model_options: OPTIONS.first(2), chat: chat)
+             .with_schema(Playthrough::IntentSchema.for(%w[north]))
+    attempts = 0
+    chat.define_singleton_method(:ask) do |prompt|
+      attempts += 1
+      if attempts == 2 && to_llm.messages.any?(&:tool_call?)
+        raise RubyLLM::PendingToolCallsError, "rejected tool call remained pending"
+      end
+
+      add_message(role: :user, content: prompt)
+      arguments = { "intent" => "move", "target" => "north" }
+      arguments["also_named"] = "nothing" if attempts == 2
+      call = RubyLLM::ToolCall.new(id: "call-#{attempts}", name: "player_intent", arguments: arguments)
+      response = RubyLLM::Message.new(role: :assistant, content: nil,
+                                      tool_calls: { call.id => call }, finish_reason: :tool_calls)
+      add_message(response)
+      response
+    end
+
+    answer = agent.ask("go north")
+
+    assert_equal 2, attempts
+    assert_equal "nothing", answer.content.fetch("also_named")
+    assert_equal %w[user assistant], chat.reload.messages.order(:id).pluck(:role)
+    assert_equal [ "call-2" ], chat.messages.last.ruby_llm_tool_calls.pluck(:tool_call_id)
   end
 
   test "ask raises once the attempts are exhausted" do
@@ -271,6 +304,17 @@ class BaseAgentTest < ActiveSupport::TestCase
     assert_equal({ "name" => "Silas" }, agent.ask("hello").content)
   end
 
+  test "ask exposes RubyLLM 2 parsed schema content through the existing content seam" do
+    response = RubyLLM::Message.new(role: :assistant, content: JSON.generate(name: "Silas"))
+    agent = build_agent
+    agent.instance_variable_set(:@chat, ConstantResponseChat.new(response))
+    agent.instance_variable_set(:@schema, Object.new)
+
+    assert_equal({ "name" => "Silas" }, agent.ask("hello").content)
+    assert_equal JSON.generate(name: "Silas"), response.content,
+                 "the persisted response must stay wire-safe when a verifier triggers a retry"
+  end
+
   test "ask leaves prose alone when no schema was requested" do
     agent = build_agent
     agent.instance_variable_set(:@chat, ConstantChat.new("just prose"))
@@ -362,7 +406,7 @@ class BaseAgentTest < ActiveSupport::TestCase
 
     assert_equal %w[system user assistant], chat.messages.reorder(:id).pluck(:role),
                  "the truncated exchange is not left in a conversation that gets picked up again"
-    assert_equal({ "pre_thought" => "Say something." }, chat.messages.find_by(role: "assistant").content_raw)
+    assert_equal({ "pre_thought" => "Say something." }, chat.messages.find_by(role: "assistant").structured_content)
   end
 
   # --- what persistence must not break --------------------------------------
@@ -389,8 +433,8 @@ class BaseAgentTest < ActiveSupport::TestCase
     assert_equal %w[system user assistant], chat.messages.reorder(:id).pluck(:role),
                  "the rejected attempt left nothing behind"
     assert_equal 1, chat.messages.where(role: "user").count, "the prompt was not asked twice"
-    assert_nil chat.messages.find_by(role: "assistant").content_raw&.dig("nope")
-    assert_equal({ "intent" => "move" }, chat.messages.find_by(role: "assistant").content_raw)
+    assert_nil chat.messages.find_by(role: "assistant").structured_content&.dig("nope")
+    assert_equal({ "intent" => "move" }, chat.messages.find_by(role: "assistant").structured_content)
   end
 
   test "a call that never succeeds leaves the conversation as it found it" do
@@ -414,7 +458,7 @@ class BaseAgentTest < ActiveSupport::TestCase
     chat = agent.chat
     chat.define_singleton_method(:ask) do |message = nil, **_options, &_block|
       add_message(role: :user, content: message)
-      raise RubyLLM::UnauthorizedError.new(nil, "Missing Authentication header")
+      raise RubyLLM::UnauthorizedError.new("Missing Authentication header")
     end
 
     rotations = 0
@@ -655,6 +699,11 @@ class BaseAgentTest < ActiveSupport::TestCase
     def ask(_prompt) = Struct.new(:content).new(@contents.shift)
   end
 
+  class ConstantResponseChat
+    def initialize(response) = @response = response
+    def ask(_prompt) = @response
+  end
+
   class UnauthorizedChat
     attr_reader :attempts
 
@@ -662,7 +711,7 @@ class BaseAgentTest < ActiveSupport::TestCase
 
     def ask(_prompt)
       @attempts += 1
-      raise RubyLLM::UnauthorizedError.new(nil, "Missing Authentication header")
+      raise RubyLLM::UnauthorizedError.new("Missing Authentication header")
     end
   end
 
@@ -692,7 +741,7 @@ class BaseAgentTest < ActiveSupport::TestCase
 
     def ask(_prompt)
       @attempts += 1
-      raise RubyLLM::Error.new(nil, "boom") if @attempts <= @failures
+      raise RubyLLM::Error.new("boom") if @attempts <= @failures
 
       Struct.new(:content).new(@content)
     end

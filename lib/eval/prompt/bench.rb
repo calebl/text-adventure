@@ -361,7 +361,7 @@ class Eval::Prompt::Bench
   def receipts_for(scene)
     return { pass: nil, calls: 0, input_tokens: 0, output_tokens: 0 } if scene.nil?
 
-    messages = scene.messages.includes(:model, :chat).sort_by(&:id)
+    messages = scene.messages.includes(:usage_receipt, :ruby_llm_usages, :chat).sort_by(&:id)
     answered = messages.select { |message| message.role.to_s == "assistant" }
     prose = answered.select { |message| Eval::Prompt::PASSES.include?(message.chat&.purpose) }
     kept = prose.last
@@ -369,7 +369,7 @@ class Eval::Prompt::Bench
 
     { pass: chat&.purpose,
       calls: answered.size,
-      answered_by: kept&.model&.model_id,
+      answered_by: kept&.answering_model_id,
       input_tokens: messages.sum { |message| message.input_tokens.to_i },
       output_tokens: messages.sum { |message| message.output_tokens.to_i },
       instructions: chat&.messages&.find_by(role: "system")&.content,
@@ -381,7 +381,7 @@ class Eval::Prompt::Bench
   # WHAT STORED PROSE CANNOT SHOW, HALF ONE: A REQUIRED FIELD THAT NEVER
   # ARRIVED. Only a schema'd pass has any -- the narrator is the app's one
   # documented unschema'd call -- so this is the arrival's figure, read off the
-  # provider's own JSON (`messages.content_raw`) against the schema's own
+  # provider's own stored JSON against the schema's own
   # `required` list. `BaseAgent#missing_schema_keys` fails the call when a field
   # is truly absent, which is the claim this checks rather than assumes.
   def missing_fields(chat, message)
@@ -428,12 +428,7 @@ class Eval::Prompt::Bench
     klass && klass.new.to_json_schema.deep_stringify_keys
   end
 
-  def raw_answer(message)
-    body = message&.content_raw
-    body.is_a?(String) ? JSON.parse(body) : body
-  rescue JSON::ParserError
-    nil
-  end
+  def raw_answer(message) = message&.structured_content
 
   # THE MOMENT AS THE RECORDS HELD IT, AFTER THE TURN, and every list in it is
   # asked of `Story::Audit` rather than rebuilt: the checks read these lists off

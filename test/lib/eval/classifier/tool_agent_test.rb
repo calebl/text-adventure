@@ -8,6 +8,7 @@ require "test_helper"
 # `RubyLLM::Chat` response elsewhere in this suite.
 class Eval::Classifier::ToolAgentTest < ActiveSupport::TestCase
   Response = Struct.new(:content)
+  ToolResponse = Struct.new(:content, :tool_calls)
 
   MODEL_OPTIONS = [ { provider: :openrouter, model: "mistralai/mistral-medium-3.1", assume_model_exists: true } ].freeze
 
@@ -47,6 +48,29 @@ class Eval::Classifier::ToolAgentTest < ActiveSupport::TestCase
     end
     assert_nil agent.send(:verify_schema_honored!,
                           Response.new({ "intent" => "move", "target" => "north", "also_named" => "nothing" }))
+  end
+
+  test "tool responses expose first-generation arguments as classifier content" do
+    agent = Eval::Classifier::ToolAgent.new(shape: :tools, model_options: MODEL_OPTIONS)
+    call = RubyLLM::ToolCall.new(id: "call-1", name: "move",
+                                 arguments: { "target" => "north", "also_named" => "nothing" })
+    response = ToolResponse.new(nil, { call.id => call })
+
+    exposed = agent.send(:expose_parsed_schema_content, response)
+
+    assert_equal({ "target" => "north", "also_named" => "nothing", "intent" => "move" }, exposed.content)
+    assert_nil response.content
+  end
+
+  test "a prose response reaches schema verification" do
+    agent = Eval::Classifier::ToolAgent.new(shape: :tool, model_options: MODEL_OPTIONS)
+    agent.with_schema(Playthrough::IntentSchema.for(%w[north]))
+    response = RubyLLM::Message.new(role: :assistant, content: "prose")
+
+    exposed = agent.send(:expose_parsed_schema_content, response)
+
+    assert_same response, exposed
+    assert_raises(BaseAgent::SchemaIgnoredError) { agent.send(:verify_schema_honored!, exposed) }
   end
 
   # THE TWO PROSE-REFUSAL CHECKS ARE UNSCHEMA'D-CALL CHECKS -- `Scene::Narrator`'s

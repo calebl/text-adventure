@@ -27,35 +27,93 @@ class Eval::Inscription::BenchTest < ActiveSupport::TestCase
     end
   end
 
-  test "real writer makes one call persists both layers and keeps rejected receipts" do
-    Model.create!(model_id: MODEL, name: MODEL, provider: "openrouter", capabilities: [ "structured_output" ])
-    arm = Eval::Classifier::Arm.parse(MODEL)
+  test "real writer makes one call and persists both layers through the public agent seam" do
     kase = Eval::Inscription.cases.first
-    [ "The office will reopen at dawn.", "x" * Item::INSCRIPTION_LIMIT ].each do |words|
-      arm.pinned do
-        Eval::Inscription.stage(kase) do |inscriber|
-          response = RubyLLM::Message.new(role: :assistant, content: JSON.generate(inscription: words),
-                                          model_id: MODEL, input_tokens: 100, output_tokens: 20)
-          llm = inscriber.agent.chat.to_llm
-          calls = 0
-          llm.stub(:provider_completion, ->(**_args) { calls += 1; response }) do
-            row = Eval::Inscription::Bench.new(model: MODEL).read(inscriber, kase, 1)
-            assert_equal 1, calls
-            assert_equal words, row.dig("raw", "inscription")
-            assert_equal 100, row.fetch("receipts").sole.fetch("input_tokens")
-            if words.length == Item::INSCRIPTION_LIMIT
-              assert_match(/TruncatedTextError/, row.fetch("error"))
-              assert_nil inscriber.item.reload.inscription
-            else
-              assert_nil row["error"]
-              assert_equal words, row.fetch("template_text")
-              assert_equal words, inscriber.inscribe!
-              assert_equal 1, calls
-            end
-          end
-        end
+    words = "The office will reopen at dawn."
+
+    Eval::Inscription.stage(kase) do |inscriber|
+      calls = 0
+      ask = lambda do |_prompt, verify:, **|
+        calls += 1
+        verify.call("inscription" => words)
+      end
+
+      inscriber.agent.stub(:ask, ask) do
+        assert_equal words, inscriber.inscribe!
+        assert_equal words, inscriber.item.reload.inscription
+        assert_equal words, inscriber.item.template.reload.inscription
+        assert_equal words, inscriber.inscribe!
+        assert_equal 1, calls
       end
     end
+  end
+
+  test "rejected writer answer is not persisted" do
+    kase = Eval::Inscription.cases.first
+    words = "x" * Item::INSCRIPTION_LIMIT
+
+    Eval::Inscription.stage(kase) do |inscriber|
+      calls = 0
+      ask = lambda do |_prompt, verify:, **|
+        calls += 1
+        verify.call("inscription" => words)
+      end
+
+      inscriber.agent.stub(:ask, ask) do
+        error = assert_raises(SanitizesGeneratedText::TruncatedTextError) { inscriber.inscribe! }
+        assert_match(/#{Item::INSCRIPTION_LIMIT}-character cap/, error.message)
+        assert_nil inscriber.item.reload.inscription
+        assert_nil inscriber.item.template.reload.inscription
+        assert_equal 1, calls
+      end
+    end
+  end
+
+  test "bench reads receipt accounting from persisted RubyLLM usage" do
+    create(:model, model_id: MODEL, provider: "openrouter", name: MODEL)
+    arm = Eval::Classifier::Arm.parse(MODEL)
+    kase = Eval::Inscription.cases.first
+    words = "The office will reopen at dawn."
+
+    arm.pinned do
+      Eval::Inscription.stage(kase) do |inscriber|
+        inscriber.item.update!(inscription: words)
+        inscriber.item.template.update!(inscription: words)
+        chat = inscriber.agent.chat
+        message = chat.messages.create!(role: "assistant", content: JSON.generate("inscription" => words))
+        RubyLLM::ActiveRecord::Usage.create!(
+          chat: chat, message: message, operation: "chat", provider: "openrouter", model: MODEL,
+          status: "succeeded", input_tokens: 100, output_tokens: 20,
+          cache_read_tokens: 7, cache_write_tokens: 3
+        )
+
+        row = Eval::Inscription::Bench.new(model: MODEL).read(inscriber, kase, 1)
+        receipt = row.fetch("receipts").sole
+
+        assert_equal MODEL, receipt.fetch("model")
+        assert_equal 100, receipt.fetch("input_tokens")
+        assert_equal 20, receipt.fetch("output_tokens")
+        assert_equal 7, receipt.fetch("cached_tokens")
+        assert_equal 3, receipt.fetch("cache_creation_tokens")
+        assert_equal words, row.fetch("text")
+        assert_equal words, row.fetch("template_text")
+        assert_nil row["error"]
+      end
+    end
+  end
+
+  test "a malformed rejected response retains its usage receipt" do
+    bench = Eval::Inscription::Bench.new(model: MODEL)
+    row = { "receipts" => [] }
+    message = RubyLLM::Message.new(role: :assistant, content: "not json", model: MODEL,
+                                   input_tokens: 100, output_tokens: 20,
+                                   cache_read_tokens: 7, cache_write_tokens: 3)
+
+    bench.send(:capture_message, row, message)
+
+    assert_equal "not json", row.fetch("raw")
+    assert_equal 100, row.fetch("receipts").sole.fetch("input_tokens")
+    assert_equal 20, row.fetch("receipts").sole.fetch("output_tokens")
   end
 
   test "request identity covers system user and emitted schema independently" do

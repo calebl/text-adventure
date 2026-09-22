@@ -33,19 +33,19 @@ class ToolCallTest < ActiveSupport::TestCase
 
   test "has one result message" do
     tool_call = create(:tool_call)
-    result = create(:message, parent_tool_call: tool_call)
+    result = create(:message, ruby_llm_parent_tool_call: tool_call)
 
     assert_equal result, tool_call.result
   end
 
   test "destroying a tool call nullifies its result rather than deleting it" do
     tool_call = create(:tool_call)
-    result = create(:message, parent_tool_call: tool_call)
+    result = create(:message, ruby_llm_parent_tool_call: tool_call)
 
     assert_no_difference -> { Message.count } do
       tool_call.destroy
     end
-    assert_nil result.reload.parent_tool_call
+    assert_nil result.reload.ruby_llm_parent_tool_call
   end
 
   test "keeps the provider's own call id distinct from the primary key" do

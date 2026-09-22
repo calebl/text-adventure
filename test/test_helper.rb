@@ -81,7 +81,8 @@ module ActiveSupport
     include FactoryBot::Syntax::Methods
 
     # RubyLLM's model registry is a process-wide memoized snapshot:
-    # `RubyLLM::Models.instance` is built once, out of the `models` table, and
+    # `RubyLLM::Models.instance` is built once, out of the
+    # `ruby_llm_models` table, and
     # falls back to the registry JSON the gem ships only when that table is
     # empty. Tests create registry rows inside transactions that roll back, so
     # whichever test touches `RubyLLM.models` first freezes the registry for

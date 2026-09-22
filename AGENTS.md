@@ -228,10 +228,10 @@ bin/brakeman --no-pager    # CI fails on a warning; a new view is where they com
 
 - Ruby 3.4.10 via asdf/mise (`.tool-versions`). Rails 8.1, SQLite.
 - `bin/rails db:prepare && bin/rails db:seed` — the dev database is not checked
-  in; the seed step fills the `models` table and loads `db/seeds/worlds`. Since
-  the RubyLLM `acts_as` migration that table **is** the model registry — RubyLLM
-  resolves names out of it and does not fall back to the one the gem ships with,
-  so an empty table resolves nothing. Offline; no API key.
+  in; the seed step fills the `ruby_llm_models` table and loads `db/seeds/worlds`.
+  That table is RubyLLM's persistent model registry and the source used for
+  local pricing; RubyLLM 2 falls back to its bundled registry when the table is
+  empty. Offline; no API key.
 - **The local rotation is OFF by default and needs `TA_LOCAL_MODELS=1`.** A
   local fallback does not fail, it ANSWERS — slowly, from a small-context CPU
   model — and every measurement downstream quietly becomes about a different

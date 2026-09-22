@@ -34,6 +34,39 @@ class MessageTest < ActiveSupport::TestCase
     assert_equal 17, message.output_tokens
   end
 
+  test "reads model and token accounting from the RubyLLM usage receipt" do
+    message = create(:message, :assistant, model: nil, input_tokens: nil, output_tokens: nil)
+    RubyLLM::ActiveRecord::Usage.create!(
+      chat: message.chat, message: message, operation: "chat", provider: "ollama",
+      model: "gemma3:12b", status: "succeeded", input_tokens: 84,
+      output_tokens: 23, cache_read_tokens: 11, cache_write_tokens: 7
+    )
+
+    assert_equal 84, message.input_tokens
+    assert_equal 23, message.output_tokens
+    assert_equal 11, message.cache_read_tokens
+    assert_equal 7, message.cache_write_tokens
+    assert_equal "gemma3:12b", message.answering_model_id
+  end
+
+  test "aggregates token accounting across every provider attempt" do
+    message = create(:message, :assistant, input_tokens: 999, output_tokens: 999)
+    [
+      { status: "failed", input_tokens: 30, output_tokens: 4, cache_read_tokens: 5, cache_write_tokens: 2 },
+      { status: "succeeded", input_tokens: 70, output_tokens: 16, cache_read_tokens: 7, cache_write_tokens: 3 }
+    ].each do |usage|
+      RubyLLM::ActiveRecord::Usage.create!(
+        chat: message.chat, message: message, operation: "chat", provider: "ollama",
+        model: "gemma3:12b", **usage
+      )
+    end
+
+    assert_equal 100, message.input_tokens
+    assert_equal 20, message.output_tokens
+    assert_equal 12, message.cache_read_tokens
+    assert_equal 5, message.cache_write_tokens
+  end
+
   # RubyLLM 1.15 renormalised token accounting: `input_tokens` no longer folds
   # in prompt cache reads and writes, which are exposed separately. Nothing in
   # this app reads token counts, and there are no columns backing the cache
@@ -54,15 +87,31 @@ class MessageTest < ActiveSupport::TestCase
   # association -- another thing the acts_as migration made possible.
   test "costs the exchange from the registry's pricing" do
     message = create(:message, :assistant)
+    model = message.model
+    RubyLLM::ActiveRecord::Usage.create!(
+      chat: message.chat, message: message, operation: "chat", provider: model.provider,
+      model: model.model_id, status: "succeeded", input_tokens: 42,
+      output_tokens: 17, total_cost: 0.01
+    )
 
-    assert_operator message.cost.total, :>, 0
+    assert_operator message.reload.cost.total, :>, 0
   end
 
-  test "has many tool calls" do
+  test "has many tool call records" do
     message = create(:message, :assistant)
     tool_call = create(:tool_call, message: message)
 
-    assert_equal [ tool_call ], message.tool_calls.to_a
+    assert_equal [ tool_call ], message.ruby_llm_tool_calls.to_a
+  end
+
+  test "converts persisted tool calls to RubyLLM protocol values" do
+    message = create(:message, :assistant)
+    tool_call = create(:tool_call, message: message, tool_call_id: "call_provider_123")
+
+    converted = message.reload.to_llm
+
+    assert_equal [ "call_provider_123" ], converted.tool_calls.keys
+    assert_instance_of RubyLLM::ToolCall, converted.tool_calls.fetch("call_provider_123")
   end
 
   test "destroying a message destroys its tool calls" do
@@ -76,10 +125,12 @@ class MessageTest < ActiveSupport::TestCase
 
   # A tool result is a message that points back at the call that produced it.
   test "links back to the tool call it answers" do
-    tool_call = create(:tool_call)
-    result = create(:message, parent_tool_call: tool_call)
+    tool_call = create(:tool_call, tool_call_id: "call_provider_123")
+    result = create(:message, ruby_llm_parent_tool_call: tool_call)
 
-    assert_equal tool_call, result.parent_tool_call
+    assert_equal tool_call, result.ruby_llm_parent_tool_call
+    assert_equal "call_provider_123", result.parent_tool_call.id
+    assert_equal "call_provider_123", result.to_llm.tool_call_id
     assert_equal result, tool_call.reload.result
   end
 
@@ -110,7 +161,7 @@ class MessageTest < ActiveSupport::TestCase
   end
 
   test "a message answering a tool call reports itself as a tool result" do
-    result = create(:message, parent_tool_call: create(:tool_call))
+    result = create(:message, ruby_llm_parent_tool_call: create(:tool_call))
 
     assert_predicate result, :tool_result?
   end
@@ -139,6 +190,16 @@ class MessageTest < ActiveSupport::TestCase
     assert_match(/move/, message.text)
   end
 
+  test "structured content reads both persisted schema representations" do
+    current = create(:message, :assistant, content: JSON.generate("intent" => "move"), content_raw: nil)
+    legacy = create(:message, :assistant, content: nil, content_raw: { "intent" => "move" })
+    prose = create(:message, :assistant, content: "Walk north.", content_raw: nil)
+
+    assert_equal({ "intent" => "move" }, current.structured_content)
+    assert_equal({ "intent" => "move" }, legacy.structured_content)
+    assert_nil prose.structured_content
+  end
+
   test "text prefers the prose when there is prose" do
     assert_equal "A road, and then the sea.", create(:message, :assistant).text
   end
@@ -157,14 +218,14 @@ class MessageTest < ActiveSupport::TestCase
     assert_equal "A road, and then the sea.", create(:message, :assistant).to_llm.content
   end
 
-  # WHY THE ENCODING HAS TO BE OURS. OpenAI's formatter JSON-encodes a raw
-  # payload; ollama's hands the Hash straight to the wire, and ollama answers
+  # WHY THE ENCODING HAS TO BE OURS. RubyLLM's chat-completions formatter
+  # hands a raw Hash straight to the wire, and ollama answers
   # `invalid message content type: map[string]interface {}`. If this ever fails,
   # the gem has fixed it and `Message#extract_content` can go.
-  test "the ollama formatter still passes a raw payload through unencoded" do
-    raw = RubyLLM::Content::Raw.new({ "intent" => "move" })
+  test "the chat completions formatter still passes a raw payload through unencoded" do
+    raw = { "intent" => "move" }
 
+    assert_kind_of Hash, RubyLLM::Protocols::ChatCompletions::Media.format_content(raw)
     assert_kind_of Hash, RubyLLM::Providers::Ollama::Media.format_content(raw)
-    assert_kind_of String, RubyLLM::Providers::OpenAI::Media.format_content(raw)
   end
 end

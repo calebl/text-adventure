@@ -241,7 +241,7 @@ class NarrationJobTest < ActiveJob::TestCase
   test "every failed turn reads the same, whichever call failed" do
     %w[classifier narrator].each do |failing|
       playthrough = create(:playthrough, :started)
-      queued = failing == "classifier" ? [] : [ NOT_A_MOVE, RubyLLM::Error.new(nil, "502 Bad Gateway") ]
+      queued = failing == "classifier" ? [] : [ NOT_A_MOVE, RubyLLM::Error.new("502 Bad Gateway") ]
 
       html = play(playthrough, "open the ledger", *queued).last.to_html
 

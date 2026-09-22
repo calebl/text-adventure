@@ -955,7 +955,9 @@ class Location::Generator
   end
 
   def detail_history?(conversation)
-    conversation&.exchange_messages&.any? { |message| message.role == "assistant" && message.content_raw == checkpoint["detail"] }
+    conversation&.exchange_messages&.any? do |message|
+      message.role == "assistant" && message.structured_content == checkpoint["detail"]
+    end
   end
 
   # Check the required prose against the destination's real validation before

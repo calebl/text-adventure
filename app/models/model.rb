@@ -1,3 +1,2 @@
-class Model < ApplicationRecord
-  acts_as_model
-end
+# RubyLLM 2 owns the registry model and its migrated table.
+Model = RubyLLM::ActiveRecord::Model

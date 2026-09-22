@@ -62,7 +62,11 @@ class Eval::Dialogue::Stage
     key&.update!(id: 910002)
     Playthrough::NpcAction.new(game, npc).apply!("follow") if kase.fetch("following")
     if kase.fetch("history", []).any?
-      chat = Chat.create!(purpose: Chat::CHARACTER, playthrough: game, character: npc)
+      chat = Chat.new(purpose: Chat::CHARACTER, playthrough: game, character: npc)
+      chat.assume_model_exists = true
+      chat.model = Eval::Dialogue.model
+      chat.provider = :openrouter
+      chat.save!
       kase.fetch("history").each do |message|
         content = message.fetch("content")
         chat.messages.create!(role: message.fetch("role"), content_raw: content)

@@ -43,13 +43,11 @@ class Eval::Inscription::Bench
     row = { "id" => kase.fetch("id"), "story" => kase.fetch("story"), "rep" => rep,
             "description" => inscriber.item.description, "request" => Eval::Inscription.request(inscriber),
             "actual_prompt" => inscriber.send(:prompt), "receipts" => [], "human_fit" => nil, "human_note" => nil }
-    inscriber.agent.chat.to_llm.after_message do |message|
+    llm = inscriber.agent.chat.to_llm
+    llm.after_message do |message|
       next unless message.role.to_s == "assistant"
 
-      row["raw"] = message.content
-      row.fetch("receipts") << { "model" => message.model_id, "input_tokens" => message.input_tokens.to_i,
-                                 "output_tokens" => message.output_tokens.to_i, "cached_tokens" => message.cached_tokens.to_i,
-                                 "cache_creation_tokens" => message.cache_creation_tokens.to_i }
+      capture_message(row, message)
     end
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     begin
@@ -59,6 +57,11 @@ class Eval::Inscription::Bench
     rescue StandardError => error
       row["error"] = "#{error.class}: #{error.message}"
     ensure
+      if row.fetch("receipts").empty?
+        message = llm.messages.reverse.find { |candidate| candidate.role.to_s == "assistant" } ||
+                  inscriber.agent.chat.messages.where(role: "assistant").order(:created_at, :id).last
+        row.fetch("receipts") << receipt_for(message) if message
+      end
       row["seconds"] = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
       # Price cached tokens as full input: conservative and reproducible from
       # the stored registry price, even where the message table drops them.
@@ -68,5 +71,30 @@ class Eval::Inscription::Bench
       end
     end
     row
+  end
+
+  private
+
+  def capture_message(row, message)
+    row.fetch("receipts") << receipt_for(message)
+    row["raw"] = parse_content(message.content)
+  end
+
+  def parse_content(content)
+    content.is_a?(String) ? JSON.parse(content) : content
+  rescue JSON::ParserError
+    content
+  end
+
+  # Live callbacks carry a RubyLLM::Message whose model is the provider ID.
+  # The persisted fallback carries the application's Message record, whose
+  # compatibility association is not RubyLLM 2's attempt identity. Convert it
+  # back to the public message value so model and tokens both come from usage.
+  def receipt_for(message)
+    message = message.to_llm if message.is_a?(ActiveRecord::Base)
+    model = message.model
+    { "model" => model, "input_tokens" => message.tokens.input.to_i,
+      "output_tokens" => message.tokens.output.to_i, "cached_tokens" => message.tokens.cache_read.to_i,
+      "cache_creation_tokens" => message.tokens.cache_write.to_i }
   end
 end

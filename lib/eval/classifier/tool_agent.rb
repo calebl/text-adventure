@@ -41,16 +41,25 @@ class Eval::Classifier::ToolAgent < BaseAgent
     # `ToolShapes#build_tool` from the tool's own name, which cannot be missing
     # -- so only `target`/`also_named` are checked there.
     @required_keys = @shape == :tool ? %w[intent target also_named] : %w[target also_named]
-    conversation.with_tools(*built[:tools], choice: built[:choice])
+    conversation.with_tools(*built[:tools]).with_tool_options(choice: built[:choice], calls: :one)
     conversation
+  end
+
+  def expose_parsed_schema_content(response)
+    calls = response.tool_calls if response.respond_to?(:tool_calls)
+    return response unless calls&.one?
+
+    call = calls.values.sole
+    content = call.arguments.transform_keys(&:to_s)
+    content["intent"] = call.name unless @shape == :tool
+    response.dup.tap { _1.define_singleton_method(:content) { content } }
   end
 
   # THE SAME TWO RULES `BaseAgent#verify_schema_honored!` CHECKS -- a `Hash`,
   # and no required field missing -- read off the tool's own required keys
   # instead of `@schema.required_properties`. A model that answered no tool
-  # call at all comes back as something other than a `Hash` (RubyLLM's own
-  # response, not a `Tool::Halt`), which raises here exactly as an un-schema'd
-  # answer does on the schema path.
+  # call at all comes back as something other than a `Hash`, which raises here
+  # exactly as an un-schema'd answer does on the schema path.
   def verify_schema_honored!(response)
     return if @intent_schema.nil?
 

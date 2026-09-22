@@ -7,10 +7,45 @@
 class Message < ApplicationRecord
   acts_as_message
 
+  # RubyLLM 2 no longer declares this association on messages, but the app's
+  # debug and cost views still read the persisted registry row.
+  belongs_to :model, class_name: "RubyLLM::ActiveRecord::Model", foreign_key: :model_id, optional: true
   belongs_to :scene, optional: true
+  has_one :usage_receipt, -> { where(operation: "chat", status: "succeeded").order(id: :desc) },
+          as: :message, class_name: "RubyLLM::ActiveRecord::Usage"
 
-  # A schema'd answer is a Hash, and RubyLLM stores it in `content_raw` with
-  # `content` left nil. Two columns, one question, so read it through here.
+  # MessageMethods#model returns only the model id in RubyLLM 2; callers here
+  # need the registry record for existing debug and accounting views.
+  def model
+    receipt = usage_receipt
+    return association(:model).reader unless receipt
+
+    RubyLLM::ActiveRecord::Model.find_by(provider: receipt.provider, model_id: receipt.model)
+  end
+
+  def input_tokens
+    accounted = usage_tokens
+    accounted ? accounted.input : self[:input_tokens]
+  end
+
+  def output_tokens
+    accounted = usage_tokens
+    accounted ? accounted.output : self[:output_tokens]
+  end
+
+  def cache_read_tokens = usage_tokens&.cache_read
+  def cache_write_tokens = usage_tokens&.cache_write
+
+  def structured_content
+    value = content_raw.presence || content
+    value = JSON.parse(value) if value.is_a?(String)
+    value if value.is_a?(Hash) || value.is_a?(Array)
+  rescue JSON::ParserError
+    nil
+  end
+
+  # A schema'd answer may be legacy `content_raw` or JSON in `content`.
+  # Two columns, one question, so read display text through here.
   def text
     return content if content.present?
     return nil if content_raw.blank?
@@ -21,9 +56,14 @@ class Message < ApplicationRecord
   # Which model wrote this. Only ever set on an assistant message -- a prompt is
   # not written by a model -- and it is the honest answer to "which model
   # actually answered", because `BaseAgent` rotates mid-conversation.
-  def answering_model_id = model&.model_id
+  def answering_model_id = usage_receipt&.model || model&.model_id || model_id_string
 
   private
+
+  def usage_tokens
+    ruby_llm_usages.load
+    tokens if ruby_llm_usages.any?
+  end
 
   # A STORED STRUCTURED ANSWER GOES BACK AS THE JSON STRING THE MODEL WROTE.
   #

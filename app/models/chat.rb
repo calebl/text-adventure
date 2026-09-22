@@ -21,6 +21,10 @@
 class Chat < ApplicationRecord
   acts_as_chat
 
+  def with_tool(tool)
+    with_tools(tool)
+  end
+
   # Talking to somebody. The one conversation that is PICKED UP AGAIN rather
   # than started fresh, keyed by (playthrough, character): a character who
   # forgets the previous sentence the moment the turn ends is the conversation
@@ -75,7 +79,7 @@ class Chat < ApplicationRecord
   #   messages + chats, on disk       4.16 KB per turn
   #   => 100 turns                    0.41 MB
   #   => 1,000 turns                  4.1 MB
-  #   `models`, which SHIPS with the app   912 KB (1,166 rows)
+  #   `ruby_llm_models`, which SHIPS with the app   912 KB (1,166 rows)
   #
   # So the registry the app installs with outweighs a 200-turn playthrough's
   # entire audit trail, and a thousand-turn game costs four megabytes. The trail
@@ -147,13 +151,13 @@ class Chat < ApplicationRecord
   end
 
   # What this conversation has cost, as far as the provider reported it.
-  def input_tokens = messages.sum(:input_tokens)
-  def output_tokens = messages.sum(:output_tokens)
+  def input_tokens = messages.includes(:ruby_llm_usages).sum { |message| message.input_tokens.to_i }
+  def output_tokens = messages.includes(:ruby_llm_usages).sum { |message| message.output_tokens.to_i }
 
   # Which model actually answered. The chat's own `model_id` is what it was
   # pointed at; this is what replied, which differs the moment `BaseAgent`
   # rotates past a model that failed.
   def answering_model_ids
-    messages.where(role: "assistant").filter_map { |message| message.model&.model_id }.uniq
+    messages.where(role: "assistant").includes(:usage_receipt).filter_map(&:answering_model_id).uniq
   end
 end

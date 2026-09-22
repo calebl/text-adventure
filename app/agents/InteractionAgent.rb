@@ -16,7 +16,7 @@
 # back as prose used to poison the narrator prompt with the word "pre_thought"
 # rather than failing. This class used to build bare `RubyLLM::Chat` objects
 # pinned to `cognitivecomputations/dolphin-mixtral-8x22b`, a model that resolves
-# in neither the bundled registry nor the seeded `models` table.
+# in neither the bundled registry nor the seeded `ruby_llm_models` table.
 #
 # The narrator pass is UNSCHEMA'D and streams, which is the same documented
 # exception `Scene::Narrator` carries and for the same reason: it is prose the
