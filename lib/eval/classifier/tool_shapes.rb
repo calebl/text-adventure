@@ -93,12 +93,13 @@ module Eval::Classifier::ToolShapes
     label = tool_name.to_s
     Class.new(RubyLLM::Tool) do
       description tool_description
-      params(schema)
+      parameters(schema)
       define_method(:name) { label }
+      define_method(:params_schema) { parameters_schema }
       define_method(:execute) do |**args|
         content = args.transform_keys(&:to_s)
         content["intent"] = label if inject_intent
-        halt(content)
+        content
       end
     end.new
   end
