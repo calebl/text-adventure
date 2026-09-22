@@ -7,6 +7,9 @@
 class Message < ApplicationRecord
   acts_as_message
 
+  # RubyLLM 2 no longer declares this association on messages, but the app's
+  # debug and cost views still read the persisted registry row.
+  belongs_to :model, class_name: "RubyLLM::ActiveRecord::Model", foreign_key: :model_id, optional: true
   belongs_to :scene, optional: true
 
   # A schema'd answer is a Hash, and RubyLLM stores it in `content_raw` with
@@ -21,7 +24,7 @@ class Message < ApplicationRecord
   # Which model wrote this. Only ever set on an assistant message -- a prompt is
   # not written by a model -- and it is the honest answer to "which model
   # actually answered", because `BaseAgent` rotates mid-conversation.
-  def answering_model_id = model&.model_id
+  def answering_model_id = model&.model_id || model_id_string
 
   private
 

@@ -79,6 +79,7 @@ module OfflineExchange
       content_raw: structured ? content : nil,
       input_tokens: answer.input_tokens,
       output_tokens: answer.output_tokens,
+      model_id: RubyLLM::ActiveRecord::Model.find_by(model_id: chat.model_id)&.id,
       model_id_string: chat.model_id
     )
 
