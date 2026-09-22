@@ -69,6 +69,12 @@ module OfflineExchange
   # Writes the assistant message the way `RubyLLM::ActiveRecord::ChatMethods`
   # does -- prose in `content`, a structured answer in `content_raw`, tokens and
   # the answering model on the row -- and returns what `Chat#ask` returns.
+  def self.answering_model(chat)
+    RubyLLM::ActiveRecord::Model.find_or_create_by!(model_id: chat.model_id, provider: "ollama") do |model|
+      model.name = chat.model_id
+    end
+  end
+
   def self.persist_answer(chat, answer)
     content = answer.content
     structured = content.is_a?(Hash) || content.is_a?(Array)
@@ -79,7 +85,7 @@ module OfflineExchange
       content_raw: structured ? content : nil,
       input_tokens: answer.input_tokens,
       output_tokens: answer.output_tokens,
-      model_id: RubyLLM::ActiveRecord::Model.find_by(model_id: chat.model_id)&.id,
+      model_id: answering_model(chat).id,
       model_id_string: chat.model_id
     )
 

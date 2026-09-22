@@ -12,6 +12,10 @@ class Message < ApplicationRecord
   belongs_to :model, class_name: "RubyLLM::ActiveRecord::Model", foreign_key: :model_id, optional: true
   belongs_to :scene, optional: true
 
+  # MessageMethods#model returns only the model id in RubyLLM 2; callers here
+  # need the registry record for existing debug and accounting views.
+  def model = association(:model).reader
+
   # A schema'd answer is a Hash, and RubyLLM stores it in `content_raw` with
   # `content` left nil. Two columns, one question, so read it through here.
   def text
