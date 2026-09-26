@@ -15,6 +15,7 @@ class Playthrough::TurnConcurrencyTest < ActiveSupport::TestCase
     @game.update!(current_scene: @opening)
     @children = []
     @pipes = []
+    @models = RubyLLM::ActiveRecord::Model.pluck(:id)
   end
 
   teardown do
@@ -28,6 +29,7 @@ class Playthrough::TurnConcurrencyTest < ActiveSupport::TestCase
     end
     @pipes.each { |pipe| pipe.close unless pipe.closed? }
     Story::Deletion.new(@story).destroy!(confirm: @story.title)
+    RubyLLM::ActiveRecord::Model.where.not(id: @models).delete_all
   end
 
   test "overlapping processes preserve both commands and do not hold SQLite's writer across rendering" do
@@ -150,7 +152,102 @@ class Playthrough::TurnConcurrencyTest < ActiveSupport::TestCase
     assert_equal @game.current_location, coin.reload.location
   end
 
+  test "a worker killed while a character answers leaves one copy of the line in their conversation" do
+    keeper = create(:character, story: @story, location: @game.current_location, fullname: "Keeper", nickname: "Keeper")
+    entered, signal = pipe
+    offline_model!
+    first = worker do
+      hold_call(signal)
+      OfflineExchange.with_model do
+        Playthrough::Turn.new(Playthrough.find(@game.id)).play("/talk Keeper", request_token: "killed")
+      end
+    end
+    assert_equal "1", read(entered)
+    kill(first)
+    conversation = Chat.conversation_with(keeper, @game)
+    assert_equal %w[user], conversation.exchange_messages.pluck(:role), "the killed call's prompt was persisted"
+
+    OfflineExchange.with(REACTION, "Keeper nods to you.", LOOK, "You look around.") do
+      Playthrough::Turn.new(@game.reload).play("/look", request_token: "later")
+    end
+
+    assert_equal %w[completed completed], @game.commands.order(:id).pluck(:status)
+    assert_equal %w[user assistant], conversation.exchange_messages.pluck(:role)
+    assert_equal 1, Interaction.where(character: keeper).count
+  end
+
+  test "a worker killed while a new room's exits are asked resumes with one exits question" do
+    quay = create(:location, :stub, story: @story, name: "Quay", population: "nobody")
+    create(:location_connection, location: @game.current_location, connected_location: quay, distance: "adjacent")
+    entered, signal = pipe
+    offline_model!
+    first = worker do
+      hold_call(signal, after: [ { "description" => "Wet planks and rope.", "lore" => "Boats came here once.", "name" => "Quay" } ])
+      OfflineExchange.with_model do
+        Playthrough::Turn.new(Playthrough.find(@game.id)).play("/move Quay", request_token: "killed")
+      end
+    end
+    assert_equal "1", read(entered)
+    kill(first)
+    assert_predicate quay.reload, :stub?
+    conversation = Chat.find(quay.generation_checkpoint.fetch("chat_id"))
+    assert_equal %w[user assistant user], conversation.exchange_messages.pluck(:role)
+
+    exits = { "exits" => [ { "name" => "Back Lane", "teaser" => "A narrow lane.", "distance" => "adjacent", "travel_method" => "walking" } ] }
+    arrival = { "description" => "You reach the quay.", "summary" => "Arrived at the quay." }
+    OfflineExchange.with(exits, arrival, LOOK, "You look around.") do
+      Playthrough::Turn.new(@game.reload).play("/look", request_token: "later")
+    end
+
+    assert_predicate quay.reload, :realized?
+    assert_equal quay, @game.reload.current_location
+    assert_equal %w[completed completed], @game.commands.order(:id).pluck(:status)
+    assert_equal %w[user assistant user assistant], conversation.exchange_messages.pluck(:role)
+    assert_equal 1, conversation.messages.where(role: "user").count { |message| message.content.start_with?("Now list the ways out of Quay") }
+  end
+
   private
+
+  REACTION = { "pre_thought" => "A visitor.", "pre_feeling" => "curious", "action" => "I nod.",
+               "post_feeling" => "calm", "post_thought" => "Fine.", "inner_resolution" => "I wait.",
+               "engine_action" => Playthrough::NpcAction::NONE }.freeze
+  LOOK = { "intent" => "other", "target" => "nothing", "also_named" => "nothing" }.freeze
+
+  # A MODEL CALL THAT NEVER RETURNS, for a worker that is about to be killed.
+  # RubyLLM's own `Chat#ask` is `ask_later`, which persists the prompt, and then
+  # the request. This keeps the first half and holds where the request would
+  # go. The calls listed in `after` are answered offline first.
+  def hold_call(signal, after: [])
+    answers = after.dup
+    Chat.define_method(:ask) do |message = nil, **_options, &block|
+      if answers.any?
+        add_message(role: :user, content: message)
+        next OfflineExchange.persist_answer(self, OfflineExchange.reply(answers.shift), &block)
+      end
+      ask_later(message)
+      signal.write("1")
+      sleep
+    end
+  end
+
+  # THE ONE MODEL ROW THE HELD CALL NEEDS, written by the parent before it forks.
+  # A chat saved into an empty registry table loads RubyLLM's whole bundled
+  # registry, which is slow enough under a parallel suite to outlast the wait for
+  # the signal, and would be committed past this test's teardown.
+  def offline_model!
+    model = OfflineExchange::MODEL
+    RubyLLM::ActiveRecord::Model.find_or_create_by!(model_id: model[:model], provider: model[:provider].to_s) do |row|
+      row.name = model[:model]
+    end
+  end
+
+  def kill(pid)
+    Process.kill("KILL", pid)
+    _, status = Timeout.timeout(10) { Process.wait2(pid) }
+    @children.delete(pid)
+    assert_equal Signal.list.fetch("KILL"), status.termsig
+    assert_equal "running", @game.commands.find_by!(request_token: "killed").status
+  end
 
   def pipe
     IO.pipe.tap { |ends| @pipes.concat(ends) }
