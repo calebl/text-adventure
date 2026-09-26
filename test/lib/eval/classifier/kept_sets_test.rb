@@ -151,10 +151,25 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   # wrong nor worth re-buying.
   FROZEN_DIGEST = "a259e93e6b865af1".freeze
 
+  # THE LINES ADDED TO THE CORPUS SINCE THE SETS AT `FROZEN_DIGEST` WERE BOUGHT.
+  # A kept set is never re-scored, so it is checked against the corpus it was
+  # scored on: today's corpus less these lines, which the first test below
+  # proves is that corpus exactly by its digest.
+  ADDED_SINCE_FROZEN = %w[throw-daybook-rowe throw-daybook-rowe-nickname throw-slate-brace throw-daybook-doorway
+                          throw-stamp-hallway throw-daybook-window throw-the-switch throw-the-bolt].freeze
+
+  def frozen_corpus = Eval::Classifier.corpus.subset { |line| !ADDED_SINCE_FROZEN.include?(line.id) }
+
+  def frozen_floor = JSON.parse(Eval::Classifier::Offline.new(corpus: frozen_corpus).summary.to_h.to_json)
+
+  test "the corpus less the lines added since is the corpus the frozen sets were scored on" do
+    assert_equal FROZEN_DIGEST, Eval::Classifier.digest(frozen_corpus)
+  end
+
   test "the current single arm baseline matches the corpus and schema request" do
     result = load_kept(CURRENT)
     assert_equal FROZEN_DIGEST, result.corpus_digest
-    assert_equal Eval::Classifier.corpus.size, result.corpus_size
+    assert_equal frozen_corpus.size, result.corpus_size
     assert_equal Eval::Classifier::Version.offline, result.request_identity
     assert_equal [ BaseAgent::REMOTE_MODEL_IDS.first ], result.arms
     assert_equal result.arms, result.answered_by
@@ -184,7 +199,7 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
       assert result.cascade, "#{set} must say it was taken with the reader ON, or it is indistinguishable " \
                              "from another Mistral-alone row of the same arm"
       assert_equal FROZEN_DIGEST, result.corpus_digest, set
-      assert_equal Eval::Classifier.corpus.size, result.corpus_size, set
+      assert_equal frozen_corpus.size, result.corpus_size, set
       assert_equal [ BaseAgent::REMOTE_MODEL_IDS.first ], result.arms,
                    "#{set}'s arm is the escalation target and nothing invents a separate reader arm"
       assert_equal Eval::Noise::MIN_RUNS, result.reps, set
@@ -209,7 +224,7 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
     CASCADE_SETS.each do |set|
       rows = load_kept(set).rows
 
-      assert_equal Eval::Noise::MIN_RUNS * Eval::Classifier.corpus.size, rows.size, set
+      assert_equal Eval::Noise::MIN_RUNS * frozen_corpus.size, rows.size, set
       rows.each do |row|
         assert_includes Playthrough::Classifier::PATHS, row["resolved_by"], "#{set}: #{row["id"]}"
         assert_kind_of Numeric, row["target_present"], "#{set}: #{row["id"]}"
@@ -291,10 +306,11 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   end
 
   test "each cascade set's floor can be recomputed offline" do
+    expected = frozen_floor
     CASCADE_SETS.each do |set|
       floor = JSON.parse(Eval.kept_root.join(set, "offline.json").read)
-      assert_equal Eval::Classifier.digest, floor.fetch("corpus_digest"), set
-      assert_equal JSON.parse(Eval::Classifier::Offline.new.summary.to_h.to_json), floor.fetch("floor"), set
+      assert_equal FROZEN_DIGEST, floor.fetch("corpus_digest"), set
+      assert_equal expected, floor.fetch("floor"), set
     end
   end
 
@@ -310,7 +326,7 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
     assert_equal FROZEN_DIGEST, result.corpus_digest
     assert_equal [ "mistralai/mistral-medium-3.1+openrouter-decisions" ], result.arms
     assert_equal Eval::Noise::MIN_RUNS, result.reps
-    assert_operator result.passes.sum { |pass| pass.rows.size }, :>=, Eval::Classifier.corpus.size * Eval::Noise::MIN_RUNS
+    assert_operator result.passes.sum { |pass| pass.rows.size }, :>=, frozen_corpus.size * Eval::Noise::MIN_RUNS
     transports = result.passes.flat_map(&:rows).map { |row| row["system_one_transport"] }.uniq
     assert_equal [ "openrouter_decisions" ], transports
     assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{CASCADE_OPENROUTER}/classifier.json"
@@ -319,14 +335,14 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
 
   test "the OpenRouter cascade set's floor can be recomputed offline" do
     floor = JSON.parse(Eval.kept_root.join(CASCADE_OPENROUTER, "offline.json").read)
-    assert_equal Eval::Classifier.digest, floor.fetch("corpus_digest")
-    assert_equal JSON.parse(Eval::Classifier::Offline.new.summary.to_h.to_json), floor.fetch("floor")
+    assert_equal FROZEN_DIGEST, floor.fetch("corpus_digest")
+    assert_equal frozen_floor, floor.fetch("floor")
   end
 
   test "the current classifier floor can be recomputed offline" do
     floor = JSON.parse(Eval.kept_root.join(CURRENT, "offline.json").read)
-    assert_equal Eval::Classifier.digest, floor.fetch("corpus_digest")
-    assert_equal JSON.parse(Eval::Classifier::Offline.new.summary.to_h.to_json), floor.fetch("floor")
+    assert_equal FROZEN_DIGEST, floor.fetch("corpus_digest")
+    assert_equal frozen_floor, floor.fetch("floor")
   end
 
   test "the initial physical candidate keeps every exact request and its single model receipt" do
