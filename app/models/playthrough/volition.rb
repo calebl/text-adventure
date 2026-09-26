@@ -202,8 +202,18 @@ class Playthrough::Volition
     # with a cast-iron press bolted through the floorboards would be doing what
     # the engine refuses the player. One rule, one predicate, both sides of the
     # counter.
+    #
+    # AND NEVER A THING THE ARC IS WAITING FOR THE PLAYER TO HOLD. A `hold_item`
+    # beat reads the party's hands (`Playthrough::Arc#holding?`), and nothing a
+    # die decides ever hands a thing back -- so a person who wandered in and
+    # pocketed one would stall the story on a roll, and a world the doctor
+    # calls completable would not be. The player may still take it, trade for
+    # it or talk somebody out of it; the only thing ruled out is a stranger's
+    # own turn doing it first.
+    arc_items = arc_item_ids
     playthrough.items_lying_in(location).each do |item|
       next unless item.throwable?
+      next if arc_items.include?(item.template_id)
 
       available["take:#{item.id}"] = "Pick up #{item.name} from #{location.name}."
     end
@@ -277,6 +287,14 @@ class Playthrough::Volition
   end
 
   private
+
+  # The world's rows this story's open arcs name in a `hold_item` beat. A
+  # player's copy carries its world row as `template_id` (`Item`), which is how
+  # a copy lying on this game's floor is recognised as one of them.
+  def arc_item_ids
+    Quest::Step.bound.where(trigger_kind: "hold_item", target_type: "Item",
+                            quest: playthrough.story.quests.open_arcs).pluck(:target_id).to_set
+  end
 
   # A WALK, AND THE ONE COLUMN IT IS ALLOWED TO WRITE.
   #

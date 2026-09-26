@@ -256,6 +256,16 @@ class EngineSweep::Walk
     (Array(document["locations"]) + Array(document["characters"])).each do |owner|
       Array(owner["items"]).each { |row| row["name"] = items.fetch(row["name"], row["name"]) }
     end
+    # AN ARC'S BEAT NAMES A ROOM OR A THING TOO, and a version of the file that
+    # renamed the room and not the beat would be an arc pointing somewhere the
+    # file no longer writes -- which `quest_unmoved` would report as the walk's
+    # doing rather than the script's.
+    Array(document["quests"]).flat_map { |quest| Array(quest["steps"]) }.each do |row|
+      case row["trigger"]
+      when "reach_location" then row["target"] = name.call(row["target"])
+      when "hold_item" then row["target"] = items.fetch(row["target"], row["target"])
+      end
+    end
   end
 
   # Where a player starts: the world's own opening arrival, in the world's

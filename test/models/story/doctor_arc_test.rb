@@ -24,12 +24,28 @@ class Story::DoctorArcTest < ActiveSupport::TestCase
 
   def codes = Story::Doctor.new(@story.reload).findings.map(&:code)
 
-  # --- a world with no arc is untouched --------------------------------------
+  # --- a world with no arc has nothing to finish ------------------------------
 
-  test "a story with no arc gets no arc findings at all" do
+  # ONE WARNING AND NONE OF THE REST. Every property above is vacuously true of
+  # an arc that is not there, so the one thing worth saying is that it is not
+  # there -- which is what let three checked-in worlds nobody could finish read
+  # HEALTHY.
+  test "a story with no arc is warned that nothing can end it, and gets no other arc finding" do
     @quest.destroy
+    doctor = Story::Doctor.new(@story.reload)
+    finding = doctor.findings.detect { |it| it.code == :no_arc }
 
+    assert finding, "a world with no quest is a world no playthrough can finish"
+    assert_equal :warning, finding.severity, "every turn still plays, so it is not fatal"
+    assert_equal :manual, finding.remedy, "an arc is world data a person writes, never a repair"
+    assert_predicate doctor, :playable?
     assert_empty codes.grep(/quest|frontier|conclusion|progress/)
+  end
+
+  test "a story with an arc is not warned that it has none" do
+    bound_step(@maw)
+
+    assert_not_includes codes, :no_arc
   end
 
   # --- P4: the ending is written ---------------------------------------------

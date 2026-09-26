@@ -200,6 +200,12 @@ characters:
   unrecognized_need: Neb Halloran needs to reach the truth without leaving his cousins to drown in his place.
   desire_pursuit: obtain
   need_pursuit: avoid
+  items:
+  - name: Neb's knotted cord
+    description: |-
+      A length of tarred line knotted along its whole length, wound round Neb's free fist: one knot for every wave that has reached the stain band since the ebb, the way the Shorefolk have counted water for two hundred years without writing any of it down. Read against the band, it is the tide's own figure for this morning, and it is not the one on the slate.
+    bulk: light
+    properties: '{"knots": 41, "written": false}'
 locations:
 - name: The Causeway Court
   detail_level: realized
@@ -213,6 +219,12 @@ locations:
     The court has sat on this rock for four hundred years because an oath sworn over standing salt water binds and an oath sworn on dry ground does not. Everything about the building follows from that: no roof, a low wall so the water can be seen, a floor that drains, and a bench positioned so the Justicar is the only person in the court who is not watching the tide.
 
     The tide-slate is the one object here with a rule about it. Only the Bell-Keeper may erase the day's figure, which in four hundred years has been broken twice, both times in the same case, and the case is not in the records because the record was the thing that was altered.
+  items:
+  - name: Assize hand-bell
+    description: |-
+      The court's bell: bronze, the size of two cupped hands, on a yew handle worn pale where nineteen years of your grip have been. It hangs on its hook at your shoulder, and the court rises and sits on it and on nothing else. Nobody but the Bell-Keeper takes it down.
+    bulk: light
+    properties: '{"rung": false}'
 - name: The Tide Post
   detail_level: realized
   # THE ROOM'S OWN HAZARD, and this world's whole premise is that it has one:
@@ -255,3 +267,37 @@ connections:
   hazard: drop
   hazard_die: 4
   hazard_from: The Causeway Court
+# THE ARC. The preface already has it: a figure altered in a hand close to
+# Vell's, a man chained where the water will reach, and a court that sits on
+# the bell. So the beats are go out to the water, take its own count, and ring
+# the court on it. The cord and the hand-bell are the two items added for it,
+# and the Vestry Hulk is left a stub on purpose -- it is where the papers live,
+# and the arc does not need a room nobody has written. The cord is in Neb's
+# hands rather than on the rock, so getting it means hearing the man the court
+# has not heard yet: he hands it over in conversation, and a thing lying at the
+# feet of somebody who wants it would be in his fist before the player looked
+# down. Ringing the court before going out to the water is the second ending.
+quests:
+- title: The Altered Figure
+  premise: Prove the high water on the tide-slate is not yours before the court sits on it and the post decides.
+  status: open
+  contributes: true
+  steps:
+  - summary: Go out to the tide post and read the stain band against the water yourself.
+    trigger: reach_location
+    target: The Tide Post
+    teaser: The water at the post will say whether the slate is lying.
+  - summary: Get the knotted cord Neb has been keeping since the ebb, the water's own count.
+    trigger: hold_item
+    target: Neb's knotted cord
+  - summary: Take the hand-bell off its hook and ring the court up on the true figure.
+    trigger: hold_item
+    target: Assize hand-bell
+  outcomes:
+  - name: the-court-rises-true
+    summary: You ring the court up on the water's own figure, with Neb's cord for the count and nobody's chalk for the hour. Justicar Brace hears him with the stain band still dry above his head, and the seventy minutes go into the record as what they were -- somebody's hand, and not the sea's.
+    default: true
+  - name: rung-on-the-chalk
+    summary: You rang the court up before you had been out to the water, so it sat on the chalk. Neb Halloran is heard at last from the causeway's edge, soaked to the chest; the hearing is lawful in every particular, and the figure it sat on is the forger's.
+    default: false
+    when: out_of_order

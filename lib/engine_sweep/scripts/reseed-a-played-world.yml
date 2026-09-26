@@ -68,7 +68,7 @@ steps:
   expect:
     changed: true
     understood: take -> ward stamp
-    here: [filing press]
+    here: [filing press, blank closure writ]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: carry-it-into-the-closet
@@ -120,7 +120,7 @@ steps:
     # EMPTY FOR THIS PLAYER, because their copy of the stamp is in the closet
     # where they left it. The world's own stamp is lying here again -- the
     # second player reads it back in the next step.
-    here: [filing press]
+    here: [filing press, blank closure writ]
     carrying: [Ward Office 12 daybook]
 
 - id: the-second-player-still-holds-its-own-daybook
@@ -143,7 +143,7 @@ steps:
     changed: false
     location: Ward Office 12 (realized)
     exits: [The Supply Closet (realized), The Long Hallway (stub)]
-    here: [filing press]
+    here: [filing press, blank closure writ]
     carrying: [Ward Office 12 daybook]
 
 - id: the-file-renames-the-closet
@@ -167,7 +167,7 @@ steps:
     changed: false
     location: Ward Office 12 (realized)
     exits: [Supply Closet (realized), The Long Hallway (stub)]
-    here: [filing press]
+    here: [filing press, blank closure writ]
     carrying: [Ward Office 12 daybook]
     note: 'is "Supply Closet" in the file, so the row was renamed'
 

@@ -124,6 +124,48 @@ class SeededWorldsTest < ActiveSupport::TestCase
     end
   end
 
+  # EVERY CHECKED-IN WORLD CAN BE FINISHED. Until each file carried a `quests:`
+  # block none of them could, and the doctor said nothing, because its arc
+  # checks answered for an arc that was not there. So this reads the arc and the
+  # doctor's findings for the five properties of a playable world directly,
+  # rather than trusting `healthy?` alone to keep meaning what it means today:
+  #
+  #   P1  the goal exists as a row      every step bound, the story can progress
+  #   P2  the frontier points at it     `frontier_turned_away_from_the_goal`
+  #   P3  the arc can complete          every target reachable from the opening
+  #   P4  the ending is written         a default, and a second ending a rule selects
+  #   P5  somebody to talk to           the turn-one test above
+  PLAYABLE_ARC_FINDINGS = %i[
+    no_arc story_without_a_conclusion quest_without_an_outcome quest_with_two_default_outcomes
+    outcome_nothing_can_reach quest_step_unbound story_cannot_progress quest_target_missing
+    quest_target_unreachable frontier_turned_away_from_the_goal
+  ].freeze
+
+  test "every checked-in world has an arc it can be finished by" do
+    WorldSeed::Loader.load_all(io: nil).each do |story|
+      arc = Quest.main_arc(story)
+
+      assert arc, "#{story.title}: no arc, so no playthrough of it can ever reach an ending"
+      assert_includes 3..4, arc.steps.size, "#{story.title}: an arc is three or four beats"
+      assert arc.steps.all?(&:bound?), "#{story.title}: a seeded arc names rows the file already wrote"
+      assert arc.steps.all? { |step| Quest::TRIGGERS.include?(step.trigger_kind) }
+      assert arc.steps.none?(&:speak_to?),
+             "#{story.title}: an offline walk cannot hold a conversation, so a speak_to beat is one no sweep can finish"
+      assert arc.default_outcome&.is_default?, "#{story.title}: the ending the world was born with"
+      assert arc.outcomes.conditional.any?, "#{story.title}: a second ending, and a rule that selects it"
+
+      arc.steps.select(&:reach_location?).each do |step|
+        assert_predicate step.target_room, :realized?,
+                         "#{story.title}: step #{step.position} sends the player to a room nobody has written"
+        assert_not_equal story.opening_location, step.target_room,
+                         "#{story.title}: step #{step.position} is reached on turn one, so every game takes it first"
+      end
+
+      findings = Story::Doctor.new(story).findings.select { |finding| PLAYABLE_ARC_FINDINGS.include?(finding.code) }
+      assert_empty findings, "#{story.title}: #{findings.map(&:message).join("; ")}"
+    end
+  end
+
   # NOWHERE ON PURPOSE, said out loud by the one world that means it. The
   # counterpart of the tide post below: that world's premise is a man who is
   # THERE, this one's is a man who is GONE, and both are now records.

@@ -1,0 +1,69 @@
+# THE SALT ASSIZES, WALKED TO ITS END -- the checked-in world's arc, `The
+# Altered Figure`, reached in the order the file lists it with no model in the
+# room: out to the post, the water's own count, and the court rung on it.
+#
+# THE COUNT IS IN NEB'S HANDS, and he hands it over in conversation. This mode
+# writes no dialogue, so the step names the choice he makes (`npc_action:`,
+# `EngineSweep::Conversation`) and the real effect writer applies it -- the
+# same closed set a model picks from in the browser.
+#
+# THE TIDE POST COSTS HIT POINTS ON ARRIVAL (`hazard: flooded`), and this walk
+# pins none of them: the die is the die's business, and `dead: false` before
+# the last beat is the assertion that a player who walks the arc straight is
+# not killed by it. The default ending is what the ordered route reaches, and
+# `ending_words:` reads its sentence off the closing scene.
+story: The Salt Assizes
+why: the checked-in world's arc walked in order to its default ending, and the closing scene carries that ending's words
+steps:
+- id: a-court-not-yet-rung
+  type: look
+  expect:
+    location: The Causeway Court (realized)
+    here: [Assize hand-bell]
+    ending: none
+    ending_words: []
+    dead: false
+
+- id: out-to-the-water
+  type: go to the Tide Post
+  why: beat 1, and the rock takes its toll for the crossing
+  expect:
+    changed: true
+    location: The Tide Post (realized)
+    present: [Neb Halloran]
+    quest:
+      1: reached
+    ending: none
+    dead: false
+
+- id: the-waters-own-count
+  type: talk to Neb
+  npc_action: "give:Neb's knotted cord"
+  why: beat 2 -- he gives it, and a thing given is in the party's hands like a thing taken
+  expect:
+    changed: true
+    carrying: [Assize tide-slate, Neb's knotted cord]
+    quest:
+      2: reached
+    ending: none
+
+- id: back-to-the-bench
+  type: go to the Causeway Court
+  expect:
+    changed: true
+    location: The Causeway Court (realized)
+    ending: none
+    dead: false
+
+- id: the-court-rung-on-the-true-figure
+  type: take the hand-bell
+  why: the last beat, in order, so the arc falls through to the default ending and the closing scene carries the file's own sentence
+  expect:
+    changed: true
+    quest:
+      1: reached
+      2: reached
+      3: reached
+    ending: the-court-rises-true
+    ending_words: ["You ring the court up on the water's own figure", "somebody's hand, and not the sea's"]
+    dead: true

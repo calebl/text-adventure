@@ -56,12 +56,18 @@ class EngineSweepTest < ActiveSupport::TestCase
   # A SWEEP WORLD IS A WORLD IN EVERY OTHER RESPECT: the same format, the same
   # loader, the same validations. One that could not be loaded and played would
   # be a fixture pretending to be a world -- see `EngineSweep::WORLDS`.
+  #
+  # EXCEPT THAT IT NEED NOT BE FINISHABLE. A sweep world exists to give one
+  # assertion something to stand on, and an arc it did not need would be a
+  # second thing every walk of it could trip over -- so `no_arc` is the one
+  # finding a sweep world may carry. A world somebody plays may not
+  # (`SeededWorldsTest`).
   test "a world of the sweep's own loads and is healthy" do
     Dir.glob(EngineSweep::WORLDS.join("*.yml")).sort.each do |path|
       story = WorldSeed::Loader.new(WorldSeed.parse(File.read(path)), source: path).load!
+      findings = Story::Doctor.new(story).findings.reject { |finding| finding.code == :no_arc }
 
-      assert_predicate Story::Doctor.new(story), :healthy?,
-                       "#{File.basename(path)}: #{Story::Doctor.new(story).findings.map(&:message).join("; ")}"
+      assert_empty findings, "#{File.basename(path)}: #{findings.map(&:message).join("; ")}"
     end
   end
 
@@ -263,7 +269,7 @@ class EngineSweepTest < ActiveSupport::TestCase
       - reseed: true
         expect:
           changed: false
-          here: [filing press]
+          here: [filing press, blank closure writ]
           carrying: [Ward Office 12 daybook, ward stamp]
           exits: [The Supply Closet (realized), The Long Hallway (stub)]
     SCRIPT
@@ -283,11 +289,11 @@ class EngineSweepTest < ActiveSupport::TestCase
           carrying: [Ward Office 12 daybook, ward stamp]
       - reseed: true
         expect:
-          here: [filing press]
+          here: [filing press, blank closure writ]
       - type: look
         player: second
         expect:
-          here: [ward stamp, filing press]
+          here: [ward stamp, filing press, blank closure writ]
           carrying: [Ward Office 12 daybook]
     SCRIPT
 

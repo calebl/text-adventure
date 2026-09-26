@@ -1,0 +1,164 @@
+# THE LUNAR CARTOGRAPHER, WALKED TO ITS END -- the checked-in world's arc, `The
+# Fixed Bearing`: up to the bell, the Ringer's tally, and the climbers' book.
+#
+# THE TALLY IS IN THE RINGER'S HANDS, so the middle beat is a fight, and it is
+# walked the way `a-fight-the-player-wins.yml` walks it: an attack and a `mend`
+# per round, ten rounds, because ten blows of at least one cannot leave his ten
+# hit points standing whatever the dice said. A round after he is down is
+# refused and writes nothing, so the walk is the same walk on every roll.
+#
+# THE WHOLE ROUTE IS TWO ROOMS UP FROM THE START, and the arc ends in the bell
+# chamber: nothing here depends on where the nightly rearrangement puts the
+# Larkspur Quarter afterwards.
+story: The Lunar Cartographer
+why: the checked-in world's arc walked in order, through a fight, to its default ending, and the closing scene carries that ending's words
+steps:
+- id: nothing-reached-yet
+  type: look
+  expect:
+    location: Grenn's Boarding House, Room 3 (realized)
+    ending: none
+    ending_words: []
+
+- id: up-the-stairs
+  type: go to the hallway
+  expect:
+    changed: true
+    location: Grenn's Boarding House hallway (stub)
+
+- id: the-one-fixed-point
+  type: go to the bell
+  why: beat 1 -- arriving is free, because a riposte runs in the room the turn began in
+  expect:
+    changed: true
+    location: The Bell of Saint Aravel (realized)
+    foes: [Marek Sollen]
+    here: [climbers' bearing book]
+    quest:
+      1: reached
+    ending: none
+
+- id: round-1
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-1
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-2
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-2
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-3
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-3
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-4
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-4
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-5
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-5
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-6
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-6
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-7
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-7
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-8
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-8
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-9
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-9
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-10
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-10
+  type: mend 20
+  expect:
+    dead: false
+
+- id: the-tally-off-the-floor
+  type: take the tally
+  why: beat 2 -- the body let go of it, and it is an ordinary item on an ordinary floor
+  expect:
+    changed: true
+    carrying: [bell-rope tally]
+    quest:
+      1: reached
+      2: reached
+    ending: none
+
+- id: the-bearing-carried-home
+  type: take the bearing book
+  why: the last beat, in order, so the default ending and its own sentence on the closing scene
+  expect:
+    changed: true
+    carrying: [bell-rope tally, climbers' bearing book]
+    quest:
+      1: reached
+      2: reached
+      3: reached
+    ending: the-bearing-holds
+    ending_words: ["the survey has its fixed point at last", "and then no more counting at all"]
+    dead: true

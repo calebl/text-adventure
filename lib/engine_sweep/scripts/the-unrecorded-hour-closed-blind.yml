@@ -1,0 +1,40 @@
+# THE UNRECORDED HOUR'S OTHER ENDING -- the writ taken before the closet and
+# the index, so the beats land out of the order the file lists them in and the
+# engine selects `closed-blind` (`when: out_of_order`) off this game's own
+# `playthrough_beats`. The ordered walk is `the-unrecorded-hour-to-an-ending.yml`;
+# this is the proof that the second ending in the file is one a player can
+# actually reach.
+story: The Unrecorded Hour
+why: the checked-in world's arc walked out of order reaches its conditional ending rather than the default
+steps:
+- id: the-writ-first
+  type: take the writ
+  why: beat 3 before beats 1 and 2 -- recorded, and the arc is not finished
+  expect:
+    changed: true
+    quest:
+      1: bound
+      2: bound
+      3: reached
+    ending: none
+
+- id: then-the-closet
+  type: go to the Supply Closet
+  expect:
+    changed: true
+    quest:
+      1: reached
+    ending: none
+
+- id: and-the-index-last
+  type: take the index
+  why: every beat is reached, one of them early, so the ending is the one whose rule holds and not the default
+  expect:
+    changed: true
+    quest:
+      1: reached
+      2: reached
+      3: reached
+    ending: closed-blind
+    ending_words: ["Query 1188 was closed on your own report"]
+    dead: true

@@ -98,7 +98,7 @@ steps:
     hp: 18
     # A dead end, and the only way down is the stair you came up.
     exits: [Grenn's Boarding House hallway (stub)]
-    here: []
+    here: [climbers' bearing book]
     carrying: []
 
 - id: a-monster-is-still-somebody-you-can-address

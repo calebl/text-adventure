@@ -191,6 +191,14 @@ locations:
 
     The office is also, on paper, four clerks. The two empty desks have been carried on the establishment for nineteen years, filled and vacated a handful of times, and no query about them has ever come back answered. Vance keeps the ledgers for all four positions out of habit. It is the kind of small, unexamined inaccuracy the Registry runs on -- and the reason a person could be removed from this room without anything in the record needing to change.
   items:
+  - name: blank closure writ
+    description: |-
+      A Registry writ of closure on the heavy grey stock only the Inspectorate issues, lying in the wire basket under the pneumatic tube where it arrived without a carrier. It is ward-marked 12, sealed, and countersigned in advance; the line for the name of the file to be closed is still empty, and the countersignature is in the same careful, borrowed slant as the amendment in your daybook.
+    bulk: light
+    readable: true
+    inscription: |-
+      WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned.
+    properties: '{"registered": true, "ward": 12, "name_line": "blank"}'
   - name: filing press
     description: |-
       The ward's copying press: a cast-iron screw press on a plinth bolted through the floorboards between the coat rail and the closet door, with a stack of damp linen sheets on the shelf beneath it. It has stood in this corner since the works of 1846 and it weighs what a small horse weighs.
@@ -238,3 +246,36 @@ connections:
 - between: [Ward Office 12, The Long Hallway]
   distance: adjacent
   travel_method: walking
+# THE ARC, and it is this world's own premise in three beats: the closet nobody
+# audits, the index that names the hand, and the writ that hand is about to
+# spend again. The writ is the one item added for it. It lies in Ward Office 12
+# rather than in the closet on purpose: a player who sweeps the closet clean has
+# not finished the story by accident, and nobody's own turn may pick up a thing
+# an arc is waiting for (`Playthrough::Volition#choices`), so the Sub-Inspector
+# standing beside it cannot pocket it first. Taking the writ before the closet
+# and the index is the second ending -- a clerk holding a blank closure with
+# nothing to set against it, which is the thing Vance fears most.
+quests:
+- title: Query 1188
+  premise: Find out who cut an hour out of Ward Office 12's daybook and what it was spent on, before the Inspectorate closes the ward.
+  status: open
+  contributes: true
+  steps:
+  - summary: Open the one door in this office nobody has audited in eleven years.
+    trigger: reach_location
+    target: The Supply Closet
+    teaser: Whatever filled the missing hour was put where nobody counts.
+  - summary: Take the private index that names the hand behind the amendments.
+    trigger: hold_item
+    target: Perrin's private index
+  - summary: Take the blank closure writ out of the tube basket before anybody fills in its name.
+    trigger: hold_item
+    target: blank closure writ
+  outcomes:
+  - name: query-answered
+    summary: With Perrin's index and the unsigned writ side by side on your desk, the missing hour has a source at last -- the same hand closed 0714, 0902 and Perrin Lasco. Query 1188 stays open in your name, and this time the record says why.
+    default: true
+  - name: closed-blind
+    summary: You had the writ before you had any reason for it, and a clerk holding a blank closure with no source to set against it is a clerk explaining herself. By the time the index was in your hand, Rowe had written the hour up as your error, and Query 1188 was closed on your own report.
+    default: false
+    when: out_of_order
