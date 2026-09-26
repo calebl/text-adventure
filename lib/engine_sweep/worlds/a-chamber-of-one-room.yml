@@ -1,0 +1,60 @@
+# A cargo deck and the stub of a maintenance shaft, and nothing past it. The
+# exits answer for the shaft names the chamber at the top of its ladder with
+# `inside: one room`, which is the pick that used to split a chamber into a
+# building of one room called "Core Access Chamber room 1". The chamber is not
+# in this file on purpose: it has to be born from that answer.
+format: 2
+universe:
+  physics: Spin gravity on the outer decks, less toward the core.
+  technology: Ladders, hatches and hand lamps.
+  weapons: Wrenches.
+  geographies: The decks of a cargo hauler.
+  civilizations: A small working crew.
+  history: The hauler has run the same route for twenty years.
+  economics: Freight contracts.
+  politics: The ship's master has the last word aboard.
+  religion: The crew keeps no faith.
+  races:
+  - name: Spacer
+    description: People born and raised aboard ships.
+story:
+  title: A Chamber of One Room
+  genre: science fiction
+  start_time: '2026-09-20T06:00:00Z'
+  preface: A shaft runs from the cargo deck up toward the gravity core.
+  summary: Kael climbs toward the core.
+opening_scene:
+  location: Cargo Deck
+  characters: [Kael]
+  description: You stand at the foot of the maintenance shaft.
+  summary: Kael arrives on the cargo deck.
+characters:
+- fullname: Kael
+  nickname: Kael
+  race: Spacer
+  age: 30
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: An engineer on her third run aboard.
+  personality: Careful and dry.
+  appearance: A patched jumpsuit.
+  likes: A clean fault log.
+  dislikes: Guesswork.
+  fears: A breach she cannot seal.
+  stats: {level: 10, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+locations:
+- name: Cargo Deck
+  detail_level: realized
+  opening: true
+  description: Crates strapped in rows under a low ceiling.
+  teaser: A cargo deck.
+  lore: The deck has carried grain and ore alike.
+- name: Maintenance Shaft
+  detail_level: stub
+  population: nobody
+  teaser: A ladder runs up into the dark.
+connections:
+- between: [Cargo Deck, Maintenance Shaft]
+  distance: adjacent
+  travel_method: climbing

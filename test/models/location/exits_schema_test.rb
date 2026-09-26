@@ -117,12 +117,13 @@ class Location::ExitsSchemaTest < ActiveSupport::TestCase
   # picks from the list* -- so it is named here rather than expected among the
   # column names: `Location::Parameters::INSIDE` holds the band in paces and the
   # engine rolls `width` and `depth` inside it
-  # (`Location::Generator#create_stub!`).
+  # (`Location::Generator#create_stub!`). The labels with no band -- `no inside`
+  # and `one room` -- write no footprint at all.
   test "every exit field maps to a location or connection column, or to a table that does" do
     columns = Location.column_names + LocationConnection.column_names
 
     assert_equal [ "inside" ], exit_properties.keys - columns
-    assert(Location::Parameters::INSIDE.except(Location::Parameters::NO_INSIDE).values.all? { |band|
+    assert(Location::Parameters::INSIDE.compact.values.all? { |band|
       band.min.positive? && band.max >= band.min
     }, "every band is a real span of paces a footprint can be rolled inside")
   end

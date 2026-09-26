@@ -194,6 +194,26 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     end
   end
 
+  # ONE ROOM IS THE NAMED PLACE ITSELF, not a building laid out as one room that
+  # fills it (`Location::Parameters::ONE_ROOM`). A rule about the band, so a
+  # chamber and a tavern picked `one room` come out the same.
+  test "an exit given one room is born the room it names, with no footprint and no child" do
+    [ "Core Access Chamber", "The Tin Cup Tavern" ].each do |name|
+      here = stub_location(name: "Shaft to #{name}")
+      realize(here, FakeAgent.new(DETAIL, exit_named(name, inside: "one room")))
+
+      room = Location.find_by!(story: @story, name: name)
+      assert_nil room.width
+      assert_nil room.depth
+      assert_not_predicate room, :place?
+
+      realize(room, FakeAgent.new(DETAIL, { "exits" => [] }))
+      assert_predicate room.reload, :realized?
+      assert_empty room.child_locations, "#{name} was split into a room of itself"
+      assert_includes room.exits, here, "the doorway that named it still lands on it"
+    end
+  end
+
   # A FOOTPRINT IS A WORLD'S PARAMETER AND THIS DOES NOT OVERRULE ONE.
   test "an exit that names a place that already exists does not resize it" do
     anchor = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)

@@ -53,11 +53,17 @@ class Location::ParametersTest < ActiveSupport::TestCase
     assert_nil Location::Parameters.none.footprint(Random.new(1))
   end
 
+  # ONE ROOM IS THE NAMED PLACE ITSELF: a footprint would make it a building
+  # laid out as a single room that fills it, and put the player in "X room 1".
+  test "one room asks for no footprint either" do
+    20.times { |seed| assert_nil picked(inside: "one room").footprint(Random.new(seed)) }
+  end
+
   # THE BAND IS THE WHOLE OF WHAT A LABEL MEANS, and the two sides are rolled
   # inside it independently -- `Location::Interior::FOOTPRINT_SIDES`' shape, so a
   # building is not a square unless the dice say so.
   test "each band rolls a footprint inside itself" do
-    Location::Parameters::INSIDE.except(Location::Parameters::NO_INSIDE).each do |label, band|
+    Location::Parameters::INSIDE.compact.each do |label, band|
       20.times do |seed|
         sides = picked(inside: label).footprint(Random.new(seed))
 
@@ -81,7 +87,7 @@ class Location::ParametersTest < ActiveSupport::TestCase
   # `Eval::Realization::Scorer` reports rather than something to allow by
   # accident.
   test "every band is wide enough for a room" do
-    Location::Parameters::INSIDE.except(Location::Parameters::NO_INSIDE).each_value do |band|
+    Location::Parameters::INSIDE.compact.each_value do |band|
       assert_operator band.min, :>=, Location::Interior::MINIMUM_SIDE
     end
   end

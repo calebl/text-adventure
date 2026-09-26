@@ -69,8 +69,24 @@ class Location::Parameters
   # and costs nothing further.
   NO_INSIDE = "no inside".freeze
 
+  # ONE ROOM IS THE NAMED PLACE ITSELF, and not a container with one room in it.
+  # A building laid out on a footprint this small is divided into exactly one
+  # room that tiles the whole of it -- no door, no stair, nothing to walk
+  # between -- so the split adds no navigation and costs the place its name: the
+  # doorway moves onto the child, the player lands in "X room 1", and
+  # `Location::RoomName` rightly refuses the one name the room should have had,
+  # because it is the place's. So a stub named with this band is born with NO
+  # footprint and is realized and stood in under the name the exits answer gave
+  # it, like any room. It is a rule about the BAND and never about the name: a
+  # chamber picked `one room` and a tavern picked `one room` are the same answer.
+  # The label stays on the list, because a model that wants a small building
+  # still has a truthful word to say it with.
+  ONE_ROOM = "one room".freeze
+
   # THE BAND A LABEL NAMES, IN PACES A SIDE. `Location::Interior::FOOTPRINT_SIDES`'
-  # shape, and the engine rolls each side independently inside the band.
+  # shape, and the engine rolls each side independently inside the band. Nil for
+  # the two labels that name no building to lay out -- `NO_INSIDE`, and
+  # `ONE_ROOM`, whose header says why.
   #
   # A FOOTPRINT AND NOT A ROOM COUNT, which is the one place this vocabulary
   # departs from the captain's own wording and it is `Location::Interior`'s rule
@@ -82,7 +98,7 @@ class Location::Parameters
   # footprint.
   INSIDE = {
     NO_INSIDE => nil,
-    "one room" => (3..5),
+    ONE_ROOM => nil,
     "a few rooms" => (6..9),
     "a warren of rooms" => (12..18)
   }.freeze
@@ -202,7 +218,8 @@ class Location::Parameters
   def inside? = inside != NO_INSIDE
 
   # THE FOOTPRINT THIS BAND ASKS FOR, as two sides rolled independently inside
-  # it, or NIL for `no inside`. The roll is the caller's -- it hands the
+  # it, or NIL for a label with no band -- `no inside`, and `one room`, whose
+  # named place is itself the room (`ONE_ROOM`). The roll is the caller's -- it hands the
   # generator, because a footprint written at stub time has to be re-derivable
   # from the story and the room count like every other draw in the app (`Roll`).
   def footprint(rng)

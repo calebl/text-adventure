@@ -1964,6 +1964,7 @@ class Story::Doctor
       *boxes_with_no_parent_footprint, *overlapping_sibling_rooms, *locations_containing_each_other,
       *rooms_outside_their_footprint, *interiors_with_an_unreachable_room, *misaligned_stairs,
       *doors_between_rooms_that_share_no_wall, *places_with_a_footprint_and_no_rooms,
+      *places_left_split_around_one_room,
       *connections_terminating_on_a_place, *places_reachable_only_from_inside,
       *things_with_a_partial_position, *things_positioned_in_a_room_with_no_box,
       *things_outside_the_room_they_are_in ]
@@ -2367,6 +2368,26 @@ class Story::Doctor
 
       [ one, other ].minmax_by(&:id)
     end.uniq
+  end
+
+  # A PLACE SPLIT AROUND ONE ROOM THAT THE FOLD WOULD NOT TOUCH. A world
+  # generated before `Location::Parameters::ONE_ROOM` meant "the named place is
+  # the room" can hold a place laid out as one room named "<place> room 1", with
+  # the player's history on that room. `Update::Steps::FoldOneRoomPlaces` folds
+  # the exact shape back into one row; this reports every candidate that falls
+  # short of `Location::OneRoomFold`'s proof, with the clause it failed.
+  #
+  # MANUAL, because the proof failing is the whole reason: a guess would move
+  # somebody's game onto the wrong row. The proven shape is not reported, because
+  # `bin/update` folds it before the doctor runs.
+  def places_left_split_around_one_room
+    Location::OneRoomFold.candidates(story).reject(&:proven?).map do |fold|
+      finding(:one_room_place_left_split, :warning,
+              "#{fold.room.name} is the only room inside #{fold.place.name} and still carries its placeholder name, " \
+              "but it is not the exact shape a fold may undo (#{fold.reasons.join("; ")}), so the player stands in " \
+              "the placeholder rather than in #{fold.place.name}",
+              :manual, subject: fold.place)
+    end
   end
 
   # A BUILDING WRITTEN OUT IN FULL WITH NOTHING INSIDE IT. A place is laid out
