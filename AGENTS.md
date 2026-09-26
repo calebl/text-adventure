@@ -150,10 +150,17 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
   passing. A script that needs new behaviour gets its own world under
   `lib/engine_sweep/worlds/`.
 - **Restyling is `ta-api-iface`, a stage of its own** — do not do it in passing.
-- **The rake tasks build worlds; the browser plays them and never builds one.**
-  There is no `rake game:play` and there is not meant to be — the loop lives in
-  `Playthrough::Turn`, so a rake front end would be a second UI for no new
-  capability. `README.md` carries the command surface in full.
+- **The rake tasks build worlds; front ends play them and never build one.**
+  There is one turn loop, `Playthrough::Turn`, and one way into it, the
+  driver (`Playthrough::Session`): a front end hands it a
+  line and a block and renders what it answers. A front end owns its layout,
+  its input and its transport and nothing else — no dispatch, no prompt, no
+  notice wording and no writer of its own; what it needs and the driver does
+  not answer is added to the driver, never to the front end. The browser
+  (`NarrationJob`), `bin/play` and the MCP narrated mode are its consumers.
+  `rake game:mechanics` stays the prose-free console. There is still no
+  `rake game:play`: a play loop in a rake task is the thing this rule
+  prevents. `README.md` carries the command surface in full.
 - **A GitHub issue names the git SHA of the code that was running** when the
   behaviour was observed (`git rev-parse HEAD`, and note if the working tree was
   dirty). Without a SHA the report cannot be tied to a version. Playthrough
