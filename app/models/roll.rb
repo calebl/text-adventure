@@ -48,6 +48,20 @@
 # are different dice whatever either one counts, and a kind needs no agreement
 # with anybody about bounds.
 #
+# A SEED IS BUILT FROM ROW IDS, AND A SWEEP PINS THE IDS RATHER THAN THE SEED.
+# `rake game:sweep` walks a copy of a checked-in world, and the copy used to take
+# whatever ids came next -- 1 in the empty test database, 4 once `db:seed` had
+# loaded the checked-in worlds into a development one -- so the same script
+# rolled different dice in the two and passed in one while failing in the other.
+# The fix is `EngineSweep::Walk::ID_BASE`: every walk starts every table's ids at
+# one number inside the transaction it rolls back, so the copy has the same ids
+# wherever it is walked. REJECTED: seeding sweep rolls from a stable identity of
+# the script instead. That would put a second way of building a seed into this
+# file for one caller, would still leave every room, person and thing id that a
+# roll keys on free to move, and would mean the sweep no longer threw the dice a
+# real game throws. Pinning the ids changes nothing here, so no real
+# playthrough's rolls move.
+#
 # THE PRIMES are odd and pairwise distinct so that the five inputs cannot cancel
 # each other out: incrementing `sequence` by one and `at` by one must not land
 # on the seed some other pair would.
