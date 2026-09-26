@@ -1,0 +1,28 @@
+lines wrong in any repetition of classifier-2026-09-26 (id, position, reps wrong, typed, expected -> got):
+4/4  office                 CHANGED 'I am going to inventory that closet myself': ['examine -> nothing'] -> {'move -> The Supply Closet': 4}
+4/4  office                 CHANGED 'stamp': ['other -> nothing'] -> {'examine -> ward stamp': 4}
+4/4  closet                 same    'take the thing with the dates on the left and the file numbers on the right': ["take -> Perrin's private index"] -> {'take -> nothing': 4}
+4/4  closet                 same    'take the folded thing behind the blank forms': ['take -> copy-room apron'] -> {'take -> nothing': 4}
+4/4  court-slate-down       CHANGED 'take the tide-slate': ['take -> Assize tide-slate'] -> {'take -> nothing': 4}
+4/4  court-slate-down       CHANGED 'pick it up again': ['take -> Assize tide-slate'] -> {'take -> nothing': 4}
+4/4  office                 CHANGED 'look at how wet the ink still is on the pad': ['examine -> ward stamp'] -> {'examine -> nothing': 4}
+4/4  office                 CHANGED 'reach into the gap in the ledger and pull the missing hour back out of it with my bare hands': ['take -> nothing'] -> {'other -> nothing': 4}
+4/4  office                 CHANGED 'take a blank writ out of the press': ['take -> nothing'] -> {'take -> blank closure writ': 4} <- names a new item
+4/4  office-empty-handed    CHANGED 'take the lot': ['take -> ward stamp (and Ward Office 12 daybook)'] -> {'take -> Ward Office 12 daybook (and blank closure writ)': 4} <- names a new item
+4/4  office-with-perrin     CHANGED 'Perrin, tell Rowe what you found in the amendments': ['talk -> Perrin Lasco (and Halkett Rowe)'] -> {'talk -> Perrin Lasco': 4}
+4/4  closet                 same    'compare the index against my daybook': ["examine -> Perrin's private index (and Ward Office 12 daybook)"] -> {"examine -> Perrin's private index": 4}
+4/4  court-slate-down       CHANGED 'take it': ['take -> Assize tide-slate'] -> {'take -> nothing': 4}
+4/4  closet                 same    'take that one on the lowest shelf': ["take -> Perrin's private index"] -> {'take -> nothing': 4}
+4/4  office                 CHANGED 'pick up mine': ['take -> ward stamp'] -> {'take -> nothing': 4}
+4/4  closet                 same    'take the aprons': ['take -> copy-room apron'] -> {'take -> nothing': 4}
+4/4  office                 CHANGED 'talk to Halket Row': ['talk -> Halkett Rowe'] -> {'talk -> nothing': 4}
+4/4  office                 CHANGED 'say: of course': ['talk -> Halkett Rowe'] -> {'talk -> nothing': 4}
+4/4  room-3                 same    'laugh at the joke you made': ['talk -> Grenn Ollivar'] -> {'talk -> nothing': 4}
+4/4  room-3                 same    'get up and close your door': ['other -> nothing', 'move -> nothing'] -> {'use -> nothing': 4}
+4/4  room-3                 same    'look up at the Celestial Spire from the lane and take its bearing': ['examine -> nothing', 'move -> nothing'] -> {'other -> nothing': 4}
+4/4  office-empty-handed    CHANGED 'take all of it': ['take -> ward stamp (and Ward Office 12 daybook)'] -> {'take -> Ward Office 12 daybook (and blank closure writ)': 4} <- names a new item
+4/4  office                 CHANGED 'do not take the stamp': ['other -> nothing'] -> {'take -> ward stamp': 4}
+4/4  court-with-both        CHANGED 'go for Neb': ['other -> nothing'] -> {'move -> nothing': 4}
+2/4  room-3                 same    'down the stairs, past the third one from the bottom that creaks': ["move -> Grenn's Boarding House hallway", 'move -> Mournwell Lane'] -> {'move -> nothing': 2}
+1/4  court                  CHANGED 'demand that the Justicar stand down': ['talk -> Ammon Brace'] -> {'talk -> nothing': 1}
+wrong readings by position kind {'changed': 65, 'unchanged': 34}
