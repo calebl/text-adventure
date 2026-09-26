@@ -576,7 +576,7 @@ class Playthrough::Moment
     return nil unless item.is_a?(Item) && item.inscribed?
 
     reader = protagonist ? protagonist.fullname : "The person you are speaking to"
-    %(What #{reader} was reading a moment ago: the #{item.name}, which says, word for word: ) +
+    %(What #{reader} was reading a moment ago: #{item.definite_name}, which says, word for word: ) +
       %("#{item.inscription}")
   end
 

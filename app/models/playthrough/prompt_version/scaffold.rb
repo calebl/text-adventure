@@ -62,6 +62,8 @@ class Playthrough::PromptVersion::Scaffold
   Thing = Struct.new(:name, :description, :inscription, :bulk, :carried, keyword_init: true) do
     def inscribed? = inscription.present?
     def carried? = carried
+    def bare_name = name.to_s.sub(Item::LEADING_ARTICLE, "")
+    def definite_name = "the #{bare_name}"
   end
 
   Person = Struct.new(:fullname)

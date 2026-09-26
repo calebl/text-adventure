@@ -865,7 +865,7 @@ class Playthrough::Turn
     Scene::Narrator.new(playthrough).narrate(
       command,
       fact: taken_fact(item, taker, from),
-      fallback_text: "You pick up the #{item.name}.",
+      fallback_text: "You pick up #{item.definite_name}.",
       handled: Playthrough::Moment::Handled.new(item: item, direction: :taken),
       &block
     )
@@ -895,7 +895,7 @@ class Playthrough::Turn
     Scene::Narrator.new(playthrough).narrate(
       command,
       fact: dropped_fact(item, here, dropper),
-      fallback_text: "You put down the #{item.name} in #{here.name}.",
+      fallback_text: "You put down #{item.definite_name} in #{here.name}.",
       handled: Playthrough::Moment::Handled.new(item: item, direction: :dropped),
       &block
     )
@@ -927,7 +927,7 @@ class Playthrough::Turn
     words = inscriber.inscribe!
 
     scene = Scene::Narrator.new(playthrough).narrate(
-      command, fact: read_fact(item, words), fallback_text: "On the #{item.name} you read: #{words}", &block
+      command, fact: read_fact(item, words), fallback_text: "On #{item.definite_name} you read: #{words}", &block
     )
 
     # The words cost a call on the one turn that wrote them, and that call
@@ -973,7 +973,7 @@ class Playthrough::Turn
 
     Scene::Narrator.new(playthrough).narrate(
       command, fact: thrown_fact(outcome, thrower),
-      fallback_text: "Your throw of the #{intent.item.name}: #{outcome.outcome_in_words}.", &block
+      fallback_text: "Your throw of #{intent.item.definite_name}: #{outcome.outcome_in_words}.", &block
     )
   end
 
@@ -1512,13 +1512,13 @@ class Playthrough::Turn
   # went from 1 flag to 12 over four repetitions (take-fix-1, 2026-09-05). One
   # row moved, so one row is what the sentence lets the paragraph move.
   def taken_fact(item, taker, from = nil)
-    "ON THIS TURN, and not before it, #{taker.fullname} picked the #{item.name} up. " \
+    "ON THIS TURN, and not before it, #{taker.fullname} picked #{item.definite_name} up. " \
       "Until this turn it was NOT in their hands at all: it was lying " \
       "#{from ? "in #{from.name}" : "in this room"}. Now they are carrying it" \
       "#{" -- #{item.description}" if item.description.present?}. " \
       "The picking up is what has just happened and it is what to narrate. Do not " \
       "write it as something they already had, already held, or turn out to be " \
-      "holding. The #{item.name} is the only thing that moved: nothing else was " \
+      "holding. #{item.definite_name.upcase_first} is the only thing that moved: nothing else was " \
       "lifted, opened, drawn out or taken into anybody's hands." \
       "#{" #{written_words_fact(item)}" if item.inscribed?}"
   end
@@ -1529,10 +1529,10 @@ class Playthrough::Turn
   # 2026-09-03 baseline).
   def dropped_fact(item, here, dropper = nil)
     "ON THIS TURN, and not before it, #{dropper&.fullname || "The party"} put the " \
-      "#{item.name} down. Until this turn it WAS in their hands: it is no longer " \
+      "#{item.bare_name} down. Until this turn it WAS in their hands: it is no longer " \
       "carried, and it is now lying in #{here.name}, where it stays until somebody " \
       "picks it up. The putting down is what has just happened and it is what to " \
-      "narrate. Do not write them picking it up or finding it. The #{item.name} is " \
+      "narrate. Do not write them picking it up or finding it. #{item.definite_name.upcase_first} is " \
       "the only thing that moved: nothing else was lifted, opened, drawn out or " \
       "taken into anybody's hands."
   end
@@ -1554,7 +1554,7 @@ class Playthrough::Turn
   # sentence second.
   def thrown_fact(outcome, thrower)
     who = thrower&.fullname || "The party"
-    thing = outcome.item.name
+    thing = outcome.item.bare_name
 
     case outcome.kind
     when :fumbled
@@ -1591,7 +1591,7 @@ class Playthrough::Turn
   def read_fact(item, words)
     return nil if words.blank?
 
-    "The #{item.name} has writing on it. #{written_words_fact(item, words)}"
+    "#{item.definite_name.upcase_first} has writing on it. #{written_words_fact(item, words)}"
   end
 
   # THE WORDS THEMSELVES, and this is the one fact in the app that is handed
