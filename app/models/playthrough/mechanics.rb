@@ -954,13 +954,13 @@ class Playthrough::Mechanics
   #   on it            says this thing has no writing on it at all.
   def recite(item, understood)
     unless item.readable?
-      return refuse("there is nothing written on the #{item.name}. Looking at something that has no " \
+      return refuse("there is nothing written on #{item.definite_name}. Looking at something that has no " \
                     "writing on it is prose, and this mode writes none. Nothing changed.",
                     understood: understood)
     end
 
     unless item.inscribed?
-      return refuse("the #{item.name} has writing on it and the records do not hold the words yet. " \
+      return refuse("#{item.definite_name} has writing on it and the records do not hold the words yet. " \
                     "Writing them down is one model call (Item::Inscriber) and this mode makes none " \
                     "here. Read it in the browser once and it is a record from then on.",
                     understood: understood)

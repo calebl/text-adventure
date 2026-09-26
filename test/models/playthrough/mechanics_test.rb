@@ -212,6 +212,17 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_includes report.refusal, "there is nothing written on the ward stamp"
   end
 
+  test "a thing named with its own article is refused without a doubled article" do
+    @stamp.update!(name: "a ward stamp")
+    report = play("read the ward stamp")
+
+    assert_includes report.refusal, "there is nothing written on the ward stamp"
+    assert_no_match(/the a /i, report.refusal)
+
+    @stamp.update!(readable: true, inscription: nil)
+    assert_no_match(/the a /i, play("read the ward stamp").refusal)
+  end
+
   # And it will not WRITE the words either: that is one model call, and this mode
   # makes none here. It says what is missing rather than inventing it.
   test "the offline mode says so rather than writing the words a readable thing lacks" do

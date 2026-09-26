@@ -184,7 +184,13 @@ class Playthrough::Refusal
     talk: "There is nobody here to talk to.",
     take: "There is nothing lying here to pick up.",
     drop: "You are carrying nothing, so there is nothing to put down.",
-    attack: "There is nobody here to fight.",
+    # THE EMPTY CAST IS NOT THE WHOLE ANSWER when the player swung at a thing:
+    # "/attack the core" names scenery, and a fight is blows between bodies
+    # the records hold. So the sentence says what an attack can be aimed at and
+    # what to do instead, rather than only that the room is empty of people.
+    attack: "There is nobody here to fight. An attack is aimed at a person standing here, " \
+            "not at the room or anything built into it -- look around, or use, take or throw " \
+            "something you can reach.",
     use: "These items and doorways offer no matching physical action."
   }.freeze
 
@@ -355,7 +361,7 @@ class Playthrough::Refusal
     end
 
     new(kind: :immovable, typed: typed,
-        fact: "The #{item.name} is #{item.bulk} and does not move for anybody: #{attempt}.")
+        fact: "#{item.definite_name.upcase_first} is #{item.bulk} and does not move for anybody: #{attempt}.")
   end
 
   def self.unresolved(intent, typed:, offered: [])
