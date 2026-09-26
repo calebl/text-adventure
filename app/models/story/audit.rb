@@ -208,8 +208,14 @@ class Story::Audit
   # than a state, and they are here rather than in a bucket of their own
   # because what they prove is the same thing: the records say what the turn
   # did and the narration says otherwise. See `#check_take`.
+  #
+  # `dead_shown_alive`, `carried_shown_lying` and `handover_invented` read the
+  # third kind of record: `Scene#engine_fact`, the receipt of what the engine
+  # handed the writer. See `#check_receipt`.
   CONTRADICTIONS = %i[unreachable_transition item_not_held unrecorded_departure unrecorded_arrival
-                      take_denied pickup_invented inscription_misquoted].freeze
+                      take_denied pickup_invented inscription_misquoted
+                      dead_shown_alive carried_shown_lying handover_invented].freeze
+
 
   # THE PROSE BROKE A RULE THE APP STATES, provable from the row itself and one
   # record. Not a disagreement between two records -- a defect in the passage.
@@ -462,6 +468,11 @@ class Story::Audit
       # of what this can be run on: no record, nothing to compare a quotation
       # with. See `#check_inscription`.
       scenes.count { |scene| inscribed_subject(scene) && scene.description.present? }
+    when :dead_shown_alive, :carried_shown_lying, :handover_invented
+      # THE SCENES WHOSE RECEIPT STATES WHAT THIS CHECK READS, and nothing else:
+      # a receipt with nobody dead on it cannot be contradicted by prose about
+      # the dead, and a scene with no receipt at all is unjudged, never clean.
+      scenes.count { |scene| scene.description.present? && Receipt.for(scene)&.states?(code) }
     else
       scenes.size
     end
@@ -535,6 +546,7 @@ class Story::Audit
       check_take(scene)
       check_drop(scene)
       check_inscription(scene)
+      check_receipt(scene)
     end
 
     check_stillness
@@ -1176,6 +1188,113 @@ class Story::Audit
     return nil unless item.is_a?(Item) && item.inscribed?
 
     item
+  end
+
+  # ------------------------------------------------------------------------
+  # THE PROSE CONTRADICTS THE RECEIPT THE ENGINE HANDED ITS WRITER.
+  #
+  # `Scene#engine_fact` is the durable receipt of the engine-owned facts a
+  # scene's prose was written against -- who lay dead and what the player
+  # carried on an arrival (`Scene::Generator#arrival_engine_fact`), whether a
+  # conversation moved any possession (`Playthrough::NpcAction`). Every other
+  # check here reads the world as it stands now or the transition a turn made;
+  # this reads the words that were true WHEN THE PROSE WAS WRITTEN, which
+  # nothing can have moved since. `Story::Audit::Receipt` reads the receipt,
+  # `Story::Audit::Prose` reads the passage, and a disagreement is a
+  # contradiction in the same sense `take_denied` is one.
+  #
+  # THREE READINGS, EACH SEPARATE, on the rule `check_drop` states: they read
+  # different sentences and miss different things.
+  #
+  #   dead_shown_alive     the receipt lists somebody dead here, and the prose
+  #                        has them stand, watch, wait or speak
+  #   carried_shown_lying  the receipt says the player carries a thing, and the
+  #                        prose has it lying on a surface or lifted off one
+  #   handover_invented    the receipt says no possession moved, and the prose
+  #                        has somebody put a thing in the player's hand
+  #
+  # WHICH RECEIPTS ARE NOT READ, and why, so nobody mistakes silence for a pass:
+  #
+  #   * an arrival FALLBACK is the engine's own words (`Scene#engine_authored?`)
+  #     and is excluded from every check here, receipt or not.
+  #   * a narrated OUTCOME (`Playthrough::Turn#taken_fact`, `#dropped_fact`,
+  #     `#read_fact`) is already read against the row the turn moved by
+  #     `take_denied`, `pickup_invented` and `inscription_misquoted`; reading its
+  #     receipt as well would count one contradiction twice. The throw, use and
+  #     locked-way receipts have no stored prose with a demonstrated
+  #     contradiction to measure a reading on.
+  #   * an ENDING's receipt is `Quest::Outcome#summary`, a sentence the world's
+  #     author wrote, and comparing prose with prose is a semantic judgment.
+  #   * the other NPC receipts -- a gift, a follower, a ceasefire -- are
+  #     contradicted in speech ("the key stays with me", "I accept your truce"),
+  #     and no grammar tells a refusal or an agreement in dialogue from a
+  #     proposal. The study's four ceasefire contradictions are a stated miss.
+  #   * a crossing's cost: the study found prose OMITTING an injury, never
+  #     denying one, and silence is not a contradiction.
+  #
+  # A SCENE WITH NO RECEIPT IS NEVER FLAGGED. Where its shape says one was
+  # expected -- an arrival or a conversation written before the column existed
+  # -- each check it would have answered is recorded unjudged and counted,
+  # because a scene with nothing to be read against is not a clean scene.
+  #
+  # PRECISION, MEASURED, and the numbers are in `Story::Audit::ReceiptTest`
+  # rather than here: every stored evaluation set that carries a receipt beside
+  # its prose, the study's own readers as the labels where they exist, and the
+  # four corpora with receipts planted under them.
+  # ------------------------------------------------------------------------
+  def check_receipt(scene)
+    return if scene.description.blank?
+
+    receipt = Receipt.for(scene)
+    return unjudge_unset_receipt(scene) if receipt.nil?
+
+    receipt.contradictions(scene.description, protagonist: protagonist_names).each do |found|
+      flag(found.code, scene, receipt_headline(found),
+           **receipt_evidence(found, receipt),
+           "named as" => found.claim.name,
+           claim: found.claim.sentence.truncate(220),
+           typed: scene.typed.presence,
+           where: scene.location&.name,
+           at: scene.story_timestamp)
+    end
+  end
+
+  def receipt_headline(found)
+    case found.code
+    when :dead_shown_alive
+      "the engine recorded #{found.subject} dead here, and the narration has them acting alive"
+    when :carried_shown_lying
+      "the engine recorded the player carrying the #{found.subject}, and the narration has it lying somewhere"
+    when :handover_invented
+      "the engine recorded that no possession changed hands, and the narration hands the player something"
+    end
+  end
+
+  # The receipt line the prose argues with, quoted from the receipt itself.
+  def receipt_evidence(found, receipt)
+    case found.code
+    when :dead_shown_alive then { person: found.subject, "the receipt says" => "Dead here: #{receipt.dead.join(", ")}." }
+    when :carried_shown_lying then { item: found.subject, "the receipt says" => "You are carrying: #{receipt.carried.join(", ")}." }
+    else { "the receipt says" => receipt.text.truncate(220) }
+    end
+  end
+
+  # AN ARRIVAL OR A CONVERSATION WITH NO RECEIPT, which is every one written
+  # before `engine_fact` existed and any whose writer had no playthrough.
+  # Counted, never read. The world's shared opening carries no receipt by
+  # design and is neither shape, so it is not counted.
+  def unjudge_unset_receipt(scene)
+    shape = if scene.moved_to? then :arrival
+    elsif scene.recorded_action == "talk" then :talk
+    end
+    return if shape.nil?
+
+    Receipt::SHAPES.each do |code, expected|
+      next unless expected == shape
+
+      unjudge(code, scene, "this scene has no engine receipt -- it predates the record, or its writer supplied none -- " \
+                            "so there is nothing to read its prose against")
+    end
   end
 
   # ------------------------------------------------------------------------

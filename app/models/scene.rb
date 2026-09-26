@@ -5,7 +5,8 @@ class Scene < ApplicationRecord
   # reconstructing it: inventory, bodies and whereabouts can all change after
   # the scene, while prose verification asks what was true when it was written.
   # The narrator may omit or contradict this field; it can never alter it.
-  # `Story::Audit` owns comparisons between the two.
+  # `Story::Audit` owns comparisons between the two (`Story::Audit::Receipt`
+  # reads it back; `#check_receipt` is where prose is read against it).
   #
   # IDs actually supplied to this arrival's renderer. Nil belongs to the
   # ordinary Moment path; an empty arrival list means no toll was presented.
@@ -318,6 +319,10 @@ class Scene < ApplicationRecord
   # which is every set `rake eval:score` opens from before 2026-09-05 -- the
   # truth about that run rather than a raise.
   def resolved_by_reader = has_attribute?("resolved_by") ? resolved_by : nil
+
+  # The same guard for the engine's receipt: a run database from before the
+  # column has no receipt on any scene, which `Story::Audit` counts as unset.
+  def recorded_engine_fact = has_attribute?("engine_fact") ? engine_fact : nil
 
   # HOW THE TURN READ, in one line, for a person: `rake eval:read` and the debug
   # page print it beside what was typed. Nil for a turn with no action on
