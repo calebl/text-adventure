@@ -526,6 +526,168 @@ module Story::Audit::Prose
   end
 
   # ------------------------------------------------------------------------
+  # THE PROSE ARGUES WITH THE ENGINE'S RECEIPT.
+  #
+  # `Scene#engine_fact` is the exact set of facts the engine handed a scene's
+  # writer (`Story::Audit::Receipt` reads it). These three read a passage
+  # against it, and each answers a contradiction the arrival and NPC study
+  # under `db/eval/adversarial-20260909` found in real prose:
+  #
+  #   the receipt says    the prose says                  reader
+  #   Dead here: X        X stands, watches, speaks       `.living_claims`
+  #   You are carrying: a a lies on the desk / is lifted  `.lying_claims`
+  #   no possession moved somebody puts a thing in your   `.handover_claims`
+  #                       hand
+  #
+  # ALL THREE ARE GRAMMARS OF A CLAIM, never a name scan, on the rule set by
+  # finding 2 of `Story::Audit`'s header: naming the dead is not raising them,
+  # and naming a key is not putting it on a desk. Each takes the house negation
+  # guard, and each ignores words inside quotation marks -- a character may say
+  # anything about a dead man or a key, and a line of dialogue is not the
+  # narration placing either.
+  #
+  # MEASURED BEFORE THEY SHIPPED, on every stored set that carries a receipt
+  # beside its prose and on the four corpora with receipts planted under them;
+  # the numbers, the hand-read flags and every stated miss are pinned in
+  # `Story::Audit::ReceiptTest`.
+  # ------------------------------------------------------------------------
+
+  # WHAT ONLY THE LIVING DO, and the name must be the subject: it comes straight
+  # after the name, with at most one adverb between. "Maren Vosk stands
+  # motionless" is a claim; "the hand of Maren Vosk floating", "Maren Vosk lies
+  # motionless" and "where Maren Vosk once stood" are not. `lies`, `sits` and
+  # `slumps` are absent on purpose: they are how a body is written.
+  LIVING_ACTS = /(?:\s+\w+ly)?\s+(?:stands?|standing|stood|watch(?:es|ing|ed)?|wait(?:s|ing|ed)?|
+                 speaks?|speaking|spoke|says|said|greets?|greeting|nods?|nodding|smiles?|smiling|
+                 looks?\s+up|glances?|glancing|turns?\s+(?:to|toward|towards)|steps?|stepping|
+                 calls?|whispers?|murmurs?|beckons?|rises?|rising|breathes?|breathing)\b/xi
+
+  # THE PROSE SHOWS SOMEBODY THE RECEIPT RECORDS DEAD DOING WHAT THE LIVING DO.
+  #
+  # WHAT IT KNOWINGLY MISSES: a dead person acting under a pronoun -- "her sharp
+  # eyes tracking your entrance" after a sentence that named her -- and any act
+  # written with a verb that is not on the list. Every labelled contradiction
+  # in the study names her as the subject of `stands` or `standing`, so the
+  # list is short on purpose.
+  def living_claims(text, names)
+    acts = Hash.new { |cache, word| cache[word] = /\b#{word}#{LIVING_ACTS.source}/xi }
+
+    claims(text, named_in(text, names)) do |sentence, word|
+      unquoted(sentence).match?(acts[word])
+    end
+  end
+
+  # Where a thing is put when it is put down, in prose about a room.
+  SURFACES = %w[
+    desk table floor shelf bench counter ground chair ledge sill bed crate stool
+    mantel mantelpiece hearth flagstones floorboards boards altar workbench tray
+  ].freeze
+
+  # A thing somebody is PUTTING somewhere is an act, not a statement of where
+  # it lies, and this reader states only the second. See `.lying_claims`.
+  PUTTING_VERBS = %w[
+    set sets setting put puts putting lay lays laying place places placing
+    lower lowers lowering rest rests resting slide slides sliding drop drops dropping
+    leave leaves leaving tuck tucks tucking
+  ].freeze
+
+  # Somewhere on a body that holds a thing: resting in a palm is being carried.
+  HELD_BY = (Story::Audit::ON_THE_PERSON + %w[grip grasp forearm]).freeze
+
+  # THE PROSE PUTS SOMETHING THE RECEIPT SAYS THE PLAYER IS CARRYING ON A
+  # SURFACE, OR HAS THE PLAYER LIFT IT FROM ONE.
+  #
+  # Three grammars, and the first two are a statement of where a thing lies:
+  #
+  #   1. the name, then a surface: "a brass key on the desk", "the brass key
+  #      glinting on the desk", "the brass key that gleams dully on the desk".
+  #      Only a participle or a short relative clause may stand between.
+  #   2. the name as the subject of lying: "the brass key resting there" --
+  #      unless a body part follows ("rests in her hands", "lies against your
+  #      arm"), because a thing resting in a hand is a thing being held.
+  #   3. `.invented_pickup_claims`: "you lift the brass key from the desk" says
+  #      it was lying there a moment ago, which the receipt says it was not.
+  #
+  # A SENTENCE THAT PUTS THE THING DOWN IS SKIPPED, by grammar 1 and 2 alike --
+  # "you set the brass key on the desk" is an act and not a standing claim, and
+  # reading it as one flagged every drop narration in the transition corpus.
+  #
+  # WHAT IT KNOWINGLY MISSES: "the brass key now resting there", whose adverb is
+  # not an -ly word, and a claim written about a name the records do not hold
+  # (`.item_names`' head-final rule).
+  def lying_claims(text, names)
+    surfaces = Regexp.union(SURFACES)
+    putting = Regexp.union(PUTTING_VERBS)
+    held = Regexp.union(HELD_BY)
+
+    names = named_in(text, names)
+    grammars = Hash.new do |cache, word|
+      cache[word] = [
+        /\b#{putting}\s+(?:down\s+)?(?:(?:the|a|an|your|his|her|their)\s+)?(?:[\w'’-]+\s+){0,2}?#{word}\b/i,
+        /\b#{word}(?:\s+(?:that|which)\s+\w+(?:\s+\w+ly)?|\s+\w+ing(?:\s+\w+ly)?)?\s+
+         (?:on|upon|atop)\s+(?:the|a|an|its)\s+(?:[\w-]+\s+)?#{surfaces}\b/xi,
+        /\b#{word}\s+(?:\w+ly\s+)?(?:rests|resting|lies|lying|sits|sitting)\b
+         (?![^.!?;:]{0,30}?\b(?:in|against|on|under|across|into)\s+(?:your|her|his|their)\s+#{held}\b)/xi
+      ]
+    end
+
+    stated = claims(text, names) do |sentence, word|
+      putting_down, on_a_surface, lying = grammars[word]
+      plain = unquoted(sentence)
+      next false if plain.match?(putting_down)
+
+      plain.match?(on_a_surface) || plain.match?(lying)
+    end
+
+    (stated + invented_pickup_claims(text, names)).uniq(&:name)
+  end
+
+  # Verbs that put a thing into somebody's hand. Present tense only: the
+  # narration is written in the present, and "someone pressed it into your
+  # hand" is a memory of a transfer rather than this turn's.
+  HANDING_VERBS = %w[
+    press presses pressing place places placing put puts putting drop drops dropping
+    slip slips slipping tuck tucks tucking lay lays laying set sets setting
+    push pushes pushing thrust thrusts thrusting
+  ].freeze
+
+  # THE PROSE HAS SOMEBODY GIVE THE PLAYER A THING ON A TURN WHOSE RECEIPT SAYS
+  # NO POSSESSION MOVED.
+  #
+  # Two grammars of a COMPLETED transfer, with the player as the recipient and
+  # not the subject:
+  #
+  #   1. a handing verb, the thing, then into the player's hand: "places the
+  #      brass key in your hand", "pressing it into your palm"
+  #   2. `hands` or `passes` with the player as the receiver: "hands you the
+  #      key", "hands it to you"
+  #
+  # AN OFFER IS NOT A TRANSFER and matches neither -- "holds it out to you",
+  # "offering it to you" -- on the study's own rubric, where an extended hand
+  # with no handover was read as consistent with an unchanged record.
+  #
+  # WHAT IT KNOWINGLY MISSES: a transfer in a sentence the negation guard drops
+  # ("without hesitation ... places it in your hand"), a transfer written with
+  # a verb that is not on the list, and every effect that is not a possession --
+  # a ceasefire accepted in dialogue is speech, and no grammar tells it from a
+  # proposal.
+  def handover_claims(text)
+    verbs = Regexp.union(HANDING_VERBS)
+    held = /(?:it|them|(?:the|a|an|her|his|their|its)\s+(?:[\w'’-]+\s+){0,2}?[\w'’-]+)/
+
+    sentences(text).filter_map do |sentence|
+      next if sentence.match?(Story::Audit::NEGATIONS)
+
+      plain = unquoted(sentence)
+      match = plain.match(/(?<!\byou\s)\b#{verbs}\s+#{held.source}\s+(?:in|into|onto)\s+your\s+
+                           (?:hand|hands|palm|palms|fingers|grip|grasp)\b/xi) ||
+              plain.match(/\b(?:hands|handing|passes|passing)\s+(?:you\s+(?:the|a|an|her|his|their)\b|
+                           #{held.source}\s+(?:over\s+)?to\s+you\b)/xi)
+      Claim.new(name: match[0], sentence: sentence.strip) if match
+    end.uniq(&:sentence)
+  end
+
+  # ------------------------------------------------------------------------
   # THE PROSE ARGUES WITH THE FLOOR PLAN.
   #
   # A room inside a laid-out place has a `Location::Box` before anybody writes a
@@ -863,6 +1025,17 @@ module Story::Audit::Prose
       yield sentence, at
     end
   end
+
+  # THE NAMES THE PASSAGE USES AT ALL, one scan each, so a grammar is only built
+  # and run for a name that is there to be argued about.
+  def named_in(text, names)
+    body = text.to_s
+    names.select { |name| body.match?(/\b#{Regexp.escape(name)}\b/i) }
+  end
+
+  # The sentence with every quoted span blanked to spaces, so a match cannot
+  # start inside dialogue and offsets still line up with the original.
+  def unquoted(sentence) = sentence.gsub(QUOTED) { |span| " " * span.length }
 
   def quoted_spans(text)
     text.enum_for(:scan, QUOTED).map { Regexp.last_match.begin(0)...Regexp.last_match.end(0) }

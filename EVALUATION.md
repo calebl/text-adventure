@@ -2107,6 +2107,16 @@ larger than most — three live read narrations, two of which quote the record
 inside quote marks, and it detected neither. See
 `test/models/story/audit/inscription_test.rb`.
 
+**A check that reads `Scene#engine_fact`** — the receipt of what the engine
+handed a scene's writer — has one more corpus the four above cannot be: they
+predate the receipt. The stored sets that carry one beside their prose are the
+arrival and NPC sets under `db/eval` (the adversarial study's arms, whose
+readers' labels are the precision reference, `arrival-branches` and the two
+dialogue sets). `dead_shown_alive`, `carried_shown_lying` and
+`handover_invented` are measured on them, and on the four corpora with a
+receipt planted underneath, in `test/models/story/audit/receipt_test.rb`. A
+scene with no receipt is counted unjudged, never clean.
+
 ## The dialogue bench
 
 `Eval::Dialogue` promotes the fictional NPC study under
