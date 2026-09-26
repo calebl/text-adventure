@@ -66,6 +66,10 @@ class Playthrough::SqlitePackageTest < ActiveSupport::TestCase
     end
     if story_ids.any?
       list = story_ids.join(",")
+      # Each factory story brought its own universe, and a universe left behind
+      # outlives this non-transactional test and fails whatever next counts them
+      # on this worker (`Story::DeletionTest`'s "no orphans at all").
+      universe_ids = connection.select_values("SELECT universe_id FROM stories WHERE id IN (#{list})").join(",")
       connection.execute("DELETE FROM items WHERE location_id IN (SELECT id FROM locations WHERE story_id IN (#{list}))")
       connection.execute("DELETE FROM characters_scenes WHERE scene_id IN (SELECT id FROM scenes WHERE story_id IN (#{list}))")
       connection.execute("DELETE FROM scenes WHERE story_id IN (#{list})")
@@ -73,6 +77,11 @@ class Playthrough::SqlitePackageTest < ActiveSupport::TestCase
       connection.execute("DELETE FROM locations WHERE story_id IN (#{list})")
       connection.execute("DELETE FROM characters WHERE story_id IN (#{list})")
       connection.execute("DELETE FROM stories WHERE id IN (#{list})")
+      if universe_ids.present?
+        orphaned = "id IN (#{universe_ids}) AND id NOT IN (SELECT universe_id FROM stories)"
+        connection.execute("DELETE FROM races WHERE universe_id IN (SELECT id FROM universes WHERE #{orphaned})")
+        connection.execute("DELETE FROM universes WHERE #{orphaned}")
+      end
     end
     connection.execute("PRAGMA foreign_keys = ON")
   end
