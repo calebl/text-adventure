@@ -77,11 +77,7 @@ module Eval::Classifier
   # THE INTENTS, out of the schema rather than copied. A word added there has to
   # show up in this board's confusion matrix without anybody remembering to add
   # it here.
-  #
-  # `throw` IS LABELLED BEFORE THE SCHEMA OFFERS IT, so the corpus can measure a
-  # classifier that cannot yet answer it -- the before side of the change that
-  # adds it. The union is a no-op once the schema carries the word.
-  INTENTS = (Playthrough::IntentSchema::INTENTS | %w[throw]).map(&:to_sym).freeze
+  INTENTS = Playthrough::IntentSchema::INTENTS.map(&:to_sym).freeze
 
   def self.corpus = Corpus.load
 

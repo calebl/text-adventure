@@ -10,7 +10,7 @@ require "turbo/broadcastable/test_helper"
 class Playthrough::DrainedTurnTest < ActiveSupport::TestCase
   include Turbo::Broadcastable::TestHelper
 
-  NOT_A_MOVE = { "intent" => "other", "target" => "nothing", "also_named" => "nothing" }.freeze
+  NOT_A_MOVE = { "intent" => "other", "target" => "nothing", "also_named" => "nothing", "thrown_at" => "nothing" }.freeze
 
   setup do
     story = create(:story)
@@ -67,7 +67,7 @@ class Playthrough::DrainedTurnTest < ActiveSupport::TestCase
   test "an overtaken job broadcasts nothing over the turn that passed it" do
     lying_here(@game, @game.current_location, name: "red coin")
     Playthrough::Command.accept!(@game, "drop red coin", "first")
-    reading = { "intent" => "drop", "target" => "red coin", "also_named" => "nothing" }
+    reading = { "intent" => "drop", "target" => "red coin", "also_named" => "nothing", "thrown_at" => "nothing" }
 
     drained = capture_turbo_stream_broadcasts(@game) do
       BaseAgent.stub(:new, FakeAgent.new(reading, "You pick up the red coin.")) do
@@ -97,7 +97,7 @@ class Playthrough::DrainedTurnTest < ActiveSupport::TestCase
   # the page -- refusal, crisis notice and all.
   test "a duplicate delivery of the newest submission still refreshes its page" do
     Playthrough::Command.accept!(@game, "look around", "first")
-    refusal = { "intent" => "take", "target" => "a brass key nobody has", "also_named" => "nothing" }
+    refusal = { "intent" => "take", "target" => "a brass key nobody has", "also_named" => "nothing", "thrown_at" => "nothing" }
 
     capture_turbo_stream_broadcasts(@game) do
       BaseAgent.stub(:new, FakeAgent.new(refusal)) do

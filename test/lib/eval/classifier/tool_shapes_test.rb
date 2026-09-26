@@ -51,7 +51,7 @@ class Eval::Classifier::ToolShapesTest < ActiveSupport::TestCase
     built[:tools].each do |tool|
       refute tool.params_schema.fetch("properties").key?("intent"),
              "#{tool.name} must not carry `intent` -- which tool was called already answers it"
-      assert_equal %w[target also_named], tool.params_schema.fetch("required")
+      assert_equal %w[target also_named thrown_at], tool.params_schema.fetch("required")
     end
 
     move = built[:tools].find { |tool| tool.name == "move" }

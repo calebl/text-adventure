@@ -148,12 +148,11 @@ class Playthrough::Refusal
     # out of the one closed set an attack reads, so it is refused like any other
     # two-name line and the pair has to be sayable.
     attack: "attack %s",
-    # WHAT A THROW ASKS FOR, in the word a player types. Unreachable TODAY and
-    # here anyway: only `:named_more_than_one` reads this table, and a throw's
-    # `also_named` is always nil because the fixed grammar produces none -- no
-    # model answers `throw`, which is the one thing slice 8 did NOT change. A
-    # table missing a row for an action `Scene::ACTIONS` already has would fall
-    # back to a bare `%s`.
+    # WHAT A THROW ASKS FOR, in the word a player types. Unreachable and here
+    # anyway: only `:named_more_than_one` reads this table, and a throw's
+    # `also_named` is always nil -- neither the fixed grammar nor
+    # `Playthrough::Classifier#build_intent` produces one. A table missing a row
+    # for an action `Scene::ACTIONS` already has would fall back to a bare `%s`.
     throw: "throw %s"
   }.freeze
 
@@ -262,6 +261,7 @@ class Playthrough::Refusal
     return named_more_than_one(intent, typed: typed) if intent.named_more_than_one?
     return unresolved(intent, typed: typed, offered: offered) if intent.reached_for_nothing?
     return unreadable(typed: typed) if intent.unreadable?
+    return unthrown(intent, typed: typed) if intent.throws_at_nothing?
     return immovable(intent, typed: typed) if intent.moves_the_immovable?
 
     nil
@@ -364,6 +364,23 @@ class Playthrough::Refusal
         fact: "#{item.definite_name.upcase_first} is #{item.bulk} and does not move for anybody: #{attempt}.")
   end
 
+  # A THROW THAT NAMED NOTHING TO THROW, OR NOTHING TO THROW IT AT. The same
+  # sentence `Playthrough::Grammar#read_throw` refuses a slashed throw with:
+  # nothing was thrown, and where the thing still is -- the engine's words, so
+  # no paragraph gets the chance to skid it across a floor it never left.
+  def self.unthrown(intent, typed:)
+    item = intent.item
+    fact = if item.nil?
+      "Nothing was thrown: that did not resolve to anything in your hands or lying here."
+    else
+      stays = item.carried? ? "stays in your hands" : "stays where it is lying"
+      "Nothing was thrown: #{item.definite_name} #{stays}. A throw is aimed at somebody here or through " \
+        "a way out, and that did not resolve to either."
+    end
+
+    new(kind: :unresolved, typed: typed, fact: fact)
+  end
+
   def self.unresolved(intent, typed:, offered: [])
     records = Array(offered)
 
@@ -404,7 +421,7 @@ class Playthrough::Refusal
     format(template, records.map { |record| Playthrough::Classifier.label_for(record) }.join(", "))
   end
 
-  private_class_method :named_more_than_one, :unresolved, :immovable, :unreadable, :asked, :missed, :offer
+  private_class_method :named_more_than_one, :unresolved, :unthrown, :immovable, :unreadable, :asked, :missed, :offer
 
   def initialize(kind:, typed:, fact:, offer: nil)
     raise ArgumentError, "#{kind.inspect} is not one of #{KINDS.inspect}" unless KINDS.include?(kind)

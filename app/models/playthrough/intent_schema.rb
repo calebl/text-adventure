@@ -45,15 +45,15 @@ class Playthrough::IntentSchema
   # `rake eval:classifier_compare`'s confusion matrix is the new word and not a
   # reshuffled enum. `other` stays last because it is the answer of last resort.
   #
-  # `throw` IS NOT HERE AND IS NOT NEXT. It names TWO records -- the thing and
-  # what it is aimed at -- and this schema holds ONE `target` by construction
-  # (see `also_named` below, which is the opposite of a second target). The
-  # fixed grammar reads it offline (`Playthrough::Grammar#read_throw`), which is
-  # the captain's call C6, and a schema that could express it is its own design
-  # question rather than a seventh word.
+  # `throw` IS THE LAST WORD, and it names TWO records -- the thing and what it
+  # is aimed at. `target` is the thing, out of what is carried or lying here, and
+  # `thrown_at` below is the aim, out of the people here and the ways out. It is
+  # appended for the reason `attack` was: every other word keeps its index in
+  # the confusion matrix. `Playthrough::Grammar#read_throw` still reads a
+  # slashed throw offline.
   # `use` names one closed PhysicalAction token, including the real tool and
   # target bound by the app. It adds no model-facing argument field.
-  INTENTS = %w[move talk examine take drop attack use other].freeze
+  INTENTS = %w[move talk examine take drop attack use other throw].freeze
 
   # The answer for "the player did not name anything on either list". Needed
   # because `strict` schemas make every property required, so `target` has to
@@ -99,6 +99,9 @@ class Playthrough::IntentSchema
              enum: choices
       string :also_named,
              description: "One more thing on those lists that the player named in the SAME line and that `target` is not already pointing at, copied exactly -- as in \"take the index and the apron\". One line does one thing, so nothing here is acted on; naming it is only how the game says what it is leaving undone. Answer `#{NOTHING}` when they named one thing or none, which is usual.",
+             enum: choices
+      string :thrown_at,
+             description: "Only for `throw`: who or which way out the thrown thing was aimed at, copied exactly from the people here or the ways out. Answer `#{NOTHING}` for every other intent, and for a throw aimed at anything not on those two lists -- a wall, a machine, the room.",
              enum: choices
     end
   end

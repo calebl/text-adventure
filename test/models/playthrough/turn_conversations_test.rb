@@ -12,8 +12,10 @@ class Playthrough::TurnConversationsTest < ActiveSupport::TestCase
   # left it out would be a half answer -- and this test runs the real BaseAgent,
   # which fails such a call rather than passing it on. `nothing` is the usual
   # answer: one typed line naming one thing.
-  CLASSIFY_TALK = { "intent" => "talk", "target" => "Grenn Ollivar", "also_named" => "nothing" }.freeze
-  CLASSIFY_OTHER = { "intent" => "other", "target" => "nothing", "also_named" => "nothing" }.freeze
+  CLASSIFY_TALK = { "intent" => "talk", "target" => "Grenn Ollivar", "also_named" => "nothing",
+                    "thrown_at" => "nothing" }.freeze
+  CLASSIFY_OTHER = { "intent" => "other", "target" => "nothing", "also_named" => "nothing",
+                    "thrown_at" => "nothing" }.freeze
 
   setup do
     @story = create(:story)
