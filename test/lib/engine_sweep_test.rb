@@ -126,6 +126,31 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_nil Story.find_by(title: "The Unrecorded Hour#{EngineSweep::Walk::TITLE_SUFFIX}")
   end
 
+  # A DATABASE WITH A HISTORY ROLLS THE SAME DICE AS AN EMPTY ONE. `Roll.seed`
+  # is built out of row ids, and these are the counters a freshly prepared
+  # development database stands at once `db:seed` has loaded the checked-in
+  # worlds. Before a walk pinned its ids the copy took the next id instead, and
+  # this script failed there while passing here: a volition die rolled
+  # differently and a bystander walked into the fight room.
+  SEEDED_COUNTERS = { "stories" => 3, "universes" => 3, "locations" => 13, "location_connections" => 20,
+                      "characters" => 9, "items" => 7, "races" => 13, "scenes" => 3,
+                      "world_events" => 2, "world_mechanics" => 1 }.freeze
+
+  test "a walk rolls the same dice whatever ids the database has already handed out" do
+    connection = ActiveRecord::Base.connection
+    SEEDED_COUNTERS.each do |table, seq|
+      connection.exec_delete("DELETE FROM sqlite_sequence WHERE name = #{connection.quote(table)}")
+      connection.exec_insert("INSERT INTO sqlite_sequence (name, seq) VALUES (#{connection.quote(table)}, #{seq})")
+    end
+    fight = EngineSweep.scripts.select { |script| script.name == "a-fight-the-player-wins" }
+
+    result = EngineSweep.run(fight).sole
+
+    assert_predicate result, :passed?, result.report
+    assert_equal 13, connection.select_value("SELECT seq FROM sqlite_sequence WHERE name = 'locations'"),
+                 "the walk's pinned counters outlived its rollback"
+  end
+
   # --- the script format -----------------------------------------------------
 
   test "an expectation that does not hold is reported with the script, the step, the line and both sides" do
