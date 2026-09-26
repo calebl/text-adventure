@@ -1,0 +1,6 @@
+ESTIMATE: 360 calls (90 cases x 4 reps x 1 model) over the main corpus, about $0.406.
+Measured at 762 in / 440 out a narration, 1112 in / 158 out a arrival, 1662 in / 640 out a ending.
+Playing 90 main cases on mistralai/mistral-medium-3.1.
+
+  mistralai/mistral-medium-3.1     first call 2.6s (excluded from the figures below)
+  mistralai/mistral-medium-3.1     rep 1 

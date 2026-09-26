@@ -1,9 +1,10 @@
 require "test_helper"
 
 # The arc block's vocabulary and absent-arc behavior. Realization branch cases
-# now measure nonempty requests through Eval::Realization::Branches. The seed
-# files themselves remain arc-free, preserving the historical cases; the branch
-# fixtures supply fixed unbound beats without changing those worlds on disk.
+# measure nonempty requests through Eval::Realization::Branches. The checked-in
+# worlds carry arcs now, but every beat in them names a row the file already
+# wrote, so the block -- which asks only for an UNBOUND beat -- stays empty in
+# the ordinary cases staged there.
 class Location::GeneratorArcTest < ActiveSupport::TestCase
   def setup
     @story = create(:story)
@@ -18,18 +19,22 @@ class Location::GeneratorArcTest < ActiveSupport::TestCase
     assert_not_includes context, "Where This Story Is Going"
   end
 
-  # Branch staging owns the added requests. A quest added to a seed file would
-  # also change the historical cases, which this guard deliberately keeps apart.
-  test "the bench worlds send an unchanged prompt" do
+  # THE BENCH'S WORLDS HAVE ARCS AND STILL SEND NO BLOCK, because the block
+  # names the first UNBOUND beat and every beat a seed file writes is bound on
+  # load. The day a bench world gains a beat that waits for a row, this fails
+  # and the ordinary cases' requests have moved: buy an after side at today's
+  # digest (`rake eval:realization_digest`) and judge it against the kept set.
+  test "the bench worlds' arcs are bound, so the ordinary cases send no story block" do
     staged = YAML.safe_load_file(Eval::Realization::CORPUS, permitted_classes: [ Date, Time ])
                  .fetch("cases").map { |kase| kase.fetch("story") }.uniq
 
     staged.each do |title|
-      document = YAML.safe_load_file(Eval::Realization.world_file(title), permitted_classes: [ Date, Time ])
+      story = WorldSeed::Loader.load_file(Eval::Realization.world_file(title))
+      stub = story.locations.stubs.order(:id).first || story.opening_location
 
-      assert_nil document["quests"],
-                 "#{title} has an arc now, so `rake eval:realization` CAN see the story block -- " \
-                 "buy an after side at today's digest and judge it against room-people-after"
+      assert_empty story.quests.flat_map(&:unbound_steps).map(&:summary),
+                   "#{title} has a beat waiting for a row, so `rake eval:realization` CAN see the story block"
+      assert_not_includes context(stub), "Where This Story Is Going", title
     end
   end
 

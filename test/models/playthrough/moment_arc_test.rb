@@ -3,14 +3,13 @@ require "test_helper"
 # THE ONE LINE THE NARRATOR IS EVER TOLD ABOUT THE ARC, and the record-only
 # checks that judge it -- because `rake eval:prompt` provably cannot.
 #
-# WHY THE BENCH CANNOT JUDGE THIS, stated here because it is the reason these
-# tests carry the whole weight. The prompt bench's corpus plays two worlds --
-# `The Salt Assizes` and `The Unrecorded Hour` -- and neither has a `quests:`
-# block, so `Playthrough::Arc#next_step` is nil for all ninety cases and this
-# line never renders. Measured rather than assumed: the narrator context for
-# every one of those cases is byte-for-byte identical either side of the change,
-# and `#the_bench_corpus_worlds_send_an_unchanged_context` below is that fact as
-# a test. Buying a bench round would have compared two identical prompts.
+# WHAT THE BENCH CAN JUDGE, AND SINCE WHEN. The prompt bench's corpus plays two
+# worlds -- `The Salt Assizes` and `The Unrecorded Hour` -- and until each was
+# given a `quests:` block `Playthrough::Arc#next_step` was nil for all ninety
+# cases, so this line never rendered and a bench round would have compared two
+# identical prompts. Both worlds carry an arc now, the line renders in the
+# bench's own worlds, and the checked-in main set was bought with it in the
+# request (`Eval::Prompt::KeptSetTest` pins that set to today's identity).
 #
 # SO WHAT IS ASSERTED HERE IS EVERY BRANCH OF THE LINE, on records: that it
 # appears exactly once when there is a beat, carries the beat's own summary and
@@ -35,23 +34,22 @@ class Playthrough::MomentArcTest < ActiveSupport::TestCase
     assert_empty arc_lines
   end
 
-  # THE MEASUREMENT THE BENCH WOULD HAVE BOUGHT, made offline. Both worlds the
-  # prompt corpus plays are seeded worlds with no `quests:` block, so the line
-  # cannot render for any case in it -- which is what makes the stored baseline
-  # `prompt-2026-09-05` still a baseline for the prompt this tree sends.
-  test "the bench corpus worlds send an unchanged context" do
-    # THE WORLDS THE NINETY-CASE CORPUS ACTUALLY PLAYS, off the corpus itself
-    # rather than off `Eval::Prompt::STORIES` -- that list gained a third world
-    # for the ending's own corpus (`Eval::Prompt::CORPORA`), and that world DOES
-    # have an arc. The claim here is about the cases `prompt-2026-09-05`
-    # measured.
+  # THE BENCH'S OWN WORLDS SEND THE LINE. Every world the ninety-case corpus
+  # plays is a checked-in world with an arc, so a game standing in its opening
+  # room is told the arc's first beat -- which is what makes the kept main set,
+  # bought on these worlds, a measurement of a prompt that carries the line.
+  test "the bench corpus worlds send the next-beat line" do
     Eval::Prompt.corpus("main").positions.map(&:story).uniq.each do |title|
-      document = WorldSeed.checked_in_document(title)
+      path = WorldSeed::DIRECTORY.join("#{WorldSeed.slug(title)}.yml")
+      assert_path_exists path, "#{title} is not a checked-in world any more, so this check is reading nothing"
 
-      assert_not_nil document, "#{title} is not a checked-in world any more, so this check is reading nothing"
-      assert_nil document["quests"],
-                 "#{title} has an arc now, so the prompt bench CAN see the next-beat line -- " \
-                 "the stored baseline is no longer a before side and a round has to be bought"
+      story = WorldSeed::Loader.load_file(path)
+      game = create(:playthrough, story: story, character: story.protagonist, current_location: story.opening_location)
+      beat = story.main_quest.steps.first
+
+      assert_equal [ "The story is asking for: #{beat.summary}" ],
+                   arc_lines(Playthrough::Moment.new(game).narration_context).map(&:strip),
+                   "#{title}: the bench plays this world, and its narrator is told the arc's next beat"
     end
   end
 

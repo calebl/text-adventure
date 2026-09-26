@@ -1,0 +1,110 @@
+== eval:prompt_digest
+{
+  "prompt_digest": "e44fecd70d56a76a",
+  "instructions_digest": "be4e1bf387f97e80",
+  "request_identity": {
+    "version": 1,
+    "digest": "9c7351f919aac05b"
+  },
+  "corpus_digest": "dfd1756a8f1f91b8"
+}
+== eval:classifier_digest
+{
+  "request_identity": {
+    "version": 2,
+    "digest": "9c85ef6604541ebb",
+    "scope": "known_physical_token_bindings"
+  },
+  "instructions_digest": "2efe119d1f50fcdb",
+  "prompt_digest": "fea45f81f227e764",
+  "corpus_digest": "a259e93e6b865af1"
+}
+== eval:realization_digest
+schema request: v1:526e8a8e06253c4b
+The prompts in this tree, assembled and digested with no model call:
+  corpus        de57509aa1da1a37 (29 cases)
+  prompt        5f42d5c63ea43a36
+  instructions  d43b9ecd17181013
+    dangerous              87b57fc0b4f3d7eb
+    dead-end               68da1d57fc329ffb
+    descent                59f7209877ecd3ca
+    interior-room          8363738b18a05f4e
+    landmark               8dd21f076dfc35a4
+    place                  d95b7c398a4def63
+    two-ways-out           166a58adba705ddf
+    unwritten-neighbour    bdf478160010de4e
+    written-neighbour      01a3f696a8cd2a21
+  branch requests {"version":1,"digest":"4536c9cd93c39e2a"}
+
+desires-scale-20260920 branch requests: match.
+schema request: v1:4e8f0c4c9c8dfe2e
+desires-scale-20260920: corpus de57509aa1da1a37 | prompt f37b7fe9bac265ed
+The recorded schema request identity differs: this remains a BEFORE side, not a current schema baseline.
+It did NOT measure these prompts on these cases. It is the BEFORE side of whatever moved, and a change judged against it needs an after side bought at this digest.
+== eval:inscription_digest
+{
+  "request_identity": {
+    "version": 1,
+    "digest": "666515f4006a5926"
+  },
+  "cases": {
+    "daybook-room": {
+      "version": 1,
+      "digest": "5a24c290fe8ec35d"
+    },
+    "daybook-holder": {
+      "version": 1,
+      "digest": "073ad8717d88b4ad"
+    },
+    "daybook-carried": {
+      "version": 1,
+      "digest": "d17e97d8020d63e6"
+    },
+    "index-room": {
+      "version": 1,
+      "digest": "96a09035f566e3d0"
+    },
+    "index-holder": {
+      "version": 1,
+      "digest": "c2bfe834491eecc9"
+    },
+    "index-carried": {
+      "version": 1,
+      "digest": "8d2ae672aad189de"
+    },
+    "tally-room": {
+      "version": 1,
+      "digest": "01649e9ab87ceeeb"
+    },
+    "tally-holder": {
+      "version": 1,
+      "digest": "bf21abf5c3667c27"
+    },
+    "tally-carried": {
+      "version": 1,
+      "digest": "bc932dcbbd79362e"
+    },
+    "slate-room": {
+      "version": 1,
+      "digest": "195d11e91503784b"
+    },
+    "slate-holder": {
+      "version": 1,
+      "digest": "1abb68ab97cb34f3"
+    },
+    "slate-carried": {
+      "version": 1,
+      "digest": "7305a65eda2131a1"
+    }
+  }
+}
+== branches
+{
+  "prompt_digest": "780ae0948949c3d9",
+  "instructions_digest": "b7473fa259e8f5cf",
+  "request_identity": {
+    "version": 1,
+    "digest": "881e79c529e5cd18"
+  },
+  "corpus_digest": "32791221dca0b007"
+}

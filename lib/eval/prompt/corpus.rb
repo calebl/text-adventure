@@ -233,7 +233,35 @@ class Eval::Prompt::Corpus
     found.concat(refusal_problems(kase, record))
     found.concat(extra_call_problems(kase, record))
     found.concat(ending_problems(kase, standing))
+    found.concat(concluding_problems(kase, standing, record))
     found
+  end
+
+  # AND THE OTHER WAY ROUND: A CASE THAT IS NOT AN ENDING CASE MUST NOT END THE
+  # STORY. Every checked-in world has an arc, so a position staged one beat from
+  # the end with a line that takes that beat would conclude the game -- and the
+  # turn would buy `Scene::Ending` as well as its prose, on a corpus whose
+  # figures are all about the prose. Settled offline for the same reason
+  # `#ending_problems` is: the beat is a record, and so is what the line acts on.
+  def concluding_problems(kase, standing, record)
+    return [] if kase.ending? || record.nil?
+
+    game = standing.playthrough.reload
+    quest = game.story.main_quest
+    return [] if quest.nil? || game.over?
+
+    reached = Playthrough::Beat.where(playthrough: game, quest_step: quest.steps).pluck(:quest_step_id)
+    outstanding = quest.steps.reject { |step| reached.include?(step.id) }
+    return [] unless outstanding.one?
+
+    step = outstanding.sole
+    takes_it = kase.act == :take && step.trigger_kind == "hold_item" && record.is_a?(Item) &&
+               [ record.id, record.template_id ].include?(step.target_id)
+    walks_in = kase.move? && step.trigger_kind == "reach_location" && record == step.target_room
+    return [] unless takes_it || walks_in
+
+    [ "#{kase.id}: this line would reach the last beat of #{quest.title.inspect} and conclude the game, so " \
+      "it would buy Scene::Ending as well as its prose -- stage it somewhere the arc is not one beat from done" ]
   end
 
   # AN ENDING CASE THAT CANNOT END THE STORY IS NOT AN ENDING CASE, and this is
