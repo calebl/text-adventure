@@ -296,7 +296,9 @@ class BaseAgent
   # second attempt would send the prompt twice, and a model that answered in
   # prose would still be sitting in the history the replacement model is handed.
   # `#rewind_to` puts the conversation back where the attempt found it, so every
-  # attempt asks the same question in the same context.
+  # attempt asks the same question in the same context. A process killed during
+  # the call never reaches this rescue; its prompt is dropped when the
+  # conversation is next picked up (`#build_chat`).
   #
   # `verify` is a caller's OWN check on the parsed answer, run inside the
   # attempt loop so whatever it raises is a failed call like any other. It
@@ -449,6 +451,9 @@ class BaseAgent
     conversation = @initial_chat || Chat.new(purpose: purpose, playthrough: @playthrough, character: @character)
     resuming = conversation.persisted?
     apply_model(conversation)
+    # A killed attempt's prompt comes out first, so the history budget below
+    # counts only exchanges that were answered. See Chat#drop_unanswered!.
+    conversation.drop_unanswered! if resuming
     # PICKING A CONVERSATION UP IS WHERE IT GETS TRIMMED. RubyLLM rebuilds the
     # request out of every persisted message, so a chat that kept more history
     # than it means to send would send it -- see Chat#prune_history!.
