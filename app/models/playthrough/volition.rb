@@ -98,17 +98,26 @@ class Playthrough::Volition
   # counts does not have to be rebuilt.
   SERVES = %w[conscious unconscious recognized unrecognized none].freeze
 
+  # WHO DECIDED A ROW: the seeded die, a typed System One act, or the die
+  # because the System One call failed (its reason is in `system_one_error`).
+  DECIDED_BY_DIE = "die".freeze
+  DECIDED_BY_SYSTEM_ONE = "system_one".freeze
+  DECIDED_BY_DIE_AFTER_FAILURE = "die_after_system_one_failed".freeze
+  DECIDERS = [ DECIDED_BY_DIE, DECIDED_BY_SYSTEM_ONE, DECIDED_BY_DIE_AFTER_FAILURE ].freeze
+
   Result = Data.define(:chosen, :status, :fact, :serves) do
     def applied? = status == "applied"
   end
 
   attr_reader :playthrough, :character, :location, :round
 
-  def initialize(playthrough, character, location:, round: 1)
+  def initialize(playthrough, character, location:, round: 1, decided_by: DECIDED_BY_DIE, system_one_error: nil)
     @playthrough = playthrough
     @character = character
     @location = location
     @round = round
+    @decided_by = decided_by
+    @system_one_error = system_one_error
   end
 
   # EVERYBODY IN ONE ROOM GETS ONE TURN, IN `id` ORDER -- `Playthrough::Riposte`'s
@@ -138,21 +147,27 @@ class Playthrough::Volition
   # labelled position without anybody walking out of the room underneath it --
   # see `Eval::Classifier::Stage`. The live game and `EngineSweep::Walk` never
   # enter it; a global constant or environment flag would reach them.
-  def self.run!(playthrough, location:, round: 1)
+  #
+  # THE TYPED DECISION COMES FIRST AND THE DIE DECIDES WHATEVER IT DID NOT.
+  # `line:` is the line the player typed, for the System One state; every row
+  # says which of the two decided it (`decided_by`), and a failed call is
+  # written onto the rows the die then decided rather than dropped.
+  def self.run!(playthrough, location:, round: 1, line: nil)
     return [] if playthrough.nil? || location.nil? || playthrough.over? || held?
 
     fighting = playthrough.foes_in(location).map(&:id).to_set
     cast = playthrough.cast_in(location).sort_by(&:id).select do |who|
       who != playthrough.character && !who.is_protagonist? && !fighting.include?(who.id) && Playthrough::Volition::Weights.weighted?(who.desire_pursuit)
     end
-    typed = Playthrough::Volition::SystemOne.new(playthrough, cast, location: location).decisions
+    typed = Playthrough::Volition::SystemOne.new(playthrough, cast, location: location, line: line).decisions
 
     cast.filter_map do |who|
-      chosen = typed&.fetch(who.id, nil)
+      chosen = typed.acts&.fetch(who.id, nil)
       if chosen
-        new(playthrough, who, location: location, round: round).apply!(chosen)
+        new(playthrough, who, location: location, round: round, decided_by: DECIDED_BY_SYSTEM_ONE).apply!(chosen)
       else
-        new(playthrough, who, location: location, round: round).decide!
+        by = typed.failure ? DECIDED_BY_DIE_AFTER_FAILURE : DECIDED_BY_DIE
+        new(playthrough, who, location: location, round: round, decided_by: by, system_one_error: typed.failure).decide!
       end
     end
   end
@@ -318,7 +333,8 @@ class Playthrough::Volition
   def record!(chosen, status, fact, serves)
     row = Playthrough::Volition::Record.new(
       playthrough: playthrough, character: character, location: location,
-      chosen: chosen, status: status, fact: fact, serves: serves, round: round
+      chosen: chosen, status: status, fact: fact, serves: serves, round: round,
+      decided_by: @decided_by, system_one_error: @system_one_error
     )
     row.validate!
     row.save!

@@ -415,7 +415,7 @@ class Playthrough::Turn
     # riposte's two rules, inherited whole. A refused line never reaches here,
     # because a refused line writes nothing.
     Playthrough::Command::Journal.commit("volition") do
-      Playthrough::Volition.run!(playthrough, location: from, round: round)
+      Playthrough::Volition.run!(playthrough, location: from, round: round, line: command)
       nil
     end
 
