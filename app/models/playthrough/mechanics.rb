@@ -346,7 +346,7 @@ class Playthrough::Mechanics
         act(reading.intent, command, reading.understood, reading.resolved_by)
       end
 
-    report = answered_by_the_world(report, reading, from: from)
+    report = answered_by_the_world(report, reading, from: from, line: command)
 
     # WHICH READER ANSWERED THE LINE, carried onto the report from the reading
     # rather than worked out again here. `rake game:sweep` asserts it
@@ -370,7 +370,7 @@ class Playthrough::Mechanics
   #
   # The report is rebuilt on fresh state, because the read-out printed under a
   # line has to be the records after everything that line caused.
-  def answered_by_the_world(report, reading, from:)
+  def answered_by_the_world(report, reading, from:, line: nil)
     intent = reading.intent
     return report if intent.nil? || intent.refused? || @engine_refused
 
@@ -389,7 +389,7 @@ class Playthrough::Mechanics
     # AND IT IS THE WHOLE FEATURE IN THIS MODE, not a reduced one: the decision
     # is a seeded die off this game's own records and makes no model call, so
     # an offline walk reaches every branch a played turn reaches.
-    volitions = Playthrough::Volition.run!(playthrough, location: from, round: round)
+    volitions = Playthrough::Volition.run!(playthrough, location: from, round: round, line: line)
 
     # AND THE PLACE ITSELF GETS ITS TURN, beside the foes and after them, on the
     # room the turn began in -- the same call `Playthrough::Turn#play` makes in

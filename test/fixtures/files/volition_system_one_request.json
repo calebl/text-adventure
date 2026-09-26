@@ -1,0 +1,48 @@
+{
+  "state": {
+    "location": "The Counting Room",
+    "characters": {
+      "person_1": {
+        "name": "Odile Vance",
+        "conscious_desire": "To be paid what they are owed before the week is out",
+        "unconscious_desire": "To be asked their opinion by somebody who waits for the answer",
+        "recognized_need": "To keep their word, because it is the only thing they have never broken",
+        "unrecognized_need": "To walk into the one room they have been going around for years",
+        "desire_pursuit": "obtain",
+        "need_pursuit": "reach",
+        "witnessed": [
+          "You: Odile Vance stayed in The Counting Room and changed nothing."
+        ]
+      }
+    },
+    "player_action": "read the docket"
+  },
+  "questions": {
+    "person_1:act": {
+      "type": "choice",
+      "instructions": "Choose one option.",
+      "criteria": {
+        "act_1": "Stay where you are and change nothing.",
+        "act_2": "Walk out of The Counting Room to The Stairwell.",
+        "act_3": "Pick up a brass ledger key from The Counting Room.",
+        "act_4": "Accompany Hero Protagonist when they leave this room."
+      }
+    },
+    "person_1:serves": {
+      "type": "choice",
+      "instructions": "Choose one option.",
+      "criteria": {
+        "conscious": "conscious",
+        "unconscious": "unconscious",
+        "recognized": "recognized",
+        "unrecognized": "unrecognized",
+        "none": "none"
+      }
+    },
+    "person_1:pressure": {
+      "type": "noul",
+      "instructions": "How strongly is this person pressured toward what they will not face?",
+      "criteria": {}
+    }
+  }
+}

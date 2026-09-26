@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_26_195041) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -454,6 +454,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
     t.integer "character_id", null: false
     t.string "chosen", null: false
     t.datetime "created_at", null: false
+    t.string "decided_by"
     t.text "fact", null: false
     t.integer "location_id", null: false
     t.integer "playthrough_id", null: false
@@ -461,6 +462,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
     t.integer "scene_id"
     t.string "serves", null: false
     t.string "status", null: false
+    t.string "system_one_error"
     t.datetime "updated_at", null: false
     t.index ["character_id"], name: "index_playthrough_volitions_on_character_id"
     t.index ["location_id"], name: "index_playthrough_volitions_on_location_id"
