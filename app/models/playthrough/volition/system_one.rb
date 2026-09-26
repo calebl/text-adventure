@@ -18,6 +18,11 @@ class Playthrough::Volition::SystemOne
 
   PRESSURE =
     "How strongly is this person pressured toward what they will not face?".freeze
+  # A Noul question is refused by the provider without both ends named.
+  PRESSURE_CRITERIA = {
+    "true" => "This person is pressured toward what they will not face.",
+    "false" => "Nothing here presses this person toward what they will not face."
+  }.freeze
 
   # `acts` is character id => token for every person whose typed act replaces
   # the die; `failure` is nil, or a one-line reason the call did not answer.
@@ -40,7 +45,7 @@ class Playthrough::Volition::SystemOne
     state.people.each_with_object({}) do |person, asked|
       asked["#{person.key}:act"] = choice(state.criteria_for(person))
       asked["#{person.key}:serves"] = choice(SERVES.index_with(&:itself))
-      asked["#{person.key}:pressure"] = { "type" => "noul", "instructions" => PRESSURE, "criteria" => {} }
+      asked["#{person.key}:pressure"] = { "type" => "noul", "instructions" => PRESSURE, "criteria" => PRESSURE_CRITERIA }
     end
   end
 

@@ -1,0 +1,184 @@
+{
+  "model": "typesafe/jev-1.13",
+  "endpoint": "https://openrouter.ai/api/alpha/decisions",
+  "request_sha256": "a7cd4ef9d2238576be93950ead282121ecfbce776f7ce70eb535921179d0bc45",
+  "cap_usd": 0.05,
+  "credits_before": {
+    "total_credits": 63,
+    "total_usage": 58.603755023
+  },
+  "credits_after": {
+    "total_credits": 63,
+    "total_usage": 58.603755023
+  },
+  "receipts": [
+    {
+      "status": 200,
+      "seconds": 0.21,
+      "id": "gen-dec-1790464783-EIX2VY4lyHgrc7UttJhQ",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 731,
+        "output_tokens": 143,
+        "cost": 0.000030702
+      },
+      "cost": 0.000030702,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.09,
+            "act_1": 0.81,
+            "act_3": 0.1,
+            "act_4": 0
+          },
+          "confidence": 0.74
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "none",
+          "probabilities": {
+            "none": 0.41,
+            "unconscious": 0.06,
+            "conscious": 0.36,
+            "unrecognized": 0.11,
+            "recognized": 0.06
+          },
+          "confidence": 0.26
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.45
+        }
+      },
+      "call": 1
+    },
+    {
+      "status": 200,
+      "seconds": 0.327,
+      "id": "gen-dec-1790464783-uBtiipjavBInqRQfK8By",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 731,
+        "output_tokens": 145,
+        "cost": 0.000030702
+      },
+      "cost": 0.000030702,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.08,
+            "act_4": 0,
+            "act_3": 0.11,
+            "act_1": 0.81
+          },
+          "confidence": 0.74
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "conscious",
+          "probabilities": {
+            "unrecognized": 0.1,
+            "unconscious": 0.06,
+            "none": 0.38,
+            "recognized": 0.05,
+            "conscious": 0.41000000000000003
+          },
+          "confidence": 0.26
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.5
+        }
+      },
+      "call": 2
+    },
+    {
+      "status": 200,
+      "seconds": 0.192,
+      "id": "gen-dec-1790464783-qUtYiPxgNKpjXhGEcP8C",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 731,
+        "output_tokens": 145,
+        "cost": 0.000030702
+      },
+      "cost": 0.000030702,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.1,
+            "act_1": 0.79,
+            "act_3": 0.11,
+            "act_4": 0
+          },
+          "confidence": 0.72
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "conscious",
+          "probabilities": {
+            "conscious": 0.44,
+            "recognized": 0.05,
+            "none": 0.35,
+            "unrecognized": 0.1,
+            "unconscious": 0.06
+          },
+          "confidence": 0.3
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.48
+        }
+      },
+      "call": 3
+    },
+    {
+      "status": 200,
+      "seconds": 0.157,
+      "id": "gen-dec-1790464784-8rdiqAk0oZetLg5trYVd",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 731,
+        "output_tokens": 145,
+        "cost": 0.000030702
+      },
+      "cost": 0.000030702,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.14,
+            "act_1": 0.75,
+            "act_3": 0.11,
+            "act_4": 0
+          },
+          "confidence": 0.67
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "conscious",
+          "probabilities": {
+            "unconscious": 0.06,
+            "conscious": 0.42,
+            "none": 0.36,
+            "unrecognized": 0.11,
+            "recognized": 0.05
+          },
+          "confidence": 0.27
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.46
+        }
+      },
+      "call": 4
+    }
+  ]
+}
