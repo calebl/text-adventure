@@ -308,14 +308,13 @@ class Location < ApplicationRecord
   # an inside" is this line.
   #
   # IT IS DELIBERATELY NARROW, and narrowing it is the point rather than a
-  # limitation. Today only a SEED FILE writes a footprint, so today only a
-  # seeded or fixture place answers true and NOTHING in a generated world
-  # changes behaviour: `Location::Generator#create_stub!` writes no extent, so
-  # every stub a generated world has ever had still answers false. WHICH
-  # generated stubs should become places -- a tavern yes, a stretch of road no
-  # -- is a decision about the Iron Gate's scope and is not made here; when it
-  # is made, it is made by whatever writes the footprint, and this predicate
-  # does not move.
+  # limitation. Two writers put a footprint on a row: a SEED FILE, and
+  # `Location::Generator.create_stub!` when the exits answer that named the stub
+  # picked a band of SEVERAL rooms (`Location::Parameters#footprint`). A stub
+  # named with `no inside` or `one room` carries no extent and answers false --
+  # `one room` is the named place itself, standable under its own name, and not
+  # a container with a single room in it. WHICH stubs become places is decided
+  # by whatever writes the footprint, and this predicate does not move.
   #
   # A ROOM IS NOT A PLACE by this predicate, because a room carries all five
   # columns and `#placed?` is true of it. So an interior does not lay out an

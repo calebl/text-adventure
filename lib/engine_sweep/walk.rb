@@ -130,7 +130,8 @@ class EngineSweep::Walk
     unless room.stub?
       raise EngineSweep::InvalidScript, "#{step.label}: realizes must name a stub, got #{name.inspect}"
     end
-    { room: room, characters: story.characters.pluck(:id), items: Item.in_story(story).templates.pluck(:id) }
+    { room: room, characters: story.characters.pluck(:id), items: Item.in_story(story).templates.pluck(:id),
+      locations: story.locations.pluck(:id), connections: LocationConnection.where(location: story.locations).pluck(:id) }
   end
 
   def record_realization!(before)
@@ -146,6 +147,25 @@ class EngineSweep::Walk
     @loaded["characters"] = Array(@loaded["characters"]) + new_people
     new_items = room.items.templates.where.not(id: before.fetch(:items)).map { |item| item.attributes.slice("name", "x", "y") }
     expected_room["items"] = Array(expected_room["items"]) + new_items
+    record_born_rooms!(room.story, before)
+  end
+
+  # AND THE ROOMS AND DOORS ITS EXITS ANSWER NAMED. A stub the answer created is
+  # a world row born of the one declared realization, exactly as its people and
+  # things are, so it joins the reference as it stands -- name, detail level,
+  # the rolled danger and population, and whatever extent it was born with --
+  # and every later turn must keep it that way. So a script can walk into a
+  # room the realization before it named, and assert what that room became.
+  def record_born_rooms!(story, before)
+    born = story.locations.where.not(id: before.fetch(:locations)).order(:id).map do |location|
+      location.attributes.slice("name", "detail_level", "danger", "population", "hazard", *Location::Box::COLUMNS)
+              .merge("parent" => location.parent_location&.name).compact
+    end
+    doors = LocationConnection.where(location: story.locations).where.not(id: before.fetch(:connections))
+                              .includes(:location, :connected_location)
+                              .map { |row| [ row.location.name, row.connected_location.name ].sort }.uniq
+    @loaded["locations"] = Array(@loaded["locations"]) + born
+    @loaded["connections"] = Array(@loaded["connections"]) + doors.map { |pair| { "between" => pair } }
   end
 
   # Mechanics moves without asking for arrival prose. Read the generator's

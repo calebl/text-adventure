@@ -343,6 +343,58 @@ class Update::StepsTest < ActiveSupport::TestCase
     assert_equal "grammar", theirs.reload.resolved_by
   end
 
+  # A place laid out around one room that fills it, the doorway and the game on
+  # that room -- the shape a world generated before `one room` meant the named
+  # place is carrying. `Location::OneRoomFoldTest` has the fold in full.
+  def a_world_split_around_one_room
+    story = create(:story)
+    protagonist = create(:character, :protagonist, story: story)
+    shaft = create(:location, story: story, name: "Maintenance Shaft")
+    place = create(:location, story: story, name: "Core Access Chamber", width: 5, depth: 3)
+    Location::Interior.lay_out!(place, parameters: Location::Parameters.from("storeys_above" => "ground floor only"))
+    room = place.child_locations.sole
+    room.update!(detail_level: :realized, description: "Frost on the rails.", lore: "Sealed after the breach.")
+    create(:location_connection, location: shaft, connected_location: room)
+    create(:location_connection, location: room, connected_location: shaft)
+    playthrough = create(:playthrough, story: story, character: protagonist, current_location: room)
+
+    [ story, place, room, playthrough ]
+  end
+
+  test "the one-room step folds the room into the place, and has nothing to do the second time" do
+    story, place, room, playthrough = a_world_split_around_one_room
+
+    assert_not Update::Steps::FoldOneRoomPlaces.model_calls?
+    report = Update::Steps::FoldOneRoomPlaces.new.call
+
+    assert_predicate report, :changed?
+    assert_equal [ "#{story.title}: folded Core Access Chamber room 1 into Core Access Chamber" ], report.lines
+    assert_not Location.exists?(room.id)
+    assert_equal place, playthrough.reload.current_location
+    assert_predicate Update::Steps::FoldOneRoomPlaces.new.call, :nothing_to_do?
+  end
+
+  test "the one-room step writes nothing in a dry run, and says what it would fold" do
+    story, _place, room, playthrough = a_world_split_around_one_room
+
+    report = Update::Steps::FoldOneRoomPlaces.new(dry_run: true).call
+
+    assert_equal [ "#{story.title}: would fold Core Access Chamber room 1 into Core Access Chamber" ], report.lines
+    assert Location.exists?(room.id)
+    assert_equal room, playthrough.reload.current_location
+  end
+
+  test "the one-room step leaves a shape it cannot prove alone, as a note" do
+    story, place, room, = a_world_split_around_one_room
+    create(:location_connection, location: place, connected_location: create(:location, story: story))
+
+    report = Update::Steps::FoldOneRoomPlaces.new.call
+
+    assert_predicate report, :nothing_to_do?
+    assert_match(/Core Access Chamber room 1 is left inside Core Access Chamber -- a doorway lands on/, report.notes.sole)
+    assert Location.exists?(room.id)
+  end
+
   test "the doctor step reports every story and writes nothing" do
     story = create(:story)
     create(:character, :protagonist, story: story)
