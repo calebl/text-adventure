@@ -482,9 +482,9 @@ that produced all of this and says defect by defect how far the walk gets.
 ## How a turn works
 
 The loop is `Playthrough::Turn` (`app/models/playthrough/turn.rb`). It lives in
-`app/models` because the browser is the only front end and its whole share of a
-turn is handing the class a string and a block to write chunks into — there is
-no `rake game:play`.
+`app/models` so that no front end owns it: every front end reaches it through
+one driver, `Playthrough::Session`, and its whole share of a turn is handing the
+session a string and a block to write chunks into — there is no `rake game:play`.
 
 Read the colours first. **Purple is a model call. Teal is the app deciding from
 records it already holds. Orange is a gap — something not built yet.** That

@@ -1,4 +1,5 @@
-# The browser's real orchestration with fixed provider answers or failures.
+# The browser's real orchestration, through `Playthrough::Session` as the
+# browser plays it, with fixed provider answers or failures.
 # This reaches boundaries Mechanics intentionally omits: the scene fallback,
 # per-command journal, time, riposte and a duplicate background delivery. It
 # Supplies no engine state: realization replies pass through the real noun and
@@ -128,7 +129,7 @@ class EngineSweep::BrowserTurn
     raised = false
     outcome = without_provider(calls, replies: replies.dup, prompt_failures: prompt_failures) do
       interrupt_after(step.browser["interrupt_after"]) do
-        Playthrough::Turn.new(game).play(step.typed, request_token: step.browser.fetch("token"))
+        Playthrough::Session.new(game).play(step.typed, request_token: step.browser.fetch("token"))
       end
     rescue WorkerStopped
       raise unless step.browser["interrupt_after"]

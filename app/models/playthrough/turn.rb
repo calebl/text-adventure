@@ -3,8 +3,9 @@
 #
 # This is the loop, and it lives in `app/models` rather than in a controller or
 # a rake task on purpose -- there is no `rake game:play` and there is not meant
-# to be. The browser is the only front end, and its whole share of the loop is
-# handing this class a string and a block to write chunks into.
+# to be. No front end reaches this class directly: `Playthrough::Session` is the
+# one way in, and a front end's whole share of the loop is handing the session
+# a string and a block to write chunks into.
 #
 # `move`, `talk`, `take` and `drop` are the four outcomes that do something
 # particular, and each of them writes a record before any prose exists. Reading

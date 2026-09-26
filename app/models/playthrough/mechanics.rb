@@ -76,7 +76,8 @@
 #
 # WHAT IT IS NOT is `rake game:play`, which is still ruled out. It renders no
 # prose and duplicates no part of the loop; the moment it grew a narrator it
-# would be the second UI that rule exists to prevent. The dispatch below is the
+# would be a play loop in a rake task, which that rule exists to prevent -- a
+# front end that narrates goes through `Playthrough::Session`. The dispatch below is the
 # one thing it does not share with `Playthrough::Turn#play`, and deliberately:
 # that method returns a Scene and streams prose into a block, and this one has
 # to be able to say what changed, what was refused and why.

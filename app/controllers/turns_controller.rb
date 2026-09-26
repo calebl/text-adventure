@@ -41,17 +41,16 @@ class TurnsController < ApplicationController
   # that order -- see both headers.
   def create
     playthrough = Playthrough.find(params[:playthrough_id])
-    command = params[:command].to_s.strip
+    submission = Playthrough::Session.new(playthrough).accept!(params[:command], params[:request_token])
 
     # Nothing typed is not a turn. Send the player back to an untouched page
     # rather than enqueuing a job to narrate the empty string.
-    if command.empty?
+    if submission.nil?
       redirect_to playthrough_path(playthrough)
       return
     end
 
-    submission = Playthrough::Command.accept!(playthrough, command, params[:request_token].presence || SecureRandom.uuid)
-    NarrationJob.perform_later(playthrough.id, command, submission.request_token)
+    NarrationJob.perform_later(playthrough.id, submission.command, submission.request_token)
     @request_token = SecureRandom.uuid
 
     respond_to do |format|
