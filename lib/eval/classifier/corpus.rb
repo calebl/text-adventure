@@ -61,8 +61,14 @@ class Eval::Classifier::Corpus
   # acted on, because the line is refused. So an answer that swapped them
   # answered the same line the same way, and scoring the order would be scoring
   # the labeller.
-  Answer = Data.define(:intent, :target, :also_named) do
-    def initialize(target: nil, also_named: nil, **rest) = super
+  #
+  # `thrown_at` is the SECOND record a `throw` names -- the person or the way
+  # out the thing was aimed at -- and nil on every other intent. It is compared
+  # on its own rather than folded into the pair, because on a throw the two
+  # names are NOT interchangeable: the thing thrown and what it was thrown at
+  # are different records doing different jobs.
+  Answer = Data.define(:intent, :target, :also_named, :thrown_at) do
+    def initialize(target: nil, also_named: nil, thrown_at: nil, **rest) = super
 
     # A physical target is the whole offered attempt, including its recipient
     # or tool. Comparing only its subject would score two different gifts as
@@ -70,18 +76,25 @@ class Eval::Classifier::Corpus
     def self.from_intent(intent)
       new(intent: intent.action,
           target: Playthrough::Classifier.label_for(intent.physical || intent.subject),
-          also_named: Playthrough::Classifier.label_for(intent.also_named))
+          also_named: Playthrough::Classifier.label_for(intent.also_named),
+          thrown_at: Playthrough::Classifier.label_for(intent.at))
     end
 
     def named = [ target, also_named ].compact.map { |name| name.to_s.downcase }.sort
 
-    def same_as?(other) = intent == other.intent && named == other.named
-
-    def refusal
-      Eval::Classifier::Corpus.implied_refusal(intent: intent, target: target, also_named: also_named)
+    def same_as?(other)
+      intent == other.intent && named == other.named && thrown_at.to_s.downcase == other.thrown_at.to_s.downcase
     end
 
-    def to_s = "#{intent} -> #{target || Eval::Classifier::NONE}#{" (and #{also_named})" if also_named}"
+    def refusal
+      Eval::Classifier::Corpus.implied_refusal(intent: intent, target: target, also_named: also_named,
+                                               thrown_at: thrown_at)
+    end
+
+    def to_s
+      "#{intent} -> #{target || Eval::Classifier::NONE}#{" (and #{also_named})" if also_named}" \
+        "#{" at #{thrown_at || Eval::Classifier::NONE}" if intent == :throw}"
+    end
   end
 
   # ONE LABELLED LINE.
@@ -99,8 +112,11 @@ class Eval::Classifier::Corpus
   # them, and an entry that left `also_named` to be inferred would be the bench
   # guessing at the label.
   # `shape` is what the line is IN the corpus for, and the board groups by it.
-  Line = Data.define(:id, :position, :typed, :intent, :target, :also_named, :refusal, :shape, :why, :also_accept) do
-    def initialize(target: nil, also_named: nil, refusal: :none, shape: nil, why: nil, also_accept: [], **rest) = super
+  # `thrown_at` is what a `throw` was aimed at, nil on every other line.
+  Line = Data.define(:id, :position, :typed, :intent, :target, :also_named, :thrown_at, :refusal, :shape, :why,
+                     :also_accept) do
+    def initialize(target: nil, also_named: nil, thrown_at: nil, refusal: :none, shape: nil, why: nil,
+                   also_accept: [], **rest) = super
 
     def refused? = refusal != :none
     def arguable? = also_accept.any?
@@ -110,7 +126,8 @@ class Eval::Classifier::Corpus
     #
     # EVERY ANSWER THIS LINE ACCEPTS, the label first.
     def answers
-      [ Eval::Classifier::Corpus::Answer.new(intent: intent, target: target, also_named: also_named),
+      [ Eval::Classifier::Corpus::Answer.new(intent: intent, target: target, also_named: also_named,
+                                             thrown_at: thrown_at),
         *also_accept.map { |other| Eval::Classifier::Corpus::Answer.new(**other) } ]
     end
 
@@ -127,9 +144,13 @@ class Eval::Classifier::Corpus
   # Written out over names rather than by building an `Intent` because a corpus
   # line holds names and has no records to build one from, and a second copy of
   # the ORDER is the thing worth keeping honest here.
-  def self.implied_refusal(intent:, target:, also_named:)
+  #
+  # A THROW IS REFUSED WHEN EITHER OF ITS TWO NAMES IS MISSING -- the thing or
+  # what it was aimed at -- which is `Playthrough::Classifier::Intent#throws_at_nothing?`.
+  def self.implied_refusal(intent:, target:, also_named:, thrown_at: nil)
     return :named_more_than_one if !also_named.nil? && !target.nil?
     return :unresolved if Playthrough::Drift::ACTIONS.include?(intent.to_s) && target.nil?
+    return :unresolved if intent.to_s == "throw" && (target.nil? || thrown_at.nil?)
 
     :none
   end
@@ -169,10 +190,11 @@ class Eval::Classifier::Corpus
     end
 
     Line.new(id: row["id"], position: row["position"], typed: row["typed"], intent: intent,
-             target: row["target"], also_named: row["also_named"], refusal: refusal,
+             target: row["target"], also_named: row["also_named"], thrown_at: row["thrown_at"], refusal: refusal,
              shape: row["shape"], why: row["why"],
              also_accept: Array(row["also_accept"]).map { |other|
-               { intent: other["intent"].to_sym, target: other["target"], also_named: other["also_named"] }
+               { intent: other["intent"].to_sym, target: other["target"], also_named: other["also_named"],
+                 thrown_at: other["thrown_at"] }
              })
   end
 
@@ -245,7 +267,8 @@ class Eval::Classifier::Corpus
     lines.each do |line|
       found << "#{line.id}: no position called #{line.position.inspect}" if position(line.position).nil?
 
-      implied = self.class.implied_refusal(intent: line.intent, target: line.target, also_named: line.also_named)
+      implied = self.class.implied_refusal(intent: line.intent, target: line.target, also_named: line.also_named,
+                                           thrown_at: line.thrown_at)
       if implied != line.refusal
         found << "#{line.id}: labelled refusal #{line.refusal.inspect} but intent/target/also_named imply " \
                  "#{implied.inspect} -- the two readings of this line disagree"
@@ -267,14 +290,31 @@ class Eval::Classifier::Corpus
 
     line.answers.flat_map do |answer|
       name_problems(line, standing, answer.intent, answer.target, "target") +
-        name_problems(line, standing, answer.intent, answer.also_named, "also_named")
+        name_problems(line, standing, answer.intent, answer.also_named, "also_named") +
+        thrown_at_problems(line, standing, answer)
     end
+  end
+
+  # A THROW'S TWO SETS, and neither is `Playthrough::Classifier#offered_for`'s:
+  # the thing comes out of the hands or off the floor, and the aim out of the
+  # people here and the ways out -- the same two sets `Playthrough::Grammar#read_throw`
+  # and `Playthrough::Classifier#build_intent` resolve a throw against.
+  def throw_sets(standing)
+    { "target" => standing.carried + standing.here, "thrown_at" => standing.cast + standing.exits }
+  end
+
+  def thrown_at_problems(line, standing, answer)
+    return [] if answer.thrown_at.nil?
+    return [ "#{line.id}: thrown_at #{answer.thrown_at.inspect} on a #{answer.intent} -- only a throw is aimed at anything" ] unless answer.intent == :throw
+
+    name_problems(line, standing, answer.intent, answer.thrown_at, "thrown_at")
   end
 
   def name_problems(line, standing, intent, name, field)
     return [] if name.nil?
 
-    offered = standing.offered_for(intent).flat_map { |record| names_of(record) }
+    records = intent == :throw ? throw_sets(standing).fetch(field, []) : standing.offered_for(intent)
+    offered = records.flat_map { |record| names_of(record) }
     if offered.empty?
       return [ "#{line.id}: #{field} #{name.inspect} on a #{intent} -- that intent resolves no record, " \
                "so the label can only ever be nothing" ]

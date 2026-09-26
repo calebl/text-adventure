@@ -3910,3 +3910,89 @@ lines:
   refusal: unresolved
   shape: unresolved-use
   why: the daybook is carried but nobody is present in the closet to receive an offer
+
+# ===========================================================================
+# A THING THROWN
+#
+# `throw` names TWO records: the thing, out of the hands or off the floor, and
+# what it was aimed at, out of the people here and the ways out. `thrown_at` is
+# the second. A throw aimed at anything else -- a wall, a window, the room --
+# keeps the intent and answers `thrown_at` nothing, which the engine refuses
+# with the thing still where it was. "Throw the switch" throws no thing at all
+# and is `other`.
+# ===========================================================================
+- id: throw-daybook-rowe
+  position: office
+  typed: throw the daybook at Halkett Rowe
+  intent: throw
+  target: Ward Office 12 daybook
+  thrown_at: Halkett Rowe
+  shape: throw
+  why: a carried thing aimed at the one person here, both named plainly -- the floor case
+
+- id: throw-daybook-rowe-nickname
+  position: office
+  typed: hurl the daybook at Rowe
+  intent: throw
+  target: Ward Office 12 daybook
+  thrown_at: Halkett Rowe
+  shape: throw
+  why: the aim by nickname and the verb a synonym; the person resolves by either of his names
+
+- id: throw-slate-brace
+  position: court-slate-down
+  typed: throw the slate at Justicar Brace
+  intent: throw
+  target: Assize tide-slate
+  thrown_at: Ammon Brace
+  shape: throw
+  why: >-
+    the thing is lying here rather than carried, and a throw reads the floor as
+    well as the hands; the aim is named by the nickname the records hold
+
+- id: throw-daybook-doorway
+  position: office
+  typed: toss the daybook through the door into The Supply Closet
+  intent: throw
+  target: Ward Office 12 daybook
+  thrown_at: The Supply Closet
+  shape: throw-exit
+  why: a throw through a way out, named exactly as the enum holds it
+
+- id: throw-stamp-hallway
+  position: office
+  typed: fling the ward stamp down The Long Hallway
+  intent: throw
+  target: ward stamp
+  thrown_at: The Long Hallway
+  shape: throw-exit
+  why: the thing is on the floor and the aim is the other way out, with no "at" in the line
+
+- id: throw-daybook-window
+  position: office
+  typed: throw the daybook at the window
+  intent: throw
+  target: Ward Office 12 daybook
+  refusal: unresolved
+  shape: throw-scenery
+  why: >-
+    a throw of a real thing at scenery no list holds. The intent stays `throw`
+    and the aim is nothing, so the engine refuses it and the daybook stays in
+    the hands -- the shape of the line issue #202 was filed about, with a window
+    for the core
+
+- id: throw-the-switch
+  position: office
+  typed: throw the switch
+  intent: other
+  shape: throw-idiom
+  why: '"throw" meaning flip; no thing is thrown, so it is `other` with no target'
+
+- id: throw-the-bolt
+  position: court
+  typed: throw the bolt on the door
+  intent: other
+  shape: throw-idiom
+  why: >-
+    "throw a bolt" is to shoot it home; no carried thing leaves the hands. Too
+    far from any listed barrier to be sure of a `use`, so it is `other`

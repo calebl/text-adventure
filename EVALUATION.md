@@ -1208,25 +1208,26 @@ bin/rails runner 'Eval::Prompt::Result.load(Eval.root.join("my-set")) \
 
 ### Current kept sets and historical comparisons
 
-`prompt-2026-09-10`, `classifier-examine-wording-20260918` and
+`prompt-2026-09-10`, `classifier-throw-after-20260926` and
 `prompt-ending-2026-09-10` are the current before sides for future changes.
-The classifier set is the judged R02 prompt with one later amendment: the
-`examine` criterion now admits a look at the room in general, which is what the
-corpus labels already assume. R02 itself prevents the demonstrated wrong-record
-substitutions, with aggregate metrics inside noise versus the prior baseline and
-a documented increase in conservative refusals versus its intermediate
-candidate; `physical-classifier-final-20260914` is that run and remains history
-with its own evidence directory. The amendment was measured either side on the
-same corpus, four repetitions a side, and every metric came back **NOISE** — its
-pair of sets and the verdict are in
-`db/eval/classifier-examine-wording-20260918/README.md`. Older sets remain
-history.
+The classifier set is the judged R02 prompt with two later amendments. The
+first, the `examine` criterion admitting a look at the room in general, came
+back **NOISE** on every metric; its pair and verdict are in
+`db/eval/classifier-examine-wording-20260918/README.md`, and that set is still
+the Mistral-alone row the cascade sets were judged against. The second added
+`throw` to the intent enum with a `thrown_at` field, measured on the corpus
+with eight throw lines added; it came back **REAL** on strict accuracy, and its
+pair and verdict are in `db/eval/classifier-throw-after-20260926/README.md`.
+R02 itself prevents the demonstrated wrong-record substitutions;
+`physical-classifier-final-20260914` is that run and remains history with its
+own evidence directory. Older sets remain history.
 The main comparison spans pre-existing request drift, so its verdicts cannot
 attribute an effect to one prompt change. Recompute them with:
 
 ```bash
 rake eval:prompt_compare BEFORE=prompt-2026-09-05 AFTER=prompt-2026-09-10
 rake eval:classifier_compare BEFORE=classifier-examine-before-20260918 AFTER=classifier-examine-wording-20260918
+rake eval:classifier_compare BEFORE=classifier-throw-before-20260926 AFTER=classifier-throw-after-20260926
 rake eval:classifier_offline
 rake eval:prompt_digest CORPUS=ending
 ```

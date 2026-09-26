@@ -206,7 +206,6 @@ class SceneTest < ActiveSupport::TestCase
 
     assert scene.valid?
     assert_includes Scene::ACTIONS, "throw"
-    assert_not_includes Playthrough::IntentSchema::INTENTS, "throw"
     assert_not_predicate scene, :engine_authored?
   end
 

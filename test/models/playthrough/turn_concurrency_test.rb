@@ -211,7 +211,7 @@ class Playthrough::TurnConcurrencyTest < ActiveSupport::TestCase
   REACTION = { "pre_thought" => "A visitor.", "pre_feeling" => "curious", "action" => "I nod.",
                "post_feeling" => "calm", "post_thought" => "Fine.", "inner_resolution" => "I wait.",
                "engine_action" => Playthrough::NpcAction::NONE }.freeze
-  LOOK = { "intent" => "other", "target" => "nothing", "also_named" => "nothing" }.freeze
+  LOOK = { "intent" => "other", "target" => "nothing", "also_named" => "nothing", "thrown_at" => "nothing" }.freeze
 
   # A MODEL CALL THAT NEVER RETURNS, for a worker that is about to be killed.
   # RubyLLM's own `Chat#ask` is `ask_later`, which persists the prompt, and then

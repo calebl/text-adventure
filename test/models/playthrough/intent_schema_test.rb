@@ -12,21 +12,18 @@ class Playthrough::IntentSchemaTest < ActiveSupport::TestCase
   end
 
   test "the intent is one of the acts the loop knows about" do
-    assert_equal %w[move talk examine take drop attack use other], properties([])["intent"]["enum"]
+    assert_equal %w[move talk examine take drop attack use other throw], properties([])["intent"]["enum"]
     assert_equal Playthrough::IntentSchema::INTENTS, properties([])["intent"]["enum"]
   end
 
-  # THE SEVENTH WORD, AND THE ONE THAT IS NOT NEXT. `attack` landed in combat
-  # slice 8 and was APPENDED rather than grouped beside `talk`, so every other
+  # APPENDED, BOTH OF THEM. `attack` landed in combat slice 8 and `throw` after
+  # it, each at the end rather than grouped beside a neighbour, so every other
   # word keeps the index it had and a movement in the classifier bench's
-  # confusion matrix across that slice is the new word and not a reshuffled
-  # enum. `throw` is deliberately absent and stays absent: it names two records
-  # and this schema holds one `target`.
-  test "use follows attack before other and throw remains outside the model enum" do
+  # confusion matrix is the new word and not a reshuffled enum.
+  test "throw is appended after other so no earlier word moves" do
     enum = properties([])["intent"]["enum"]
 
-    assert_equal %w[attack use other], enum.last(3)
-    assert_not_includes enum, "throw"
+    assert_equal %w[attack use other throw], enum.last(4)
     assert_equal Playthrough::IntentSchema::INTENTS.size, enum.size
   end
 
@@ -57,6 +54,16 @@ class Playthrough::IntentSchemaTest < ActiveSupport::TestCase
     assert_equal properties["target"]["enum"], properties["also_named"]["enum"]
   end
 
+  # THE AIM OF A THROW, out of the same closed set. `Playthrough::Classifier`
+  # narrows it to the people here and the ways out when it resolves it.
+  test "what a throw was aimed at is closed over the same candidates and can be nothing" do
+    properties = properties([ "Ashgate Market", "Maren Vosk" ])
+
+    assert_equal properties["target"]["enum"], properties["thrown_at"]["enum"]
+    assert_includes properties["thrown_at"]["enum"], "nothing"
+    assert_match(/Only for `throw`/, properties["thrown_at"]["description"])
+  end
+
   # A required field and not an optional one, because `strict` schemas require
   # every property -- and `nothing`, which this enum already has, is how the
   # usual answer is given. An array here would have had to be allowed to come
@@ -66,7 +73,7 @@ class Playthrough::IntentSchemaTest < ActiveSupport::TestCase
   test "every field is required, so BaseAgent can tell a half answer from a whole one" do
     schema = Playthrough::IntentSchema.for([ "Ashgate Market" ])
 
-    assert_equal %w[intent target also_named], schema.required_properties.map(&:to_s)
+    assert_equal %w[intent target also_named thrown_at], schema.required_properties.map(&:to_s)
     assert_includes properties([ "Ashgate Market" ])["also_named"]["enum"], "nothing"
   end
 
