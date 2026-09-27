@@ -27,6 +27,30 @@ module Eval::Prompt::RequestVersion
   end
 
   def offline(corpus = Eval::Prompt.corpus)
+    designated, captured, ending = capture_all(corpus)
+    requests = designated.transform_values { |kase| captured.fetch(kase.id) }
+    legacy = { prompt_digest: Eval::Prompt::Version.digest(requests.map { |shape, request| "#{shape}\n#{request[:user]}" }),
+               instructions_digest: Eval::Prompt::Version.digest(requests.values.map { |request| request[:system] }.uniq.sort) }
+    identity = if ending
+      scaffolds = captured.transform_values { |request| request.fetch(:ending_scaffold) }
+      Eval::Prompt::EndingVersion.identity(scaffolds, corpus)
+    else
+      Eval::RequestIdentity.of(requests.transform_values { |request| request.except(:ending_scaffold) })
+    end
+    legacy.merge(request_identity: identity)
+  end
+
+  # The designated requests of a corpus without an ending, shape => request:
+  # exactly what `#offline`'s identity is taken over.
+  def requests(corpus = Eval::Prompt.corpus)
+    designated, captured, ending = capture_all(corpus)
+    raise ArgumentError, "an ending corpus is identified by its scaffolds" if ending
+
+    designated.transform_values { |kase| captured.fetch(kase.id).except(:ending_scaffold) }
+  end
+
+  # [shape => designated case, case id => captured request, whether every case is an ending].
+  def capture_all(corpus)
     BaseAgent.prepend(Capture) unless BaseAgent.ancestors.include?(Capture)
     # Pending branch moments need their producer stager, not an extra Turn#play.
     bench_class = corpus.path.to_s == Eval::Prompt::BRANCHES_CORPUS.to_s ? Eval::Prompt::Branches::Bench : Eval::Prompt::Bench
@@ -47,16 +71,7 @@ module Eval::Prompt::RequestVersion
       raise "No designated request captured for #{kase.id}" unless request
       [ kase.id, request ]
     end
-    requests = designated.transform_values { |kase| captured.fetch(kase.id) }
-    legacy = { prompt_digest: Eval::Prompt::Version.digest(requests.map { |shape, request| "#{shape}\n#{request[:user]}" }),
-               instructions_digest: Eval::Prompt::Version.digest(requests.values.map { |request| request[:system] }.uniq.sort) }
-    identity = if ending
-      scaffolds = captured.transform_values { |request| request.fetch(:ending_scaffold) }
-      Eval::Prompt::EndingVersion.identity(scaffolds, corpus)
-    else
-      Eval::RequestIdentity.of(requests.transform_values { |request| request.except(:ending_scaffold) })
-    end
-    legacy.merge(request_identity: identity)
+    [ designated, captured, ending ]
   end
 
   def capture(kase)

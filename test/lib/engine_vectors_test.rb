@@ -42,6 +42,25 @@ class EngineVectorsTest < ActiveSupport::TestCase
     assert_equal Eval::Classifier.corpus.lines.map(&:id), ids
   end
 
+  # The export stops if either fixture is not reproduced; these pin that the
+  # cases which reproduce them stay in the files.
+  test "the two stored System One requests are vectors" do
+    scored = JSON.parse(DIRECTORY.join("classifier_request.json").read).fetch("cases")
+                 .find { |one| one["input"] == { "world" => "scored", "typed" => EngineVectors::ClassifierRequest::SCORED_LINE } }
+    stored = JSON.parse(file_fixture("scored_classifier_request.json").read)
+
+    assert_equal stored.fetch("state"), scored.dig("output", "state")
+    assert_equal JSON.parse(file_fixture("volition_system_one_request.json").read),
+                 JSON.parse(DIRECTORY.join("volition_request.json").read).fetch("cases").first.fetch("output")
+  end
+
+  test "the classifier and prompt sets' digests are the ones their digest tasks print" do
+    cases = JSON.parse(DIRECTORY.join("request_identity.json").read).fetch("cases").index_by { |one| one["name"] }
+
+    assert_equal Eval::Classifier::Version.offline, cases.fetch("classifier set").dig("output", "identity")
+    assert_equal Eval::Prompt::RequestVersion.offline.fetch(:request_identity), cases.fetch("prompt set").dig("output", "identity")
+  end
+
   test "each file declares the format and version it is written in" do
     EngineVectors::PORTIONS.each_key do |portion|
       document = JSON.parse(DIRECTORY.join("#{portion}.json").read)
