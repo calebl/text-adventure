@@ -23,12 +23,23 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   # deleting one is a failing test rather than a table that quietly loses a
   # column.
   BASELINE = %w[classifier-remote classifier-mistral-small classifier-gemini-flash-lite].freeze
-  # THE CURRENT BEFORE SIDE, which is the run whose prompt the code sends today:
-  # the classifier that can answer `throw`, measured on the corpus with the
-  # throw lines in it. Its own before side and the verdict are in this set's
-  # README.
-  CURRENT = "classifier-throw-after-20260926".freeze
+  # THE CURRENT BEFORE SIDE, which is the run whose request the code sends
+  # today: the classifier that can answer `throw`, on the worlds with arcs, on
+  # the corpus with the throw lines in it and three labels moved to name the
+  # writ the Unrecorded Hour's arc put in the office. Its README has why.
+  CURRENT = "classifier-2026-09-27".freeze
+
+  # THE THROW PAIR, either side of `throw` joining the enum -- bought on the
+  # worlds before they had arcs, so history now, read at the corpus it scored.
+  THROW_AFTER = "classifier-throw-after-20260926".freeze
   THROW_BEFORE = "classifier-throw-before-20260926".freeze
+
+  # THE SETS BOUGHT ON THE WORLDS WITH ARCS BEFORE `throw` JOINED THE ENUM: the
+  # model call alone and the cascade through each System One transport. History
+  # too, and read at the corpus they scored.
+  ARC_ALONE = "classifier-2026-09-26".freeze
+  ARC_CASCADE = "classifier-cascade-state-20260927".freeze
+  ARC_OPENROUTER = "classifier-cascade-openrouter-20260927".freeze
 
   # THE PREVIOUS CURRENT SET, and the Mistral-alone row the cascade sets were
   # judged against: the same prompt as the cascade's escalation target, on the
@@ -164,9 +175,35 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   ADDED_SINCE_FROZEN = %w[throw-daybook-rowe throw-daybook-rowe-nickname throw-slate-brace throw-daybook-doorway
                           throw-stamp-hallway throw-daybook-window throw-the-switch throw-the-bolt].freeze
 
-  def frozen_corpus = Eval::Classifier.corpus.subset { |line| !ADDED_SINCE_FROZEN.include?(line.id) }
+  # AND THE THREE LABELS THAT MOVED WITH THE WORLD, as they were before the
+  # writ existed. Every set bought before the relabel was scored against these.
+  FORMER_LABELS = {
+    "unresolved-take-blank-writ" => { target: nil, also_named: nil },
+    "two-names-take-the-lot" => { target: "ward stamp", also_named: "Ward Office 12 daybook" },
+    "two-names-take-all" => { target: "ward stamp", also_named: "Ward Office 12 daybook" }
+  }.freeze
 
-  def frozen_floor = JSON.parse(Eval::Classifier::Offline.new(corpus: frozen_corpus).summary.to_h.to_json)
+  # The digests of the corpora the throw pair and the arc sets were scored on.
+  THROW_DIGEST = "1ebd2f0c35908933".freeze
+  ARC_DIGEST = "027013dd5a020328".freeze
+
+  def labelled_before_the_writ(corpus)
+    Eval::Classifier::Corpus.new(path: corpus.path, positions: corpus.positions,
+                                 lines: corpus.lines.map { |line| FORMER_LABELS[line.id] ? line.with(**FORMER_LABELS[line.id]) : line })
+  end
+
+  def without_the_throw_lines(corpus) = corpus.subset { |line| !ADDED_SINCE_FROZEN.include?(line.id) }
+
+  def frozen_corpus = labelled_before_the_writ(without_the_throw_lines(Eval::Classifier.corpus))
+
+  def throw_corpus = labelled_before_the_writ(Eval::Classifier.corpus)
+
+  def arc_corpus = without_the_throw_lines(Eval::Classifier.corpus)
+
+  test "each historical corpus is today's corpus less what changed since, exactly, by digest" do
+    assert_equal THROW_DIGEST, Eval::Classifier.digest(throw_corpus)
+    assert_equal ARC_DIGEST, Eval::Classifier.digest(arc_corpus)
+  end
 
   test "the corpus less the lines added since is the corpus the frozen sets were scored on" do
     assert_equal FROZEN_DIGEST, Eval::Classifier.digest(frozen_corpus)
@@ -179,26 +216,26 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
     assert_equal [ BaseAgent::REMOTE_MODEL_IDS.first ], result.arms
   end
 
-  # THE THROW PAIR, both sides on today's corpus and the same arm. Only the
-  # after side is the request the code sends; the before side is the request
-  # it sent before `throw` joined the enum, which is the previous set's.
-  test "the throw pair measured today's corpus either side of the request change" do
+  # THE THROW PAIR, both sides on one corpus and the same arm, either side of
+  # `throw` joining the enum; the before side is the request the previous set
+  # sent.
+  test "the throw pair measured one corpus either side of the request change" do
     before = load_kept(THROW_BEFORE)
-    after = load_kept(CURRENT)
+    after = load_kept(THROW_AFTER)
 
     [ before, after ].each do |result|
-      assert_equal Eval::Classifier.digest, result.corpus_digest
-      assert_equal Eval::Classifier.corpus.size, result.corpus_size
+      assert_equal THROW_DIGEST, result.corpus_digest
+      assert_equal throw_corpus.size, result.corpus_size
       assert_equal [ BaseAgent::REMOTE_MODEL_IDS.first ], result.arms
       assert_equal Eval::Noise::MIN_RUNS, result.reps
     end
     assert_equal load_kept(EXAMINE).request_identity, before.request_identity
     assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{THROW_BEFORE}/classifier.json"
-    assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{CURRENT}/README.md"
+    assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{THROW_AFTER}/README.md"
   end
 
   test "the throw pair's verdict can be recomputed with no key and no calls" do
-    comparison = Eval::Classifier::Comparison.new(load_kept(THROW_BEFORE), load_kept(CURRENT))
+    comparison = Eval::Classifier::Comparison.new(load_kept(THROW_BEFORE), load_kept(THROW_AFTER))
     strict = comparison.verdicts(BaseAgent::REMOTE_MODEL_IDS.first).find { |row| row.metric == :strict_accuracy }
 
     assert comparison.comparable_corpus?
@@ -344,12 +381,14 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
     assert_match(/escalation rate.*0\.\d+ escalated/, printed)
   end
 
-  test "each cascade set's floor can be recomputed offline" do
-    expected = frozen_floor
+  # A HISTORICAL FLOOR IS THE GRAMMAR ON THE WORLDS IT WAS STAGED IN, and the
+  # checked-in worlds have gained arcs and the things they need since -- so
+  # these floors are read as the record of the corpus they were taken on, and
+  # only the current set's floor is recomputed against today's worlds.
+  test "each cascade set's floor says which corpus it was taken on" do
     CASCADE_SETS.each do |set|
       floor = JSON.parse(Eval.kept_root.join(set, "offline.json").read)
       assert_equal FROZEN_DIGEST, floor.fetch("corpus_digest"), set
-      assert_equal expected, floor.fetch("floor"), set
     end
   end
 
@@ -372,16 +411,48 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
     assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{CASCADE_OPENROUTER}/README.md"
   end
 
-  test "the OpenRouter cascade set's floor can be recomputed offline" do
-    floor = JSON.parse(Eval.kept_root.join(CASCADE_OPENROUTER, "offline.json").read)
-    assert_equal FROZEN_DIGEST, floor.fetch("corpus_digest")
-    assert_equal frozen_floor, floor.fetch("floor")
+  test "the historical floors say which corpus each was taken on" do
+    { CASCADE_OPENROUTER => FROZEN_DIGEST, EXAMINE => FROZEN_DIGEST, THROW_AFTER => THROW_DIGEST }.each do |set, digest|
+      floor = JSON.parse(Eval.kept_root.join(set, "offline.json").read)
+      assert_equal digest, floor.fetch("corpus_digest"), set
+    end
   end
 
-  test "the previous classifier floor can be recomputed offline" do
-    floor = JSON.parse(Eval.kept_root.join(EXAMINE, "offline.json").read)
-    assert_equal FROZEN_DIGEST, floor.fetch("corpus_digest")
-    assert_equal frozen_floor, floor.fetch("floor")
+  # THE ARC SETS, bought on the worlds with arcs before `throw` joined the
+  # enum: one request identity across all three, one corpus, and every
+  # cascade reading kept. Their READMEs carry the verdicts.
+  test "the arc sets are one request on one corpus, and the cascade ones keep every reading" do
+    sets = [ ARC_ALONE, ARC_CASCADE, ARC_OPENROUTER ].map { |name| load_kept(name) }
+
+    sets.each do |result|
+      assert_equal ARC_DIGEST, result.corpus_digest, result.name
+      assert_equal arc_corpus.size, result.corpus_size, result.name
+      assert_equal Eval::Noise::MIN_RUNS, result.reps, result.name
+    end
+    assert_equal [ sets.first.request_identity ], sets.map(&:request_identity).uniq
+    [ sets[1], sets[2] ].each do |cascade|
+      assert cascade.cascade, cascade.name
+      assert_equal Eval::Noise::MIN_RUNS * arc_corpus.size, cascade.rows.size, cascade.name
+    end
+    assert_equal [ "typesafe_direct" ], sets[1].rows.map { |row| row["system_one_transport"] }.uniq
+    assert_equal [ "openrouter_decisions" ], sets[2].rows.map { |row| row["system_one_transport"] }.uniq
+  end
+
+  # ON THE WORLDS WITH ARCS THE CASCADE'S LEAD IS INSIDE THE NOISE, and that is
+  # said here rather than left in a README. The claim above that it reads ahead
+  # holds of the files it was made about; of these two, read on one corpus and
+  # one request, it reads NOISE on strict accuracy, accuracy and misses. What is
+  # still asserted is the floor under it: the cascade is not behind on the
+  # medians. A change that puts it behind has to argue with this.
+  test "on the worlds with arcs the cascade is not behind the model call alone" do
+    cascade = load_kept(ARC_CASCADE)
+    alone = load_kept(ARC_ALONE)
+    arm = BaseAgent::REMOTE_MODEL_IDS.first
+
+    assert_operator cascade.spread(:strict_accuracy, arm: arm).median, :>=,
+                    alone.spread(:strict_accuracy, arm: arm).median
+    assert_operator cascade.spread(:closed_set_misses, arm: arm).median, :<=,
+                    alone.spread(:closed_set_misses, arm: arm).median
   end
 
   test "the current classifier floor can be recomputed offline" do
