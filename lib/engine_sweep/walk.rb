@@ -17,10 +17,13 @@
 # makes "two people playing one world carry two different sets of things"
 # assertable offline. The rooms stay shared, because they are the world.
 #
-# NOTHING IS ISOLATED FROM THE ENGINE ITSELF. The walk is `Playthrough::Mechanics`
-# with `model: false`, which is `Playthrough::Turn#stand_in!`, `#carry!` and
-# `#put_down!` -- the same statements the browser moves the world with. A sweep
-# with its own copy of the line that moves the player would be testing itself.
+# NOTHING IS ISOLATED FROM THE ENGINE ITSELF. The sweep walks the Rust engine
+# one committed step at a time (`#prepare!` and `#play_step`, below), through
+# the same extension every turn is played through. `#play` walks the Ruby loop
+# instead -- `Playthrough::Mechanics` with `model: false`, which is
+# `Playthrough::Turn#stand_in!`, `#carry!` and `#put_down!` -- for a test about
+# that walk itself. A sweep with its own copy of the line that moves the player
+# would be testing itself.
 class EngineSweep::Walk
   # Appended to the world's title so the copy cannot collide with the real one.
   # A story is matched by title and by nothing else, which is what makes one
@@ -67,7 +70,7 @@ class EngineSweep::Walk
     # `requires_new` because this may be called from inside the suite's own
     # transaction, where a plain nested `transaction` shares its parent and
     # `ActiveRecord::Rollback` silently does nothing at all.
-    on_the_reference do
+    in_one_transaction do
       pin_ids!
       story = load_world!
       games = {}
@@ -107,35 +110,47 @@ class EngineSweep::Walk
   end
 
   # THE SAME WALK, ONE STEP AT A TIME, on a database committed between steps --
-  # the shared-database mode of `EngineSweep::Parity`. `#prepare!` does what
-  # `#play` does before its first step, without the transaction, and each of
-  # the others plays or reads one step and answers its `EngineSweep::Dump`.
-  # Nothing here checks an expectation or an invariant: this is what a second
-  # engine is compared on, not the sweep.
+  # the shared-database mode of `EngineSweep::Parity`, and how the sweep walks
+  # the Rust engine. `#prepare!` does what `#play` does before its first step,
+  # without the transaction, and each of the others plays or reads one step and
+  # answers its `EngineSweep::Dump`.
+  #
+  # A WALK THAT PREPARED THE FILE ITSELF CHECKS EVERY STEP'S EXPECTATION as it
+  # plays it, exactly as `#play` does, and keeps what did not hold in
+  # `#unmet`; the invariants are the caller's, over the file, once the walk is
+  # done (`EngineSweep::Parity::InProcess#sweep`). One made for a single step
+  # (a command engine's) checks nothing: it is what a second engine is
+  # compared on, not the sweep.
   def prepare!
     pin_ids!
     load_world!
+    @unmet = []
   end
 
   # A declared realization joins `#loaded` here as it does in `#walk`, so the
-  # invariants can be checked after a walk played this way too -- by a walk
-  # that prepared the file itself. One made for a single step (a command
-  # engine's) has loaded nothing to add it to.
+  # invariants can be checked after a walk played this way too.
   def play_step(step)
     mechanics = engine_for(game_of(step.player))
     realization = before_realization(mechanics.playthrough.story, step) if @loaded
     report, counts = measure(mechanics, step)
     record_realization!(realization) if realization
+    @unmet&.concat(failures(step, report, **counts), arrival_cast_failures(mechanics.playthrough, step, report))
     EngineSweep::Dump.new(report, **counts)
   end
 
   def reseed_step(step)
     note = reseed!(step.renames)
-    EngineSweep::Dump.new(engine_for(game_of(step.player)).read(note: note), drifts: 0)
+    report = engine_for(game_of(step.player)).read(note: note)
+    @unmet&.concat(failures(step, report, drifts: 0))
+    EngineSweep::Dump.new(report, drifts: 0)
   end
 
   # The world file as last loaded, which the invariants are checked against.
   def loaded = @loaded
+
+  # Every expectation this walk found unmet, step by step, when it prepared
+  # the file itself; nil otherwise.
+  def unmet = @unmet
 
   # A player's playthrough, found on the database rather than in memory: the
   # players get playthroughs in the order they first appear, so the n-th
@@ -148,10 +163,10 @@ class EngineSweep::Walk
 
   private
 
-  # THE RUBY TURN LOOP, the parity reference, in one transaction: a whole walk
-  # is rolled back, and the Rust engine could not play inside it.
-  # `EngineSweep::Parity::InProcess` is how a script plays on Rust.
-  def on_the_reference(&)
+  # THE RUBY TURN LOOP, in one transaction: a whole walk is rolled back, and
+  # the Rust engine could not play inside it. `EngineSweep::Parity::InProcess`
+  # is how a script plays on Rust, which is how the sweep walks.
+  def in_one_transaction(&)
     Playthrough::RustEngine.using(:ruby) { ActiveRecord::Base.transaction(requires_new: true, &) }
   end
 

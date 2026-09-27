@@ -1,8 +1,8 @@
 require "test_helper"
 
 # THE REAL EXTENSION, when it is built (`bin/rails engine:build`); skipped
-# otherwise, so the default suite needs no Rust toolchain. CI's Rust job builds
-# it and runs this file beside `bin/rails engine:rust_gates`.
+# otherwise. CI's test job builds it before the suite runs, and the engine
+# sweep (`test/lib/engine_sweep_test.rb`) fails outright without it.
 class RustEngineExtensionTest < ActiveSupport::TestCase
   # The engine reads what Ruby committed, on scratch copies of this database,
   # so nothing here may sit inside the suite's transaction.

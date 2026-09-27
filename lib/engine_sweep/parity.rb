@@ -5,13 +5,20 @@
 # `#play(script)` with one dump per step, in the script's order -- and either
 # writes the dumps down as golden files or compares two engines' and names the
 # first step where they part. docs/engine-parity.md is the contract an engine
-# other than this one implements.
+# implements.
 #
-# `Ruby` is the engine the rest of the app is: `EngineSweep::Walk` with a
-# listener, so it plays exactly the way `rake game:sweep` plays, in the same
-# rolled-back transaction with the same pinned ids. `Command` is any other
-# engine behind a subprocess: it is handed a script's path and prints one
-# dump per line.
+# THE GOLDENS ARE THE RUST ENGINE'S. Its parity binary writes them and this
+# repository vendors them at the pinned commit (`EngineSweep::Vendored`), so
+# `bin/rails engine:parity`, which writes them from the Rust walk here, is for
+# writing them into a checkout of the engine, never for moving them here on
+# their own.
+#
+# `InProcess` plays a script on the engine this app plays, through its
+# extension. `Command` is an engine behind a subprocess: it is handed a
+# script's path and prints one dump per line. `Ruby` is the Ruby reference
+# loop, `EngineSweep::Walk` with a listener, which wrote the goldens until the
+# engine took them over; no gate plays it, and it stays for asking by hand
+# where the two loops part (`Parity.diff(Parity::Ruby.new, first: ...)`).
 #
 # NO MODEL, ON EITHER SIDE. The Ruby engine plays inside
 # `EngineSweep.without_a_model`, and a subprocess is started with both
@@ -125,6 +132,24 @@ module EngineSweep::Parity
 
     def play(script) = Dir.mktmpdir("engine-parity") { |directory| play_in(directory, script).dumps }
 
+    # THE SWEEP ON THIS ENGINE: the walk played as `#play_in` plays it, with
+    # every step's expectation checked as it is played and the invariants
+    # checked over the file afterwards, as an `EngineSweep::Result`. A step the
+    # engine could not play ends the walk there, as a failure of the script.
+    def sweep(script)
+      Dir.mktmpdir("engine-sweep") do |directory|
+        played = play_in(directory, script)
+        broken = on_file(played.file) do
+          story = Story.find_by!(title: "#{script.story}#{EngineSweep::Walk::TITLE_SUFFIX}")
+          EngineSweep::Invariants.new(story, seed: played.walk.loaded).check.map { |row| row.with(script: script) }
+        end
+        EngineSweep::Result.new(script: script, steps: script.steps.size, failures: played.walk.unmet + broken)
+      end
+    rescue EngineSweep::RustMechanics::Failed, Playthrough::RustEngine::EngineError => e
+      stopped = EngineSweep::Result::Broken.new(script: script, invariant: "every_step_played", detail: e.message)
+      EngineSweep::Result.new(script: script, steps: script.steps.size, failures: [ stopped ])
+    end
+
     Played = Data.define(:dumps, :file, :walk)
 
     # Plays `script` on a scratch copy in `directory`, and keeps the file for
@@ -166,6 +191,12 @@ module EngineSweep::Parity
     from&.close
   end
 
+  # The name a scratch copy's connection goes by. The suite exempts it from
+  # its transaction (`skip_transactional_tests_for_database`, in
+  # test/test_helper.rb): a step has to commit on the copy for the engine, on
+  # a connection of its own, to read it.
+  SCRATCH = "engine_scratch".freeze
+
   # Runs the block with every model connected to `file` instead, and puts the
   # connection back afterwards. A handler of its own, so a transaction open on
   # the usual connection -- the suite's, say -- is left exactly as it was.
@@ -173,7 +204,9 @@ module EngineSweep::Parity
     original = ActiveRecord::Base.connection_handler
     handler = ActiveRecord::ConnectionAdapters::ConnectionHandler.new
     ActiveRecord::Base.connection_handler = handler
-    ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: file.to_s)
+    ActiveRecord::Base.establish_connection(
+      ActiveRecord::DatabaseConfigurations::HashConfig.new(Rails.env, SCRATCH, { adapter: "sqlite3", database: file.to_s })
+    )
     yield
   ensure
     handler&.clear_all_connections!
@@ -197,12 +230,14 @@ module EngineSweep::Parity
   def self.render(document) = "#{JSON.pretty_generate(document)}\n"
 
   # Every script's golden file, as { file name => body }, played by `engine`.
-  def self.files(engine = Ruby.new, scripts = EngineSweep.scripts)
+  def self.files(engine, scripts = EngineSweep.scripts)
     scripts.to_h { |script| [ "#{script.name}.json", render(document(script, engine.play(script))) ] }
   end
 
-  def self.write!(engine = Ruby.new, scripts = EngineSweep.scripts)
-    directory = Rails.root.join(DIRECTORY)
+  # Writes them into `directory`: this repository's goldens by default, or a
+  # checkout of the engine's (`parity/goldens`).
+  def self.write!(engine, scripts = EngineSweep.scripts, directory: DIRECTORY)
+    directory = Rails.root.join(directory)
     FileUtils.mkdir_p(directory)
     files(engine, scripts).each { |name, body| directory.join(name).write(body) }
   end
@@ -228,18 +263,18 @@ module EngineSweep::Parity
   end
 
   # Plays every script through both engines and returns one divergence per
-  # script that has one. `first` may be nil, in which case the committed
-  # golden files stand in for it.
-  def self.diff(second, first: nil, scripts: EngineSweep.scripts)
+  # script that has one. `first` may be nil, in which case the golden files in
+  # `goldens` stand in for it.
+  def self.diff(second, first: nil, scripts: EngineSweep.scripts, goldens: DIRECTORY)
     scripts.filter_map do |script|
-      expected = first ? first.play(script) : golden(script)
+      expected = first ? first.play(script) : golden(script, goldens)
       first_divergence(script, expected, second.play(script))
     end
   end
 
-  def self.golden(script)
-    path = Rails.root.join(DIRECTORY, "#{script.name}.json")
-    raise EngineSweep::InvalidScript, "#{script.name}: no golden file at #{DIRECTORY}/ -- run bin/rails engine:parity" unless path.exist?
+  def self.golden(script, directory = DIRECTORY)
+    path = Rails.root.join(directory, "#{script.name}.json")
+    raise EngineSweep::InvalidScript, "#{script.name}: no golden file at #{directory}/ -- see docs/engine-parity.md" unless path.exist?
 
     JSON.parse(path.read).fetch("steps").map { |row| row.fetch("dump") }
   end

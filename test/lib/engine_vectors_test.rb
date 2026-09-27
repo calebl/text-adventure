@@ -3,6 +3,9 @@ require "test_helper"
 # THE COMMITTED VECTORS ARE WHAT THE RUBY CODE ANSWERS TODAY. Regenerated in
 # memory and compared byte for byte, so a change to any rule they cover fails
 # here until `rake engine:vectors` is run and the diff is committed with it.
+# The engine's own portions (`EngineVectors::ENGINE_OWNED`) are not Ruby's to
+# regenerate: they are vendored from the pinned engine (`bin/rails
+# engine:vendored`).
 class EngineVectorsTest < ActiveSupport::TestCase
   DIRECTORY = Rails.root.join(EngineVectors::DIRECTORY)
 

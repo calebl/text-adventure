@@ -13,6 +13,16 @@
 # compares, so any change to the Ruby behaviour shows up as a vector diff in
 # the same PR that made it.
 #
+# EXCEPT THE PORTIONS THE ENGINE OWNS (`ENGINE_OWNED`): rules no Ruby code
+# runs any more but the Ruby turn loop, which no player plays. Their files
+# are the engine's, blessed there as a reviewed diff and vendored here byte
+# for byte at the pinned commit (`EngineSweep::Vendored`), so this module
+# neither writes nor regenerates them; their builders stay, so the Ruby
+# reference loop can still be asked what it would have answered. A portion
+# joins the list only once nothing but that loop runs its Ruby code:
+# `world_mechanic` is not on it, because the debug view reads a mechanic's
+# boundaries (`Playthrough::Debug`).
+#
 # OFFLINE AND WRITING NOTHING. No portion makes a model call. The portions
 # that need rows (an interior, a shuffle, a deadline's anchor) build them with
 # explicit ids inside a transaction that is always rolled back, so the answer
@@ -76,10 +86,14 @@ module EngineVectors
     "kept_requests" => "EngineVectors::KeptRequests"
   }.freeze
 
-  # EVERY PORTION'S FILE CONTENTS, keyed by file name. Needs a database with
-  # the current schema for the portions that build rows; nothing is kept.
+  # The portions whose files are the engine's (its `vectors/ENGINE_OWNED`).
+  ENGINE_OWNED = %w[shuffle_connections].freeze
+
+  # EVERY PORTION'S FILE CONTENTS that this module writes, keyed by file
+  # name: all but the engine's own. Needs a database with the current schema
+  # for the portions that build rows; nothing is kept.
   def self.files
-    PORTIONS.to_h { |portion, builder| [ "#{portion}.json", render(document(portion, builder.constantize)) ] }
+    PORTIONS.except(*ENGINE_OWNED).to_h { |portion, builder| [ "#{portion}.json", render(document(portion, builder.constantize)) ] }
   end
 
   # A portion whose tables and cases come out of one piece of work answers

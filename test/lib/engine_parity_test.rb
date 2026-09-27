@@ -1,23 +1,41 @@
 require "test_helper"
 require_relative "../support/per_step_engine"
 
-# THE COMMITTED DUMPS ARE WHAT THE RUBY ENGINE PLAYS TODAY. Every sweep script
-# is played again and compared byte for byte, so an engine change that moves
-# any record a script could assert fails here until `bin/rails engine:parity`
-# is run and the diff is committed with it. See docs/engine-parity.md.
+# THE GOLDENS ARE THE RUST ENGINE'S, vendored at the pinned commit
+# (`bin/rails engine:vendored`) and held to the Rust walk by `bin/rails
+# engine:rust_gates`; see docs/engine-parity.md. What is tested here is the
+# harness around them: the files, the divergence a gate reports, and both
+# command contracts.
 class EngineParityTest < ActiveSupport::TestCase
   DIRECTORY = Rails.root.join(EngineSweep::Parity::DIRECTORY)
 
-  test "the committed dumps match what the engine plays now" do
-    stale = EngineSweep::Parity.files.reject { |name, body| DIRECTORY.join(name).exist? && DIRECTORY.join(name).read == body }
-
-    assert_empty stale.keys, "run `bin/rails engine:parity` and commit the diff; see docs/engine-parity.md"
-  end
-
-  test "every file in the directory is a script's dump" do
-    expected = EngineSweep.scripts.map { |script| "#{script.name}.json" }.sort
+  test "every file in the directory is a script's dump or its checks" do
+    expected = EngineSweep.scripts.flat_map { |script| [ "#{script.name}.json", "#{script.name}.checks.json" ] }.sort
 
     assert_equal expected, DIRECTORY.children.map { |path| path.basename.to_s }.sort
+  end
+
+  test "a checks file holds what both judges say, under its script's name" do
+    script = EngineSweep.scripts.find { |candidate| candidate.name == "a-thing-can-be-thrown" }
+    checks = EngineSweep::RustGates.frozen(script)
+
+    assert_equal %w[script doctor audit], checks.keys
+    assert_equal script.name, checks["script"]
+    assert_equal %w[headline findings], checks["doctor"].keys
+    assert_equal %w[headline flags unjudged], checks["audit"].keys
+  end
+
+  test "a judge that says something else is named, with both sides" do
+    script = EngineSweep.scripts.find { |candidate| candidate.name == "a-thing-can-be-thrown" }
+    kept = EngineSweep::RustGates.frozen(script)
+    now = kept.deep_dup
+    now["doctor"]["findings"] << [ "invented", "warning", "a finding the file does not have", "none" ]
+
+    assert_empty EngineSweep::RustGates.compared(script, kept, kept)
+    problem = EngineSweep::RustGates.compared(script, now, kept).sole
+
+    assert_includes problem, "the doctor disagrees with test/engine_parity/#{script.name}.checks.json"
+    assert_includes problem, "a finding the file does not have"
   end
 
   test "a dump holds the expectation keys in their order and no others" do
@@ -59,14 +77,14 @@ class EngineParityTest < ActiveSupport::TestCase
   end
 end
 
-# THE SHARED-DATABASE CONTRACT, with a per-step engine that is the Ruby engine
+# THE SHARED-DATABASE CONTRACT, with a per-step engine that is the Rust engine
 # played one step at a time (test/support/per_step_engine.rb). Not transactional:
 # the runner's scratch database is a connection of its own, and it has to commit
 # for the engine to read it; the suite's database is only read, to copy it.
 class EngineParitySharedDatabaseTest < ActiveSupport::TestCase
   self.use_transactional_tests = false
 
-  # THE SHARED-DATABASE CONTRACT, with a per-step engine that is the Ruby
+  # THE SHARED-DATABASE CONTRACT, with a per-step engine that is the Rust
   # engine played one step at a time: every script, re-seeds and browser steps
   # included, agrees with the goldens when the runner owns the database.
   test "a per-step engine on a shared database agrees with every golden" do

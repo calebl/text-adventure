@@ -37,6 +37,9 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
+  # THE SUITE, WITH THE EXTENSION BUILT. The engine sweep in it walks the Rust
+  # engine, so this job builds the extension (`bin/rails engine:build`) before
+  # it runs a test. No provider key is set in this job.
   test:
     runs-on: ubuntu-latest
 
@@ -48,7 +51,7 @@ jobs:
     #    options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y curl libjemalloc2 libvips sqlite3
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y curl libjemalloc2 libvips sqlite3 libclang-dev
 
       - name: Checkout code
         uses: actions/checkout@v7
@@ -59,15 +62,27 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache the Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ext/renderedstep -> target
+
+      - name: Build the extension
+        run: bin/rails engine:build
+
       - name: Run tests
         env:
           RAILS_ENV: test
           # REDIS_URL: redis://localhost:6379/0
         run: bin/rails db:test:prepare test
 
-  # THE RUST ENGINE'S GATES. The only job that needs a Rust toolchain: it builds
-  # the extension (`bin/rails engine:build`) and holds the Rust engine to the
-  # Ruby one on every sweep script. No provider key is set in this job, and no
+  # THE RUST ENGINE'S GATES. It builds the extension (`bin/rails engine:build`),
+  # checks that what is vendored from the engine is the pinned commit's, and
+  # holds the Rust walk of every sweep script to its golden, the invariants and
+  # its frozen doctor and audit. No provider key is set in this job, and no
   # step makes a model call.
   rust_engine:
     runs-on: ubuntu-latest
@@ -106,11 +121,11 @@ jobs:
       - name: Prepare the test database
         run: bin/rails db:test:prepare
 
-      - name: "Gates: every sweep script matches its golden, the invariants hold, the doctor and audit match the Ruby-played twin"
+      - name: "Gate: the goldens, the scripts and the engine's own vector portions are the pinned engine commit's, byte for byte"
+        run: bin/rails engine:vendored
+
+      - name: "Gates: every sweep script matches its golden, the invariants hold, the doctor and audit say what its checks file says"
         run: bin/rails engine:rust_gates
 
       - name: "Gate: the golden vectors and the kept-set request equality, at the pinned engine commit"
         run: bin/rails engine:kept_requests
-
-      - name: The switch's own tests, with the extension loaded
-        run: bin/rails test test/lib/rust_engine_extension_test.rb test/models/playthrough/rust_engine_test.rb test/models/playthrough/rust_engine/turn_test.rb test/models/playthrough/session_test.rb
