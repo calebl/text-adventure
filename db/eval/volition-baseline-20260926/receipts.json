@@ -1,0 +1,2366 @@
+{
+  "model": "typesafe/jev-1.13",
+  "endpoint": "https://openrouter.ai/api/alpha/decisions",
+  "requests_file": "test/fixtures/files/volition_baseline_requests.json",
+  "requests_sha256": "6c63bbb49d2ce2ca5d352e83c4e8907695e3e20892145f57f88c3c99bdb7ef68",
+  "reps": 4,
+  "cap_usd": 0.05,
+  "credits_before": {
+    "total_credits": 63,
+    "total_usage": 59.195331031
+  },
+  "credits_after": {
+    "total_credits": 63,
+    "total_usage": 59.202209031
+  },
+  "receipts": [
+    {
+      "room": "room3-grenn",
+      "rep": 1,
+      "call": 1,
+      "status": 200,
+      "seconds": 0.182,
+      "id": "gen-dec-1790478277-LYG63CDrVn0AnRRkMhbe",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 785,
+        "output_tokens": 155,
+        "cost": 0.00003297
+      },
+      "cost": 0.00003297,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_5": 0,
+            "act_2": 0.03,
+            "act_3": 0.17,
+            "act_1": 0.46,
+            "act_4": 0.34
+          },
+          "confidence": 0.32
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unrecognized",
+          "probabilities": {
+            "conscious": 0.03,
+            "unrecognized": 0.74,
+            "recognized": 0.01,
+            "none": 0.08,
+            "unconscious": 0.14
+          },
+          "confidence": 0.68
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.51
+        }
+      }
+    },
+    {
+      "room": "room3-grenn-rent",
+      "rep": 1,
+      "call": 2,
+      "status": 200,
+      "seconds": 0.169,
+      "id": "gen-dec-1790478277-VyXFpffigEx42xAZuttD",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 871,
+        "output_tokens": 163,
+        "cost": 0.000036582
+      },
+      "cost": 0.000036582,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_5",
+          "probabilities": {
+            "act_3": 0.03,
+            "act_6": 0,
+            "act_2": 0,
+            "act_4": 0,
+            "act_1": 0.27,
+            "act_5": 0.7
+          },
+          "confidence": 0.63
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "conscious",
+          "probabilities": {
+            "unrecognized": 0,
+            "conscious": 0.85,
+            "recognized": 0.13,
+            "none": 0.02,
+            "unconscious": 0
+          },
+          "confidence": 0.8
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.46
+        }
+      }
+    },
+    {
+      "room": "hallway-grenn-alone",
+      "rep": 1,
+      "call": 3,
+      "status": 200,
+      "seconds": 0.168,
+      "id": "gen-dec-1790478277-izl3Y3IOPh4b88rkxnAd",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 751,
+        "output_tokens": 146,
+        "cost": 0.000031542
+      },
+      "cost": 0.000031542,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_2",
+          "probabilities": {
+            "act_4": 0.08,
+            "act_3": 0.04,
+            "act_2": 0.69,
+            "act_1": 0.19
+          },
+          "confidence": 0.59
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unrecognized",
+          "probabilities": {
+            "conscious": 0.03,
+            "none": 0.09,
+            "unconscious": 0.04,
+            "recognized": 0.01,
+            "unrecognized": 0.83
+          },
+          "confidence": 0.79
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.57
+        }
+      }
+    },
+    {
+      "room": "bell-marek",
+      "rep": 1,
+      "call": 4,
+      "status": 200,
+      "seconds": 0.173,
+      "id": "gen-dec-1790478277-gnytSHDL4it4njNCxnYg",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 727,
+        "output_tokens": 146,
+        "cost": 0.000030534
+      },
+      "cost": 0.000030534,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.12,
+            "act_3": 0.02,
+            "act_1": 0.84,
+            "act_4": 0.02
+          },
+          "confidence": 0.79
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unconscious",
+          "probabilities": {
+            "unconscious": 0.78,
+            "recognized": 0.01,
+            "unrecognized": 0.17,
+            "none": 0.02,
+            "conscious": 0.02
+          },
+          "confidence": 0.72
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.84
+        }
+      }
+    },
+    {
+      "room": "bell-marek-struck",
+      "rep": 1,
+      "call": 5,
+      "status": 200,
+      "seconds": 0.163,
+      "id": "gen-dec-1790478277-X9SYlLh1vLemeTZ0iDh9",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 766,
+        "output_tokens": 145,
+        "cost": 0.000032172
+      },
+      "cost": 0.000032172,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_1": 0.69,
+            "act_2": 0.09,
+            "act_4": 0.01,
+            "act_3": 0.21
+          },
+          "confidence": 0.59
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "conscious",
+          "probabilities": {
+            "recognized": 0.39,
+            "none": 0.02,
+            "conscious": 0.56,
+            "unconscious": 0.02,
+            "unrecognized": 0.01
+          },
+          "confidence": 0.45
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.69
+        }
+      }
+    },
+    {
+      "room": "court-ammon",
+      "rep": 1,
+      "call": 6,
+      "status": 200,
+      "seconds": 0.2,
+      "id": "gen-dec-1790478278-51LgcV0y9sqmkYMg4vIV",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 750,
+        "output_tokens": 152,
+        "cost": 0.0000315
+      },
+      "cost": 0.0000315,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_3": 0.02,
+            "act_5": 0.02,
+            "act_1": 0.58,
+            "act_4": 0.28,
+            "act_2": 0.1
+          },
+          "confidence": 0.48
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "none",
+          "probabilities": {
+            "none": 0.44,
+            "conscious": 0.31,
+            "unrecognized": 0.03,
+            "recognized": 0.19,
+            "unconscious": 0.03
+          },
+          "confidence": 0.29
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.51
+        }
+      }
+    },
+    {
+      "room": "court-ammon-neb",
+      "rep": 1,
+      "call": 7,
+      "status": 200,
+      "seconds": 0.185,
+      "id": "gen-dec-1790478278-ru993VcAbN6M4y4JJb4h",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 1161,
+        "output_tokens": 282,
+        "cost": 0.000048762
+      },
+      "cost": 0.000048762,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.04,
+            "act_3": 0.01,
+            "act_1": 0.93,
+            "act_4": 0.02
+          },
+          "confidence": 0.91
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "conscious": 0.12,
+            "unrecognized": 0.03,
+            "none": 0.09,
+            "recognized": 0.75,
+            "unconscious": 0.01
+          },
+          "confidence": 0.69
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.72
+        },
+        "person_2:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.04,
+            "act_3": 0.01,
+            "act_1": 0.9299999999999999,
+            "act_4": 0.02
+          },
+          "confidence": 0.92
+        },
+        "person_2:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "conscious": 0.13,
+            "none": 0.12,
+            "recognized": 0.69,
+            "unrecognized": 0.05,
+            "unconscious": 0.01
+          },
+          "confidence": 0.61
+        },
+        "person_2:pressure": {
+          "type": "noul",
+          "noul": 0.71
+        }
+      }
+    },
+    {
+      "room": "tidepost-neb-alone",
+      "rep": 1,
+      "call": 8,
+      "status": 200,
+      "seconds": 0.178,
+      "id": "gen-dec-1790478278-N3bLo18s17OcNmevfHZS",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 730,
+        "output_tokens": 125,
+        "cost": 0.00003066
+      },
+      "cost": 0.00003066,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.26,
+            "act_1": 0.74
+          },
+          "confidence": 0.47
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "none",
+          "probabilities": {
+            "unconscious": 0.03,
+            "recognized": 0.04,
+            "none": 0.6,
+            "unrecognized": 0.05,
+            "conscious": 0.28
+          },
+          "confidence": 0.5
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.61
+        }
+      }
+    },
+    {
+      "room": "tidepost-neb-deed",
+      "rep": 1,
+      "call": 9,
+      "status": 200,
+      "seconds": 0.197,
+      "id": "gen-dec-1790478278-WubTv5nvRdpwg8v9eGEU",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 727,
+        "output_tokens": 146,
+        "cost": 0.000030534
+      },
+      "cost": 0.000030534,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_4": 0.04,
+            "act_3": 0.05,
+            "act_2": 0.2,
+            "act_1": 0.71
+          },
+          "confidence": 0.61
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unconscious",
+          "probabilities": {
+            "conscious": 0.05,
+            "none": 0.02,
+            "unconscious": 0.84,
+            "recognized": 0.05,
+            "unrecognized": 0.04
+          },
+          "confidence": 0.79
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.81
+        }
+      }
+    },
+    {
+      "room": "office-halkett",
+      "rep": 1,
+      "call": 10,
+      "status": 200,
+      "seconds": 0.402,
+      "id": "gen-dec-1790478278-IhgKsBNmE09qo1zLlsor",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 765,
+        "output_tokens": 155,
+        "cost": 0.00003213
+      },
+      "cost": 0.00003213,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_4",
+          "probabilities": {
+            "act_1": 0.1,
+            "act_2": 0,
+            "act_3": 0,
+            "act_5": 0,
+            "act_4": 0.9
+          },
+          "confidence": 0.86
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unrecognized",
+          "probabilities": {
+            "conscious": 0.25,
+            "recognized": 0.13,
+            "none": 0.17,
+            "unrecognized": 0.44,
+            "unconscious": 0.01
+          },
+          "confidence": 0.3
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.69
+        }
+      }
+    },
+    {
+      "room": "office-halkett-perrin",
+      "rep": 1,
+      "call": 11,
+      "status": 200,
+      "seconds": 0.154,
+      "id": "gen-dec-1790478279-a1F5wx40Ds8bnCHrrA9u",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 1263,
+        "output_tokens": 309,
+        "cost": 0.000053046
+      },
+      "cost": 0.000053046,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.02,
+            "act_5": 0.01,
+            "act_3": 0.02,
+            "act_1": 0.68,
+            "act_4": 0.27
+          },
+          "confidence": 0.6
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "unconscious": 0.02,
+            "recognized": 0.45,
+            "conscious": 0.33,
+            "unrecognized": 0.13,
+            "none": 0.07
+          },
+          "confidence": 0.31
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.6
+        },
+        "person_2:act": {
+          "type": "choice",
+          "choice": "act_5",
+          "probabilities": {
+            "act_2": 0.02,
+            "act_5": 0.46,
+            "act_6": 0.01,
+            "act_3": 0.02,
+            "act_1": 0.39,
+            "act_4": 0.1
+          },
+          "confidence": 0.35
+        },
+        "person_2:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "unconscious": 0.02,
+            "recognized": 0.5,
+            "conscious": 0.31,
+            "unrecognized": 0.09,
+            "none": 0.08
+          },
+          "confidence": 0.37
+        },
+        "person_2:pressure": {
+          "type": "noul",
+          "noul": 0.6
+        }
+      }
+    },
+    {
+      "room": "closet-perrin-following",
+      "rep": 1,
+      "call": 12,
+      "status": 200,
+      "seconds": 0.189,
+      "id": "gen-dec-1790478279-Z9X8KOnwAmwNNXuJJnEM",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 727,
+        "output_tokens": 134,
+        "cost": 0.000030534
+      },
+      "cost": 0.000030534,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_2",
+          "probabilities": {
+            "act_2": 0.95,
+            "act_1": 0.01,
+            "act_3": 0.04
+          },
+          "confidence": 0.93
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "none",
+          "probabilities": {
+            "none": 0.57,
+            "unconscious": 0.05,
+            "conscious": 0.14,
+            "unrecognized": 0.09,
+            "recognized": 0.15
+          },
+          "confidence": 0.46
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.47
+        }
+      }
+    },
+    {
+      "room": "room3-grenn",
+      "rep": 2,
+      "call": 13,
+      "status": 200,
+      "seconds": 0.218,
+      "id": "gen-dec-1790478279-LXniK4c0tABKWrAILecS",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 785,
+        "output_tokens": 155,
+        "cost": 0.00003297
+      },
+      "cost": 0.00003297,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.02,
+            "act_1": 0.51,
+            "act_3": 0.17,
+            "act_5": 0,
+            "act_4": 0.3
+          },
+          "confidence": 0.38
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unrecognized",
+          "probabilities": {
+            "none": 0.1,
+            "unconscious": 0.09,
+            "conscious": 0.03,
+            "unrecognized": 0.77,
+            "recognized": 0.01
+          },
+          "confidence": 0.72
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.52
+        }
+      }
+    },
+    {
+      "room": "room3-grenn-rent",
+      "rep": 2,
+      "call": 14,
+      "status": 200,
+      "seconds": 0.155,
+      "id": "gen-dec-1790478279-ZTELDYb9mtR3QkKBc4s7",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 871,
+        "output_tokens": 163,
+        "cost": 0.000036582
+      },
+      "cost": 0.000036582,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_5",
+          "probabilities": {
+            "act_2": 0,
+            "act_1": 0.27,
+            "act_6": 0,
+            "act_3": 0.03,
+            "act_5": 0.7,
+            "act_4": 0
+          },
+          "confidence": 0.63
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "conscious",
+          "probabilities": {
+            "none": 0.03,
+            "unconscious": 0,
+            "conscious": 0.8099999999999999,
+            "unrecognized": 0.01,
+            "recognized": 0.15
+          },
+          "confidence": 0.77
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.44
+        }
+      }
+    },
+    {
+      "room": "hallway-grenn-alone",
+      "rep": 2,
+      "call": 15,
+      "status": 200,
+      "seconds": 0.178,
+      "id": "gen-dec-1790478280-NNNdss4wTBEf1hSNJvu7",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 751,
+        "output_tokens": 146,
+        "cost": 0.000031542
+      },
+      "cost": 0.000031542,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_2",
+          "probabilities": {
+            "act_3": 0.07,
+            "act_2": 0.57,
+            "act_1": 0.26,
+            "act_4": 0.1
+          },
+          "confidence": 0.43
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unrecognized",
+          "probabilities": {
+            "recognized": 0.01,
+            "none": 0.16,
+            "unconscious": 0.04,
+            "conscious": 0.04,
+            "unrecognized": 0.75
+          },
+          "confidence": 0.7
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.56
+        }
+      }
+    },
+    {
+      "room": "bell-marek",
+      "rep": 2,
+      "call": 16,
+      "status": 200,
+      "seconds": 0.16,
+      "id": "gen-dec-1790478280-XcpdIX5V7aAGR4eKx5js",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 727,
+        "output_tokens": 146,
+        "cost": 0.000030534
+      },
+      "cost": 0.000030534,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_3": 0.02,
+            "act_4": 0.02,
+            "act_2": 0.11,
+            "act_1": 0.85
+          },
+          "confidence": 0.8
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unconscious",
+          "probabilities": {
+            "unrecognized": 0.14,
+            "recognized": 0.02,
+            "conscious": 0.02,
+            "none": 0.02,
+            "unconscious": 0.8
+          },
+          "confidence": 0.75
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.84
+        }
+      }
+    },
+    {
+      "room": "bell-marek-struck",
+      "rep": 2,
+      "call": 17,
+      "status": 200,
+      "seconds": 0.199,
+      "id": "gen-dec-1790478280-ROEAC1ZAgEyHF1NPmx8k",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 766,
+        "output_tokens": 145,
+        "cost": 0.000032172
+      },
+      "cost": 0.000032172,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_4": 0.02,
+            "act_1": 0.73,
+            "act_2": 0.08,
+            "act_3": 0.17
+          },
+          "confidence": 0.65
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "conscious",
+          "probabilities": {
+            "unconscious": 0.01,
+            "recognized": 0.28,
+            "conscious": 0.68,
+            "none": 0.02,
+            "unrecognized": 0.01
+          },
+          "confidence": 0.59
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.67
+        }
+      }
+    },
+    {
+      "room": "court-ammon",
+      "rep": 2,
+      "call": 18,
+      "status": 200,
+      "seconds": 0.193,
+      "id": "gen-dec-1790478280-cWlJgorIzgzF3IqGKxuR",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 750,
+        "output_tokens": 152,
+        "cost": 0.0000315
+      },
+      "cost": 0.0000315,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_3": 0.02,
+            "act_4": 0.32,
+            "act_5": 0.03,
+            "act_1": 0.5599999999999999,
+            "act_2": 0.07
+          },
+          "confidence": 0.46
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "none",
+          "probabilities": {
+            "conscious": 0.31,
+            "recognized": 0.21,
+            "none": 0.4,
+            "unconscious": 0.04,
+            "unrecognized": 0.04
+          },
+          "confidence": 0.25
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.51
+        }
+      }
+    },
+    {
+      "room": "court-ammon-neb",
+      "rep": 2,
+      "call": 19,
+      "status": 200,
+      "seconds": 0.148,
+      "id": "gen-dec-1790478280-bxtpQ6pOHUKcAJOTC9nx",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 1161,
+        "output_tokens": 282,
+        "cost": 0.000048762
+      },
+      "cost": 0.000048762,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.04,
+            "act_1": 0.9299999999999999,
+            "act_3": 0.01,
+            "act_4": 0.02
+          },
+          "confidence": 0.91
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "recognized": 0.61,
+            "none": 0.16,
+            "conscious": 0.16,
+            "unrecognized": 0.05,
+            "unconscious": 0.02
+          },
+          "confidence": 0.52
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.72
+        },
+        "person_2:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.04,
+            "act_1": 0.93,
+            "act_3": 0.01,
+            "act_4": 0.02
+          },
+          "confidence": 0.9
+        },
+        "person_2:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "recognized": 0.61,
+            "none": 0.15,
+            "conscious": 0.18,
+            "unrecognized": 0.04,
+            "unconscious": 0.02
+          },
+          "confidence": 0.51
+        },
+        "person_2:pressure": {
+          "type": "noul",
+          "noul": 0.73
+        }
+      }
+    },
+    {
+      "room": "tidepost-neb-alone",
+      "rep": 2,
+      "call": 20,
+      "status": 200,
+      "seconds": 0.181,
+      "id": "gen-dec-1790478280-M9u4jlOh2N1gCLFexUqm",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 730,
+        "output_tokens": 125,
+        "cost": 0.00003066
+      },
+      "cost": 0.00003066,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_1": 0.69,
+            "act_2": 0.31
+          },
+          "confidence": 0.37
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "none",
+          "probabilities": {
+            "none": 0.61,
+            "recognized": 0.04,
+            "unconscious": 0.04,
+            "unrecognized": 0.04,
+            "conscious": 0.27
+          },
+          "confidence": 0.51
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.62
+        }
+      }
+    },
+    {
+      "room": "tidepost-neb-deed",
+      "rep": 2,
+      "call": 21,
+      "status": 200,
+      "seconds": 0.171,
+      "id": "gen-dec-1790478281-MjGdkGFDVtC8gST0MXDd",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 727,
+        "output_tokens": 146,
+        "cost": 0.000030534
+      },
+      "cost": 0.000030534,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.27,
+            "act_1": 0.63,
+            "act_3": 0.05,
+            "act_4": 0.05
+          },
+          "confidence": 0.5
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unconscious",
+          "probabilities": {
+            "conscious": 0.05,
+            "recognized": 0.04,
+            "none": 0.03,
+            "unrecognized": 0.06,
+            "unconscious": 0.82
+          },
+          "confidence": 0.78
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.82
+        }
+      }
+    },
+    {
+      "room": "office-halkett",
+      "rep": 2,
+      "call": 22,
+      "status": 200,
+      "seconds": 0.161,
+      "id": "gen-dec-1790478281-Nf1NEiW7GMlaUigfiKVS",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 765,
+        "output_tokens": 155,
+        "cost": 0.00003213
+      },
+      "cost": 0.00003213,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_4",
+          "probabilities": {
+            "act_3": 0.01,
+            "act_2": 0,
+            "act_4": 0.86,
+            "act_5": 0,
+            "act_1": 0.13
+          },
+          "confidence": 0.83
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unrecognized",
+          "probabilities": {
+            "unrecognized": 0.46,
+            "conscious": 0.2,
+            "recognized": 0.13,
+            "none": 0.2,
+            "unconscious": 0.01
+          },
+          "confidence": 0.33
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.71
+        }
+      }
+    },
+    {
+      "room": "office-halkett-perrin",
+      "rep": 2,
+      "call": 23,
+      "status": 200,
+      "seconds": 0.19,
+      "id": "gen-dec-1790478281-72RNyMuGlgRz1CdGKrzo",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 1263,
+        "output_tokens": 309,
+        "cost": 0.000053046
+      },
+      "cost": 0.000053046,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_3": 0.02,
+            "act_2": 0.02,
+            "act_1": 0.61,
+            "act_5": 0.01,
+            "act_4": 0.34
+          },
+          "confidence": 0.52
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "recognized": 0.51,
+            "none": 0.06,
+            "unconscious": 0.02,
+            "conscious": 0.31,
+            "unrecognized": 0.1
+          },
+          "confidence": 0.38
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.59
+        },
+        "person_2:act": {
+          "type": "choice",
+          "choice": "act_5",
+          "probabilities": {
+            "act_6": 0.01,
+            "act_3": 0.02,
+            "act_2": 0.01,
+            "act_1": 0.42,
+            "act_4": 0.12,
+            "act_5": 0.42
+          },
+          "confidence": 0.3
+        },
+        "person_2:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "recognized": 0.41,
+            "none": 0.06,
+            "unconscious": 0.02,
+            "unrecognized": 0.14,
+            "conscious": 0.37
+          },
+          "confidence": 0.26
+        },
+        "person_2:pressure": {
+          "type": "noul",
+          "noul": 0.6
+        }
+      }
+    },
+    {
+      "room": "closet-perrin-following",
+      "rep": 2,
+      "call": 24,
+      "status": 200,
+      "seconds": 0.21,
+      "id": "gen-dec-1790478281-gNoK3eAvBRazi9spjZT4",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 727,
+        "output_tokens": 134,
+        "cost": 0.000030534
+      },
+      "cost": 0.000030534,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_2",
+          "probabilities": {
+            "act_3": 0.03,
+            "act_1": 0.01,
+            "act_2": 0.96
+          },
+          "confidence": 0.94
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "none",
+          "probabilities": {
+            "unconscious": 0.05,
+            "recognized": 0.13,
+            "conscious": 0.12,
+            "none": 0.59,
+            "unrecognized": 0.11
+          },
+          "confidence": 0.48
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.48
+        }
+      }
+    },
+    {
+      "room": "room3-grenn",
+      "rep": 3,
+      "call": 25,
+      "status": 200,
+      "seconds": 0.235,
+      "id": "gen-dec-1790478281-0msDOkohe65ZbpKsmnyl",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 785,
+        "output_tokens": 155,
+        "cost": 0.00003297
+      },
+      "cost": 0.00003297,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_3": 0.16,
+            "act_4": 0.35,
+            "act_5": 0,
+            "act_1": 0.46,
+            "act_2": 0.03
+          },
+          "confidence": 0.33
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unrecognized",
+          "probabilities": {
+            "conscious": 0.03,
+            "recognized": 0.01,
+            "none": 0.08,
+            "unconscious": 0.07,
+            "unrecognized": 0.81
+          },
+          "confidence": 0.76
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.53
+        }
+      }
+    },
+    {
+      "room": "room3-grenn-rent",
+      "rep": 3,
+      "call": 26,
+      "status": 200,
+      "seconds": 0.156,
+      "id": "gen-dec-1790478282-wqBEMrNW8HV91OiE1nhU",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 871,
+        "output_tokens": 163,
+        "cost": 0.000036582
+      },
+      "cost": 0.000036582,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_5",
+          "probabilities": {
+            "act_3": 0.03,
+            "act_6": 0,
+            "act_4": 0,
+            "act_1": 0.23,
+            "act_5": 0.74,
+            "act_2": 0
+          },
+          "confidence": 0.69
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "conscious",
+          "probabilities": {
+            "unrecognized": 0.01,
+            "recognized": 0.15,
+            "none": 0.03,
+            "unconscious": 0,
+            "conscious": 0.81
+          },
+          "confidence": 0.76
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.45
+        }
+      }
+    },
+    {
+      "room": "hallway-grenn-alone",
+      "rep": 3,
+      "call": 27,
+      "status": 200,
+      "seconds": 0.167,
+      "id": "gen-dec-1790478282-Bb2207LeOXSQG2Lwgozh",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 751,
+        "output_tokens": 146,
+        "cost": 0.000031542
+      },
+      "cost": 0.000031542,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_2",
+          "probabilities": {
+            "act_4": 0.12,
+            "act_1": 0.18,
+            "act_2": 0.66,
+            "act_3": 0.04
+          },
+          "confidence": 0.56
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unrecognized",
+          "probabilities": {
+            "unconscious": 0.06,
+            "recognized": 0.01,
+            "conscious": 0.03,
+            "none": 0.11,
+            "unrecognized": 0.79
+          },
+          "confidence": 0.74
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.58
+        }
+      }
+    },
+    {
+      "room": "bell-marek",
+      "rep": 3,
+      "call": 28,
+      "status": 200,
+      "seconds": 0.165,
+      "id": "gen-dec-1790478282-K1moJuCYz0OeMPsc30Rm",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 727,
+        "output_tokens": 146,
+        "cost": 0.000030534
+      },
+      "cost": 0.000030534,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.1,
+            "act_3": 0.02,
+            "act_4": 0.02,
+            "act_1": 0.86
+          },
+          "confidence": 0.81
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unconscious",
+          "probabilities": {
+            "unconscious": 0.75,
+            "recognized": 0.01,
+            "conscious": 0.02,
+            "unrecognized": 0.2,
+            "none": 0.02
+          },
+          "confidence": 0.69
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.85
+        }
+      }
+    },
+    {
+      "room": "bell-marek-struck",
+      "rep": 3,
+      "call": 29,
+      "status": 200,
+      "seconds": 0.207,
+      "id": "gen-dec-1790478282-QVXEOxZvvP6MjrW8ye1E",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 766,
+        "output_tokens": 145,
+        "cost": 0.000032172
+      },
+      "cost": 0.000032172,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_4": 0.01,
+            "act_3": 0.2,
+            "act_1": 0.71,
+            "act_2": 0.08
+          },
+          "confidence": 0.61
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "conscious",
+          "probabilities": {
+            "unrecognized": 0.01,
+            "unconscious": 0.02,
+            "recognized": 0.34,
+            "none": 0.03,
+            "conscious": 0.6
+          },
+          "confidence": 0.51
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.69
+        }
+      }
+    },
+    {
+      "room": "court-ammon",
+      "rep": 3,
+      "call": 30,
+      "status": 200,
+      "seconds": 0.146,
+      "id": "gen-dec-1790478282-l2UeWWAlZ723S4BC337s",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 750,
+        "output_tokens": 152,
+        "cost": 0.0000315
+      },
+      "cost": 0.0000315,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_5": 0.02,
+            "act_4": 0.34,
+            "act_2": 0.07,
+            "act_3": 0.02,
+            "act_1": 0.55
+          },
+          "confidence": 0.43
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "none",
+          "probabilities": {
+            "unrecognized": 0.04,
+            "none": 0.44,
+            "unconscious": 0.04,
+            "recognized": 0.21,
+            "conscious": 0.27
+          },
+          "confidence": 0.31
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.51
+        }
+      }
+    },
+    {
+      "room": "court-ammon-neb",
+      "rep": 3,
+      "call": 31,
+      "status": 200,
+      "seconds": 0.158,
+      "id": "gen-dec-1790478282-NZ4ELkNJSNsytum9SsMn",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 1161,
+        "output_tokens": 282,
+        "cost": 0.000048762
+      },
+      "cost": 0.000048762,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_3": 0.01,
+            "act_4": 0.02,
+            "act_1": 0.93,
+            "act_2": 0.04
+          },
+          "confidence": 0.91
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "unconscious": 0.02,
+            "unrecognized": 0.04,
+            "recognized": 0.61,
+            "conscious": 0.14,
+            "none": 0.19
+          },
+          "confidence": 0.51
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.71
+        },
+        "person_2:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_3": 0.01,
+            "act_4": 0.02,
+            "act_1": 0.93,
+            "act_2": 0.04
+          },
+          "confidence": 0.9
+        },
+        "person_2:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "unrecognized": 0.04,
+            "unconscious": 0.02,
+            "recognized": 0.66,
+            "conscious": 0.14,
+            "none": 0.14
+          },
+          "confidence": 0.58
+        },
+        "person_2:pressure": {
+          "type": "noul",
+          "noul": 0.71
+        }
+      }
+    },
+    {
+      "room": "tidepost-neb-alone",
+      "rep": 3,
+      "call": 32,
+      "status": 200,
+      "seconds": 0.175,
+      "id": "gen-dec-1790478283-eY3Zad5hFPcVhdKaPJRL",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 730,
+        "output_tokens": 125,
+        "cost": 0.00003066
+      },
+      "cost": 0.00003066,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_1": 0.74,
+            "act_2": 0.26
+          },
+          "confidence": 0.47
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "none",
+          "probabilities": {
+            "none": 0.65,
+            "conscious": 0.23,
+            "unrecognized": 0.04,
+            "recognized": 0.04,
+            "unconscious": 0.04
+          },
+          "confidence": 0.57
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.61
+        }
+      }
+    },
+    {
+      "room": "tidepost-neb-deed",
+      "rep": 3,
+      "call": 33,
+      "status": 200,
+      "seconds": 0.173,
+      "id": "gen-dec-1790478283-z0wDsADcnX1MZOctOT6G",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 727,
+        "output_tokens": 146,
+        "cost": 0.000030534
+      },
+      "cost": 0.000030534,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_3": 0.05,
+            "act_4": 0.06,
+            "act_1": 0.66,
+            "act_2": 0.23
+          },
+          "confidence": 0.55
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unconscious",
+          "probabilities": {
+            "none": 0.03,
+            "unconscious": 0.8,
+            "conscious": 0.07,
+            "recognized": 0.05,
+            "unrecognized": 0.05
+          },
+          "confidence": 0.76
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.8
+        }
+      }
+    },
+    {
+      "room": "office-halkett",
+      "rep": 3,
+      "call": 34,
+      "status": 200,
+      "seconds": 0.163,
+      "id": "gen-dec-1790478283-1vjnOPsd75oargNVrnDr",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 765,
+        "output_tokens": 155,
+        "cost": 0.00003213
+      },
+      "cost": 0.00003213,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_4",
+          "probabilities": {
+            "act_3": 0,
+            "act_4": 0.88,
+            "act_5": 0,
+            "act_1": 0.12,
+            "act_2": 0
+          },
+          "confidence": 0.84
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unrecognized",
+          "probabilities": {
+            "none": 0.16,
+            "unconscious": 0.01,
+            "recognized": 0.11,
+            "unrecognized": 0.51,
+            "conscious": 0.21
+          },
+          "confidence": 0.39
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.71
+        }
+      }
+    },
+    {
+      "room": "office-halkett-perrin",
+      "rep": 3,
+      "call": 35,
+      "status": 200,
+      "seconds": 0.161,
+      "id": "gen-dec-1790478283-kvQSffL2PIYiN9m0oZqu",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 1263,
+        "output_tokens": 309,
+        "cost": 0.000053046
+      },
+      "cost": 0.000053046,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_4": 0.31,
+            "act_5": 0.01,
+            "act_3": 0.02,
+            "act_2": 0.02,
+            "act_1": 0.64
+          },
+          "confidence": 0.57
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "unconscious": 0.02,
+            "recognized": 0.49,
+            "conscious": 0.27,
+            "none": 0.08,
+            "unrecognized": 0.14
+          },
+          "confidence": 0.37
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.6
+        },
+        "person_2:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_6": 0.01,
+            "act_4": 0.12,
+            "act_5": 0.39,
+            "act_3": 0.02,
+            "act_2": 0.02,
+            "act_1": 0.44
+          },
+          "confidence": 0.34
+        },
+        "person_2:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "unconscious": 0.02,
+            "recognized": 0.5,
+            "conscious": 0.28,
+            "none": 0.09,
+            "unrecognized": 0.11
+          },
+          "confidence": 0.39
+        },
+        "person_2:pressure": {
+          "type": "noul",
+          "noul": 0.6
+        }
+      }
+    },
+    {
+      "room": "closet-perrin-following",
+      "rep": 3,
+      "call": 36,
+      "status": 200,
+      "seconds": 0.174,
+      "id": "gen-dec-1790478283-JLsid8vcGgRS6r9cLtuK",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 727,
+        "output_tokens": 134,
+        "cost": 0.000030534
+      },
+      "cost": 0.000030534,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_2",
+          "probabilities": {
+            "act_3": 0.03,
+            "act_1": 0.01,
+            "act_2": 0.96
+          },
+          "confidence": 0.95
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "none",
+          "probabilities": {
+            "none": 0.57,
+            "conscious": 0.12,
+            "unrecognized": 0.12,
+            "unconscious": 0.05,
+            "recognized": 0.14
+          },
+          "confidence": 0.47
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.48
+        }
+      }
+    },
+    {
+      "room": "room3-grenn",
+      "rep": 4,
+      "call": 37,
+      "status": 200,
+      "seconds": 0.237,
+      "id": "gen-dec-1790478283-yVlQxUQyf91qFbqGkaQC",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 785,
+        "output_tokens": 155,
+        "cost": 0.00003297
+      },
+      "cost": 0.00003297,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.03,
+            "act_1": 0.46,
+            "act_3": 0.14,
+            "act_5": 0,
+            "act_4": 0.37
+          },
+          "confidence": 0.31
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unrecognized",
+          "probabilities": {
+            "conscious": 0.03,
+            "recognized": 0.01,
+            "none": 0.09,
+            "unrecognized": 0.76,
+            "unconscious": 0.11
+          },
+          "confidence": 0.7
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.52
+        }
+      }
+    },
+    {
+      "room": "room3-grenn-rent",
+      "rep": 4,
+      "call": 38,
+      "status": 200,
+      "seconds": 0.19,
+      "id": "gen-dec-1790478284-CEPqbxvHJ2vSjbhEblR4",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 871,
+        "output_tokens": 163,
+        "cost": 0.000036582
+      },
+      "cost": 0.000036582,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_5",
+          "probabilities": {
+            "act_5": 0.71,
+            "act_2": 0.01,
+            "act_6": 0,
+            "act_4": 0,
+            "act_1": 0.25,
+            "act_3": 0.03
+          },
+          "confidence": 0.64
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "conscious",
+          "probabilities": {
+            "conscious": 0.8200000000000001,
+            "none": 0.03,
+            "unconscious": 0,
+            "unrecognized": 0,
+            "recognized": 0.15
+          },
+          "confidence": 0.77
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.46
+        }
+      }
+    },
+    {
+      "room": "hallway-grenn-alone",
+      "rep": 4,
+      "call": 39,
+      "status": 200,
+      "seconds": 0.189,
+      "id": "gen-dec-1790478284-uerZWmA0ONgZCO0ZBkjW",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 751,
+        "output_tokens": 146,
+        "cost": 0.000031542
+      },
+      "cost": 0.000031542,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_2",
+          "probabilities": {
+            "act_1": 0.24,
+            "act_3": 0.06,
+            "act_4": 0.1,
+            "act_2": 0.6
+          },
+          "confidence": 0.47
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unrecognized",
+          "probabilities": {
+            "unrecognized": 0.79,
+            "none": 0.12,
+            "recognized": 0.01,
+            "unconscious": 0.05,
+            "conscious": 0.03
+          },
+          "confidence": 0.73
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.56
+        }
+      }
+    },
+    {
+      "room": "bell-marek",
+      "rep": 4,
+      "call": 40,
+      "status": 200,
+      "seconds": 0.168,
+      "id": "gen-dec-1790478284-sH28R2ezx8RI9f4RGzyO",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 727,
+        "output_tokens": 146,
+        "cost": 0.000030534
+      },
+      "cost": 0.000030534,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_1": 0.85,
+            "act_4": 0.03,
+            "act_3": 0.02,
+            "act_2": 0.1
+          },
+          "confidence": 0.8
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unconscious",
+          "probabilities": {
+            "none": 0.01,
+            "unconscious": 0.66,
+            "unrecognized": 0.3,
+            "recognized": 0.01,
+            "conscious": 0.02
+          },
+          "confidence": 0.57
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.84
+        }
+      }
+    },
+    {
+      "room": "bell-marek-struck",
+      "rep": 4,
+      "call": 41,
+      "status": 200,
+      "seconds": 0.232,
+      "id": "gen-dec-1790478284-E85f1bPoEznb8c7V3cO6",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 766,
+        "output_tokens": 145,
+        "cost": 0.000032172
+      },
+      "cost": 0.000032172,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.1,
+            "act_4": 0.01,
+            "act_1": 0.73,
+            "act_3": 0.16
+          },
+          "confidence": 0.64
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "conscious",
+          "probabilities": {
+            "none": 0.02,
+            "conscious": 0.64,
+            "unconscious": 0.02,
+            "unrecognized": 0.01,
+            "recognized": 0.31
+          },
+          "confidence": 0.56
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.68
+        }
+      }
+    },
+    {
+      "room": "court-ammon",
+      "rep": 4,
+      "call": 42,
+      "status": 200,
+      "seconds": 0.223,
+      "id": "gen-dec-1790478284-9GuKjDKUJzXhLeHHe9Za",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 750,
+        "output_tokens": 152,
+        "cost": 0.0000315
+      },
+      "cost": 0.0000315,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_3": 0.02,
+            "act_4": 0.31,
+            "act_5": 0.02,
+            "act_1": 0.58,
+            "act_2": 0.07
+          },
+          "confidence": 0.48
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "none",
+          "probabilities": {
+            "none": 0.43,
+            "unconscious": 0.03,
+            "recognized": 0.19,
+            "conscious": 0.31,
+            "unrecognized": 0.04
+          },
+          "confidence": 0.28
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.53
+        }
+      }
+    },
+    {
+      "room": "court-ammon-neb",
+      "rep": 4,
+      "call": 43,
+      "status": 200,
+      "seconds": 0.188,
+      "id": "gen-dec-1790478285-60Ua8yYYp4JTvmEt1qAz",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 1161,
+        "output_tokens": 282,
+        "cost": 0.000048762
+      },
+      "cost": 0.000048762,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.04,
+            "act_1": 0.92,
+            "act_3": 0.01,
+            "act_4": 0.03
+          },
+          "confidence": 0.9
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "unconscious": 0.01,
+            "recognized": 0.72,
+            "unrecognized": 0.03,
+            "none": 0.1,
+            "conscious": 0.14
+          },
+          "confidence": 0.65
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.72
+        },
+        "person_2:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.03,
+            "act_3": 0.01,
+            "act_1": 0.94,
+            "act_4": 0.02
+          },
+          "confidence": 0.92
+        },
+        "person_2:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "unconscious": 0.01,
+            "recognized": 0.77,
+            "unrecognized": 0.03,
+            "none": 0.08,
+            "conscious": 0.11
+          },
+          "confidence": 0.71
+        },
+        "person_2:pressure": {
+          "type": "noul",
+          "noul": 0.72
+        }
+      }
+    },
+    {
+      "room": "tidepost-neb-alone",
+      "rep": 4,
+      "call": 44,
+      "status": 200,
+      "seconds": 0.189,
+      "id": "gen-dec-1790478285-KWafHDSW6YpJwHkEQzlU",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 730,
+        "output_tokens": 125,
+        "cost": 0.00003066
+      },
+      "cost": 0.00003066,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.32,
+            "act_1": 0.68
+          },
+          "confidence": 0.35
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "none",
+          "probabilities": {
+            "none": 0.67,
+            "recognized": 0.03,
+            "unrecognized": 0.04,
+            "unconscious": 0.03,
+            "conscious": 0.23
+          },
+          "confidence": 0.58
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.62
+        }
+      }
+    },
+    {
+      "room": "tidepost-neb-deed",
+      "rep": 4,
+      "call": 45,
+      "status": 200,
+      "seconds": 0.144,
+      "id": "gen-dec-1790478285-zRvLTOGhR4oABrLvxmue",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 727,
+        "output_tokens": 146,
+        "cost": 0.000030534
+      },
+      "cost": 0.000030534,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_3": 0.06,
+            "act_4": 0.05,
+            "act_2": 0.27,
+            "act_1": 0.62
+          },
+          "confidence": 0.49
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unconscious",
+          "probabilities": {
+            "none": 0.02,
+            "conscious": 0.04,
+            "recognized": 0.04,
+            "unrecognized": 0.04,
+            "unconscious": 0.86
+          },
+          "confidence": 0.83
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.83
+        }
+      }
+    },
+    {
+      "room": "office-halkett",
+      "rep": 4,
+      "call": 46,
+      "status": 200,
+      "seconds": 0.234,
+      "id": "gen-dec-1790478285-8p5MTFVavT4usoIGYSa7",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 765,
+        "output_tokens": 155,
+        "cost": 0.00003213
+      },
+      "cost": 0.00003213,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_4",
+          "probabilities": {
+            "act_5": 0,
+            "act_4": 0.87,
+            "act_2": 0,
+            "act_3": 0.01,
+            "act_1": 0.12
+          },
+          "confidence": 0.84
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "unrecognized",
+          "probabilities": {
+            "unrecognized": 0.51,
+            "none": 0.17,
+            "unconscious": 0.01,
+            "recognized": 0.13,
+            "conscious": 0.18
+          },
+          "confidence": 0.4
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.7
+        }
+      }
+    },
+    {
+      "room": "office-halkett-perrin",
+      "rep": 4,
+      "call": 47,
+      "status": 200,
+      "seconds": 0.171,
+      "id": "gen-dec-1790478285-DRbKdI6Zg7hhBbHQ5ybT",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 1263,
+        "output_tokens": 309,
+        "cost": 0.000053046
+      },
+      "cost": 0.000053046,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_2": 0.02,
+            "act_1": 0.67,
+            "act_5": 0.01,
+            "act_3": 0.02,
+            "act_4": 0.28
+          },
+          "confidence": 0.6
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "recognized": 0.47,
+            "none": 0.06,
+            "conscious": 0.33,
+            "unrecognized": 0.12,
+            "unconscious": 0.02
+          },
+          "confidence": 0.33
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.59
+        },
+        "person_2:act": {
+          "type": "choice",
+          "choice": "act_1",
+          "probabilities": {
+            "act_6": 0.01,
+            "act_2": 0.02,
+            "act_1": 0.44,
+            "act_5": 0.38,
+            "act_3": 0.02,
+            "act_4": 0.13
+          },
+          "confidence": 0.32
+        },
+        "person_2:serves": {
+          "type": "choice",
+          "choice": "recognized",
+          "probabilities": {
+            "recognized": 0.47,
+            "none": 0.06,
+            "conscious": 0.34,
+            "unrecognized": 0.11,
+            "unconscious": 0.02
+          },
+          "confidence": 0.33
+        },
+        "person_2:pressure": {
+          "type": "noul",
+          "noul": 0.6
+        }
+      }
+    },
+    {
+      "room": "closet-perrin-following",
+      "rep": 4,
+      "call": 48,
+      "status": 200,
+      "seconds": 0.432,
+      "id": "gen-dec-1790478286-wc6naXKNDsaaaieaEHao",
+      "provider": "TypeSafe",
+      "usage": {
+        "input_tokens": 727,
+        "output_tokens": 134,
+        "cost": 0.000030534
+      },
+      "cost": 0.000030534,
+      "answers": {
+        "person_1:act": {
+          "type": "choice",
+          "choice": "act_2",
+          "probabilities": {
+            "act_3": 0.03,
+            "act_1": 0.01,
+            "act_2": 0.96
+          },
+          "confidence": 0.94
+        },
+        "person_1:serves": {
+          "type": "choice",
+          "choice": "none",
+          "probabilities": {
+            "unrecognized": 0.11,
+            "unconscious": 0.05,
+            "recognized": 0.13,
+            "conscious": 0.11,
+            "none": 0.6
+          },
+          "confidence": 0.5
+        },
+        "person_1:pressure": {
+          "type": "noul",
+          "noul": 0.48
+        }
+      }
+    }
+  ]
+}
