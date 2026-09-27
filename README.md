@@ -191,10 +191,17 @@ rake players:limit[ada,2.50]      # dollars a calendar month
 rake players:revoke[ada]          # the token stops working; games and receipts are kept
 ```
 
-`TA_HOSTED_API_ONLY=1` boots an instance that serves only `/api/v1` and `/up`:
-no play page, no debug, map, lab or machinery, and no cable. Bind it to a
-loopback address and put whatever reaches it in front; the app assumes no
-address of its own.
+`TA_HOSTED_API_ONLY=1` boots an instance that serves only `/api/v1`, the model
+relay and `/up`: no play page, no debug, map, lab or machinery, and no cable.
+Bind it to a loopback address and put whatever reaches it in front; the app
+assumes no address of its own.
+
+**The model relay** lets an engine running on a player's own machine use the
+instance's OpenRouter key, under the same player token and the same monthly
+limit. It serves OpenRouter's two routes under `/relay/openrouter`, and only
+when `RELAY_OPENROUTER_API_KEY` is set. That is a separate variable from
+`OPENROUTER_API_KEY`, so an instance can play with one key and relay with
+another. [docs/protocol/relay.md](docs/protocol/relay.md) is the contract.
 
 ## Play the mechanics on their own
 

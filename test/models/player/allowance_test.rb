@@ -72,4 +72,35 @@ class Player::AllowanceTest < ActiveSupport::TestCase
     assert_includes error.message, "allowance is used up"
     assert_includes error.message, "2026-10-01"
   end
+
+  test "settled relay calls are spent and open ones are held, beside the hosted engine's own" do
+    create(:relay_receipt, :settled, player: @player, cost_usd: BigDecimal("0.02"), created_at: NOW)
+    create(:relay_receipt, player: @player, reserved_usd: BigDecimal("0.015"), created_at: NOW)
+    create(:system_one_receipt, player: @player, cost_usd: BigDecimal("0.01"), created_at: NOW)
+    create(:playthrough_command, playthrough: @game, status: "pending")
+
+    assert_equal BigDecimal("0.03"), allowance.spent
+    assert_equal Player::Allowance::TURN_RESERVATION_USD + BigDecimal("0.015"), allowance.reserved
+  end
+
+  test "last month's relay calls and other players' do not count" do
+    create(:relay_receipt, :settled, player: @player, cost_usd: 5, created_at: NOW - 1.month)
+    create(:relay_receipt, player: @player, reserved_usd: 5, created_at: NOW - 1.month)
+    create(:relay_receipt, :settled, cost_usd: 5, created_at: NOW)
+    assert_equal [ 0, 0 ], [ allowance.spent, allowance.reserved ]
+  end
+
+  test "a relay call is admitted against its own reservation, and one open call is held against the next" do
+    create(:system_one_receipt, player: @player, cost_usd: BigDecimal("0.06"), created_at: NOW)
+    assert allowance.admits?(BigDecimal("0.04")), "0.06 + 0.04 = 0.10 is within the limit"
+    create(:relay_receipt, player: @player, reserved_usd: BigDecimal("0.04"), created_at: NOW)
+    assert_not allowance.admits?(BigDecimal("0.000001")), "the open call holds the rest"
+    assert_not allowance.admits_turn?, "and a hosted turn sees the same hold"
+  end
+
+  test "a refused relay call names what was held for it" do
+    @player.update!(monthly_limit_usd: 0)
+    error = assert_raises(Player::Allowance::LimitReached) { allowance.admit!(BigDecimal("0.0123"), held_for: "the call") { nil } }
+    assert_includes error.message, "with $0.01 held for the call"
+  end
 end

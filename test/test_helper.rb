@@ -2,7 +2,7 @@ ENV["RAILS_ENV"] ||= "test"
 
 # THE SUITE RUNS IN A DECLARED ENVIRONMENT, not in whoever's shell started it
 # and not in whoever's `.env`. Every one of these changes how the app behaves,
-# all five are things a person working on this app legitimately has in `.env` or
+# all of them are things a person working on this app legitimately has in `.env` or
 # `.envrc`, and a test that reads one is asserting against a value it did not
 # author:
 #
@@ -32,6 +32,9 @@ ENV["RAILS_ENV"] ||= "test"
 #                              `Playthrough::Classifier::CascadeTest#with_key`).
 #                              `OPENROUTER_API_KEY` is already cleared above for
 #                              BaseAgent; both must stay cleared for System One.
+#   RELAY_OPENROUTER_API_KEY   `Relay.configured?` is the whole of the model
+#                              relay's switch; the relay tests set a fake key
+#                              themselves and stub the upstream.
 #
 # It takes TWO passes, and the second one is not belt-and-braces. `dotenv-rails`
 # is in the `:development, :test` group, so it loads `.env` while
@@ -48,7 +51,7 @@ ENV["RAILS_ENV"] ||= "test"
 declare_environment = lambda do
   %w[
     OPENROUTER_API_KEY OPENROUTER_MODEL TA_DEBUG_VIEW
-    TA_CHAT_KEEP_TURNS TA_CHAT_HISTORY_EXCHANGES TYPESAFE_API_KEY
+    TA_CHAT_KEEP_TURNS TA_CHAT_HISTORY_EXCHANGES TYPESAFE_API_KEY RELAY_OPENROUTER_API_KEY
   ].each { |key| ENV.delete(key) }
 end
 

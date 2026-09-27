@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_031841) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_152056) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -572,6 +572,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_031841) do
     t.index ["universe_id"], name: "index_races_on_universe_id"
   end
 
+  create_table "relay_receipts", force: :cascade do |t|
+    t.string "cost_source"
+    t.decimal "cost_usd", precision: 12, scale: 6
+    t.datetime "created_at", null: false
+    t.datetime "finished_at"
+    t.integer "input_tokens"
+    t.string "model", null: false
+    t.integer "output_tokens"
+    t.integer "player_id", null: false
+    t.decimal "reserved_usd", precision: 12, scale: 6, null: false
+    t.string "route", null: false
+    t.string "status", default: "open", null: false
+    t.boolean "stream", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.integer "upstream_status"
+    t.index ["player_id", "created_at"], name: "index_relay_receipts_on_player_id_and_created_at"
+    t.index ["player_id", "status"], name: "index_relay_receipts_on_player_id_and_status"
+    t.index ["player_id"], name: "index_relay_receipts_on_player_id"
+  end
+
   create_table "ruby_llm_batches", force: :cascade do |t|
     t.string "batch_protocol"
     t.json "chat_ids", default: []
@@ -835,6 +855,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_031841) do
   add_foreign_key "quests", "quests", column: "parent_quest_id"
   add_foreign_key "quests", "stories"
   add_foreign_key "races", "universes"
+  add_foreign_key "relay_receipts", "players"
   add_foreign_key "scenes", "locations"
   add_foreign_key "scenes", "scenes", column: "previous_scene_id"
   add_foreign_key "scenes", "stories"
