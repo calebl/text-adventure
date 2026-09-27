@@ -28,7 +28,14 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   # gained a look at the room in general; that set is history now and its own
   # directory still carries the R02 evidence. The pair either side of the wording
   # change, and the verdict (NOISE on every metric), are in this set's README.
-  CURRENT = "classifier-examine-wording-20260918".freeze
+  # It in turn gave way to `classifier-2026-09-26`, bought when every checked-in
+  # world gained an arc and put a new thing on the floor of eight of the twelve
+  # staged positions; that set's README has why, and the three labels that
+  # moved with the world.
+  CURRENT = "classifier-2026-09-26".freeze
+  # THE SET THE HISTORICAL CASCADE CLAIMS WERE MADE AGAINST, read by name so
+  # they keep holding of the files they were made about.
+  HISTORICAL_CURRENT = "classifier-examine-wording-20260918".freeze
 
   # Every arm the baseline measured, and the figures the PR body and
   # EVALUATION.md quote for it. If a checked-in file is ever regenerated, this
@@ -150,10 +157,14 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   # `abc2535c473693d9`, the labels then moved, and its paid readings were neither
   # wrong nor worth re-buying.
   FROZEN_DIGEST = "a259e93e6b865af1".freeze
+  # AND THE DIGEST TODAY'S SETS WERE SCORED AT: the same lines with three labels
+  # moved to name the writ the Unrecorded Hour's arc put in the office.
+  CURRENT_DIGEST = "027013dd5a020328".freeze
 
   test "the current single arm baseline matches the corpus and schema request" do
     result = load_kept(CURRENT)
-    assert_equal FROZEN_DIGEST, result.corpus_digest
+    assert_equal CURRENT_DIGEST, result.corpus_digest
+    assert_equal Eval::Classifier.digest, result.corpus_digest
     assert_equal Eval::Classifier.corpus.size, result.corpus_size
     assert_equal Eval::Classifier::Version.offline, result.request_identity
     assert_equal [ BaseAgent::REMOTE_MODEL_IDS.first ], result.arms
@@ -174,8 +185,13 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   # state. The two above are its baselines and are kept for that reason: the
   # wording change is judged by the first pair and the state change by the
   # second, and neither is defensible without the side before it.
-  CASCADE_KEPT = "classifier-cascade-state-20260919".freeze
-  CASCADE_SETS = [ CASCADE_BEFORE, CASCADE_AFTER, CASCADE_KEPT ].freeze
+  HISTORICAL_CASCADE_KEPT = "classifier-cascade-state-20260919".freeze
+  # THE CASCADE'S KEPT SET TODAY -- the same request, re-bought on the worlds
+  # with arcs. The three above are history and are read at the digest they
+  # were scored at.
+  CASCADE_KEPT = "classifier-cascade-state-20260927".freeze
+  CASCADE_SETS = [ CASCADE_BEFORE, CASCADE_AFTER, HISTORICAL_CASCADE_KEPT, CASCADE_KEPT ].freeze
+  SCORED_AT = Hash.new(FROZEN_DIGEST).merge(CASCADE_KEPT => CURRENT_DIGEST).freeze
 
   test "both cascade sets are cascade runs of the same arm, corpus and schema as the kept Mistral row" do
     CASCADE_SETS.each do |set|
@@ -183,7 +199,7 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
 
       assert result.cascade, "#{set} must say it was taken with the reader ON, or it is indistinguishable " \
                              "from another Mistral-alone row of the same arm"
-      assert_equal FROZEN_DIGEST, result.corpus_digest, set
+      assert_equal SCORED_AT[set], result.corpus_digest, set
       assert_equal Eval::Classifier.corpus.size, result.corpus_size, set
       assert_equal [ BaseAgent::REMOTE_MODEL_IDS.first ], result.arms,
                    "#{set}'s arm is the escalation target and nothing invents a separate reader arm"
@@ -200,7 +216,8 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   # `db/eval/#{CASCADE_AFTER}/README.md` is what records what moved.
   test "the two cascade sides share a schema identity, because the model call is what it describes" do
     assert_equal load_kept(CASCADE_BEFORE).request_identity, load_kept(CASCADE_AFTER).request_identity
-    assert_equal Eval::Classifier::Version.offline, load_kept(CASCADE_AFTER).request_identity
+    assert_equal load_kept(CASCADE_AFTER).request_identity, load_kept(HISTORICAL_CASCADE_KEPT).request_identity
+    assert_equal Eval::Classifier::Version.offline, load_kept(CASCADE_KEPT).request_identity
   end
 
   # THE ROWS ARE THE REASON THIS PAIR IS KEPT AT ALL. Aggregates cannot say
@@ -243,7 +260,7 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   end
 
   test "the cascade sides can be judged against each other with no key and no calls" do
-    comparison = Eval::Classifier::Comparison.new(load_kept(CASCADE_AFTER), load_kept(CASCADE_KEPT))
+    comparison = Eval::Classifier::Comparison.new(load_kept(CASCADE_AFTER), load_kept(HISTORICAL_CASCADE_KEPT))
 
     assert_not comparison.cross_model?, "one arm measured twice, not two models"
     assert comparison.comparable_corpus?
@@ -257,14 +274,32 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   # was FALSE until the state was restored. A later change that puts the cascade
   # back behind the incumbent has to argue with this.
   test "the kept cascade set reads ahead of the kept model-alone row it is judged against" do
-    cascade = load_kept(CASCADE_KEPT)
-    alone = load_kept(CURRENT)
+    cascade = load_kept(HISTORICAL_CASCADE_KEPT)
+    alone = load_kept(HISTORICAL_CURRENT)
     arm = BaseAgent::REMOTE_MODEL_IDS.first
 
     assert_operator cascade.values(:accuracy, arm: arm).min, :>, alone.values(:accuracy, arm: arm).max,
                     "the bands must not overlap, or this is not a reading anybody can act on"
     assert_operator cascade.values(:closed_set_misses, arm: arm).max, :<,
                     alone.values(:closed_set_misses, arm: arm).min
+  end
+
+  # ON THE WORLDS WITH ARCS THE LEAD IS INSIDE THE NOISE, and that is said here
+  # rather than left in a README. Re-bought on today's corpus, the cascade and
+  # the model call alone read NOISE on strict accuracy, accuracy and misses
+  # (`db/eval/classifier-cascade-state-20260927/README.md`), so the claim above
+  # holds of the files it was made about and no longer of today's. What is
+  # still asserted is the floor under it: the cascade is not behind on the
+  # medians. A change that puts it behind has to argue with this.
+  test "on today's corpus the kept cascade set is not behind the kept model-alone row" do
+    cascade = load_kept(CASCADE_KEPT)
+    alone = load_kept(CURRENT)
+    arm = BaseAgent::REMOTE_MODEL_IDS.first
+
+    assert_operator cascade.spread(:strict_accuracy, arm: arm).median, :>=,
+                    alone.spread(:strict_accuracy, arm: arm).median
+    assert_operator cascade.spread(:closed_set_misses, arm: arm).median, :<=,
+                    alone.spread(:closed_set_misses, arm: arm).median
   end
 
   # THE OPEN QUESTION THE THREE SETS WERE BOUGHT TO ANSWER. The arm the design
@@ -290,8 +325,10 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
     assert_match(/escalation rate.*0\.\d+ escalated/, printed)
   end
 
+  # TODAY'S SET ONLY. A historical set's floor was the grammar on the corpus
+  # and worlds it was scored at, and both have moved since.
   test "each cascade set's floor can be recomputed offline" do
-    CASCADE_SETS.each do |set|
+    [ CASCADE_KEPT ].each do |set|
       floor = JSON.parse(Eval.kept_root.join(set, "offline.json").read)
       assert_equal Eval::Classifier.digest, floor.fetch("corpus_digest"), set
       assert_equal JSON.parse(Eval::Classifier::Offline.new.summary.to_h.to_json), floor.fetch("floor"), set
@@ -301,13 +338,13 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   # THE OPENROUTER TRANSPORT READING -- same cascade request as CASCADE_KEPT,
   # answered through OpenRouter Decisions. The arm suffix names the Jev
   # transport; the escalation target is still Mistral.
-  CASCADE_OPENROUTER = "classifier-cascade-openrouter-20260919".freeze
+  CASCADE_OPENROUTER = "classifier-cascade-openrouter-20260927".freeze
 
   test "the OpenRouter cascade set pins the Decisions transport and keeps every reading" do
     result = load_kept(CASCADE_OPENROUTER)
 
     assert result.cascade
-    assert_equal FROZEN_DIGEST, result.corpus_digest
+    assert_equal CURRENT_DIGEST, result.corpus_digest
     assert_equal [ "mistralai/mistral-medium-3.1+openrouter-decisions" ], result.arms
     assert_equal Eval::Noise::MIN_RUNS, result.reps
     assert_operator result.passes.sum { |pass| pass.rows.size }, :>=, Eval::Classifier.corpus.size * Eval::Noise::MIN_RUNS

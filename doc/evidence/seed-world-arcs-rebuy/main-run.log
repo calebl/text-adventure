@@ -8,7 +8,7 @@ Playing 90 main cases on mistralai/mistral-medium-3.1.
   mistralai/mistral-medium-3.1     rep 3  90 passages,  5 flagged, 1.6s median
   mistralai/mistral-medium-3.1     rep 4  90 passages,  7 flagged, 1.6s median
 
-Wrote /home/calebl/.treehouse/text-adventure-b5f921/15/text-adventure/tmp/eval/prompt-2026-09-26/prompt.json.
+Wrote ./tmp/eval/prompt-2026-09-26/prompt.json.
 
 schema request: v1:9c7351f919aac05b
 ------------------------------------------------------------------------------

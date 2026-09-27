@@ -425,8 +425,11 @@ that, both cheap to forget:
   `also_named` answer is read on about one line in twelve of the ones that
   question was measured on.
 
-`classifier-cascade-state-20260919` is the cascade's kept set; read its README
-before changing anything about the cascade.
+`classifier-cascade-state-20260919` was the cascade's kept set until the
+checked-in worlds gained arcs; `classifier-cascade-state-20260927` is the same
+request re-bought on them, and on today's worlds its lead over the model call
+alone is **inside the noise**. Read both READMEs before changing anything about
+the cascade.
 
 ### What it measures
 
@@ -1208,8 +1211,20 @@ bin/rails runner 'Eval::Prompt::Result.load(Eval.root.join("my-set")) \
 
 ### Current kept sets and historical comparisons
 
+**Re-bought when every checked-in world gained an arc.** The arcs, and the
+things they need on the floor, moved what the benches stage, so
+`prompt-2026-09-26`, `classifier-2026-09-26`, `realization-2026-09-26`,
+`inscription-2026-09-26`, `classifier-cascade-state-20260927` and
+`classifier-cascade-openrouter-20260927` replace the sets named below as the
+current before sides; `prompt-ending-2026-09-10` and `prompt-branches-2026-09-10`
+still match today's requests and were not re-bought. Three classifier labels
+moved with the world -- see `db/eval/classifier-2026-09-26/README.md`, which
+also has why the classifier readings were scored twice. Every set's README has
+its verdict against the set it replaced; the receipts, the credit readings and
+the scripts are under `doc/evidence/seed-world-arcs-rebuy/`.
+
 `prompt-2026-09-10`, `classifier-examine-wording-20260918` and
-`prompt-ending-2026-09-10` are the current before sides for future changes.
+`prompt-ending-2026-09-10` were the before sides until then.
 The classifier set is the judged R02 prompt with one later amendment: the
 `examine` criterion now admits a look at the room in general, which is what the
 corpus labels already assume. R02 itself prevents the demonstrated wrong-record
@@ -1239,7 +1254,8 @@ Its request identity certifies the scaffold, never identical generated prose.
 The generic prose checks still cannot assess whether an ending expresses its
 outcome faithfully or whether its prose is good.
 
-`desires-scale-20260920` is the current room-generation and genesis baseline
+`desires-scale-20260920` is the current genesis baseline and was the
+room-generation baseline until `realization-2026-09-26` replaced it
 (scale revision of the objects of desire). `desires-realization-20260919`
 remains the before side for that revision; against `physical-realization-20260910`
 its behavioral checks were all noise and median output tokens rose from 22,357

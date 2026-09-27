@@ -1,5 +1,5 @@
-# Task-local runner for the seed-world arc re-baseline, adapted from
-# doc/evidence/ta-bench-rebaseline-stale/run.rb. It changes no prompt, schema,
+# The runner for the seed-world arc re-baseline, adapted from the previous
+# re-baseline's runner beside it under doc/evidence. It changes no prompt, schema,
 # sampling parameter or scoring. Before every model call it reserves the
 # registry price of a bounded input plus the model's entire output allowance,
 # and refuses the call if the ledger's accounted spend plus that reservation

@@ -7,7 +7,7 @@ Building 29 rooms on mistralai/mistral-medium-3.1.
   mistralai/mistral-medium-3.1     rep 3  29 rooms, 41 flagged, 6.3s median
   mistralai/mistral-medium-3.1     rep 4  29 rooms, 36 flagged, 6.4s median
 
-Wrote /home/calebl/.treehouse/text-adventure-b5f921/15/text-adventure/tmp/eval/realization-2026-09-26/realization.json.
+Wrote ./tmp/eval/realization-2026-09-26/realization.json.
 
 schema request: v1:526e8a8e06253c4b
 ------------------------------------------------------------------------------

@@ -1,0 +1,218 @@
+ESTIMATE: 1372 calls (343 lines x 4 reps x 1 model), about $0.259. Measured at 372 in / 20 out a call.
+CASCADE: every line also pays for a System One request, unpriced by the registry above -- read the receipted total off this run's own output, not the estimate.
+System One transport pinned on mistralai/mistral-medium-3.1+openrouter-decisions.
+Replaying 343 lines on mistralai/mistral-medium-3.1+openrouter-decisions, 2 calls in flight (CONCURRENCY=).
+
+  mistralai/mistral-medium-3.1+openrouter-decisions first call 0.7s (excluded from the figures below)
+  mistralai/mistral-medium-3.1+openrouter-decisions rep 1 321/343 right (0.936), 14 misses, 0.23s median / 0.87s p95
+  mistralai/mistral-medium-3.1+openrouter-decisions rep 2 322/343 right (0.939), 13 misses, 0.23s median / 0.87s p95
+  mistralai/mistral-medium-3.1+openrouter-decisions rep 3 321/343 right (0.936), 13 misses, 0.23s median / 0.85s p95
+  mistralai/mistral-medium-3.1+openrouter-decisions rep 4 320/343 right (0.933), 13 misses, 0.22s median / 0.85s p95
+
+Wrote ./tmp/eval/classifier-cascade-openrouter-20260927/classifier.json.
+
+schema request: v2:9c85ef6604541ebb
+------------------------------------------------------------------------------
+THE CLASSIFIER BENCH -- 343 labelled lines, 4 repetitions, 1 model
+Every rate is min..max over the repetitions with the median in the middle. A
+difference smaller than that band is not a difference -- see EVALUATION.md.
+THE LATENCIES ARE WARM-CACHE FIGURES: every arm's first call is timed separately
+and excluded, because on a local model it is mostly the model being loaded.
+AND THEY ARE AT 2 CALLS IN FLIGHT: past about eight the provider queues and a
+latency becomes queueing time. The other figures are unaffected -- EVALUATION.md.
+------------------------------------------------------------------------------
+
+MODEL  mistralai/mistral-medium-3.1+openrouter-decisions   (4 reps, 1372 readings)
+
+  strict_accuracy      0.931..0.938 (median 0.936)   the whole answer right, over unarguable lines
+  accuracy             0.933..0.939 (median 0.936)   the whole answer right, over every line
+  intent_accuracy      0.971..0.977 (median 0.975)   the intent right, whatever it landed on
+  refusal_agreement    0.948..0.952 (median 0.952)   the refusal the line earns, over unarguable lines
+  closed_set_misses     13..14  (median 13)   right intent, wrong record (a count, not a rate)
+  latency_median         0.22s..0.23  s (median   0.23s)   seconds the median call took (CLOCK_MONOTONIC)
+  latency_p95            0.85s..0.87  s (median   0.86s)   seconds the worst call in twenty took
+  failures               0..0   (median 0)   calls that failed outright (a count; the arm has no rotation)
+  out_of_set            53..55  (median 54)   a target or also_named named on no list at all (a count, not a rate)
+  cost                 $0.0666 over 353 calls -- the 1019 the cascade composed never reached it
+  first call           0.71s   EXCLUDED from the figures above, so an outlier shows as one
+  answered             1372 of 1372   every call answered
+
+  ACCURACY PER INTENT -- of the lines labelled with each, how many came back whole
+    move      261/264  whole 0.989    branch right 1.000
+    talk      292/312  whole 0.936    branch right 0.987
+    examine   174/188  whole 0.926    branch right 0.957
+    take      200/224  whole 0.893    branch right 0.982
+    drop      116/116  whole 1.000    branch right 1.000
+    attack     92/96   whole 0.958    branch right 1.000
+    use        32/36   whole 0.889    branch right 1.000
+    other     117/136  whole 0.860    branch right 0.860
+
+  BY SHAPE -- what the line is in the corpus for
+    articles-and-pronouns   92/108  0.852
+    attack                  60/60   1.000
+    drop                    60/60   1.000
+    examine                 64/68   0.941
+    examine-nothing         83/88   0.943
+    move                   157/160  0.981
+    other                  117/136  0.860
+    take                    84/96   0.875
+    talk                   212/216  0.981
+    two-names-one-set      119/128  0.930
+    two-sets                36/36   1.000
+    unresolved-attack       20/24   0.833
+    unresolved-drop         28/28   1.000
+    unresolved-move         56/56   1.000
+    unresolved-take         32/32   1.000
+    unresolved-talk         32/40   0.800
+    unresolved-use           8/12   0.667
+    use-offer               24/24   1.000
+
+  also_named -- the field the ruling of 2026-09-04 hangs on (PR 102 finding F4)
+    positives in the corpus  128 of 1372 readings
+    precision                1.000   (115 right of 115 answered)
+    recall                   0.898   (115 found of 128 there)
+    omission rate            0.000   (0 of 1372 answers came back with the required field absent or null)
+
+  REFUSAL KIND -- what the engine would say, out of Playthrough::Refusal
+    agreement                0.951   (over the 1164 unarguable readings)
+    none                     832/860  0.967
+    named_more_than_one      103/112  0.920
+    unresolved               172/192  0.896
+
+  MISSED -- 25 distinct lines, 88 readings (first 20)
+    examine-stamp-ink                CLOSED-SET MISS x4
+      typed:    "look at how wet the ink still is on the pad"
+      expected: examine -> ward stamp
+      got:      examine -> nothing | examine -> Ward Office 12 daybook
+    grammar-it-take                  CLOSED-SET MISS x4
+      typed:    "take it"
+      expected: take -> Assize tide-slate
+      got:      take -> nothing
+    grammar-mine                     CLOSED-SET MISS x4
+      typed:    "pick up mine"
+      expected: take -> ward stamp
+      got:      take -> nothing
+    grammar-that-one                 CLOSED-SET MISS x4
+      typed:    "take that one on the lowest shelf"
+      expected: take -> Perrin's private index
+      got:      take -> copy-room apron
+    grammar-titles-only              CLOSED-SET MISS x4
+      typed:    "your honour"
+      expected: talk -> Ammon Brace
+      got:      talk -> nothing
+    real-give-him-the-index          CLOSED-SET MISS x4
+      typed:    "give him the index"
+      expected: use -> nothing
+      got:      use -> Offer Ward Office 12 daybook to Halkett Rowe; they may refuse
+    take-apron-folded                CLOSED-SET MISS x4
+      typed:    "take the folded thing behind the blank forms"
+      expected: take -> copy-room apron
+      got:      take -> nothing
+    take-slate-pronoun               CLOSED-SET MISS x4
+      typed:    "pick it up again"
+      expected: take -> Assize tide-slate
+      got:      take -> nothing
+    two-names-talk-perrin            CLOSED-SET MISS x4
+      typed:    "Perrin, tell Rowe what you found in the amendments"
+      expected: talk -> Perrin Lasco (and Halkett Rowe)
+      got:      talk -> Perrin Lasco
+    unresolved-attack-inspectorate   CLOSED-SET MISS x4
+      typed:    "take a swing at the rest of the Inspectorate"
+      expected: attack -> nothing
+      got:      attack -> Halkett Rowe
+    unresolved-talk-inspectorate     CLOSED-SET MISS x4
+      typed:    "talk to the rest of the Inspectorate"
+      expected: talk -> nothing
+      got:      talk -> Halkett Rowe
+    unresolved-talk-landlord         CLOSED-SET MISS x4
+      typed:    "ask my landlord for another week"
+      expected: talk -> nothing
+      got:      talk -> Ammon Brace
+    move-third-stair                 CLOSED-SET MISS x3
+      typed:    "down the stairs, past the third one from the bottom that creaks"
+      expected: move -> Grenn's Boarding House hallway | move -> Mournwell Lane
+      got:      move -> nothing
+    real-what-is-on-my-desk          CLOSED-SET MISS x1
+      typed:    "what is on my desk?"
+      expected: examine -> nothing | other -> nothing
+      got:      examine -> Ward Office 12 daybook
+    two-names-examine-three          CLOSED-SET MISS x1
+      typed:    "read the index and the daybook against each other"
+      expected: examine -> Perrin's private index (and Ward Office 12 daybook)
+      got:      examine -> Perrin's private index
+    attack-neb-court-both            wrong branch   x4
+      typed:    "go for Neb"
+      expected: other -> nothing
+      got:      move -> nothing
+    grammar-double-negative          wrong branch   x4
+      typed:    "do not take the stamp"
+      expected: other -> nothing
+      got:      take -> nothing
+    grammar-empty-ish                wrong branch   x4
+      typed:    "..."
+      expected: other -> nothing
+      got:      use -> Offer Ward Office 12 daybook to Halkett Rowe; they may refuse
+    other-impossible                 wrong branch   x4
+      typed:    "reach into the gap in the ledger and pull the missing hour back out of it with my bare hands"
+      expected: take -> nothing
+      got:      other -> nothing
+    real-consider-daybook-gap        wrong branch   x4
+      typed:    "consider what will happen if you present your daybook with a gap"
+      expected: other -> nothing | examine -> Ward Office 12 daybook
+      got:      use -> Offer Ward Office 12 daybook to Halkett Rowe; they may refuse
+
+------------------------------------------------------------------------------
+CONFUSION -- rows are the labelled intent, columns what came back. Every arm and
+repetition pooled, because this is a shape and not a rate.
+
+                 move    talk examine    take    drop  attack     use   other
+    move          260       .       4       .       .       .       .       .
+    talk            4     288       4       4       .       .       .      12
+    examine         .       .     176       .       .       .       .      12
+    take            .       .       .     220       .       .       .       4
+    drop            .       .       .       4     112       .       .       .
+    attack          .       .       .       .       .      96       .       .
+    use             .       .       .       .       .       .      36       .
+    other           4       4       4       4       .       4      11     105
+
+------------------------------------------------------------------------------
+THE OFFLINE FLOOR -- the same 343 lines through the fixed grammar
+(`Playthrough::Mechanics` with `model: false`), no model, no key, no spend. This is
+what a classifier call is bought against, and it is free.
+
+  right                    0.426
+    resolved          73   the grammar produced an answer the label accepts
+    refused           73   the grammar refused, and the label says the line earns a refusal
+    wrong              8   the grammar produced an answer the label does not accept -- silently
+    over_refused     176   the grammar refused a line the label says should have played
+    unparsed          13   no verb it knows and no exit by that name, so the whole grammar is printed
+
+  `refused` is GENEROUS to the grammar: it counts a refusal on a line the label
+  says earns one, and the grammar has no refusal KINDS to check -- its refusals are
+  strings it composes, not `Playthrough::Refusal` objects. So the floor can say
+  whether a line was refused and never which kind. It has no `also_named` at all.
+
+  BY SHAPE
+    articles-and-pronouns   11/27   0.407
+    attack                   6/15   0.400
+    drop                     4/15   0.267
+    examine                  5/17   0.294
+    examine-nothing          0/22   0.000
+    move                    22/40   0.550
+    other                    0/34   0.000
+    take                    14/24   0.583
+    talk                     7/54   0.130
+    two-names-one-set       23/32   0.719
+    two-sets                 2/9    0.222
+    unresolved-attack        6/6    1.000
+    unresolved-drop          7/7    1.000
+    unresolved-move         14/14   1.000
+    unresolved-take          8/8    1.000
+    unresolved-talk         10/10   1.000
+    unresolved-use           3/3    1.000
+    use-offer                4/6    0.667
+
+------------------------------------------------------------------------------
+Judge a prompt change against this with `rake eval:classifier_compare BEFORE= AFTER=`.
+Four repetitions a side is the arithmetic floor for a verdict -- Eval::Noise::MIN_RUNS.
+------------------------------------------------------------------------------

@@ -7,7 +7,7 @@ Replaying 343 lines on mistralai/mistral-medium-3.1, 2 calls in flight (CONCURRE
   mistralai/mistral-medium-3.1 rep 3 318/343 right (0.927), 18 misses, 0.52s median / 0.81s p95
   mistralai/mistral-medium-3.1 rep 4 318/343 right (0.927), 18 misses, 0.52s median / 0.79s p95
 
-Wrote /home/calebl/.treehouse/text-adventure-b5f921/15/text-adventure/tmp/eval/classifier-2026-09-26/classifier.json.
+Wrote ./tmp/eval/classifier-2026-09-26/classifier.json.
 
 schema request: v2:9c85ef6604541ebb
 ------------------------------------------------------------------------------
