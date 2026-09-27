@@ -27,6 +27,21 @@ class EngineVectorsTest < ActiveSupport::TestCase
     assert_equal [ [ 4, 9 ] ], one_cell["output"]
   end
 
+  # `Playthrough::GrammarTest` pins this throw by hand; the vectors carry it too.
+  test "the throw the grammar test pins is a vector" do
+    throw = JSON.parse(DIRECTORY.join("grammar.json").read).fetch("cases")
+                .find { |one| one["input"] == { "world" => "office", "typed" => "/throw the daybook at Halkett Rowe" } }
+
+    assert_equal "throw -> Ward Office 12 daybook at Halkett Rowe", throw.dig("output", "reading_first", "understood")
+    assert_equal "grammar", throw.dig("output", "reading_first", "resolved_by")
+  end
+
+  test "every line of the labelled classifier corpus is a vector" do
+    ids = JSON.parse(DIRECTORY.join("grammar_corpus.json").read).fetch("cases").map { |one| one.dig("input", "id") }
+
+    assert_equal Eval::Classifier.corpus.lines.map(&:id), ids
+  end
+
   test "each file declares the format and version it is written in" do
     EngineVectors::PORTIONS.each_key do |portion|
       document = JSON.parse(DIRECTORY.join("#{portion}.json").read)
