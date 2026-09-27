@@ -39,7 +39,7 @@ steps:
   expect:
     changed: true
     understood: take -> ward stamp
-    here: [filing press]
+    here: [filing press, blank closure writ]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: the-office-stays-empty-on-the-next-turn
@@ -48,7 +48,7 @@ steps:
   expect:
     changed: false
     refused: false
-    here: [filing press]
+    here: [filing press, blank closure writ]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: the-closet-is-copied-when-the-party-walks-in
@@ -73,7 +73,7 @@ steps:
   expect:
     changed: true
     location: Ward Office 12 (realized)
-    here: [filing press]
+    here: [filing press, blank closure writ]
     carrying: [Ward Office 12 daybook]
 
 - id: and-the-closet-still-holds-what-was-left-there

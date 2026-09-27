@@ -33,7 +33,7 @@ steps:
   expect:
     location: The Causeway Court (realized)
     exits: [The Tide Post (realized), The Vestry Hulk (stub)]
-    here: []
+    here: [Assize hand-bell]
     carrying: [Assize tide-slate]
     volitions: 0
     acts: 0

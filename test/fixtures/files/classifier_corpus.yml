@@ -1522,11 +1522,14 @@ lines:
   position: office
   typed: take a blank writ out of the press
   intent: take
-  refusal: unresolved
-  shape: unresolved-take
+  target: blank closure writ
+  shape: take
   why: >-
     the thing the whole world is afraid of, which the lore says officially does
-    not exist outside the Sealed Room -- and no record has it
+    not exist outside the Sealed Room -- and until the world's arc put one in
+    the tube basket no record had it, so this was an unresolved take. The
+    office's floor now holds a blank closure writ, so the line resolves to it;
+    the id is kept so a stored reading still lines up with its label.
 
 - id: unresolved-drop-empty-hands
   position: office-empty-handed
@@ -1676,11 +1679,22 @@ lines:
   position: office-empty-handed
   typed: take the lot
   intent: take
-  target: ward stamp
-  also_named: Ward Office 12 daybook
+  target: Ward Office 12 daybook
+  also_named: blank closure writ
   refusal: named_more_than_one
   shape: two-names-one-set
-  why: the third of the instruction's four words for all of them, against a different pair
+  why: >-
+    the third of the instruction's four words for all of them, against a floor
+    of three since the arc put the writ in the office. The label is the first
+    two the floor lists, and the other two pairs out of the same three are
+    accepted: "the lot" says every one, and an answer can carry only two.
+  also_accept:
+  - intent: take
+    target: ward stamp
+    also_named: Ward Office 12 daybook
+  - intent: take
+    target: ward stamp
+    also_named: blank closure writ
 
 - id: two-names-drop-three
   position: office-carrying-three
@@ -3164,11 +3178,21 @@ lines:
   position: office-empty-handed
   typed: take all of it
   intent: take
-  target: ward stamp
-  also_named: Ward Office 12 daybook
+  target: Ward Office 12 daybook
+  also_named: blank closure writ
   refusal: named_more_than_one
   shape: two-names-one-set
-  why: "\"all\", the second of the instruction's four words, against a floor of two"
+  why: >-
+    "all", the second of the instruction's four words, against a floor of three
+    since the arc put the writ in the office. The label is the first two the
+    floor lists, and the other two pairs out of the same three are accepted.
+  also_accept:
+  - intent: take
+    target: ward stamp
+    also_named: Ward Office 12 daybook
+  - intent: take
+    target: ward stamp
+    also_named: blank closure writ
 
 - id: two-names-drop-both
   position: office-carrying-three

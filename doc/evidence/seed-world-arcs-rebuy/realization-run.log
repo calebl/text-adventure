@@ -1,0 +1,151 @@
+ESTIMATE: 232 calls (29 stubs x 4 reps x 2 calls x 1 model), about $0.273. Measured at 1399 in / 385 out a detail call and 1848 in / 144 out an exits call.
+Building 29 rooms on mistralai/mistral-medium-3.1.
+
+  mistralai/mistral-medium-3.1     first call 16.3s (excluded from the figures below)
+  mistralai/mistral-medium-3.1     rep 1  29 rooms, 39 flagged, 7.9s median
+  mistralai/mistral-medium-3.1     rep 2  29 rooms, 43 flagged, 6.7s median
+  mistralai/mistral-medium-3.1     rep 3  29 rooms, 41 flagged, 6.3s median
+  mistralai/mistral-medium-3.1     rep 4  29 rooms, 36 flagged, 6.4s median
+
+Wrote ./tmp/eval/realization-2026-09-26/realization.json.
+
+schema request: v1:526e8a8e06253c4b
+------------------------------------------------------------------------------
+THE REALIZATION BENCH -- 29 stubs, 4 repetitions, 1 model
+corpus de57509aa1da1a37   prompt 5f42d5c63ea43a36   instructions d43b9ecd17181013
+Every rate is min..max over the repetitions with the median in the middle. A
+difference smaller than that band is not a difference -- see EVALUATION.md.
+THE LATENCIES ARE WARM-CACHE FIGURES: each arm's first realization is timed
+separately and excluded.
+------------------------------------------------------------------------------
+
+MODEL  mistralai/mistral-medium-3.1   (4 reps, 116 rooms)
+
+  THE CHECKS -- flagged over the opportunities each one can be judged on
+  quest_target_not_admitted    0.333..0.333 (median 0.333)   1..1 of 3
+                                 an optional target proposal was not admitted before the engine deadline fallback; take-up, not natural fit
+  exit_into_a_written_room     0.000..0.024 (median 0.000)   0..1 of 43
+                                 an exit named a place already WRITTEN that this room cannot reach -- the prompt marks those and the engine drops the edge
+  exit_already_reachable       0.220..0.273 (median 0.250)   9..12 of 42
+                                 an exit named a place this room can already reach, which the prompt lists and says does not need naming again
+  exit_spelled_a_place_differently 0.176..0.265 (median 0.209)   6..9 of 34
+                                 an exit named a place the world already held, spelled another way -- `WorldSeed.natural_key`'s reading of the same name, which the engine resolves and every check keyed on the written string cannot see
+  exit_named_this_room         0.000..0.000 (median 0.000)   0..0 of 43
+                                 an exit named the room it leads out of
+  exit_over_the_allowance      0.000..0.000 (median 0.000)   0..0 of 19
+                                 more ways out than the prompt said were left
+  no_new_ground                0.400..0.400 (median 0.400)   6..6 of 15
+                                 a room the story points into whose every exit was a place the world already had
+  person_over_the_allowance    0.000..0.000 (median 0.000)   0..0 of 28
+                                 more people than the prompt said this world had room for
+  item_over_the_allowance      0.000..0.000 (median 0.000)   0..0 of 28
+                                 more things than the prompt said this room had room for
+  name_already_spoken_for      0.000..0.000 (median 0.000)   0..0 of 117
+                                 a name the world had already given to somebody, somewhere or something
+  proposal_refused             0.000..0.000 (median 0.000)   0..0 of 81
+                                 a person or a thing the engine would not admit, so the room lost it
+  readable_without_words       0.000..0.000 (median 0.000)   0..0 of 13
+                                 a thing marked readable with nothing written on it, which costs a later round trip to Item::Inscriber
+  room_name_refused            0.000..0.000 (median 0.000)   0..0 of 9
+                                 a room asked to name itself that kept its placeholder, read off the room's own name afterwards -- judgeable only on a room the engine laid out
+  room_name_already_taken      0.000..0.000 (median 0.000)   0..0 of 9
+                                 a proposed room name the world had already given to somewhere, somebody or something
+  inside_declined              0.000..0.000 (median 0.000)   0..0 of 43
+                                 an exit named with no `inside` pick at all, so the engine took the quietest option -- the field is optional and an absent one is a decision not made
+  inside_on_a_place_that_already_exists 0.722..0.941 (median 0.828)   13..16 of 18
+                                 an inside pick on an exit that named a place the world already held, so the engine reused the row and threw the pick away -- judgeable only on a set that records what the call opened
+  inside_where_the_world_wanted_none 0.000..0.000 (median 0.000)   0..0 of 3
+                                 MORE buildings OPENED than the case's `expects_inside` quantifier allows -- judgeable only on a case whose label has a ceiling (`none of them`, `at most one`), in a set that records what the call opened
+  no_inside_where_the_world_wanted_one 0.000..0.000 (median 0.000)   0..0 of 3
+                                 FEWER insides picked than the case's `expects_inside` quantifier asks for -- judgeable only on a case whose label has a floor (`at least one`, `every one`)
+  population_declined          0.000..0.000 (median 0.000)   0..0 of 43
+                                 an exit named with no `population` pick at all, so the engine rolled a word for the place instead -- the field asks and nothing rests on the asking
+  people_short_of_the_pick     0.000..0.000 (median 0.000)   0..0 of 20
+                                 a room asked for an exact number of people that came back with fewer, so the room the prose describes is emptier than the word somebody picked for it
+  parameters_declined          0.000..0.000 (median 0.000)   0..0 of 1
+                                 a building offered the `parameters` block that came back without one, so every pick fell to its quietest default
+  parameters_the_engine_narrowed 0.000..0.000 (median 0.000)   0..0 of 1
+                                 a building whose picks the layout could not honour -- a warren on a footprint that holds one room, a depth the storeys do not reach
+  race_not_named               0.000..1.000 (median 0.000)   0..1 of 1  [KEYWORD]
+                                 a person written for a MONSTROUS slot whose sheet never says the race -- a KEYWORD check, so it reads words rather than comparing records
+  size_the_records_do_not_hold unavailable in this corpus   nothing in this run gave the check anything to read  [KEYWORD]
+                                 the description stated a size in paces, or a storey, that is not this room's -- a KEYWORD check, judgeable only on a room the engine laid out
+
+  UNAVAILABLE TO THIS BENCH -- reported, never scored as clean
+  description_is_good          there is no deterministic reader of whether a paragraph is worth reading, and a judge model would be a second model to keep honest -- see Story::Scoreboard
+  the_exit_led_somewhere_worth_going that is a fact about the room on the far side, which does not exist until somebody walks through and pays for it
+  the_room_fits_its_neighbours the description is told not to describe its neighbours (Location::DetailSchema), so agreement with them is not asked for
+  the_cast_is_worth_talking_to a person's sheet is judged by the conversation it produces, which is InteractionAgent's call and not this one
+  door_in_a_wall_the_records_do_not_hold a description that puts a door in a wall the plan does not hold cannot be told from one that describes a DOORLESS wall beside a door without parsing the sentence, and six measured grammars each admitted a shape the one before it did not -- Story::Audit's header carries the record. The prompt still states every door's wall (Location::Plan); only the check is gone
+
+  BY WORLD -- flagged of judgeable, pooled over the repetitions
+    The Iron Gate Descends                 28 rooms   exit_into_a_written_room 1/60, exit_already_reachable 16/60, no_new_ground 10/24, inside_on_a_place_that_already_exists 16/23
+    The Lunar Cartographer                 24 rooms   exit_already_reachable 16/49, no_new_ground 13/16, inside_on_a_place_that_already_exists 18/20, race_not_named 1/4
+    The Quay House                         40 rooms   quest_target_not_admitted 4/12, exit_spelled_a_place_differently 4/6, no_new_ground 1/4, inside_on_a_place_that_already_exists 6/6
+    The Salt Assizes           [HELD OUT]  12 rooms   exit_spelled_a_place_differently 22/22, inside_on_a_place_that_already_exists 5/5
+    The Unrecorded Hour                    12 rooms   exit_already_reachable 10/28, exit_spelled_a_place_differently 3/18, inside_on_a_place_that_already_exists 13/16
+
+  WHAT WAS ACTUALLY IN THE ROOM -- never folded into the rates above
+  insides_given                0.386..0.429 (median 0.412)   exits given an inside, over exits named -- THE DOMINANT-STRATEGY CHECK on the two inside rates: the cheapest way to clear both is to answer `no inside` every time, and a prompt change that cleared them and halved this bought its numbers with a world of open ground
+  insides_reaching             0.023..0.116 (median 0.071)   exits whose inside pick OPENED a place, over exits named -- `insides_given` cut by what the player got: a pick on a place the world already held is thrown away (`Location::Generator#connect_exit!`), so the distance between the two figures is insides that built nothing. Unavailable on a set stored before the rows recorded what a call opened
+  rooms_laid_out                  17.00..17.00    (median 17.00)   mean rooms the layout wrote for a building that was offered the parameters block
+  storeys_below_ground             3.00..3.00     (median 3.00)   mean floors a building was laid out below its ground floor -- the parameter that exists to make "down" expressible is worthless if it always comes back none
+  hazard_on_the_ground_floor   0.200..0.200 (median 0.200)   rooms carrying a hazard, on storey 0
+  hazard_below_ground          0.750..0.750 (median 0.750)   the same share below ground -- the recorded benchmark figure, and the ONLY one that reads whether the gradient did anything at all: it is the two ends of the slope, off the rows the layout wrote
+  populations_given            1.000..1.000 (median 1.000)   exits given a population word, over exits named -- `insides_given`'s figure one field over and the same warning: nothing rests on the pick being made (`Location::ExitsSchema`), so a prompt that cleared every rate and halved this handed the words back to the engine
+  crowds_picked                0.619..0.786 (median 0.678)   picks that asked for somebody, over picks made -- THE DOMINANT-STRATEGY CHECK on the population pick: `nobody` is a real answer rather than a default, so a model can make the pick honestly every time and still empty the world, and the two rates would not notice
+  people_named                     1.24..1.24     (median 1.24)   mean people one realization wrote
+  people_offered                   1.24..1.24     (median 1.24)   mean people the engine ASKED it for -- the denominator, measured and not assumed. Since 2026-09-07 it is an exact count rolled inside the word the narrator picked (`Location::Population`) and not a ceiling, so it moves with the picks: a set either side of that ruling is not comparing the same quantity
+  people_take_up               1.000..1.000 (median 1.000)   people written over slots offered
+  items_named                      1.48..1.69     (median 1.55)   mean things one realization put on the floor
+  exits_named                      2.21..2.32     (median 2.24)   mean ways out one realization named
+  new_places_opened                0.42..0.53     (median 0.47)   mean places this realization brought into existence -- read off the RECORDS afterwards, so it is what the room really opened
+  new_places_named                 0.79..0.95     (median 0.84)   mean names the ANSWER gave that the world did not have -- not the same figure as the one above it: write_exits! stops connecting at the allowance, so a room that named five and was allowed three opened three
+  exits_restating              0.581..0.643 (median 0.628)   exits that named a place the story already had -- the investigation's figure, and NOT a defect on its own: the prompt asks for reuse when an exit leads somewhere known
+
+  WHAT A STORED ANSWER CANNOT SHOW
+  (the first three are the schema-validity figures: a field absent, a field cut off,
+   and a call that did not answer at all)
+  refusals                            0..0        (median 0)   calls the model declined to answer (BaseAgent::RefusalError)
+  failures                            0..0        (median 0)   realizations that failed outright (a count; the arm has no rotation)
+  omitted_fields                      0..0        (median 0)   schema fields that came back absent -- top level AND inside a person or a thing
+  cap_hits                           10..15       (median 11)   fields that arrived at their max_length, so the provider cut them off
+  latency_median                  6.30s..7.89s    (median   6.54s)   seconds the median realization took, both calls (CLOCK_MONOTONIC)
+  latency_p95                    14.75s..15.88s   (median  14.83s)   seconds the worst realization in twenty took
+  output_tokens                   29044..29643    (median 29231.5)   output tokens over the pass -- what the rooms cost to write
+  spend                        $0.3441 over 116 realizations (274,484 in / 117,150 out)
+  first realization            16.27s   EXCLUDED from the figures above, so an outlier shows as one
+
+  FLAGGED -- 44 distinct (case, check) pairs, 159 readings (first 12)
+    assizes-tide-post              exit_spelled_a_place_differently x8   [HELD OUT]
+      named "Causeway Court", which is the world's "The Causeway Court" written another way
+    assizes-vestry-hulk-early      exit_spelled_a_place_differently x8   [HELD OUT]
+      named "Causeway Court", which is the world's "The Causeway Court" written another way
+    hour-long-hallway-early        inside_on_a_place_that_already_exists x8
+      picked "one room" for "Ward Office 12", which the world already held as "Ward Office 12", so the engine reused that place and dropped the pick
+    iron-gate-hollows-end          inside_on_a_place_that_already_exists x7
+      picked "a warren of rooms" for "Blackfang Warren", which the world already held as "Blackfang Warren", so the engine reused that place and dropped the pick
+    assizes-vestry-hulk            exit_spelled_a_place_differently x6   [HELD OUT]
+      named "Causeway Court", which is the world's "The Causeway Court" written another way
+    branch-restored-conversation   inside_on_a_place_that_already_exists x6
+      picked "a few rooms" for "Custom House", which the world already held as "The Custom House", so the engine reused that place and dropped the pick
+    assizes-tide-post              inside_on_a_place_that_already_exists x5   [HELD OUT]
+      picked "a few rooms" for "Vestry Hulk", which the world already held as "The Vestry Hulk", so the engine reused that place and dropped the pick
+    hour-long-hallway              exit_already_reachable       x4
+      named "Ward Office 12", which The Long Hallway already leads to
+    hour-long-hallway-early        exit_already_reachable       x4
+      named "Ward Office 12", which The Long Hallway already leads to
+    iron-gate-blackfang-deep       exit_already_reachable       x4
+      named "obsidian maw", which Blackfang Tunnel already leads to
+    iron-gate-surface              exit_already_reachable       x4
+      named "tunnel upward", which surface already leads to
+    iron-gate-tunnel-upward        exit_already_reachable       x4
+      named "Iron Gate Chamber", which tunnel upward already leads to
+
+------------------------------------------------------------------------------
+Judge a prompt change against this with `rake eval:realization_compare BEFORE= AFTER=`.
+Four repetitions a side is the arithmetic floor for a verdict -- Eval::Noise::MIN_RUNS.
+And confirm it with `rake eval:run`: a room measured on its own cannot show what it is
+like to walk into three turns later.
+------------------------------------------------------------------------------
+exit=0

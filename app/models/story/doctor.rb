@@ -1624,14 +1624,30 @@ class Story::Doctor
   # doctor's own rule is that fatal means the story cannot be PLAYED, and an arc
   # never gates a line -- but the captain's Call 1 of 2026-09-06 chose *always
   # completable*, and a world that cannot deliver its own ending is a world the
-  # index page should not offer. A world with NO arc at all is untouched by
-  # every check here, which is every world generated before this shipped.
+  # index page should not offer.
+  #
+  # A WORLD WITH NO ARC AT ALL gets one finding and none of the rest, because
+  # every property above is vacuously true of an arc that is not there. It used
+  # to get nothing, which let a world nobody could finish read HEALTHY -- every
+  # checked-in world did, until each was given an arc of its own.
   def arc
-    return [] if story.quests.none?
+    return [ no_arc ] if story.quests.none?
 
     [ *stories_without_a_conclusion, *quests_without_an_outcome, *quests_with_two_defaults,
       *outcomes_nothing_can_reach, *unbound_quest_steps, *stories_that_cannot_progress,
       *missing_quest_targets, *unreachable_quest_targets, *frontier_turned_away_from_the_goal ]
+  end
+
+  # NOTHING TO FINISH. A warning and not fatal: every turn still plays, and a
+  # world generated before arcs existed is a perfectly good place to walk
+  # around. But the five properties above are what make a world FINISHABLE, and
+  # a doctor that answered them for a world with no arc would be answering them
+  # about nothing. A person writes the `quests:` block; nothing here invents one.
+  def no_arc
+    finding(:no_arc, :warning,
+            "this story has no arc, so no playthrough of it can ever reach an ending: there is no quest for a beat " \
+            "to belong to and no outcome to select. A world file's `quests:` block is where one is written",
+            :manual)
   end
 
   # AN ENDING WRITTEN INTO A WORLD THAT NO GAME CAN EVER REACH. The default is

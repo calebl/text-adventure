@@ -155,20 +155,18 @@ class Scene::EndingTest < ActiveSupport::TestCase
   # the ninety-case corpus, because `Eval::Prompt.digest` is over the cases and
   # the 2026-09-05 baseline is the before side for the prompts those cases send.
   #
-  # SO THIS IS THE CANARY ON THE OTHER CORPUS. None of the worlds it plays has an
-  # arc, which is why no case in it could conclude one, reach this pass, or so
-  # much as gain a line -- and the day one of them gains a `quests:` block, that
-  # is no longer true and its baseline needs re-taking.
+  # SO THIS IS THE CANARY ON THE OTHER CORPUS. Every world it plays has an arc
+  # now, so a case COULD end a game: one staged a beat from the end whose line
+  # takes that beat. `Eval::Prompt::Corpus#concluding_problems` refuses such a
+  # case offline, and this asserts none is in the file -- so no case in it
+  # reaches this pass, and its kept set measures prose and nothing else.
+  test "no case in the ninety-case corpus concludes an arc, so none reaches this pass" do
+    problems = EngineSweep.without_a_model { Eval::Prompt.corpus("main").problems }
 
-  test "the ninety-case corpus still cannot reach an ending, so its baseline stands" do
-    Eval::Prompt.corpus("main").positions.map(&:story).uniq.each do |title|
-      document = WorldSeed.checked_in_document(title)
-
-      assert_not_nil document, "#{title} is not a checked-in world any more, so this check is reading nothing"
-      assert_nil document["quests"],
-                 "#{title} has an arc now, so a case in the main corpus CAN end a game and reach " \
-                 "Scene::Ending -- its prompts have moved and prompt-2026-09-05 is no longer their before side"
-    end
+    assert_empty problems.grep(/conclude the game/), problems.join("\n")
+    assert Eval::Prompt.corpus("main").positions.map(&:story).uniq.all? { |title|
+      WorldSeed.checked_in_document(title)&.dig("quests").present?
+    }, "the reason this can happen at all is that every world the corpus plays has an arc"
   end
 
   # AND THE OTHER HALF OF THE SAME ARGUMENT: the prompt every other pass sends

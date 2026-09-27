@@ -55,8 +55,10 @@ class Story::ForkTest < ActiveSupport::TestCase
       Story::Fork.new(story).create!
     end
 
-    doctor = Story::Doctor.new(forked)
-    assert doctor.healthy?, "the fork is not healthy: #{doctor.findings.map(&:message).join("; ")}"
+    # BUT FOR THE ARC, which this fixture world does not have: a world with
+    # none is warned that nothing can end it, fork or original alike.
+    findings = Story::Doctor.new(forked).findings.reject { |finding| finding.code == :no_arc }
+    assert_empty findings, "the fork is not healthy: #{findings.map(&:message).join("; ")}"
   end
 
   # The loader keys a story on its TITLE, so a fork under the original's name

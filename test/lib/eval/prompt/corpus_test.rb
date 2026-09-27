@@ -267,6 +267,37 @@ class Eval::Prompt::CorpusTest < ActiveSupport::TestCase
     assert_match(/needs a `why`/, problems.sole)
   end
 
+  # EVERY CHECKED-IN WORLD HAS AN ARC, so a line that takes its last beat ends
+  # the game and buys `Scene::Ending` too. A case one beat from the end of the
+  # Unrecorded Hour's arc that takes the writ is exactly that line.
+  test "a case that would conclude the arc is refused, because it would buy the ending pass" do
+    problems = validate(<<~YML)
+      positions:
+      - id: two-beats-in
+        story: The Unrecorded Hour
+        room: Ward Office 12
+        setup: [go to the Supply Closet, take the private index, go to Ward Office 12]
+      cases:
+      - id: the-last-beat
+        position: two-beats-in
+        typed: take the writ
+        act: take
+        target: blank closure writ
+        shape: take
+        why: the arc's last beat
+      - id: not-the-last-beat
+        position: two-beats-in
+        typed: take the stamp
+        act: take
+        target: ward stamp
+        shape: take
+        why: any other thing in the room
+    YML
+
+    assert_equal 1, problems.size, problems.join("\n")
+    assert_match(/the-last-beat: this line would reach the last beat of "Query 1188"/, problems.sole)
+  end
+
   test "an act the schema does not have is refused on the way in" do
     error = assert_raises(Eval::Prompt::Corpus::Invalid) do
       Eval::Prompt::Corpus.load(written(<<~YML))

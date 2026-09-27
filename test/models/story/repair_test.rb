@@ -185,6 +185,10 @@ class Story::RepairTest < ActiveSupport::TestCase
     street = story.locations.find_by(name: "The Street")
     create(:location_connection, location: street, connected_location: opening,
                                  distance: "a short walk", travel_method: "walking")
+    # AN ARC, because a story with none is warned that nothing can end it
+    # (`no_arc`), and that warning is `manual`.
+    quest = create(:quest, :with_an_ending, story: story)
+    create(:quest_step, :reach_location, quest: quest, target_name: "Your Office").bind!(opening, at: story.start_time)
     repair = Story::Repair.new(story.reload, generate: true)
 
     assert_empty repair.plan

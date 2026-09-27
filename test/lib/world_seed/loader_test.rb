@@ -1423,10 +1423,14 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_equal :none, Location::Box.shape(road)
   end
 
+  # BUT FOR THE ARC, which this fixture world does not have -- a world with none
+  # is warned that nothing can end it (`no_arc`), and this test is about the
+  # interior.
   test "the fixture world is healthy" do
     story = WorldSeed::Loader.new(interior_document).load!
+    findings = Story::Doctor.new(story).findings.reject { |finding| finding.code == :no_arc }
 
-    assert_predicate Story::Doctor.new(story), :healthy?
+    assert_empty findings, findings.map(&:message).join("; ")
   end
 
   # BOTH DIRECTIONS, like `danger` and `hazard`: taking the keys out of a file

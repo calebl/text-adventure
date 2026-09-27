@@ -13,6 +13,11 @@ class Story::DoctorTest < ActiveSupport::TestCase
     connect(opening, elsewhere)
     create(:character, :protagonist, story: story)
     create(:scene, :opening, story: story, location: opening, story_timestamp: story.start_time)
+    # AN ARC, which `rake game:new` writes too (`Quest::Generator`): one beat
+    # and the ending it was born with. A story with none is warned that nothing
+    # can end it (`no_arc`).
+    quest = create(:quest, :with_an_ending, story: story)
+    create(:quest_step, :reach_location, quest: quest, target_name: "Your Office").bind!(opening, at: story.start_time)
     story
   end
 
@@ -22,6 +27,11 @@ class Story::DoctorTest < ActiveSupport::TestCase
                                    distance: distance, travel_method: travel_method)
     end
   end
+
+  # EVERYTHING BUT `no_arc`. The stories built here have no arc on purpose --
+  # each test is about something else -- and a story with none is warned that
+  # nothing can end it (`Story::DoctorArcTest` owns that finding).
+  def but_the_arc(doctor) = doctor.findings.reject { |finding| finding.code == :no_arc }
 
   def codes(story)
     Story::Doctor.new(story).findings.map(&:code)
@@ -317,7 +327,7 @@ class Story::DoctorTest < ActiveSupport::TestCase
     create(:item, :lying, location: story.locations.first, name: "ward stamp")
     create(:item, character: story.characters.first, name: "brass key")
 
-    assert_empty Story::Doctor.new(story).findings
+    assert_empty but_the_arc(Story::Doctor.new(story))
   end
 
   test "a story whose party is carrying its own copies is still healthy" do
@@ -327,7 +337,7 @@ class Story::DoctorTest < ActiveSupport::TestCase
     played = create(:playthrough, story: story, character: story.protagonist, current_location: room)
     Playthrough::Turn.new(played).carry!(played.items_lying_in(room).sole)
 
-    assert_empty Story::Doctor.new(story).findings
+    assert_empty but_the_arc(Story::Doctor.new(story))
   end
 
   # A COPY OF NOTHING IS A REPORT AND NOT A DEFECT: the row is a real thing that
@@ -564,7 +574,7 @@ class Story::DoctorTest < ActiveSupport::TestCase
     create(:character, story: story, fullname: "Perrin Lasco").absent!
 
     assert_not_includes codes(story), :character_nowhere
-    assert_predicate Story::Doctor.new(story), :healthy?
+    assert_empty but_the_arc(Story::Doctor.new(story))
   end
 
   # NOWHERE ON PURPOSE AND STANDING IN A ROOM: the marker says nobody may be
@@ -591,7 +601,7 @@ class Story::DoctorTest < ActiveSupport::TestCase
     perrin.move_to!(story.locations.first)
 
     assert_not_predicate perrin, :deliberately_absent?
-    assert_predicate Story::Doctor.new(story), :healthy?
+    assert_empty but_the_arc(Story::Doctor.new(story))
   end
 
   # THE PARTY IS NOT ASKED ABOUT: the protagonist and any companion are wherever
@@ -1259,9 +1269,9 @@ class Story::DoctorTest < ActiveSupport::TestCase
     room = story.locations.realized.first
     create(:character, :monster, story: story, location: room, fullname: "Marek Sollen")
 
-    doctor = Story::Doctor.new(story)
+    findings = but_the_arc(Story::Doctor.new(story))
 
-    assert_predicate doctor, :healthy?, doctor.findings.map(&:message).join("\n")
+    assert_empty findings, findings.map(&:message).join("\n")
   end
 
   test "a foe with no body is reported as a foe with no body" do

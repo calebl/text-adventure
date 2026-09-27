@@ -51,6 +51,25 @@ class Playthrough::VolitionTest < ActiveSupport::TestCase
     assert_not_includes volition.choices.keys, "take:#{template.id}"
   end
 
+  # A THING THE ARC WAITS FOR THE PLAYER TO HOLD is the player's to pick up:
+  # nothing a die decides hands it back, so a stranger's own turn taking it
+  # would stall the story on a roll. Only the open arc's beat counts -- an
+  # authored tragedy is evaluated for nothing and guards nothing.
+  test "a thing the arc waits for the player to hold is not offered to anybody else" do
+    template = create(:item, character: nil, location: @room, playthrough: nil, name: "the cell key")
+    copy = create(:item, character: nil, location: @room, playthrough: @game, name: "the cell key", template: template)
+    bystander = create(:item, character: nil, location: @room, playthrough: @game, name: "a spare candle")
+    quest = create(:quest, story: @story)
+    create(:quest_step, :hold_item, quest: quest).bind!(template, at: @story.start_time)
+
+    assert_not_includes volition.choices.keys, "take:#{copy.id}"
+    assert_includes volition.choices.keys, "take:#{bystander.id}"
+
+    quest.update!(status: "doomed")
+
+    assert_includes volition.choices.keys, "take:#{copy.id}"
+  end
+
   test "a held thing is offered as a gift only while the player is standing here" do
     held = create(:item, character: @clerk, location: nil, playthrough: @game)
 

@@ -1,0 +1,85 @@
+# THE UNRECORDED HOUR, WALKED TO ITS END -- the checked-in world's own arc,
+# `Query 1188`, reached beat by beat with no model in the room.
+#
+# THE CLAIM: a world a fresh clone can play can also be FINISHED, and finishing
+# it leaves words on the closing scene. `an-ending-with-words.yml` makes that
+# claim of a sweep world; this makes it of a world somebody sits down to play,
+# which until the arc was written into the file had no ending to reach at all.
+#
+# THE ROUTE IS THE ORDER THE FILE LISTS THE BEATS IN, so the ending is the
+# default (`query-answered`) and its own sentence is what `ending_words:` reads.
+# `the-unrecorded-hour-closed-blind.yml` takes the writ first and reaches the
+# other one.
+story: The Unrecorded Hour
+why: the checked-in world's arc walked in order to its default ending, and the closing scene carries that ending's words
+steps:
+- id: a-story-still-open
+  type: look
+  why: nothing reached, nothing ended, and no last paragraph yet
+  expect:
+    location: Ward Office 12 (realized)
+    ending: none
+    ending_words: []
+    dead: false
+
+- id: the-door-nobody-audits
+  type: go to the Supply Closet
+  why: beat 1 -- a place, and the first thing the arc points a player at
+  expect:
+    changed: true
+    location: The Supply Closet (realized)
+    here: [Perrin's private index, copy-room apron]
+    quest:
+      1: reached
+    ending: none
+
+- id: the-hand-behind-the-amendments
+  type: take the index
+  why: beat 2, and still two thirds of an arc -- no ending yet
+  expect:
+    changed: true
+    carrying: [Ward Office 12 daybook, Perrin's private index]
+    quest:
+      1: reached
+      2: reached
+    ending: none
+    ending_words: []
+
+- id: back-to-the-desk
+  type: go to Ward Office 12
+  why: |-
+    THE WRIT IS STILL IN THE BASKET. The Sub-Inspector has stood beside it the
+    whole walk, and nobody's own turn may take a thing the arc is waiting for
+    (`Playthrough::Volition#choices`). What else he does with his turns is the
+    dice's business, so the next line taking it is the assertion.
+  expect:
+    changed: true
+    location: Ward Office 12 (realized)
+    ending: none
+
+- id: the-writ-before-anybody-names-it
+  type: take the writ
+  why: |-
+    THE LAST BEAT, AND THE STORY ENDS ON IT. Every beat is reached in the
+    order the file lists them, so `Playthrough::Arc` falls through to the
+    default ending and the closing scene carries its sentence -- the world
+    file's words, since this mode makes no model call.
+  expect:
+    changed: true
+    quest:
+      1: reached
+      2: reached
+      3: reached
+    ending: query-answered
+    ending_words: ["the missing hour has a source at last", "Query 1188 stays open in your name"]
+    dead: true
+
+- id: a-finished-game-plays-no-more-lines
+  type: take the ward stamp
+  why: a line typed into a finished game is refused whole, and the last paragraph is still the last paragraph
+  expect:
+    refused: true
+    changed: false
+    offers: ["story is over"]
+    ending: query-answered
+    ending_words: ["the missing hour has a source at last"]

@@ -84,6 +84,9 @@ module Eval
     db/eval/inscription-2026-09-10/inscription.json
     db/eval/inscription-2026-09-19/inscription.json
     db/eval/inscription-2026-09-19/README.md
+    db/eval/inscription-2026-09-26/inscription.json
+    db/eval/inscription-2026-09-26/receipts.json
+    db/eval/inscription-2026-09-26/README.md
     lib/eval/arrival.rb
     lib/eval/arrival/bench.rb
     lib/eval/arrival/budget.rb
@@ -120,6 +123,8 @@ module Eval
     doc/evidence/ta-bench-rebaseline-stale/receipts.json
     db/eval/prompt-2026-09-10/prompt.json
     db/eval/prompt-2026-09-10/receipts.json
+    db/eval/prompt-2026-09-26/prompt.json
+    db/eval/prompt-2026-09-26/receipts.json
     db/eval/classifier-2026-09-10/classifier.json
     db/eval/classifier-2026-09-10/receipts.json
     db/eval/classifier-2026-09-10/offline.json
@@ -337,6 +342,14 @@ module Eval
     db/eval/classifier-examine-wording-20260918/classifier.json
     db/eval/classifier-examine-wording-20260918/offline.json
     db/eval/classifier-examine-wording-20260918/README.md
+    db/eval/classifier-2026-09-26/classifier.json
+    db/eval/classifier-2026-09-26/offline.json
+    db/eval/classifier-2026-09-26/receipts.json
+    db/eval/classifier-2026-09-26/README.md
+    db/eval/classifier-2026-09-27/classifier.json
+    db/eval/classifier-2026-09-27/offline.json
+    db/eval/classifier-2026-09-27/receipts.json
+    db/eval/classifier-2026-09-27/README.md
     db/eval/classifier-cascade-before-20260919/classifier.json
     db/eval/classifier-cascade-before-20260919/offline.json
     db/eval/classifier-cascade-before-20260919/README.md
@@ -349,6 +362,12 @@ module Eval
     db/eval/classifier-cascade-openrouter-20260919/classifier.json
     db/eval/classifier-cascade-openrouter-20260919/offline.json
     db/eval/classifier-cascade-openrouter-20260919/README.md
+    db/eval/classifier-cascade-state-20260927/classifier.json
+    db/eval/classifier-cascade-state-20260927/offline.json
+    db/eval/classifier-cascade-state-20260927/README.md
+    db/eval/classifier-cascade-openrouter-20260927/classifier.json
+    db/eval/classifier-cascade-openrouter-20260927/offline.json
+    db/eval/classifier-cascade-openrouter-20260927/README.md
     db/eval/classifier-throw-before-20260926/classifier.json
     db/eval/classifier-throw-after-20260926/classifier.json
     db/eval/classifier-throw-after-20260926/offline.json
@@ -436,6 +455,11 @@ module Eval
     db/eval/desires-scale-20260920/run.rb
     db/eval/desires-scale-20260920/source-manifest.json
     db/eval/desires-scale-20260920/verdicts.json
+    db/eval/realization-2026-09-26/realization.json
+    db/eval/realization-2026-09-26/readings.json.gz
+    db/eval/realization-2026-09-26/requests.json
+    db/eval/realization-2026-09-26/receipts.json
+    db/eval/realization-2026-09-26/README.md
     db/eval/desires-dialogue-20260919/README.md
     db/eval/desires-dialogue-20260919/after-board.json
     db/eval/desires-dialogue-20260919/before-board.json

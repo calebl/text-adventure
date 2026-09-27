@@ -1,0 +1,229 @@
+== inscription-2026-09-19
+Inscription: mistralai/mistral-medium-3.1; v1:666515f4006a5926
+Receipted cost (cached input priced conservatively): $0.032780
+tuning:
+  failed: 0.111 / 0.000 / 0.000 / 0.000 (rates per rep)
+  empty: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  truncated_prose: unavailable / unavailable / unavailable / unavailable (rates per rep)
+  narration_framing: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  length_bound: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  description_repeated: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+held-out:
+  failed: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  empty: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  truncated_prose: unavailable / unavailable / unavailable / unavailable (rates per rep)
+  narration_framing: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  length_bound: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  description_repeated: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+Fit/register/meaning are human judgements. Unavailable punctuation is not a clean finish.
+daybook-room rep 1: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00–12:00: Docket 417–422 (5), carbon copies to Middle Ward 7. 12:00–13:00: Lunch. 13:00–16:00: Ledger reconciliation, Ward 12 sub-accounts. 16:00–17:00: —. 17:00–18:00: Final tally, stamp applied. Total lines: 38. Running total carried forward."
+daybook-holder rep 1: human_fit=unjudged; human_note=nil
+  "14th Inst. — Receipts: 347 (Perrin), 348 (Vance). Dockets: 12-M/45–47. Supply: 2 reams, 1 bottle ink. Total carried: 1,247. 15th Inst. — Receipts: 349 (Vance). Dockets: 12-M/48–50. Total carried: 1,247."
+daybook-carried rep 1: human_fit=unjudged; human_note=nil
+  "Ward Office 12 – Daily Ledger\n\n14th of the Flood Moon, Year of the Registry 1127\n\n08:00 – 12:00: Docket 471-B (Copyist’s Line, 3rd Class) – 12 folios, verified, filed. \n12:00 – 13:00: Lunch (Registry-issued, receipt attached).\n13:00 – 14:00: Marginalia Petitions – 8 cases, cross-referenced, pending Inspectorate review.\n14:00 – 16:00: Inventory of Supply Closet 12-B (see attached sheet).\n16:00 – 17"
+index-room rep 1: human_fit=unjudged; human_note=nil
+  "14/03 – W12-471-9\n18/03 – W12-472-3\n22/03 – W12-473-1\n25/03 – W12-474-8\n28/03 – W12-475-2\n01/04 – W12-476-5\n04/04 – W12-477-0\n08/04 – W12-478-4\n12/04 – W12-479-7\n15/04 – W12-480-1\n19/04 – W12-481-6\n22/04 – W12-482-3\n26/04 – W12-483-9\n29/04 – W12-484-2\n03/05 – W12-485-5\n06/05 – W12-486-8\n10/05 – W12-487-0\n14/05 – W12-488-4"
+index-holder rep 1: human_fit=unjudged; human_note=nil
+  "14/3/126 – 4719\n15/3/126 – 4720\n16/3/126 – 4721\n17/3/126 – 4722\n18/3/126 – 4723\n19/3/126 – 4724\n20/3/126 – 4725\n21/3/126 – 4726\n22/3/126 – 4727\n23/3/126 – 4728\n24/3/126 – 4729\n25/3/126 – 4730\n26/3/126 – 4731\n27/3/126 – 4732"
+index-carried rep 1: human_fit=unjudged; human_note=nil
+  "14th Inst. – 126\n15th – 412\n16th – 78\n17th – 304\n18th – 19\n20th – 807\n21st – 502\n22nd – 114\n23rd – 29\n24th – 601\n25th – 33\n26th – 408\n27th – 126"
+tally-room rep 1: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-holder rep 1: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-carried rep 1: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+slate-room rep 1: human_fit=unjudged; human_note=nil
+  "High water: 8:10. Cases: Neb Halloran, wrecking; M. Tallow, salvage dispute; H. Vey, oath default."
+slate-holder rep 1: human_fit=unjudged; human_note=nil
+  "High water: ten past eight"
+slate-carried rep 1: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+daybook-room rep 2: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00–12:00: Docket 471-12 (re: Marginalia transfer, 3rd Ward). 12:00–13:00: Lunch. 13:00–16:00: Ledger reconciliation, Block 7. 16:00–17:00: Tea. 17:00–18:00: Pending. Total: 8h."
+daybook-holder rep 2: human_fit=unjudged; human_note=nil
+  "12 Oct. — Received: 347 dockets (Ward 12, standard). Issued: 345 writs (2 blank, per requisition 12-47-B). Balance carried: 2. 16:00–17:00: —. Balance carried: 2. 17:00–18:00: Closed ledger. Signed: O. Vance, Clerk."
+daybook-carried rep 2: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00 Arrived, stamped in. 9:00-12:00 Docket 471-478 (copies to Central). 12:30-1:30 Lunch. 1:30-4:00 Ledger reconcile, Ward 12. 5:00-6:00 Filing. 6:00 Stamped out. Total: 8h."
+index-room rep 2: human_fit=unjudged; human_note=nil
+  "14/05 – 126-47\n18/05 – 126-48\n22/05 – 126-49\n25/05 – 126-50\n29/05 – 126-51\n01/06 – 126-52\n05/06 – 126-53\n09/06 – 126-54\n12/06 – 126-55\n16/06 – 126-56\n20/06 – 126-57\n24/06 – 126-58\n28/06 – 126-59\n02/07 – 126-60\n06/07 – 126-61\n10/07 – 126-62\n14/07 – 126-63"
+index-holder rep 2: human_fit=unjudged; human_note=nil
+  "14/3 – 4712\n15/3 – 8904\n16/3 – 1207\n17/3 – 5519\n18/3 – 3002\n19/3 – 6781\n20/3 – 1143\n21/3 – 9876\n22/3 – 4215\n23/3 – 7308\n24/3 – 2891\n25/3 – 6044\n26/3 – 1552\n27/3 – 3333"
+index-carried rep 2: human_fit=unjudged; human_note=nil
+  "14th Mar – 126-47-9\n15th Mar – 126-48-2\n16th Mar – 126-49-5\n17th Mar – 126-50-1\n18th Mar – 126-51-3\n19th Mar – 126-52-7\n20th Mar – 126-53-0"
+tally-room rep 2: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-holder rep 2: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-carried rep 2: human_fit=unjudged; human_note=nil
+  "29 years. Then silence."
+slate-room rep 2: human_fit=unjudged; human_note=nil
+  "High water: 8:10\nNeb Halloran - wrecking\nM. Veyne - salvage dispute\nT. Croft - oath breach"
+slate-holder rep 2: human_fit=unjudged; human_note=nil
+  "High water: ten past eight"
+slate-carried rep 2: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+daybook-room rep 3: human_fit=unjudged; human_note=nil
+  "12 Oct. — Received: 347 dockets (Ward 12), 18 carbon sets, 2 wax cylinders (sealed). Issued: 312 dockets, 14 carbon sets. Balance carried: 35 dockets, 4 carbon sets, 2 wax cylinders. 4:00–5:00: —. Balance carried: 35 dockets, 4 carbon sets, 2 wax cylinders. 5:00–6:00: Closed ledger, filed under 12/10/347. Signed: [illegible initials]."
+daybook-holder rep 3: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00 Arrived, checked seals on Ward 12 ledgers. 9:00-11:30 Processed 47 docket updates (Batch #12-10-47). 11:30-12:30 Lunch. 12:30-15:00 Cross-referenced Marginalia work orders (see File 12-M-88). 16:00-17:00 Inventory of supply closet (pending). 17:00 End of shift. Totals carried forward."
+daybook-carried rep 3: human_fit=unjudged; human_note=nil
+  "12 Oct. — In: 47 dockets (Ward 12, Block 4), 3 writs (2 sealed, 1 blank), 11 carbon copies. Out: 45 dockets (filed), 2 writs (sealed, to Archives). Balance: 2 dockets, 1 writ (blank). 4:00–5:00: —. 5:00–6:00: 1 query (Perrin, re: Marginalia transfer), 1 tea (ledger). Total: 94 entries. Signed: [illegible initials]."
+index-room rep 3: human_fit=unjudged; human_note=nil
+  "14/03 – 126-47\n18/03 – 126-48\n22/03 – 126-49\n25/03 – 126-50\n29/03 – 126-51\n02/04 – 126-52\n05/04 – 126-53\n08/04 – 126-54\n11/04 – 126-55\n15/04 – 126-56\n18/04 – 126-57\n21/04 – 126-58\n24/04 – 126-59\n28/04 – 126-60\n01/05 – 126-61\n04/05 – 126-62\n07/05 – 126-63\n10/05 – 126-64\n14/05 – 126-65\n17/05 – 126-66\n20/05 – 126-67"
+index-holder rep 3: human_fit=unjudged; human_note=nil
+  "14/3 – 4712\n15/3 – 8901\n16/3 – 1244\n17/3 – 5678\n18/3 – 3402\n19/3 – 7813\n20/3 – 1129"
+index-carried rep 3: human_fit=unjudged; human_note=nil
+  "14th Mar – 12/47/9\n15th Mar – 12/48/2\n16th Mar – 12/49/5\n17th Mar – 12/50/1\n18th Mar – 12/51/3\n19th Mar – 12/52/7\n20th Mar – 12/53/0"
+tally-room rep 3: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-holder rep 3: human_fit=unjudged; human_note=nil
+  "29 years, 11 months, 4 days. Then the silence."
+tally-carried rep 3: human_fit=unjudged; human_note=nil
+  "29 years. Then silence."
+slate-room rep 3: human_fit=unjudged; human_note=nil
+  "High water: 8:10. Cases: Neb Halloran, wrecking; M. Tidewell, salvage dispute; Assize v. Marshborn grazing rights."
+slate-holder rep 3: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+slate-carried rep 3: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+daybook-room rep 4: human_fit=unjudged; human_note=nil
+  "14:00–15:00: —\n15:00–16:00: 128 docketed, 37 filed, 11 carried forward. Total: 176."
+daybook-holder rep 4: human_fit=unjudged; human_note=nil
+  "14 Nov. — 8:00 Arrived, checked seals on Ward 12 ledgers. 9:30-11:00 Processed 17 dockets (see cross-ref). 12:00 Lunch (15 min). 1:00-3:45 Audited supply closet inventory (pending). 4:00 — 5:00 — 5:15 Resumed docket backlog. 6:00 Closed ledgers. Total: 22 dockets, 1 inventory audit."
+daybook-carried rep 4: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00 a.m. to 4:00 p.m.: Docket 4711 (3 copies), Ledger update (Ward 12, Block 4), Supply requisition (ink, 2 bottles). 4:00 p.m. to 5:00 p.m.: —. 5:00 p.m. to 6:00 p.m.: Cross-check Marginalia assignments, File 12-27-89 (pending). Total: 8 hrs. Carried forward."
+index-room rep 4: human_fit=unjudged; human_note=nil
+  "14/3 – 126-47\n18/3 – 126-48\n22/3 – 126-49\n25/3 – 126-50\n29/3 – 126-51\n2/4 – 126-52\n5/4 – 126-53\n8/4 – 126-54\n11/4 – 126-55\n15/4 – 126-56\n18/4 – 126-57\n21/4 – 126-58\n24/4 – 126-59\n27/4 – 126-60\n30/4 – 126-61\n3/5 – 126-62\n6/5 – 126-63\n9/5 – 126-64\n12/5 – 126-65\n15/5 – 126-66\n18/5 – 126-67\n21/5 – 126-68"
+index-holder rep 4: human_fit=unjudged; human_note=nil
+  "14/3 – 4721\n15/3 – 8904\n16/3 – 1203\n17/3 – 5518\n18/3 – 7002\n19/3 – 3445\n20/3 – 6119"
+index-carried rep 4: human_fit=unjudged; human_note=nil
+  "14/3 – 4712\n15/3 – 8904\n16/3 – 1203\n17/3 – 5411\n18/3 – 7822\n19/3 – 3309\n20/3 – 6145"
+tally-room rep 4: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-holder rep 4: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-carried rep 4: human_fit=unjudged; human_note=nil
+  "29 years. Then the silence."
+slate-room rep 4: human_fit=unjudged; human_note=nil
+  "High water: 8:10. Cases: Neb Halloran – wrecking, 7:50."
+slate-holder rep 4: human_fit=unjudged; human_note=nil
+  "High water: ten past eight"
+slate-carried rep 4: human_fit=unjudged; human_note=nil
+  "High water: ten minutes past eight"
+== inscription-2026-09-26
+Inscription: mistralai/mistral-medium-3.1; v1:666515f4006a5926
+Receipted cost (cached input priced conservatively): $0.031874
+tuning:
+  failed: 0.000 / 0.000 / 0.111 / 0.000 (rates per rep)
+  empty: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  truncated_prose: unavailable / unavailable / unavailable / unavailable (rates per rep)
+  narration_framing: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  length_bound: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  description_repeated: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+held-out:
+  failed: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  empty: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  truncated_prose: unavailable / unavailable / unavailable / unavailable (rates per rep)
+  narration_framing: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  length_bound: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  description_repeated: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+Fit/register/meaning are human judgements. Unavailable punctuation is not a clean finish.
+daybook-room rep 1: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00–12:00: Dockets 471–489 (received, stamped, filed). 12:00–13:00: Lunch. 13:00–16:00: Ledger cross-check, Wards 10–12. 16:00–17:00: Supply requisition (pending). 17:00–18:00: Close. Total: 47 entries. Carried forward: 1,234."
+daybook-holder rep 1: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00 Arrived, sealed ledger 417. 9:30–11:00 Docketed 14 petitions (see cross-ref. 12/10/14-A). 11:15–12:30 Lunch. 1:00–3:45 Transcribed Ward 12 census updates (vol. 3, pp. 87–92). 4:00–5:00 [ruled gap, total carried forward]. 5:15–6:45 Audited supply closet inventory (pending)."
+daybook-carried rep 1: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00–12:00: Docket 4711 (3 copies, carbon), 12:00–13:00: Lunch, 13:00–16:00: Transfer ledgers (Ward 7), 16:00–17:00: — , 17:00–18:00: Close. Totals carried forward."
+index-room rep 1: human_fit=unjudged; human_note=nil
+  "14/3 – 12-478\n15/3 – 12-481\n16/3 – 12-484\n17/3 – 12-487\n18/3 – 12-490\n19/3 – 12-493\n20/3 – 12-496\n21/3 – 12-499\n22/3 – 12-502\n23/3 – 12-505\n24/3 – 12-508\n25/3 – 12-511"
+index-holder rep 1: human_fit=unjudged; human_note=nil
+  "14/6 - 4217\n15/6 - 8902\n16/6 - 3145\n17/6 - 7011\n18/6 - 2204\n19/6 - 5833\n20/6 - 1609"
+index-carried rep 1: human_fit=unjudged; human_note=nil
+  "14 Mar – 7821\n15 Mar – 7845\n16 Mar – 7869\n17 Mar – 7892\n18 Mar – 7914\n19 Mar – 7937\n20 Mar – 7961"
+tally-room rep 1: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-holder rep 1: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-carried rep 1: human_fit=unjudged; human_note=nil
+  "29 years, 11 months, 4 days. No more."
+slate-room rep 1: human_fit=unjudged; human_note=nil
+  "High water: 8:10\nNeb Halloran - wrecking\nM. Veyne - salvage dispute\nT. Cawse - oath on causeway"
+slate-holder rep 1: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+slate-carried rep 1: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+daybook-room rep 2: human_fit=unjudged; human_note=nil
+  "14 Nov. — 8:00–12:00: Docket 471-B (received), 12:00–1:00: Lunch, 1:00–4:00: Docket 471-B (filed), 4:00–5:00: , 5:00–6:00: Docket 472-A (received). Totals carried forward: 471-B complete, 472-A pending. Balance: 0."
+daybook-holder rep 2: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00 a.m. to 4:00 p.m.: Docket 4711-B (re: Levee Ward 3 drainage), 2 carbon copies, 1 certified. 4:00 p.m. to 5:00 p.m.: —. 5:00 p.m. to 6:00 p.m.: Docket 4712-A (re: Marginalia work permit renewal), 1 copy. Total entries: 3. Running total: 1,472."
+daybook-carried rep 2: human_fit=unjudged; human_note=nil
+  "12 Oct. — 08:00–12:00: Docket 4711 (received), 3 copies; 12:00–13:00: Lunch; 13:00–16:00: Docket 4712 (filed), 2 copies; 16:00–17:00: —; 17:00–18:00: Supply audit (pending). Totals carried forward."
+index-room rep 2: human_fit=unjudged; human_note=nil
+  "14/3 – 12-478\n18/3 – 12-481\n22/3 – 12-484\n25/3 – 12-487\n29/3 – 12-490\n2/4 – 12-493\n5/4 – 12-496\n8/4 – 12-499\n11/4 – 12-502\n15/4 – 12-505\n18/4 – 12-508\n21/4 – 12-511\n24/4 – 12-514\n27/4 – 12-517\n30/4 – 12-520\n3/5 – 12-523\n6/5 – 12-526\n9/5 – 12-529\n12/5 – 12-532\n15/5 – 12-535\n18/5 – 12-538\n21/5 – 12-541\n24/5 – 12-544"
+index-holder rep 2: human_fit=unjudged; human_note=nil
+  "12/4/89 - 4712\n12/5/89 - 4718\n12/6/89 - 4723\n...\n14/6/89 - 4891\n14/6/89 - 4892"
+index-carried rep 2: human_fit=unjudged; human_note=nil
+  "14th – 4721\n15th – 4725\n16th – 4728\n17th – 4730\n18th – 4732\n19th – 4735\n20th – 4738\n21st – 4740\n22nd – 4742\n23rd – 4745\n24th – 4748\n25th – 4750"
+tally-room rep 2: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-holder rep 2: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-carried rep 2: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+slate-room rep 2: human_fit=unjudged; human_note=nil
+  "High water: 8:10. Cases: Halloran – wrecking, 7:30; Marshborn vs. Shorefolk – salvage rights, 9:00."
+slate-holder rep 2: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+slate-carried rep 2: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+daybook-room rep 3: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00–12:00: Docket 471-12 (3x carbon, 1x master) | 12:00–13:00: Lunch (Registry canteen, receipt filed) | 13:00–16:00: Ledger reconciliation (Ward 12, Q3) | 16:00–17:00: [ruled gap, total carried forward] | 17:00–18:30: Inspectorate prep (files 12-A to 12-F, stamps verified)."
+daybook-holder rep 3: human_fit=unjudged; human_note=nil
+  "12 Oct. — Received: 347 dockets (Ward 12, Block 4), 12 carbon copies, 2 wax seals. Dispatched: 345 dockets, 14 carbons. Balance: +2 dockets, -2 carbons. Notes: Rain at 15:42. Total carried forward."
+daybook-carried rep 3: human_fit=unjudged; human_note=nil
+  "Ward Office 12 – Daily Ledger\n\nDate: 14th of the Flood Moon\n\n08:00 – Arrival, desk inspection, ink audit. Total: 001\n09:00 – Filing of Docket 47-B (Ledger-Kept, minor amendment). Total: 002\n10:00 – Copying of Marginalia work order (3x). Total: 005\n11:00 – Lunch (15 min). Total: 005\n12:00 – Registry cross-reference for Unwritten salvage permit. Total: 006\n13:00 – Inspectorate query (pending). Total"
+index-room rep 3: human_fit=unjudged; human_note=nil
+  "14/3 – 47219\n18/3 – 47224\n22/3 – 47231\n25/3 – 47238\n29/3 – 47245\n1/4 – 47250\n5/4 – 47256\n8/4 – 47261\n12/4 – 47267\n15/4 – 47272\n19/4 – 47278\n22/4 – 47283\n26/4 – 47289\n30/4 – 47294\n3/5 – 47300\n7/5 – 47305\n10/5 – 47311\n14/5 – 47316\n17/5 – 47322\n21/5 – 47327"
+index-holder rep 3: human_fit=unjudged; human_note=nil
+  "14th – 4712\n15th – 8903\n16th – 1245\n17th – 3678\n18th – 5120\n19th – 7841\n20th – 2309"
+index-carried rep 3: human_fit=unjudged; human_note=nil
+  "14 Mar - 7821\n18 Mar - 9104\n22 Mar - 3456\n25 Mar - 1208\n28 Mar - 5673\n31 Mar - 8921\n3 Apr - 4309\n5 Apr - 6782\n8 Apr - 1145\n10 Apr - 2301\n12 Apr - 3456\n15 Apr - 7890"
+tally-room rep 3: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-holder rep 3: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-carried rep 3: human_fit=unjudged; human_note=nil
+  "29 years. Then silence."
+slate-room rep 3: human_fit=unjudged; human_note=nil
+  "High water: 8:10\nNeb Halloran - wrecking\nM. Cray - salvage dispute\nT. Vell - boundary stone"
+slate-holder rep 3: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+slate-carried rep 3: human_fit=unjudged; human_note=nil
+  "High water: ten minutes past eight"
+daybook-room rep 4: human_fit=unjudged; human_note=nil
+  "12 Oct. — Received: 37 dockets (Ward 12), 14 transfers (Ward 7), 2 corrections (Marginalia). Issued: 41 dockets, 12 transfers, 1 blank writ. Balance: +2. Notes: Rain at 15:45. Supply closet unopened. Perrin—"
+daybook-holder rep 4: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00 a.m. to 4:00 p.m.: Docket 471-B (re: Marginalia transfer), 4:00 p.m. to 5:00 p.m.: [ruled gap, total carried across], 5:00 p.m. to 6:00 p.m.: Supply requisition for Ward 12 (ink, carbon, wax). Total: 147 entries. Signed: O. Vance."
+daybook-carried rep 4: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00 Arrived, checked seals on Ward 12 ledgers. 9:00-12:00 Processed 47 dockets (see cross-ref. 12/10/47). 12:00-1:00 Lunch. 1:00-4:00 Verified marginal corrections on 18 forms. 4:00-5:00 —. 5:00-6:00 Filed incoming from Ward 7. Totals carried forward."
+index-room rep 4: human_fit=unjudged; human_note=nil
+  "14/05 – W12-4789\n15/05 – W12-4792\n16/05 – W12-4795\n17/05 – W12-4798\n18/05 – W12-4801\n19/05 – W12-4804\n20/05 – W12-4807"
+index-holder rep 4: human_fit=unjudged; human_note=nil
+  "14th Mar – W12/4789\n15th Mar – W12/4791\n16th Mar – W12/4794\n17th Mar – W12/4796\n18th Mar – W12/4799\n19th Mar – W12/4802\n20th Mar – W12/4805"
+index-carried rep 4: human_fit=unjudged; human_note=nil
+  "14/03 - 4721\n15/03 - 8904\n16/03 - 3112\n17/03 - 6543\n18/03 - 2209\n19/03 - 7831\n20/03 - 5002\n21/03 - 1147\n22/03 - 9876\n23/03 - 4321\n24/03 - 6789\n25/03 - 1234"
+tally-room rep 4: human_fit=unjudged; human_note=nil
+  "29 years, 8 months, 14 days. Then no more."
+tally-holder rep 4: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-carried rep 4: human_fit=unjudged; human_note=nil
+  "29 years. Then silence."
+slate-room rep 4: human_fit=unjudged; human_note=nil
+  "High water: 8:10\nNeb Halloran – wrecking\nM. Trew – salvage rights\nP. Vell – tide dispute"
+slate-holder rep 4: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+slate-carried rep 4: human_fit=unjudged; human_note=nil
+  "High water: ten minutes past eight"
+request identity {"version" => 1, "digest" => "666515f4006a5926"} -> {"version" => 1, "digest" => "666515f4006a5926"}; case identities equal: true

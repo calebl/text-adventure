@@ -191,15 +191,22 @@ class Eval::Realization::KeptSetTest < ActiveSupport::TestCase
     end
   end
 
+  # THE PACKAGE THE BRANCH CASES WERE FIRST BOUGHT IN, whose receipt and
+  # admission record are history: the two tests below are claims about what
+  # that purchase paid for and recorded, so they read it by name and keep
+  # holding when the baseline moves on. The current baseline's own receipts are
+  # in its directory and in the evidence log it cites.
+  BRANCH_PACKAGE = "desires-scale-20260920".freeze
+
   test "branch receipts include warmup and price every purchased answer within authorization" do
-    receipt = JSON.parse(File.read(Eval.kept_root.join(BASELINE, "receipts.json")))
+    receipt = JSON.parse(File.read(Eval.kept_root.join(BRANCH_PACKAGE, "receipts.json")))
     assert_operator receipt.fetch("actual"), :>, 0
     assert_operator receipt.fetch("actual"), :<=, 2
     assert_in_delta receipt.fetch("receipts").sum { |row| row.fetch("dollars") } +
                     receipt.fetch("previous_attempt").fetch("actual"), receipt.fetch("actual")
     assert_equal 1, receipt.fetch("receipts").count { |row| row.fetch("warmup") }
     assert receipt.fetch("receipts").all? { |row| row.fetch("model") == ARM }
-    retries = full_rows.select { |row| row.dig("facts", "retry") }
+    retries = full_rows(BRANCH_PACKAGE).select { |row| row.dig("facts", "retry") }
     assert_equal Eval::Noise::MIN_RUNS, retries.size
     assert retries.all? { |row| row.fetch("answers").keys == [ "exits" ] && row.fetch("calls") == 1 }
   end
@@ -217,7 +224,7 @@ class Eval::Realization::KeptSetTest < ActiveSupport::TestCase
   # path changes exactly the capped personality that used to drop Mara Quill;
   # every unrelated quest receipt must remain identical.
   test "quest receipts preserve the one admission changed by sentence salvage" do
-    rows = full_rows.select { |row| row.dig("facts", "quest_request") }
+    rows = full_rows(BRANCH_PACKAGE).select { |row| row.dig("facts", "quest_request") }
     differences = rows.filter_map do |row|
       replayed = Eval::Realization::Admissions.replay(row)
       recorded = row.fetch("after").fetch("quest_admitted")
@@ -234,8 +241,9 @@ class Eval::Realization::KeptSetTest < ActiveSupport::TestCase
     } ], differences
   end
 
-  def full_rows
-    @full_rows ||= Zlib::GzipReader.open(Eval.kept_root.join(BASELINE, "readings.json.gz")) do |file|
+  def full_rows(set = BASELINE)
+    @full_rows ||= {}
+    @full_rows[set] ||= Zlib::GzipReader.open(Eval.kept_root.join(set, "readings.json.gz")) do |file|
       JSON.parse(file.read).fetch("passes").flat_map { |pass| pass.fetch("readings") }
     end
   end

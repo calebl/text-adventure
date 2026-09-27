@@ -56,7 +56,7 @@ steps:
   expect:
     changed: true
     understood: take -> ward stamp
-    here: [filing press]
+    here: [filing press, blank closure writ]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: second-is-not-holding-it
@@ -84,7 +84,7 @@ steps:
   expect:
     changed: true
     understood: take -> ward stamp
-    here: [filing press]
+    here: [filing press, blank closure writ]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: first-still-holds-the-one-it-took
@@ -110,7 +110,7 @@ steps:
   expect:
     changed: false
     refused: false
-    here: [filing press]
+    here: [filing press, blank closure writ]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: first-walks-off-with-the-stamp

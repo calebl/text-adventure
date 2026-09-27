@@ -246,6 +246,15 @@ locations:
     The stair comes out into the bell chamber and stops being a stair, and the whole city is suddenly below you and going quietly sideways. Saint Aravel's bell hangs on a headstock older than the Great War, green-black, big enough to stand inside, and the rope comes down through a hole in the boards and lies coiled on the floor as neatly as anything you have seen in Nocturnis. There is no lamp up here. There does not need to be: the louvres are open on four sides and the Larkspur Quarter is putting out enough silver to read a bearing by.
 
     The Ringer is standing by the rope with his back to the louvres, and he was standing there before you came up. He is grey the way a photograph is grey, all of him the same shade, and he is far too still for a man waiting for the hour. Nothing in the chamber moves except the bell, very slightly, in the wind off the roofs. The only way down is the stair behind you, and the boards on it creak on the way down exactly as loudly as they creaked on the way up.
+  items:
+  - name: climbers' bearing book
+    description: |-
+      A quarto ledger swollen with damp, lying open on the boards under the south louvre where the light is best, a pencil tied to its spine with string. Every cartographer who ever climbed the tower wrote their bearing in it, because a bearing from here is the only one in Nocturnis that means the same thing tomorrow. The last entry is four years old, and the hand under it is the hand the parish register gives for Marek Sollen.
+    readable: true
+    inscription: |-
+      From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)
+      Rung the eleven. Rung the eleven. Rung the
+    properties: '{"entries": 212, "last_entry_years": 4}'
   lore: |-
     Saint Aravel's is one of the three fixed points in Nocturnis. The Sovereigns will tell you the tower does not move because it was built on pre-war footings; the Crystal Dwarves will tell you it does not move because there is a seam of unworked moonstone under it and Nocturna will not cross its own supply. Either way, a bearing taken from the bell is the only bearing in this city that means the same thing tomorrow, which is why every cartographer in the quarter eventually climbs it and why the parish gave up charging for the privilege.
 
@@ -280,3 +289,36 @@ schedule:
   after_minutes: 5
 - summary: Grenn Ollivar comes for the overdue rent, and the table and the instruments go out into Mournwell Lane.
   after_minutes: 480
+# THE ARC. Three beats in the one place the city cannot move: the tower, the
+# tally its ringer kept, and the book every climber writes a bearing in -- the
+# book is the one item added for it. It lies in the bell chamber because the
+# only person there is the Ringer, and a foe answers a turn with a blow rather
+# than with a turn of his own, so nothing picks it up before the player does.
+# The tally is the measurement the Sovereigns cannot answer: twenty-nine years
+# of hours counted from a fixed point and then no more counting, which is a
+# Blighted ringer written in wood. Taking the bearing with him still standing
+# over the rope is the second ending.
+quests:
+- title: The Fixed Bearing
+  premise: Take one bearing in Nocturnis that will still be true tomorrow, and the proof of what standing on it costs.
+  status: open
+  contributes: true
+  steps:
+  - summary: Climb to the bell of Saint Aravel, the one bearing in the city that means the same thing tomorrow.
+    trigger: reach_location
+    target: The Bell of Saint Aravel
+    teaser: Every cartographer in the quarter climbs Saint Aravel's tower sooner or later.
+  - summary: Get the Ringer's tally, twenty-nine years of hours counted from a fixed point.
+    trigger: hold_item
+    target: bell-rope tally
+  - summary: Take the climbers' bearing book off the boards and carry the tower's bearing home.
+    trigger: hold_item
+    target: climbers' bearing book
+  outcomes:
+  - name: the-bearing-holds
+    summary: With the Ringer's tally and the tower's own bearing book in your satchel, the survey has its fixed point at last, and a measurement the Sovereigns cannot answer -- twenty-nine years counted from the one place in Nocturnis that holds still, and then no more counting at all.
+    default: true
+  - name: taken-under-his-hands
+    summary: You took the bearing while the Ringer was still standing over the rope, and it shows. The tally is proof of what he was, but the figures you carried home beside it are the figures of somebody writing with their back to something, and they are off by the width of a flinch.
+    default: false
+    when: out_of_order

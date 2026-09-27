@@ -1,0 +1,28 @@
+ESTIMATE: 1404 calls (351 lines x 4 reps x 1 model), about $0.265. Measured at 372 in / 20 out a call.
+Replaying 351 lines on mistralai/mistral-medium-3.1, 2 calls in flight (CONCURRENCY=).
+
+  mistralai/mistral-medium-3.1 first call 1.2s (excluded from the figures below)
+  mistralai/mistral-medium-3.1 rep 1 329/351 right (0.937), 16 misses, 0.75s median / 1.16s p95
+  mistralai/mistral-medium-3.1 rep 2 #<Thread:0x00007fb6cd8df708 ./lib/eval/concurrency.rb:122 run> terminated with exception (report_on_exception is true):
+./doc/evidence/seed-world-arcs-rebuy/run.rb:47:in 'block in ArcRebaselineSpend#ask': Task budget cannot reserve another request (0.4059 accounted) (ArcRebaselineSpend::Halt)
+	from ./doc/evidence/seed-world-arcs-rebuy/run.rb:23:in 'block in ArcRebaselineSpend.edit'
+	from ./doc/evidence/seed-world-arcs-rebuy/run.rb:19:in 'IO.open'
+	from ./doc/evidence/seed-world-arcs-rebuy/run.rb:19:in 'ArcRebaselineSpend.edit'
+	from ./doc/evidence/seed-world-arcs-rebuy/run.rb:45:in 'ArcRebaselineSpend#ask'
+	from ./app/agents/BaseAgent.rb:316:in 'BaseAgent#ask'
+	from ./app/models/playthrough/classifier.rb:554:in 'Playthrough::Classifier#ask_the_model'
+	from ./app/models/playthrough/classifier.rb:356:in 'Playthrough::Classifier#classify'
+	from ./lib/eval/classifier/bench.rb:521:in 'Eval::Classifier::Bench#read'
+	from ./lib/eval/classifier/bench.rb:494:in 'block in Eval::Classifier::Bench#play'
+	from ./lib/eval/concurrency.rb:124:in 'block (2 levels) in Eval::Concurrency.fan'
+./doc/evidence/seed-world-arcs-rebuy/run.rb:47:in 'block in ArcRebaselineSpend#ask': Task budget cannot reserve another request (0.4059 accounted) (ArcRebaselineSpend::Halt)
+	from ./doc/evidence/seed-world-arcs-rebuy/run.rb:23:in 'block in ArcRebaselineSpend.edit'
+	from ./doc/evidence/seed-world-arcs-rebuy/run.rb:19:in 'IO.open'
+	from ./doc/evidence/seed-world-arcs-rebuy/run.rb:19:in 'ArcRebaselineSpend.edit'
+	from ./doc/evidence/seed-world-arcs-rebuy/run.rb:45:in 'ArcRebaselineSpend#ask'
+	from ./app/agents/BaseAgent.rb:316:in 'BaseAgent#ask'
+	from ./app/models/playthrough/classifier.rb:554:in 'Playthrough::Classifier#ask_the_model'
+	from ./app/models/playthrough/classifier.rb:356:in 'Playthrough::Classifier#classify'
+	from ./lib/eval/classifier/bench.rb:521:in 'Eval::Classifier::Bench#read'
+	from ./lib/eval/classifier/bench.rb:494:in 'block in Eval::Classifier::Bench#play'
+	from ./lib/eval/concurrency.rb:124:in 'block (2 levels) in Eval::Concurrency.fan'
