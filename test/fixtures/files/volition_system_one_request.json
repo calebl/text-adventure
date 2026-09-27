@@ -42,7 +42,10 @@
     "person_1:pressure": {
       "type": "noul",
       "instructions": "How strongly is this person pressured toward what they will not face?",
-      "criteria": {}
+      "criteria": {
+        "true": "This person is pressured toward what they will not face.",
+        "false": "Nothing here presses this person toward what they will not face."
+      }
     }
   }
 }
