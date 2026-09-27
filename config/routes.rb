@@ -18,6 +18,16 @@ Rails.application.routes.draw do
     end
   end
 
+  # THE MODEL RELAY, drawn in every mode: OpenRouter's two routes under
+  # /relay/openrouter, for invited players and under their monthly cap. The
+  # paths are OpenRouter's own so a client changes only its base URL; see
+  # `Relay` for the design and `Relay::OpenrouterController` for the order of
+  # the checks.
+  scope "relay/openrouter", module: :relay, as: :relay, format: false do
+    post "api/v1/chat/completions", to: "openrouter#chat_completions", as: :chat_completions
+    post "api/alpha/decisions", to: "openrouter#decisions", as: :decisions
+  end
+
   # HOSTED, THAT IS ALL THERE IS: see `config.x.hosted_api_only` in
   # config/application.rb. Everything below is the browser's and the
   # maintainer's, and none of it has a login.

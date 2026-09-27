@@ -10,15 +10,17 @@
 # A player reaches only their own playthroughs (`playthroughs.player_id`);
 # worlds stay shared, and a room a player's turn realizes joins the world like
 # any other. What a player may spend is `monthly_limit_usd`, enforced by
-# `Player::Allowance` before a turn is accepted. Revoking keeps the row and its
-# receipts -- spend already metered must stay on the books -- and stops the
-# token authenticating.
+# `Player::Allowance` before a turn is accepted and before a call through the
+# model relay (`Relay`) is forwarded -- the same token opens both. Revoking
+# keeps the row and its receipts -- spend already metered must stay on the
+# books -- and stops the token authenticating.
 class Player < ApplicationRecord
   DEFAULT_MONTHLY_LIMIT_USD = BigDecimal("1")
 
   has_many :playthroughs, dependent: :restrict_with_exception
   has_many :chats, dependent: :restrict_with_exception
   has_many :system_one_receipts, dependent: :restrict_with_exception
+  has_many :relay_receipts, dependent: :restrict_with_exception
 
   validates :name, presence: true, uniqueness: true
   validates :token_digest, presence: true, uniqueness: true

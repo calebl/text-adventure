@@ -1,5 +1,6 @@
-# THE HOSTED MODE'S OUTER DOOR: a request for anything but the engine API or
-# the health check is answered 404 before it reaches a router.
+# THE HOSTED MODE'S OUTER DOOR: a request for anything but the engine API, the
+# model relay's two routes (`Relay`) or the health check is answered 404 before
+# it reaches a router.
 #
 # config/routes.rb already draws nothing else when `config.x.hosted_api_only`
 # is on, and this is the second lock, because the app's own routes are not the
@@ -9,7 +10,7 @@
 # served. What passes is decided by the path alone, so it cannot depend on how
 # any of those frameworks happens to be configured.
 class HostedApiOnly
-  ALLOWED = %r{\A/(api/v1(/|\z|\.json\z)|up\z)}
+  ALLOWED = %r{\A/(api/v1(/|\z|\.json\z)|relay/openrouter/api/(v1/chat/completions|alpha/decisions)\z|up\z)}
 
   NOT_FOUND = [ 404, { "content-type" => "application/json" },
                 [ { error: { code: "not_found", message: "There is nothing here by that id." } }.to_json ] ].freeze

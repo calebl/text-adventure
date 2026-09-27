@@ -35,7 +35,8 @@ module TextAdventure
     config.api_only = false
 
     # THE HOSTED MODE SERVES THE ENGINE API AND NOTHING ELSE. With
-    # `TA_HOSTED_API_ONLY=1`, config/routes.rb draws only `/api/v1` and `/up`:
+    # `TA_HOSTED_API_ONLY=1`, config/routes.rb draws only `/api/v1`, the model
+    # relay's two routes under `/relay/openrouter` and `/up`:
     # the browser play page has no login, and debug, map, lab and machinery are
     # windows into every game, so none of them may be reachable from a hosted
     # instance. Action Cable is not mounted either -- it only ever carried the
