@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 8.1.0"
+gem "rails", "~> 8.1.4"
 # Use sqlite3 as the database for Active Record
 gem "sqlite3", ">= 2.1"
 # Use the Puma web server [https://github.com/puma/puma]
@@ -72,11 +72,11 @@ gem "ruby_llm", "~> 2.0"
 # classes are deliberately migrated; `test/models/ruby_llm_schema_envelope_test.rb`
 # guards the provider-visible request shape. See `.github/dependabot.yml` for
 # why the major-version update is not hidden from Dependabot.
-gem "ruby_llm-schema", "~> 0.2"
+gem "ruby_llm-schema", "~> 1.0"
 
 gem "open_router", "~> 0.3.3"
 
-gem "async", "~> 2.27"
+gem "async", "~> 2.46"
 
 # Hotwire, zero build step. `propshaft` serves digested assets with no
 # compilation, `importmap-rails` maps bare module names to those assets in the
