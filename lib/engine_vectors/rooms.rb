@@ -43,6 +43,12 @@ module EngineVectors::Rooms
                           { "name" => "flask of gin", "use_kind" => "drink" }, { "name" => "crowbar", "use_kind" => "lever" },
                           { "name" => "old letter", "combustible" => true } ] }.freeze
 
+  # The position `test/fixtures/files/scored_classifier_request.json` was sent
+  # for: the design of record's own stored System One request.
+  SCORED = { protagonist: "Iri Calder", exits: [ "The Supply Closet", "The Long Hallway" ],
+             cast: [ [ "Perrin Lasco", "Perrin" ], [ "Halkett Rowe", "Sub-Inspector Rowe" ] ],
+             lying: [ "filing press", "ward stamp" ], carried: [ "Ward Office 12 daybook" ] }.freeze
+
   WORLDS = {
     "office" => world(8_001, **OFFICE),
     "office_register" => world(8_002, **OFFICE, lying: [ "ward stamp", "ward register" ]),
@@ -58,7 +64,8 @@ module EngineVectors::Rooms
     "physical" => world(8_011, **PHYSICAL),
     "empty" => world(8_012),
     "castless" => world(8_013, protagonist: nil, **OFFICE),
-    "nowhere" => world(8_014, here: nil, exits: [], cast: [], lying: [], carried: [ "Ward Office 12 daybook" ])
+    "nowhere" => world(8_014, here: nil, exits: [], cast: [], lying: [], carried: [ "Ward Office 12 daybook" ]),
+    "scored" => world(8_015, **SCORED)
   }.freeze
 
   def self.build!(name) = EngineVectors::Room.build!(WORLDS.fetch(name))

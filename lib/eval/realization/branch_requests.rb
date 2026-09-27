@@ -47,7 +47,9 @@ module Eval::Realization::BranchRequests
                "#{JSON.pretty_generate({ request_identity: identity(requests), requests: requests })}\n")
   end
 
-  def offline(corpus = Eval::Realization.corpus)
+  # A block is handed each case with its stage still open, after its request
+  # is built -- the rows it was built from, for a caller that keeps them.
+  def offline(corpus = Eval::Realization.corpus, &inside)
     previous = RubyLLM.config.openrouter_api_key
     RubyLLM.config.openrouter_api_key ||= "offline-request-identity"
     Eval::Classifier::Arm.parse(BaseAgent::REMOTE_MODEL_IDS.first).pinned do
@@ -57,7 +59,9 @@ module Eval::Realization::BranchRequests
           retrying = kase.staging.key?("retry_detail")
           schema = retrying ? Location::ExitsSchema : generator.detail_schema
           prompt = retrying ? generator.exits_prompt : generator.detail_prompt
-          [ kase.id, canonical(request(generator, schema, prompt)) ]
+          built = canonical(request(generator, schema, prompt))
+          inside&.call(kase, built)
+          [ kase.id, built ]
         end
       end
     end

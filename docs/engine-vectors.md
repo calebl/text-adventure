@@ -4,8 +4,9 @@
 for each portion (the dice, a stat block, a spot in a room, a population, a
 room's danger, a building's parameters, box geometry, an interior's layout,
 a shuffle of doorways, a world mechanic's boundaries, a deadline's anchor, the
-seeded cast draws, and the reading of a typed line) a list of cases, each with
-named inputs and the exact output this Ruby code gives for them.
+seeded cast draws, the reading of a typed line, and the requests built for a
+model) a list of cases, each with named inputs and the exact output this Ruby
+code gives for them.
 
 ## The line-reading portions
 
@@ -32,6 +33,38 @@ export stops if the two readings disagree.
 No prompt text is copied into these files. The words a System One request
 carries are `config/engine/playthrough/classifier/request.yml`, and the
 `cascade` portion records only each question's id, type and options.
+
+## The request-building portions
+
+Eight portions pin what the engine hands a model, byte for byte, still without
+calling one:
+
+| Portion | What it records |
+| --- | --- |
+| `classifier_request` | `Playthrough::Classifier::State` and `Request`: the whole System One request for a typed line, every instruction and criterion as sent, in the rooms the line-reading portions stand in -- including the position `test/fixtures/files/scored_classifier_request.json` was sent for |
+| `volition_request` | `Playthrough::Volition::SystemOne#request`, built on `Volition::State`: the room written in `test/fixtures/files/volition_system_one_request.json`, reproduced exactly, and rooms of sweep scripts |
+| `moment` | `Playthrough::Moment`: the narration context (with and without the floor plan and the arc, with a thing just taken or dropped, with each of the story's endings) and every other person's character context |
+| `ledger` | `Playthrough::Ledger#recall` for everybody in games inside and past both of its bounds |
+| `memory` | `Playthrough::Memory#recall`, `#resolution` and `#recollection`, and the moment's conclusions and recollections built on them |
+| `plan` | `Location::Plan` for every room of built worlds and laid-out places |
+| `request_identity` | RubyLLM's `to_json_schema` output for every schema a request carries, and `Eval::RequestIdentity`'s canonical form and 16-hex digest -- including the classifier and prompt sets `rake eval:classifier_digest` and `rake eval:prompt_digest` identify |
+| `kept_requests` | literal requests stored in kept evaluation sets under `db/eval/` (arrival, realization, dialogue), rebuilt by today's builders |
+
+These builders read many tables at once, so their cases do not describe a
+room field by field. A case builds its records, runs the builder, and writes
+down every row the database then holds as its `records` input: a second
+implementation loads those rows into the same schema and must give the same
+output. `lib/engine_vectors/records.rb` documents the shape. Where a moment is
+worth recording, the game reaches it itself: a sweep script is played offline
+through the engine and stopped after a chosen step
+(`lib/engine_vectors/walked.rb`), so the blows, tolls and acts in it were
+written by the engine's own statements.
+
+The prompt text in these outputs is `config/engine/`, read by the Ruby
+builders; the vectors record what those builders make of it. The export stops
+if a fixture or a kept request is no longer reproduced -- the scored classifier
+request is compared with the one deliberate `examine` edit applied that its own
+test names.
 
 ## What they are for
 
@@ -82,6 +115,8 @@ short:
 A seed that can exceed 2^53 (in `roll.json`) is a decimal string; a System
 One reading (in `cascade.json`) is a JSON number between 0 and 1; every other
 number is a JSON integer. A time is whole seconds since the Unix epoch, UTC.
+A case whose input is `records` holds rows as `lib/engine_vectors/records.rb`
+writes them; a case that shares another's rows names it in `records_of`.
 
 Adding a portion means a module under `lib/engine_vectors/` with `SOURCES`,
 `NOTES`, `.constants_table` and `.cases` (or `.contents`, answering both at

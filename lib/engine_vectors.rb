@@ -37,7 +37,10 @@
 #
 # A seed that can pass 2**53 is written as a decimal string; a System One
 # reading is a JSON number between 0 and 1; every other number is a JSON
-# integer. A time is whole seconds since the Unix epoch, UTC.
+# integer. A time is whole seconds since the Unix epoch, UTC. The portions
+# that pin a builder reading many tables take `records`, the rows the
+# database held (`EngineVectors::Records`), or `records_of`, the name of the
+# case whose rows they share.
 module EngineVectors
   FORMAT = "engine-vectors".freeze
   FORMAT_VERSION = 1
@@ -62,7 +65,15 @@ module EngineVectors
     "slash_menu" => "EngineVectors::SlashMenu",
     "classifier_intent" => "EngineVectors::ClassifierIntent",
     "cascade" => "EngineVectors::Cascade",
-    "refusal" => "EngineVectors::Refusal"
+    "refusal" => "EngineVectors::Refusal",
+    "classifier_request" => "EngineVectors::ClassifierRequest",
+    "moment" => "EngineVectors::Moment",
+    "volition_request" => "EngineVectors::VolitionRequest",
+    "ledger" => "EngineVectors::Ledger",
+    "memory" => "EngineVectors::Memory",
+    "plan" => "EngineVectors::Plan",
+    "request_identity" => "EngineVectors::RequestIdentity",
+    "kept_requests" => "EngineVectors::KeptRequests"
   }.freeze
 
   # EVERY PORTION'S FILE CONTENTS, keyed by file name. Needs a database with
