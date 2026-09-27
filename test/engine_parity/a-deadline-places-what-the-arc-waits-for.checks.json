@@ -1,0 +1,46 @@
+{
+  "script": "a-deadline-places-what-the-arc-waits-for",
+  "doctor": {
+    "headline": "playable, 1 warning",
+    "findings": [
+      [
+        "character_in_a_stub",
+        "warning",
+        "Warden Hesk is in \"where Warden Hesk is room 4\", which nobody has written yet. The room realizes when somebody walks in, and its description is written without knowing he is there",
+        "manual"
+      ]
+    ]
+  },
+  "audit": {
+    "headline": "4 scenes: 2 contradictions, 0 defects, 0 drifts, 0 still turns",
+    "flags": [
+      [
+        "unreachable_transition",
+        1000000003,
+        "the player got from \"Cold Store\" to \"Wash House\" with no edge between them",
+        {
+          "from": "Cold Store",
+          "to": "Wash House",
+          "edge out": "missing",
+          "edge back": "missing",
+          "exits from Cold Store": "Yard",
+          "at": "2026-09-12T06:02:00.000Z"
+        }
+      ],
+      [
+        "unreachable_transition",
+        1000000004,
+        "the player got from \"Wash House\" to \"Byre\" with no edge between them",
+        {
+          "from": "Wash House",
+          "to": "Byre",
+          "edge out": "missing",
+          "edge back": "missing",
+          "exits from Wash House": "Yard",
+          "at": "2026-09-12T06:03:00.000Z"
+        }
+      ]
+    ],
+    "unjudged": []
+  }
+}

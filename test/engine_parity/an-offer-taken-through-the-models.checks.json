@@ -1,0 +1,37 @@
+{
+  "script": "an-offer-taken-through-the-models",
+  "doctor": {
+    "headline": "unplayable: \"The Silent Bell\" has 3 beat(s) and not one of them names a row this world contains, so there is nothing in it to walk toward. The engine places an unbound target itself once 3 room(s) have been written (`Quest::Deadline`); a world past that with nothing bound is one that has stopped growing",
+    "findings": [
+      [
+        "quest_step_unbound",
+        "warning",
+        "\"The Silent Bell\" step 1 waits for \"brass censer\" (hold_item) and this world has no such thing. This file declares no such row, so the arc names something the world file does not contain",
+        "manual"
+      ],
+      [
+        "quest_step_unbound",
+        "warning",
+        "\"The Silent Bell\" step 2 waits for \"Brother Anselm\" (speak_to) and this world has no such person. This file declares no such row, so the arc names something the world file does not contain",
+        "manual"
+      ],
+      [
+        "quest_step_unbound",
+        "warning",
+        "\"The Silent Bell\" step 3 waits for \"the Bell Tower\" (reach_location) and this world has no such place. This file declares no such row, so the arc names something the world file does not contain",
+        "manual"
+      ],
+      [
+        "story_cannot_progress",
+        "fatal",
+        "\"The Silent Bell\" has 3 beat(s) and not one of them names a row this world contains, so there is nothing in it to walk toward. The engine places an unbound target itself once 3 room(s) have been written (`Quest::Deadline`); a world past that with nothing bound is one that has stopped growing",
+        "manual"
+      ]
+    ]
+  },
+  "audit": {
+    "headline": "3 scenes, nothing to report",
+    "flags": [],
+    "unjudged": []
+  }
+}
