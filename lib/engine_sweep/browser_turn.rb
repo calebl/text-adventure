@@ -141,16 +141,24 @@ class EngineSweep::BrowserTurn
     end
     expected_calls = replies.map { |reply| reply.fetch("purpose") }
     raised = false
+    # THE SAME REPLIES, FOR THE RUST ENGINE, which asks its models through a
+    # replay of its own rather than through `BaseAgent` (see
+    # `Playthrough::RustEngine.replaying`). Inert when the Ruby engine plays.
+    replayed = nil
     outcome = without_provider(calls, replies: replies.dup, prompt_failures: prompt_failures) do
-      interrupt_after(step.browser["interrupt_after"]) do
-        Playthrough::Session.new(game).play(step.typed, request_token: step.browser.fetch("token"))
+      Playthrough::RustEngine.replaying(replies, stop_after: step.browser["interrupt_after"]) do
+        interrupt_after(step.browser["interrupt_after"]) do
+          Playthrough::Session.new(game).play(step.typed, request_token: step.browser.fetch("token"))
+        end
+      ensure
+        replayed = Playthrough::RustEngine.replayed
       end
-    rescue WorkerStopped
+    rescue WorkerStopped, Playthrough::RustEngine::Stopped
       raise unless step.browser["interrupt_after"]
 
       raised = true
       nil
-    rescue RenderingUnavailable
+    rescue RenderingUnavailable, Playthrough::RustEngine::ProviderUnavailable
       raise unless step.browser["raises"]
 
       raised = true
@@ -159,10 +167,17 @@ class EngineSweep::BrowserTurn
     if (step.browser["raises"] || step.browser["interrupt_after"]) && !raised
       raise EngineSweep::ModelCalled, "browser step expected an unavailable provider to interrupt submission"
     end
-    raise EngineSweep::ModelCalled, prompt_failures.join("; ") if prompt_failures.any?
+    if replayed
+      # The Rust engine played the turn and checked its own replay, the
+      # declared order and every prompt's includes and excludes, as the agents
+      # above check them for the Ruby engine.
+      raise EngineSweep::ModelCalled, replayed["unfinished"] if replayed["unfinished"]
+    else
+      raise EngineSweep::ModelCalled, prompt_failures.join("; ") if prompt_failures.any?
 
-    unless calls == expected_calls
-      raise EngineSweep::ModelCalled, "browser step expected #{expected_calls.inspect} rendering calls, got #{calls.inspect}"
+      unless calls == expected_calls
+        raise EngineSweep::ModelCalled, "browser step expected #{expected_calls.inspect} rendering calls, got #{calls.inspect}"
+      end
     end
 
     game.reload

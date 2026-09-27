@@ -64,3 +64,54 @@ jobs:
           RAILS_ENV: test
           # REDIS_URL: redis://localhost:6379/0
         run: bin/rails db:test:prepare test
+
+  # THE RUST ENGINE'S GATES. The only job that needs a Rust toolchain: it builds
+  # the extension (`bin/rails engine:build`) and holds the Rust engine to the
+  # Ruby one on every sweep script. No provider key is set in this job, and no
+  # step makes a model call.
+  rust_engine:
+    runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: test
+      TA_ENGINE: rust
+    steps:
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y curl libjemalloc2 libvips sqlite3 libclang-dev
+
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache the Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ext/renderedstep -> target
+
+      - name: Lint the extension
+        working-directory: ext/renderedstep
+        run: cargo fmt --check && cargo clippy --release --locked -- -D warnings
+
+      - name: Build the extension
+        run: bin/rails engine:build
+
+      - name: Prepare the test database
+        run: bin/rails db:test:prepare
+
+      - name: "Gates: every sweep script matches its golden, the invariants hold, the doctor and audit match the Ruby-played twin"
+        run: bin/rails engine:rust_gates
+
+      - name: "Gate: the golden vectors and the kept-set request equality, at the pinned engine commit"
+        run: bin/rails engine:kept_requests
+
+      - name: The switch's own tests, with the extension loaded
+        run: bin/rails test test/lib/rust_engine_extension_test.rb test/models/playthrough/rust_engine_test.rb test/models/playthrough/rust_engine/turn_test.rb test/models/playthrough/session_test.rb

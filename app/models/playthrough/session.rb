@@ -171,9 +171,13 @@ class Playthrough::Session
   # header). `on_error` receives a raised error after it has been told, for a
   # front end that has to know the turn's own ending was already delivered.
   # Returns the turn's outcome.
+  #
+  # WHICH ENGINE PLAYS IT is decided here and nowhere else: with
+  # `TA_ENGINE=rust` the whole turn is handed to the Rust engine, and a turn it
+  # hands back plays on the Ruby engine below, from the same journal. Both
+  # engines answer through the same callbacks and the same `Ending`; see
+  # `Playthrough::RustEngine`.
   def play(line, request_token: nil, on_start: nil, on_finish: nil, on_error: nil, &block)
-    turn = Playthrough::Turn.new(playthrough)
-    completion = ->(outcome) { on_finish&.call(ending(outcome, turn)) }
     failure = lambda do |error|
       told = self.class.ending_for(error, playthrough_id: playthrough.id)
       on_finish&.call(told) if told
@@ -181,8 +185,19 @@ class Playthrough::Session
     end
     # Every call this turn makes is spent on the game's player; see `Current`.
     Current.set(player: playthrough.player, playthrough: playthrough) do
+      if Playthrough::RustEngine.wanted?
+        rust = Playthrough::RustEngine::Turn.new(playthrough)
+        played = rust.play(line, request_token: request_token, on_start: on_start,
+                                 on_finish: ->(outcome) { on_finish&.call(ending(outcome, rust)) },
+                                 on_error: failure, &block)
+        next played unless played.equal?(Playthrough::RustEngine::Turn::HANDED_BACK)
+
+        playthrough.reload
+      end
+
+      turn = Playthrough::Turn.new(playthrough)
       turn.play(line, request_token: request_token, on_start: on_start,
-                on_finish: completion, on_error: failure, &block)
+                on_finish: ->(outcome) { on_finish&.call(ending(outcome, turn)) }, on_error: failure, &block)
     end
   end
 

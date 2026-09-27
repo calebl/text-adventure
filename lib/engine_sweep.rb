@@ -132,6 +132,12 @@ module EngineSweep
   # `.configured?` is forced to answer NO for the length of the run so the
   # keyless path is what a sweep walks unless a script says otherwise.
   #
+  # AND A THIRD, THE RUST ENGINE, which asks its models from inside the
+  # extension and never through either class. The only way its turn reaches a
+  # live model is a models document built from the environment, so building
+  # one fails the sweep too; a browser step hands it a replay instead
+  # (`Playthrough::RustEngine.replaying`).
+  #
   # The originals are put back in an `ensure`, including when a script raises, so
   # a failing sweep does not leave a poisoned class behind for the rest of a test
   # run.
@@ -139,6 +145,7 @@ module EngineSweep
     original = BaseAgent.method(:new)
     typed = SystemOneAgent.method(:new)
     switch = SystemOneAgent.method(:configured?)
+    guard = Playthrough::RustEngine.live_models_guard
 
     BaseAgent.singleton_class.send(:define_method, :new) do |*_args, **options, &_block|
       raise ModelCalled, "a sweep asked for a model (BaseAgent.new#{options.any? ? " #{options.inspect}" : ""}); " \
@@ -148,11 +155,15 @@ module EngineSweep
       raise ModelCalled, "a sweep asked for a System One provider; the engine sweep is offline by definition"
     end
     SystemOneAgent.singleton_class.send(:define_method, :configured?) { false }
+    Playthrough::RustEngine.live_models_guard = lambda do
+      raise ModelCalled, "a sweep handed the Rust engine a live model; the engine sweep is offline by definition"
+    end
 
     yield
   ensure
     BaseAgent.singleton_class.send(:define_method, :new, original)
     SystemOneAgent.singleton_class.send(:define_method, :new, typed)
     SystemOneAgent.singleton_class.send(:define_method, :configured?, switch)
+    Playthrough::RustEngine.live_models_guard = guard
   end
 end

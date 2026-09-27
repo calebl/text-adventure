@@ -104,6 +104,64 @@ module EngineSweep::Parity
     def on_file(file, &) = EngineSweep::Parity.on_database(file) { EngineSweep.without_a_model(&) }
   end
 
+  # THE SHARED-DATABASE MODE, IN THIS PROCESS. The runner's half is exactly
+  # `Command`'s -- a scratch copy of this database, the world prepared on it
+  # and committed, every `reseed:` step played here -- and every typed step is
+  # `EngineSweep::Walk#play_step` on that file, with nothing held open between
+  # steps. `engine` says which engine plays them: `:ruby`, or `:rust`, which is
+  # the Rust engine through its extension -- the typed steps through
+  # `EngineSweep::RustMechanics`, the browser steps through
+  # `Playthrough::Session` with the switch on. So a Rust walk plays through
+  # the same seam the front ends do, and a turn that silently fell back to Ruby
+  # would be a turn nobody tested: `fallbacks` counts them, and a step that
+  # had one fails.
+  class InProcess
+    attr_reader :engine
+
+    def initialize(engine)
+      @engine = engine
+    end
+
+    def name = "#{engine} (in process)"
+
+    def play(script) = Dir.mktmpdir("engine-parity") { |directory| play_in(directory, script).dumps }
+
+    Played = Data.define(:dumps, :file, :walk)
+
+    # Plays `script` on a scratch copy in `directory`, and keeps the file for
+    # whoever wants to read what the engine wrote there.
+    def play_in(directory, script)
+      file = File.join(directory, "#{script.name}.#{engine}.sqlite3")
+      EngineSweep::Parity.copy_database!(file)
+      walk = EngineSweep::Walk.new(script, engine: engine)
+      on_file(file) { walk.prepare! }
+      dumps = script.steps.map do |step|
+        on_file(file) { step.reseed? ? walk.reseed_step(step) : played(script, step) { walk.play_step(step) } }
+          .then { |dump| JSON.parse(dump.to_h.to_json) }
+      end
+      Played.new(dumps: dumps, file: file, walk: walk)
+    end
+
+    def on_file(file, &block)
+      EngineSweep::Parity.on_database(file) do
+        EngineSweep.without_a_model { Playthrough::RustEngine.using(engine, &block) }
+      end
+    end
+
+    private
+
+    def played(script, step)
+      before = Playthrough::RustEngine.fallbacks
+      dump = yield
+      fell = Playthrough::RustEngine.fallbacks.select { |reason, count| count > before.fetch(reason, 0) }
+      if engine == :rust && fell.any?
+        raise EngineSweep::InvalidScript, "#{script.name} #{step.label}: the turn fell back to Ruby (#{fell.keys.join(", ")})"
+      end
+
+      dump
+    end
+  end
+
   # A copy of the database this process is connected to, written to `file` with
   # SQLite's backup: every table, row and counter as last committed. Refuses to
   # write over the database itself.

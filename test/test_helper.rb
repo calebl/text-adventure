@@ -35,6 +35,10 @@ ENV["RAILS_ENV"] ||= "test"
 #   RELAY_OPENROUTER_API_KEY   `Relay.configured?` is the whole of the model
 #                              relay's switch; the relay tests set a fake key
 #                              themselves and stub the upstream.
+#   TA_ENGINE                  `Playthrough::RustEngine.wanted?`: with `rust`
+#                              every turn a test plays is offered to the Rust
+#                              engine first. The switch's own tests set it
+#                              themselves (`Playthrough::RustEngine.using`).
 #
 # It takes TWO passes, and the second one is not belt-and-braces. `dotenv-rails`
 # is in the `:development, :test` group, so it loads `.env` while
@@ -51,7 +55,7 @@ ENV["RAILS_ENV"] ||= "test"
 declare_environment = lambda do
   %w[
     OPENROUTER_API_KEY OPENROUTER_MODEL TA_DEBUG_VIEW
-    TA_CHAT_KEEP_TURNS TA_CHAT_HISTORY_EXCHANGES TYPESAFE_API_KEY RELAY_OPENROUTER_API_KEY
+    TA_CHAT_KEEP_TURNS TA_CHAT_HISTORY_EXCHANGES TYPESAFE_API_KEY RELAY_OPENROUTER_API_KEY TA_ENGINE
   ].each { |key| ENV.delete(key) }
 end
 

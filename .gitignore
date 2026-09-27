@@ -43,3 +43,7 @@
 /doc/evidence/**/*.sqlite3.gz
 /doc/evidence/**/*.sqlite3.meta.json
 /doc/evidence/**/*.sqlite3.gz.meta.json
+
+# The Rust engine extension: built by `bin/rails engine:build`, never checked in.
+/ext/renderedstep/target
+/ext/renderedstep/build

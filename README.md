@@ -139,7 +139,9 @@ watches an empty cursor and the turn lands in silence.
 There is still no Node, no `package.json` and no build step. `propshaft` serves
 `app/javascript` as it sits on disk, `importmap-rails` lets the browser resolve
 the module names itself, and foreman is a process runner rather than a build
-step — deliberately outside the Gemfile, installed on demand by `bin/dev`.
+step — deliberately outside the Gemfile, installed on demand by `bin/dev`. The
+one optional build is the Rust engine's extension, which nothing needs unless
+you ask for it ([The Rust engine](#the-rust-engine)).
 
 ### Use things and open passages
 
@@ -504,6 +506,66 @@ classifier off, a defect in how a *model* read the line is out of reach and stay
 pinned by `Playthrough::ClassifierTest`. See `lib/engine_sweep.rb` and
 `lib/engine_sweep/scripts/regressions-2026-09-03.yml`, which walks the evening
 that produced all of this and says defect by defect how far the walk gets.
+
+## The Rust engine
+
+The same game has a second engine, written in Rust:
+[renderedstep/engine](https://github.com/renderedstep/engine) (MIT OR
+Apache-2.0), which plays the same rules and the same dice over this app's SQLite
+schema. With `TA_ENGINE=rust`, `Playthrough::Session` hands it each whole turn
+through a native extension, so the browser, the `/api/v1` API and anything else
+that plays through the session play on Rust, while Turbo, the labs, the
+benches, the doctor, repair, seeding and every backfill stay Ruby on the same
+database.
+
+**Ruby is the default and the fallback.** Without the variable nothing changes,
+and the default `bundle install` needs no Rust toolchain: the extension is not
+a gem and is not in the Gemfile. It is a crate in `ext/renderedstep` that
+depends on the engine at one pinned commit (`ext/renderedstep/Cargo.toml`), and
+it is built only when you build it:
+
+```bash
+bin/rails engine:build          # cargo build, into ext/renderedstep/build/ (gitignored)
+TA_ENGINE=rust bin/dev          # every turn is offered to the Rust engine
+ENGINE_SOURCE=../engine bin/rails engine:build   # against a local checkout of the engine instead
+```
+
+It needs cargo and libclang. With the switch on, a turn still plays on Ruby
+whenever Rust cannot take it: the extension is not built or does not load, the
+line has no request token, `TA_LOCAL_MODELS` is set (the local rotation exists
+only in Ruby), a transaction is open, or the engine answers with an engine
+error (a schema it is not written against, a rule it does not play yet, a
+database failure, a panic it caught). A turn the engine started is handed back
+the way a stopped worker leaves it, and the Ruby engine finishes it from the
+same journal. Every fallback is logged, counted in the process
+(`Playthrough::RustEngine.fallbacks`) and published as `fallback.rust_engine`.
+A model failure is not a fallback: it is how the turn ended, and the player is
+told what the Ruby engine would tell them. The Rust engine's model calls use
+the credentials the Ruby engine uses — `OPENROUTER_API_KEY` as its Direct route,
+`OPENROUTER_MODEL`, and the System One keys — and neither side logs them.
+`app/models/playthrough/rust_engine.rb` says all of this at the source.
+
+**The gates**, all offline and all run by CI's `rust_engine` job, which is the
+only job that builds the extension:
+
+```bash
+unset OPENROUTER_API_KEY TYPESAFE_API_KEY
+RAILS_ENV=test bin/rails db:test:prepare
+RAILS_ENV=test TA_ENGINE=rust bin/rails engine:rust_gates   # SCRIPT=<name> for one
+bin/rails engine:kept_requests
+```
+
+`engine:rust_gates` plays every sweep script through the extension, one step
+at a time on a scratch copy of the test database, and a Ruby-played twin of it
+beside it. It fails when a step's dump differs from its golden
+(`test/engine_parity/`), when a step fell back to Ruby, when an
+`EngineSweep::Invariants` check breaks on the database Rust wrote, or when
+`Story::Doctor` or `Story::Audit` says anything different about the two
+databases. `engine:kept_requests` runs the engine's own vector tests, at the
+pinned commit, against this checkout's `test/engine_vectors/`: every pure rule
+and request builder, and every kept-set request sent through the engine's live
+client with nothing sent anywhere. Moving the pin is a change of its own, made
+when these pass on the new commit.
 
 ## How a turn works
 

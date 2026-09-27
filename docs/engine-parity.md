@@ -77,6 +77,20 @@ whole-script contract above is unchanged and stays the default.
 `test/support/per_step_engine.rb` is an engine of this shape made of the Ruby
 engine, and `test/lib/engine_parity_test.rb` plays every script through it.
 
+## In process
+
+`EngineSweep::Parity::InProcess` runs the shared-database contract without a
+subprocess: this side prepares the file and plays the re-seeds as above, and
+each typed step is `EngineSweep::Walk#play_step` on the file, played by the
+engine it was built with. `:ruby` is the Ruby engine; `:rust` is the Rust
+engine through its extension (`Playthrough::RustEngine`), which plays a typed
+step with `EngineSweep::RustMechanics` and a browser step through
+`Playthrough::Session` with the switch on, answering its providers from the
+step's `replies`. A Rust step that fell back to Ruby fails. The dump is built
+by Ruby from the rows the engine wrote. `bin/rails engine:rust_gates`
+(`EngineSweep::RustGates`) plays every script both ways and holds the Rust
+walk to the goldens, the invariants, and the doctor and audit of the Ruby walk.
+
 ## Commands
 
 ```bash

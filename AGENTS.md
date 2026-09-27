@@ -108,12 +108,16 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
   object and typed questions rather than messages, so it is `BaseAgent`'s
   counterpart and not a kind of it — one provider per file, and neither is ever
   bypassed. Its header has the key, the failure policy and why an absent key is
-  not an error.
+  not an error. The one other caller is the opt-in Rust engine
+  (`TA_ENGINE=rust`), which makes a turn's calls itself under a port of the
+  same policy; `app/models/playthrough/rust_engine.rb` says how.
 - **Genuinely zero build step.** `propshaft` + `importmap-rails` +
   `turbo-rails`; no Node, no `package.json`, no watch process.
   `jsbundling-rails`, `cssbundling-rails`, esbuild, Vite and any npm dependency
   are explicitly refused. **If something appears to need one, that is a reason
-  to reconsider the something; stop and ask.**
+  to reconsider the something; stop and ask.** The one approved exception is
+  the Rust engine's extension (`ext/renderedstep`, `bin/rails engine:build`),
+  which is opt-in: the default install builds nothing.
 - **Do not bind port 3000.** A long-lived development server may already use it.
   `PORT=3142 bin/dev` moves the whole formation; check a port is free before
   taking it, and never kill anything to free one.
