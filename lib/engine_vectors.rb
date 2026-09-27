@@ -1,11 +1,12 @@
 # GOLDEN VECTORS: THE ENGINE'S PURE RULES, WRITTEN DOWN AS INPUTS AND ANSWERS.
 #
 # Every file under `DIRECTORY` holds one portion of the engine -- the dice, a
-# box's geometry, an interior's layout -- as a list of cases, each a set of
-# named inputs and the exact output this Ruby code gives for them. A second
-# implementation of the same rules (a port to another language) is tested by
-# reading these files and reproducing every output. So the files are a
-# contract, and `docs/engine-vectors.md` says how to use and change them.
+# box's geometry, an interior's layout, the reading of a typed line -- as a
+# list of cases, each a set of named inputs and the exact output this Ruby
+# code gives for them. A second implementation of the same rules (a port to
+# another language) is tested by reading these files and reproducing every
+# output. So the files are a contract, and `docs/engine-vectors.md` says how
+# to use and change them.
 #
 # THE FILES ARE GENERATED, NEVER HAND-EDITED. `rake engine:vectors` writes
 # them and `test/lib/engine_vectors_test.rb` regenerates them in memory and
@@ -34,8 +35,9 @@
 #             (a table is a list of [key, value] pairs, so key order is kept)
 #   cases     one object per line: { "name", "input", "output" }
 #
-# A seed that can pass 2**53 is written as a decimal string; every other
-# number is a JSON integer. A time is whole seconds since the Unix epoch, UTC.
+# A seed that can pass 2**53 is written as a decimal string; a System One
+# reading is a JSON number between 0 and 1; every other number is a JSON
+# integer. A time is whole seconds since the Unix epoch, UTC.
 module EngineVectors
   FORMAT = "engine-vectors".freeze
   FORMAT_VERSION = 1
@@ -54,7 +56,13 @@ module EngineVectors
     "shuffle_connections" => "EngineVectors::Shuffle",
     "world_mechanic" => "EngineVectors::Boundaries",
     "deadline" => "EngineVectors::Deadline",
-    "cast" => "EngineVectors::Cast"
+    "cast" => "EngineVectors::Cast",
+    "grammar" => "EngineVectors::Grammar",
+    "grammar_corpus" => "EngineVectors::GrammarCorpus",
+    "slash_menu" => "EngineVectors::SlashMenu",
+    "classifier_intent" => "EngineVectors::ClassifierIntent",
+    "cascade" => "EngineVectors::Cascade",
+    "refusal" => "EngineVectors::Refusal"
   }.freeze
 
   # EVERY PORTION'S FILE CONTENTS, keyed by file name. Needs a database with
@@ -63,15 +71,18 @@ module EngineVectors
     PORTIONS.to_h { |portion, builder| [ "#{portion}.json", render(document(portion, builder.constantize)) ] }
   end
 
+  # A portion whose tables and cases come out of one piece of work answers
+  # `.contents` as [constants, cases] instead of the two separately.
   def self.document(portion, builder)
+    constants, cases = builder.respond_to?(:contents) ? builder.contents : [ builder.constants_table, builder.cases ]
     {
       "format" => FORMAT,
       "version" => FORMAT_VERSION,
       "portion" => portion,
       "sources" => builder::SOURCES,
       "notes" => builder::NOTES,
-      "constants" => builder.constants_table,
-      "cases" => builder.cases
+      "constants" => constants,
+      "cases" => cases
     }
   end
 
