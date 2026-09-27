@@ -132,6 +132,14 @@ module Roll
   # what keeps where somebody is standing and what they decide to do from being
   # the same number twice.
   VOLITION = 7
+  # WHO A GENERATED PERSON IS BEFORE THE MODEL WRITES THEM
+  # (`Character::Generator`): race, age, sex and the other predetermined
+  # details. Its identity is WHICH STORY AND HOW MANY PEOPLE IT ALREADY HAS --
+  # a count on the `sequence` axis that every kind-0 roll also counts on, so a
+  # kind of its own keeps the next person's details from being some check's
+  # die. A realized room's cast is not this kind: it draws from the room's own
+  # `Location::Danger.generator_for`, after the `monstrous?` throws.
+  CAST = 8
 
   # THE SEED, FROM FIVE INTEGERS AND NOTHING ELSE. Public because it is the part
   # worth asserting on its own: `RollTest` pins that the same inputs give the

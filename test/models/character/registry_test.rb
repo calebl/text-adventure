@@ -706,4 +706,44 @@ class Character::RegistryTest < ActiveSupport::TestCase
       Character::Registry::SHEET.to_h { |field| [ field.to_s, "a #{field} line" ] }
     )
   end
+
+  # THE SAME ROOM REALIZES THE SAME CAST. Race, age and sex are drawn from the
+  # room's own seeded generator, so building the same world twice -- each in a
+  # transaction rolled back, so the second reuses the first's ids -- gives the
+  # same people, where Kernel's unseeded dice used to give different ones.
+  test "the same room realized twice draws the same race, age and sex" do
+    casts = 2.times.map do
+      cast = nil
+      ActiveRecord::Base.transaction(requires_new: true) do
+        story = create(:story)
+        create(:race, :monstrous, universe: story.universe)
+        room = create(:location, :dangerous, story: story, name: "The Sump")
+        cast = Location::Population.stub(:count_for, Location::Population::MOST) do
+          Character::Registry.new(room).slots.map { |slot| [ slot[:race].id, slot[:age], slot[:sex] ] }
+        end
+        raise ActiveRecord::Rollback
+      end
+      cast
+    end
+
+    assert_equal Location::Population::MOST, casts.first.size
+    assert_equal casts.first, casts.last
+  end
+
+  # THE `monstrous?` THROWS COME FIRST, every slot's before any race, age or
+  # sex is drawn, so whether a slot is a monster is exactly what the room's
+  # generator gave it before those draws were seeded from it too.
+  test "the monstrous throws are the room generator's first draws" do
+    create(:race, :monstrous, universe: @story.universe)
+    rooms = 12.times.map { |n| create(:location, :dangerous, story: @story, name: "Chamber #{n}") }
+
+    Location::Population.stub(:count_for, Location::Population::MOST) do
+      rooms.each do |room|
+        rng = Location::Danger.generator_for(room)
+        expected = Array.new(Location::Population::MOST) { Location::Danger.monstrous?(room, rng: rng) }
+
+        assert_equal expected, Character::Registry.new(room).slots.map { |slot| slot[:race].monstrous? }
+      end
+    end
+  end
 end

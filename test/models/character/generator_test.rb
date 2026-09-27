@@ -279,4 +279,15 @@ class Character::GeneratorTest < ActiveSupport::TestCase
     assert_includes player.character_generation_prompt, "This is the PLAYER CHARACTER"
     assert_not_includes ordinary.character_generation_prompt, "PLAYER CHARACTER"
   end
+
+  # THE SAME WORLD WRITES THE SAME PERSON: every predetermined detail is drawn
+  # from a generator seeded on the story and its cast, so the prompt -- which
+  # states all of them -- comes out byte for byte the same.
+  test "the same story draws the same race, age, sex and prompt twice" do
+    first = Character::Generator.new(@story, protagonist: true)
+    second = Character::Generator.new(@story.reload, protagonist: true)
+
+    assert_equal [ first.race, first.age, first.sex ], [ second.race, second.age, second.sex ]
+    assert_equal first.character_generation_prompt, second.character_generation_prompt
+  end
 end
