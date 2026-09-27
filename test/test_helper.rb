@@ -65,6 +65,13 @@ declare_environment.call
 # `test/models/chat_test.rb`).
 RubyLLM.config.openrouter_api_key = nil
 
+# THE SUITE PLAYS THE RUBY TURN LOOP, the parity reference, by default: almost
+# every test runs inside a transaction the Rust engine, on a connection of its
+# own, could neither see into nor write past. The Rust engine's own tests ask
+# for it (`Playthrough::RustEngine.using(:rust)`), and `bin/rails
+# engine:rust_gates` holds it to this loop. See `Playthrough::RustEngine`.
+Playthrough::RustEngine.reference_by_default!
+
 require "rails/test_help"
 require "minitest/mock"
 require_relative "support/fake_agent"

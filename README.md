@@ -8,13 +8,19 @@ persist — walk back into a room and it is the room you left.
 
 ```bash
 bundle install
+bin/rails engine:build   # the Rust engine, which plays every turn: needs cargo and libclang
 bin/rails db:prepare
 ```
+
+`bin/setup` does all three. **A Rust toolchain is required**
+([rustup](https://rustup.rs), plus libclang: `libclang-dev` on Debian and
+Ubuntu, `clang` on Arch, the Xcode command line tools on macOS), because every
+turn is played by the Rust engine; see [The Rust engine](#the-rust-engine).
 
 Generation needs a model. Either:
 
 * **Local** — run `ollama serve` and pull the models listed in
-  `BaseAgent::LOCAL_MODEL_OPTIONS` — **off unless `TA_LOCAL_MODELS=1`**. Free, but 40–90 seconds per structured call, and a slow local answer is worse than a loud failure.
+  `BaseAgent::LOCAL_MODEL_OPTIONS` — **off unless `TA_LOCAL_MODELS=1`**. Free, but 40–90 seconds per structured call, and a slow local answer is worse than a loud failure. World building, the benches and the labs only: the Rust engine plays turns on the hosted rotation.
 * **Hosted (preferred)** — set `OPENROUTER_API_KEY`, in a gitignored `.env`
   (loaded by `dotenv-rails`) or a gitignored `.envrc` (loaded by direnv). Much
   faster, and `BaseAgent` prefers it automatically when the key is present. Defaults to `mistralai/mistral-medium-3.1`, falling back to
@@ -139,7 +145,9 @@ watches an empty cursor and the turn lands in silence.
 There is still no Node, no `package.json` and no build step. `propshaft` serves
 `app/javascript` as it sits on disk, `importmap-rails` lets the browser resolve
 the module names itself, and foreman is a process runner rather than a build
-step — deliberately outside the Gemfile, installed on demand by `bin/dev`.
+step — deliberately outside the Gemfile, installed on demand by `bin/dev`. The
+one build is the Rust engine's extension, which plays every turn
+([The Rust engine](#the-rust-engine)).
 
 ### Use things and open passages
 
@@ -504,6 +512,70 @@ classifier off, a defect in how a *model* read the line is out of reach and stay
 pinned by `Playthrough::ClassifierTest`. See `lib/engine_sweep.rb` and
 `lib/engine_sweep/scripts/regressions-2026-09-03.yml`, which walks the evening
 that produced all of this and says defect by defect how far the walk gets.
+
+## The Rust engine
+
+Every turn is played by the Rust engine,
+[renderedstep/engine](https://github.com/renderedstep/engine) (MIT OR
+Apache-2.0): the same rules and the same dice over this app's SQLite schema.
+`Playthrough::Session` hands it each whole turn through a native extension, so
+the browser, the `/api/v1` API and anything else that plays through the session
+play on Rust, while Turbo, the labs, the benches, the doctor, repair, seeding
+and every backfill stay Ruby on the same database.
+
+**The extension is required to play, and so is a Rust toolchain to build it.**
+It is not a gem and not in the Gemfile: it is a crate in `ext/renderedstep`
+that depends on the engine at one pinned commit (`ext/renderedstep/Cargo.toml`,
+with `Cargo.lock` committed), built into `ext/renderedstep/build/`, which is
+gitignored. `bin/setup` builds it, `bin/update` rebuilds it whenever the crate
+moved in what it pulled, and the Dockerfile builds it in its build stage, so
+the image itself carries no toolchain.
+
+```bash
+bin/rails engine:build          # cargo build --release --locked, then into ext/renderedstep/build/
+PORT=3142 bin/dev               # play; restart after a rebuild
+ENGINE_SOURCE=../engine bin/rails engine:build   # against a local checkout of the engine instead
+```
+
+**There is no fallback.** A turn the engine cannot play fails, in the engine's
+own words, as the turn's failure notice; it is logged, counted in the process
+(`Playthrough::RustEngine.failures`), published as `failure.rust_engine`, and
+never played again on Ruby. That covers an extension that is not built or does
+not load, and every engine error: a schema it is not written against, a rule it
+does not play yet, a database failure, a panic it caught. A model failure is
+not an engine error; the player is told what they have always been told (the
+crisis notice, the setup notice, the failure copy). The engine's model calls
+use the credentials the app uses: `OPENROUTER_API_KEY` as its Direct route,
+`OPENROUTER_MODEL`, and the System One keys; neither side logs them. The local
+rotation (`TA_LOCAL_MODELS`) is not the engine's, so it never reaches a turn.
+`app/models/playthrough/rust_engine.rb` says all of this at the source.
+
+**The Ruby turn loop is the parity reference.** `Playthrough::Turn` is still in
+the code because the gates below judge the Rust engine against it, and the
+engine sweep and the test suite exercise it; the suite plays it by default
+because its tests run inside a transaction the engine, on its own connection,
+could not see into. No setting turns it on for a player.
+
+**The gates**, all offline and all run by CI's `rust_engine` job:
+
+```bash
+unset OPENROUTER_API_KEY TYPESAFE_API_KEY
+RAILS_ENV=test bin/rails db:test:prepare
+RAILS_ENV=test bin/rails engine:rust_gates   # SCRIPT=<name> for one
+bin/rails engine:kept_requests
+```
+
+`engine:rust_gates` plays every sweep script through the extension, one step
+at a time on a scratch copy of the test database, and a twin of it on the Ruby
+reference beside it. It fails when a step's dump differs from its golden
+(`test/engine_parity/`), when the engine could not play a step, when an
+`EngineSweep::Invariants` check breaks on the database Rust wrote, or when
+`Story::Doctor` or `Story::Audit` says anything different about the two
+databases. `engine:kept_requests` runs the engine's own vector tests, at the
+pinned commit, against this checkout's `test/engine_vectors/`: every pure rule
+and request builder, and every kept-set request sent through the engine's live
+client with nothing sent anywhere. Moving the pin is a change of its own, made
+when these pass on the new commit.
 
 ## How a turn works
 

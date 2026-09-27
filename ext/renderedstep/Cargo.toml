@@ -1,0 +1,26 @@
+[package]
+name = "renderedstep-native"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+description = "The Rust engine as a Ruby extension: Playthrough::Session hands it a whole turn"
+license = "MIT"
+publish = false
+
+[lib]
+name = "renderedstep_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+magnus = { version = "0.9", features = ["rb-sys"] }
+rb-sys = "0.9"
+serde_json = { version = "1", features = ["preserve_order"] }
+# The engine, pinned to one commit of its public repository. `bin/rails
+# engine:build` builds against exactly this; moving the pin is a change of
+# its own, with the parity gates run again (README, "The Rust engine").
+renderedstep-engine = { git = "https://github.com/renderedstep/engine", rev = "036f96965240612cf4ce8c3baffc21a01e955f3a" }
+
+[profile.release]
+# A panic must unwind so the engine's own catch_unwind can turn it into an
+# error value; `abort` would take the Ruby process down with it.
+panic = "unwind"

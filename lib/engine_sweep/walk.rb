@@ -46,9 +46,15 @@ class EngineSweep::Walk
   # `EngineSweep::Dump` -- the records the step's expectation was checked
   # against, written down whole. It observes and never steers: the walk plays
   # and asserts exactly as it does without one (`EngineSweep::Parity`).
-  def initialize(script, on_step: nil)
+  #
+  # `engine: :rust` plays the typed steps through the Rust engine
+  # (`EngineSweep::RustMechanics`). Only the one-step-at-a-time mode below can,
+  # because the Rust engine writes on its own connection and `#play` holds a
+  # transaction open for the whole walk.
+  def initialize(script, on_step: nil, engine: :ruby)
     @script = script
     @on_step = on_step
+    @engine = engine
   end
 
   # Returns an `EngineSweep::Result`. Raises only on a broken script or a model
@@ -61,7 +67,7 @@ class EngineSweep::Walk
     # `requires_new` because this may be called from inside the suite's own
     # transaction, where a plain nested `transaction` shares its parent and
     # `ActiveRecord::Rollback` silently does nothing at all.
-    ActiveRecord::Base.transaction(requires_new: true) do
+    on_the_reference do
       pin_ids!
       story = load_world!
       games = {}
@@ -111,8 +117,15 @@ class EngineSweep::Walk
     load_world!
   end
 
+  # A declared realization joins `#loaded` here as it does in `#walk`, so the
+  # invariants can be checked after a walk played this way too -- by a walk
+  # that prepared the file itself. One made for a single step (a command
+  # engine's) has loaded nothing to add it to.
   def play_step(step)
-    report, counts = measure(engine_for(game_of(step.player)), step)
+    mechanics = engine_for(game_of(step.player))
+    realization = before_realization(mechanics.playthrough.story, step) if @loaded
+    report, counts = measure(mechanics, step)
+    record_realization!(realization) if realization
     EngineSweep::Dump.new(report, **counts)
   end
 
@@ -120,6 +133,9 @@ class EngineSweep::Walk
     note = reseed!(step.renames)
     EngineSweep::Dump.new(engine_for(game_of(step.player)).read(note: note), drifts: 0)
   end
+
+  # The world file as last loaded, which the invariants are checked against.
+  def loaded = @loaded
 
   # A player's playthrough, found on the database rather than in memory: the
   # players get playthroughs in the order they first appear, so the n-th
@@ -131,6 +147,13 @@ class EngineSweep::Walk
   end
 
   private
+
+  # THE RUBY TURN LOOP, the parity reference, in one transaction: a whole walk
+  # is rolled back, and the Rust engine could not play inside it.
+  # `EngineSweep::Parity::InProcess` is how a script plays on Rust.
+  def on_the_reference(&)
+    Playthrough::RustEngine.using(:ruby) { ActiveRecord::Base.transaction(requires_new: true, &) }
+  end
 
   def walk(mechanics, step)
     realization = before_realization(mechanics.playthrough.story, step)
@@ -264,7 +287,9 @@ class EngineSweep::Walk
     end
   end
 
-  def engine_for(game) = EngineSweep::Conversation.new(game, model: false)
+  def engine_for(game)
+    @engine == :rust ? EngineSweep::RustMechanics.new(game) : EngineSweep::Conversation.new(game, model: false)
+  end
 
   # The same `WorldSeed::Loader` call `bin/rails db:seed` makes, over the copy
   # this walk has been playing. What it reconciled and what it warned about

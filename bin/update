@@ -9,7 +9,7 @@
 # database still needed. `lib/update.rb` is that list, in the repo, in
 # dependency order; this is the command that runs it.
 #
-#   bin/update              pull, install, migrate, apply, reseed, report
+#   bin/update              pull, install, build the engine, migrate, apply, reseed, report
 #   bin/update --dry-run    fetch and say what WOULD happen. Writes nothing --
 #                           not the pull, not the migration, not a row.
 #   bin/update --skip-pull  "I already pulled, just apply."
@@ -223,6 +223,34 @@ if lockfile_moved || !satisfied
   end
 else
   say "unchanged and satisfied."
+end
+
+# ----------------------------------------------------------------------------
+# The Rust engine's extension, which plays every turn. Rebuilt when its crate
+# moved in the range (a new engine pin is a change there) or when there is no
+# built one to play with; silent otherwise.
+# ----------------------------------------------------------------------------
+
+section "THE RUST ENGINE"
+
+engine_moved =
+  if SKIP_PULL || OLD == TARGET
+    false
+  else
+    changed, = git("diff", "--name-only", OLD, TARGET, "--", "ext/renderedstep")
+    !changed.empty?
+  end
+engine_built = Dir[File.join(APP_ROOT, "ext/renderedstep/build/renderedstep_native.*")].any?
+
+if engine_moved || !engine_built
+  say engine_moved ? "the extension's crate moved in that range." : "the extension is not built yet."
+  if DRY_RUN
+    say "would run: bin/rails engine:build"
+  else
+    abort "\nbin/update: `bin/rails engine:build` failed; no turn can be played until it builds." unless loud("bin/rails", "engine:build")
+  end
+else
+  say "unchanged and built."
 end
 
 # ----------------------------------------------------------------------------

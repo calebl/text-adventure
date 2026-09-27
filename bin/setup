@@ -15,6 +15,11 @@ FileUtils.chdir APP_ROOT do
   puts "== Installing dependencies =="
   system("bundle check") || system!("bundle install")
 
+  # Every turn is played by the Rust engine, through this extension. It needs
+  # cargo and libclang; README.md ("The Rust engine") says why and how.
+  puts "\n== Building the Rust engine =="
+  system! "bin/rails engine:build"
+
   # puts "\n== Copying sample files =="
   # unless File.exist?("config/database.yml")
   #   FileUtils.cp "config/database.yml.sample", "config/database.yml"

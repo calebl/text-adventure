@@ -1,0 +1,7 @@
+# A Ruby extension on macOS resolves the interpreter's symbols when it is
+# loaded, not when it is linked.
+[target.aarch64-apple-darwin]
+rustflags = ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]
+
+[target.x86_64-apple-darwin]
+rustflags = ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]

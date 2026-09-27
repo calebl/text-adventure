@@ -43,3 +43,7 @@
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*
+
+# The Rust engine extension's build output (`bin/rails engine:build`); the image does not build it.
+/ext/renderedstep/target
+/ext/renderedstep/build

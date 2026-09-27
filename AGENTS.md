@@ -108,12 +108,16 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
   object and typed questions rather than messages, so it is `BaseAgent`'s
   counterpart and not a kind of it — one provider per file, and neither is ever
   bypassed. Its header has the key, the failure policy and why an absent key is
-  not an error.
+  not an error. The one other caller is the Rust engine, which plays every
+  turn and makes that turn's calls itself under a port of the same policy;
+  `app/models/playthrough/rust_engine.rb` says how.
 - **Genuinely zero build step.** `propshaft` + `importmap-rails` +
   `turbo-rails`; no Node, no `package.json`, no watch process.
   `jsbundling-rails`, `cssbundling-rails`, esbuild, Vite and any npm dependency
   are explicitly refused. **If something appears to need one, that is a reason
-  to reconsider the something; stop and ask.**
+  to reconsider the something; stop and ask.** The one approved exception is
+  the Rust engine's extension (`ext/renderedstep`, `bin/rails engine:build`),
+  which every turn is played through, so a checkout needs a Rust toolchain.
 - **Do not bind port 3000.** A long-lived development server may already use it.
   `PORT=3142 bin/dev` moves the whole formation; check a port is free before
   taking it, and never kill anything to free one.
@@ -151,7 +155,8 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
   `lib/engine_sweep/worlds/`.
 - **Restyling is `ta-api-iface`, a stage of its own** — do not do it in passing.
 - **The rake tasks build worlds; front ends play them and never build one.**
-  There is one turn loop, `Playthrough::Turn`, and one way into it, the
+  There is one turn loop, the Rust engine's (`Playthrough::RustEngine`;
+  `Playthrough::Turn` is the Ruby reference it is held to), and one way into it, the
   driver (`Playthrough::Session`): a front end hands it a
   line and a block and renders what it answers. A front end owns its layout,
   its input and its transport and nothing else — no dispatch, no prompt, no

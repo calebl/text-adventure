@@ -28,10 +28,15 @@ ENV RAILS_ENV="production" \
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
-# Install packages needed to build gems
+# Install packages needed to build gems, and the Rust engine's extension
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git pkg-config && \
+    apt-get install --no-install-recommends -y build-essential git pkg-config libclang-dev && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# The Rust toolchain, for the build stage only: the extension it builds links
+# nothing but libc, so the final image carries no toolchain.
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
 
 # Install application gems
 COPY Gemfile Gemfile.lock ./
@@ -44,6 +49,10 @@ COPY . .
 
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
+
+# Build the Rust engine's extension, which plays every turn, and drop the
+# compiler's working files so they are not copied into the image.
+RUN bin/rails engine:build && rm -rf ext/renderedstep/target
 
 # Precompile assets. propshaft compiles nothing and importmap downloads nothing,
 # so this needs no Node and installs none -- it copies the files in
