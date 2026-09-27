@@ -41,7 +41,14 @@ class NarrationJob < ApplicationJob
   # a time, which reads as prose arriving rather than as blocks landing.
   BATCH_SIZE = 20
 
-  def perform(playthrough_id, command, request_token = job_id)
+  # WHICH FRONT END IS WAITING. The browser listens on the cable; an API client
+  # tails the turn's event rows, which `Events` writes instead. One job, one
+  # call into the driver, two adapters -- the turn itself cannot tell them apart.
+  TRANSPORTS = %w[turbo events].freeze
+
+  def perform(playthrough_id, command, request_token = job_id, transport = "turbo")
+    return Events.new(playthrough_id, command, request_token).perform if transport == "events"
+
     playthrough = Playthrough.find(playthrough_id)
     buffer = +""
     handled_error = false
@@ -110,5 +117,75 @@ class NarrationJob < ApplicationJob
       locals: { playthrough: playthrough.reload, command: nil, error: ending.error,
                 safety_notice: ending.safety_notice, refusal: ending.refusal }
     )
+  end
+
+  # THE EVENT-ROW ADAPTER, for a turn an API client asked for. It writes what
+  # the protocol's events endpoint streams -- `started`, `prose` in the same
+  # batches the cable gets, `glance` when the engine's facts have changed by
+  # the time prose starts, and `finished` with the saved record -- as numbered
+  # `Playthrough::TurnEvent` rows on the turn's own command, so a client that
+  # drops its connection resumes from `Last-Event-ID`. What each event says is
+  # `Protocol::V1`'s; how the turn went is `Playthrough::Session`'s.
+  class Events
+    def initialize(playthrough_id, line, request_token)
+      @playthrough_id = playthrough_id
+      @line = line
+      @request_token = request_token
+      @buffer = +""
+      @finished = false
+    end
+
+    def perform
+      @playthrough = Playthrough.find(@playthrough_id)
+      @session = Playthrough::Session.new(@playthrough)
+      @command = @playthrough.commands.find_by!(request_token: @request_token, command: @line)
+      handled = false
+      @session.play(@line, request_token: @request_token, on_start: ->(_line) { start },
+                           on_finish: ->(ending) { finish(ending) },
+                           on_error: ->(_error) { handled = true }) { |chunk| prose(chunk) }
+    rescue StandardError => e
+      return if handled || @command.nil? || @finished
+
+      finish(Playthrough::Session.ending_for(e, playthrough_id: @playthrough_id))
+    end
+
+    private
+
+    def start
+      @opening = Protocol::V1.glance(reader.glance)
+      append("started", turn: Protocol::V1.id(@command), line: @line)
+    end
+
+    def prose(chunk)
+      unless @told_glance
+        @told_glance = true
+        now = Protocol::V1.glance(reader.glance)
+        append("glance", turn: Protocol::V1.id(@command), glance: now) if now != @opening
+      end
+      @buffer << chunk
+      flush if @buffer.length >= BATCH_SIZE
+    end
+
+    def flush
+      return if @buffer.empty?
+
+      append("prose", turn: Protocol::V1.id(@command), text: @buffer.dup)
+      @buffer.clear
+    end
+
+    def finish(ending)
+      return if @finished
+
+      @finished = true
+      flush
+      append("finished", Protocol::V1.finished(reader, @command, ending))
+    end
+
+    # A SECOND HOLD ON THE SAME GAME, for reading. `Session#glance` reloads the
+    # playthrough it holds, and the one the turn is playing must not be
+    # reloaded under it mid-turn.
+    def reader = Playthrough::Session.new(Playthrough.find(@playthrough_id))
+
+    def append(kind, data) = Playthrough::TurnEvent.append!(@command, kind, data.as_json)
   end
 end

@@ -40,10 +40,19 @@ class Playthrough::Session
     def self.plain = new(error: nil, safety_notice: false, refusal: nil)
   end
 
+  # WHERE A GAME STANDS BETWEEN TURNS, for a front end that is not looking at
+  # the log: whether it is over, whether a turn is still in hand, and the saved
+  # turn a player may have to resume or let go (`saved_turn`, a
+  # `Playthrough::Command`, and `saved_action`, `:resume` or `:acknowledge`
+  # or `:none` -- the same three states the play page draws).
+  Standing = Data.define(:over, :ended, :busy, :saved_turn, :saved_action)
+
   # STARTING A GAME, which is the protagonist's arrival in the story's first
   # realized room. A story that has neither cannot be played, and the answer is
   # a refusal with the remedy, never an invented room or an invented person.
-  def self.begin!(story)
+  # `player` files the game under whoever may play it over the API; the
+  # browser starts games that belong to nobody.
+  def self.begin!(story, player: nil)
     location = opening_location(story)
     return Start.new(playthrough: nil, refusal: no_opening_location_message(story)) if location.nil?
 
@@ -70,6 +79,7 @@ class Playthrough::Session
 
     playthrough = Playthrough.create!(
       story: story,
+      player: player,
       character: story.protagonist,
       current_location: location,
       current_scene: opening_scene(story, location)
@@ -135,11 +145,21 @@ class Playthrough::Session
   # line answers nil and writes nothing. The request token is what makes a
   # second submit of the same line a second turn rather than a redelivery of
   # the first; see `Playthrough::Command`.
+  #
+  # A GAME THAT BELONGS TO A PLAYER IS PAID FOR BEFORE IT IS PLAYED. The line is
+  # accepted only inside `Player::Allowance#admit!`, which raises
+  # `Player::Allowance::LimitReached` -- having written nothing and called
+  # nothing -- when one more turn would not fit this month's limit. This is
+  # the gate, and it is here, before the job that makes the model calls is
+  # ever enqueued.
   def accept!(line, request_token = nil)
     line = line.to_s.strip
     return nil if line.empty?
 
-    Playthrough::Command.accept!(playthrough, line, request_token.presence || SecureRandom.uuid)
+    token = request_token.presence || SecureRandom.uuid
+    return Playthrough::Command.accept!(playthrough, line, token) if playthrough.player.nil?
+
+    playthrough.player.allowance.admit! { Playthrough::Command.accept!(playthrough, line, token) }
   end
 
   # Plays a line through the one loop. `on_start` receives the line as the turn
@@ -157,8 +177,43 @@ class Playthrough::Session
       on_finish&.call(told) if told
       on_error&.call(error)
     end
-    turn.play(line, request_token: request_token, on_start: on_start,
-              on_finish: completion, on_error: failure, &block)
+    # Every call this turn makes is spent on the game's player; see `Current`.
+    Current.set(player: playthrough.player, playthrough: playthrough) do
+      turn.play(line, request_token: request_token, on_start: on_start,
+                on_finish: completion, on_error: failure, &block)
+    end
+  end
+
+  # WHERE THE GAME STANDS NOW; see `Standing`. Reads only.
+  def standing
+    playthrough.reload
+    saved = Playthrough::Command.resume_target(playthrough)
+    action =
+      if saved.nil? then nil
+      elsif saved.status == "running" && !saved.recoverable?
+        saved.journal.blank? ? :acknowledge : :none
+      else :resume
+      end
+    Standing.new(over: playthrough.over?,
+                 ended: (Playthrough::EndNotice.for(playthrough).sentence if playthrough.over?),
+                 busy: playthrough.commands.where(status: %w[pending running]).exists?,
+                 saved_turn: saved, saved_action: action)
+  end
+
+  # LETTING GO OF AN OLD INTERRUPTED TURN, which is the one thing a player may
+  # do to a turn that cannot be resumed. Pre-journal workers left no evidence
+  # from which to replay safely, so only an explicit acknowledgement closes
+  # one, retaining every saved effect. Taking the game's lock waits for any
+  # still-live worker; it cannot discard a recoverable command or a completed
+  # turn. Raises RecordNotFound for a command of another game.
+  def acknowledge_interruption!(command_id)
+    GameLock.synchronize("playthrough", playthrough.id) do
+      submission = playthrough.commands.find(command_id)
+      if submission.status == "running" && submission.journal.blank?
+        submission.update!(status: "failed", error_kind: "interruption_acknowledged")
+      end
+      submission
+    end
   end
 
   # WHAT THE SIDE PANELS SHOW NOW, and which verbs are open from here: a fresh

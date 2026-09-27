@@ -150,17 +150,22 @@ class Playthrough::SqlitePackage
       "scenes" => rows_by_id(connection, "scenes", scene_ids),
       "characters_scenes" => join_rows(connection, "characters_scenes", "scene_id", scene_ids),
       "interactions" => rows_where(connection, "interactions", "scene_id", scene_ids),
-      "playthroughs" => rows_by_id(connection, "playthroughs", [ playthrough.id ]),
+      "playthroughs" => without_player(rows_by_id(connection, "playthroughs", [ playthrough.id ])),
       "playthrough_tables" => PLAYTHROUGH_TABLES.to_h do |table|
         [ table, rows_where(connection, table, "playthrough_id", [ playthrough.id ]) ]
       end,
       "ruby_llm_models" => rows_by_id(connection, "ruby_llm_models", model_ids),
-      "chats" => rows_by_id(connection, "chats", chat_ids),
+      "chats" => without_player(rows_by_id(connection, "chats", chat_ids)),
       "messages" => rows_by_id(connection, "messages", message_ids),
       "ruby_llm_tool_calls" => polymorphic_rows(connection, "ruby_llm_tool_calls", "message", message_ids),
       "ruby_llm_usages" => usage_rows
     }
   end
+
+  # WHO PLAYED IS NOT EVIDENCE, and the players table is never packaged: a
+  # player row holds a token digest. So the reference is dropped rather than
+  # left pointing at a row the package does not contain.
+  def without_player(rows) = rows.map { |row| row.merge("player_id" => nil) }
 
   def message_ids_for(connection, chat_ids)
     return [] if chat_ids.empty?

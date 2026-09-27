@@ -71,6 +71,7 @@ require_relative "support/schema_assertions"
 require_relative "support/offline_exchange"
 require_relative "support/refusal_corpus_skeleton"
 require_relative "support/forkable_world"
+require_relative "support/protocol_v1"
 
 module ActiveSupport
   class TestCase

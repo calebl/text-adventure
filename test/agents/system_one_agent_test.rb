@@ -355,4 +355,35 @@ class SystemOneAgentTest < ActiveSupport::TestCase
   test "OpenRouter's published context ceiling is recorded beside the pin" do
     assert_equal 32_000, SystemOneAgent::OPENROUTER_CONTEXT_CEILING
   end
+
+  # --- the receipt -----------------------------------------------------------
+
+  test "every request writes its receipt before it is sent, filed under the current player" do
+    player = create(:player)
+    receipts_when_sent = nil
+    transport = lambda do |_request|
+      receipts_when_sent = SystemOneReceipt.count
+      body({ "intent" => CHOICE, "here" => NOUL }, extra: { "usage" => { "cost" => 0.005 } })
+    end
+    Current.set(player: player) { ask({ "intent" => CHOICE, "here" => NOUL }, transport: transport) }
+
+    assert_equal 1, receipts_when_sent
+    receipt = SystemOneReceipt.sole
+    assert_equal player, receipt.player
+    assert_equal BigDecimal("0.005"), receipt.cost_usd, "a reported cost above the constant raises the receipt"
+  end
+
+  test "a request that fails after sending keeps its receipt" do
+    assert_raises(SystemOneAgent::Unavailable) do
+      ask({}, transport: ->(_) { raise SystemOneAgent::Unavailable, "timed out" })
+    end
+    assert_equal SystemOneReceipt::COST_PER_REQUEST_USD, SystemOneReceipt.sole.cost_usd
+  end
+
+  test "a request refused before sending writes no receipt" do
+    assert_raises(SystemOneAgent::Unavailable) do
+      SystemOneAgent.new(transport: ->(_) { body({}) }).ask_questions(state: {}, questions: QUESTIONS)
+    end
+    assert_equal 0, SystemOneReceipt.count
+  end
 end

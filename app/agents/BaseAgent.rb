@@ -448,7 +448,8 @@ class BaseAgent
   # it saving the chat raises `RubyLLM::ModelNotFoundError` before anything is
   # asked.
   def build_chat
-    conversation = @initial_chat || Chat.new(purpose: purpose, playthrough: @playthrough, character: @character)
+    conversation = @initial_chat || Chat.new(purpose: purpose, playthrough: @playthrough, character: @character,
+                                                        player: Current.player)
     resuming = conversation.persisted?
     apply_model(conversation)
     # A killed attempt's prompt comes out first, so the history budget below
