@@ -231,6 +231,7 @@ module Eval
     lib/eval/script.rb
     lib/eval/transcript.rb
     lib/tasks/eval.rake
+    lib/eval/run_turn.rb
     script/eval_run.rb
     db/eval_baseline.json
     test/fixtures/files/eval_corpus.json

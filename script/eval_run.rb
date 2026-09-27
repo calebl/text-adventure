@@ -10,9 +10,17 @@
 # `item_not_held` and `reached_for_nothing` could not be run on it: you cannot
 # check prose against records you did not keep.
 #
-# Every turn goes through `Playthrough::Turn#play` as `NarrationJob` calls it --
-# classifier, then generator / narrator / InteractionAgent as the input dictates
-# -- against a per-run copy of `tmp/eval/base.sqlite3`.
+# Every turn goes through `Playthrough::Session#play`, as `NarrationJob` calls
+# it, so the Rust engine plays the whole turn through its native extension --
+# classifier, then generator / narrator / conversation as the input dictates --
+# against a per-run copy of `tmp/eval/base.sqlite3`. `Eval::RunTurn` is that
+# one call and what the turn is recorded as; the Ruby turn loop is the parity
+# reference and is never played here.
+#
+# THE ENGINE MAKES ITS MODEL CALLS IN RUST, so the probes below, which tap
+# `BaseAgent` and the Rails log, see only calls Ruby itself makes. A turn's
+# `calls`, `rotations` and `warnings` are what Ruby saw; the intent is read off
+# the scene the engine wrote (`Eval::RunTurn.intent_of`).
 #
 # TWO THINGS THIS CHANGES, and neither is in the app:
 #
@@ -55,7 +63,6 @@ BaseAgent.const_set(:LOCAL_MODEL_OPTIONS, [].freeze)
 module Probe
   CALLS = []
   ROTATIONS = []
-  INTENTS = []
   SINK = StringIO.new
 
   class << self
@@ -65,7 +72,6 @@ module Probe
   def self.reset_turn!
     CALLS.clear
     ROTATIONS.clear
-    INTENTS.clear
     self.sink_mark = SINK.string.length
   end
 
@@ -103,22 +109,6 @@ module AskProbe
 end
 BaseAgent.prepend(AskProbe)
 
-# WHAT THE CLASSIFIER DECIDED, recorded rather than inferred. The branch a turn
-# took is visible from its records; the intent it was given is not, and a `move`
-# that resolved to nothing looks identical to an `examine` from the outside.
-module IntentProbe
-  def classify(command)
-    intent = super
-    Probe::INTENTS << {
-      action: intent.action.to_s,
-      subject: intent.subject.respond_to?(:name) ? intent.subject.name : intent.subject&.fullname,
-      reached_for_nothing: intent.reached_for_nothing?
-    }
-    intent
-  end
-end
-Playthrough::Classifier.prepend(IntentProbe)
-
 # ------------------------------------------------------------------ the world
 script = Eval::Script.for(STORY_TITLE)
 script = script.first(TURN_LIMIT) if TURN_LIMIT
@@ -146,23 +136,17 @@ record = {
 
 script.turns.each_with_index do |spec, index|
   Probe.reset_turn!
-  scene = nil
-  failure = nil
   before = playthrough.current_location&.name
   drifts_before = playthrough.drifts.count
   started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-  begin
-    scene = Playthrough::Turn.new(playthrough).play(spec.command)
-  rescue BaseAgent::CrisisResponseError => error
-    failure = { kind: "crisis", shown: Playthrough::SafetyNotice::HEADING, error: "#{error.class}: #{error.message}" }
-  rescue => error
-    failure = { kind: "turn_failed", shown: Playthrough::TurnFailureNotice::MESSAGE, error: "#{error.class}: #{error.message}" }
-  end
+  played = Eval::RunTurn.play(playthrough, spec.command)
+  scene = played.scene
+  failure = played.failure
 
   elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
   playthrough.reload
-  intent = Probe::INTENTS.last
+  intent = played.intent
   acted = intent && %w[move talk take drop].include?(intent[:action]) && !intent[:reached_for_nothing]
 
   record[:turns] << {
@@ -175,7 +159,7 @@ script.turns.each_with_index do |spec, index|
     seconds: elapsed.round(3),
     failure: failure,
     drifts: playthrough.drifts.order(:id).offset(drifts_before).map { |drift| { action: drift.action, command: drift.command } },
-    intents: Probe::INTENTS.map(&:dup),
+    intents: [ intent ].compact,
     warnings: Probe.turn_warnings,
     calls: Probe::CALLS.map(&:dup),
     rotations: Probe::ROTATIONS.map(&:dup)
