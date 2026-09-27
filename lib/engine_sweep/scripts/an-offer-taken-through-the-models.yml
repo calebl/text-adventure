@@ -1,0 +1,61 @@
+# Offering a thing to somebody is a conversation with one more choice in it:
+# the person may accept the thing the player holds out, and only the engine
+# moves it (`Playthrough::NpcAction`). The sexton takes the cup, and turns
+# the letter down.
+story: A Bell Nobody Has Rung
+steps:
+- id: the-cup-in-hand
+  type: "/take pewter cup"
+  expect:
+    carrying:
+    - pewter cup
+- id: the-sexton-takes-the-cup
+  type: "/give pewter cup to Oda"
+  browser:
+    token: cup
+    replies:
+    - purpose: character
+      content:
+        pre_thought: A cup for the vestry.
+        pre_feeling: pleased
+        action: Oda takes the cup and tucks it under her arm.
+        post_thought: It will do for the holy water.
+        post_feeling: content
+        inner_resolution: I will put it back in the vestry.
+        engine_action: accept:1000000003
+      prompt_includes:
+      - "accept:1000000003: Accept the offered pewter cup from Ilse; it becomes yours."
+    - purpose: interaction-narration
+      content: Oda takes the cup from you and tucks it under her arm.
+  expect:
+    carrying: []
+    changed: true
+    note: completed
+- id: the-letter-in-hand
+  type: "/take sealed letter"
+  expect:
+    carrying:
+    - sealed letter
+- id: the-sexton-turns-the-letter-down
+  type: "/give sealed letter to Oda"
+  browser:
+    token: letter
+    replies:
+    - purpose: character
+      content:
+        pre_thought: That is not mine to open.
+        pre_feeling: wary
+        action: Oda shakes her head at the letter.
+        post_thought: Let the prior read his own letters.
+        post_feeling: firm
+        inner_resolution: I will not touch the prior's letters.
+        engine_action: none
+      prompt_includes:
+      - "accept:1000000004: Accept the offered sealed letter from Ilse; it becomes yours."
+    - purpose: interaction-narration
+      content: Oda shakes her head and will not take the letter.
+  expect:
+    carrying:
+    - sealed letter
+    changed: true
+    note: completed

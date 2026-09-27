@@ -1,0 +1,255 @@
+{
+  "script": "a-letter-read-for-the-first-time",
+  "story": "A Bell Nobody Has Rung",
+  "steps": [
+    {
+      "step": "step 1 the-first-reading-writes-the-words",
+      "player": "first",
+      "typed": "/read sealed letter",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Chapter Hall",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Gatehouse",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Lower Cloister",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "pewter cup"
+          },
+          {
+            "id": 1000000004,
+            "name": "sealed letter"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Oda"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "sealed letter",
+            "text": "Ring it at vespers, and not before. The rope is in the tower."
+          }
+        ],
+        "hp": 28,
+        "hp_of": {
+          "Oda": 14
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 12,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "examine -> sealed letter",
+        "resolved_by": "grammar",
+        "note": "first-reading: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "unbound",
+          "2": "unbound",
+          "3": "unbound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 5.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 the-second-reading-reads-the-record",
+      "player": "first",
+      "typed": "/read sealed letter",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Chapter Hall",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Gatehouse",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Lower Cloister",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "pewter cup"
+          },
+          {
+            "id": 1000000004,
+            "name": "sealed letter"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Oda"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "sealed letter",
+            "text": "Ring it at vespers, and not before. The rope is in the tower."
+          }
+        ],
+        "hp": 28,
+        "hp_of": {
+          "Oda": 14
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 12,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "examine -> sealed letter",
+        "resolved_by": "grammar",
+        "note": "second-reading: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "unbound",
+          "2": "unbound",
+          "3": "unbound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 5.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 another-game-reads-the-same-words (second)",
+      "player": "second",
+      "typed": "/read sealed letter",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Chapter Hall",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Gatehouse",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Lower Cloister",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000005,
+            "name": "pewter cup"
+          },
+          {
+            "id": 1000000006,
+            "name": "sealed letter"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Oda"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000006,
+            "name": "sealed letter",
+            "text": "Ring it at vespers, and not before. The rope is in the tower."
+          }
+        ],
+        "hp": 28,
+        "hp_of": {
+          "Oda": 14
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 12,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "examine -> sealed letter",
+        "resolved_by": "grammar",
+        "note": "another-reading: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "unbound",
+          "2": "unbound",
+          "3": "unbound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 5.0,
+        "shown": null
+      }
+    }
+  ]
+}
