@@ -1,0 +1,566 @@
+{
+  "script": "the-lunar-cartographer",
+  "story": "The Lunar Cartographer",
+  "steps": [
+    {
+      "step": "step 1 the-one-written-room",
+      "player": "first",
+      "typed": "stats",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Grenn's Boarding House, Room 3",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000004,
+            "name": "Larkspur Quarter rooftops",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "Mournwell Lane",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Grenn Ollivar"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {
+          "Grenn Ollivar": 6
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 into-the-lane",
+      "player": "first",
+      "typed": "go to Mournwell Lane",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Mournwell Lane",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Grenn's Boarding House, Room 3",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000005,
+            "name": "Sovereign's Circle",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Grenn Ollivar"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {
+          "Grenn Ollivar": 6
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Grenn's Boarding House, Room 3 -> Mournwell Lane (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Mournwell Lane",
+        "resolved_by": "grammar",
+        "note": "someone here: Grenn Ollivar walked out of Grenn's Boarding House, Room 3 to Mournwell Lane and is no longer in Grenn's Boarding House, Room 3.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 two-rooms-deep",
+      "player": "first",
+      "typed": "go to Sovereign's Circle",
+      "dump": {
+        "location": {
+          "id": 1000000005,
+          "name": "Sovereign's Circle",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Mournwell Lane",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Mournwell Lane -> Sovereign's Circle (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Sovereign's Circle",
+        "resolved_by": "grammar",
+        "note": "someone here: Grenn Ollivar walked out of Mournwell Lane to Grenn's Boarding House, Room 3 and is no longer in Mournwell Lane.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 the-rooftops-are-not-reachable-from-here",
+      "player": "first",
+      "typed": "go to the Larkspur Quarter rooftops",
+      "dump": {
+        "location": {
+          "id": 1000000005,
+          "name": "Sovereign's Circle",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Mournwell Lane",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no way out called \"to the Larkspur Quarter rooftops\". There is: Mournwell Lane",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 nothing-to-carry-in-this-world",
+      "player": "first",
+      "typed": "take the sextant",
+      "dump": {
+        "location": {
+          "id": 1000000005,
+          "name": "Sovereign's Circle",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Mournwell Lane",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no thing lying here called \"the sextant\". There is: nothing",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 nothing-in-the-hands-either",
+      "player": "first",
+      "typed": "drop",
+      "dump": {
+        "location": {
+          "id": 1000000005,
+          "name": "Sovereign's Circle",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Mournwell Lane",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "drop what? Carrying: nothing",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 back-out",
+      "player": "first",
+      "typed": "go to Mournwell Lane",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Mournwell Lane",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Grenn's Boarding House, Room 3",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000005,
+            "name": "Sovereign's Circle",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Sovereign's Circle -> Mournwell Lane (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Mournwell Lane",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 back-to-the-room-that-is-written",
+      "player": "first",
+      "typed": "go to Room 3",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Grenn's Boarding House, Room 3",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000004,
+            "name": "Larkspur Quarter rooftops",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "Mournwell Lane",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Grenn Ollivar"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {
+          "Grenn Ollivar": 6
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Mournwell Lane -> Grenn's Boarding House, Room 3",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Grenn's Boarding House, Room 3",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 the-rooftops-still-lead-two-ways",
+      "player": "first",
+      "typed": "go to the rooftops",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "Larkspur Quarter rooftops",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Grenn's Boarding House, Room 3",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000006,
+            "name": "The Celestial Spire",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Grenn's Boarding House, Room 3 -> Larkspur Quarter rooftops (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Larkspur Quarter rooftops",
+        "resolved_by": "grammar",
+        "note": "someone here: Grenn Ollivar walked out of Grenn's Boarding House, Room 3 to Mournwell Lane and is no longer in Grenn's Boarding House, Room 3.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

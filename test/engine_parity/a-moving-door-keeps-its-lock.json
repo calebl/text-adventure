@@ -1,0 +1,373 @@
+{
+  "script": "a-moving-door-keeps-its-lock",
+  "story": "A Lock in the Moving City",
+  "steps": [
+    {
+      "step": "step 1 open-the-door-before-midnight",
+      "player": "first",
+      "typed": "/unlock West Yard with workshop key",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Mobile Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Mobile Gallery",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "West Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "workshop key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "use -> West Yard",
+        "resolved_by": "grammar",
+        "note": "unlock: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 5.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 the-moved-door-is-still-locked-in-another-game (second)",
+      "player": "second",
+      "typed": "/move East Yard",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Mobile Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "East Yard",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Mobile Gallery",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000003,
+            "name": "workshop key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "The way to East Yard is locked. Open it before crossing or throwing anything through it. Nothing has changed.",
+        "understood": null,
+        "resolved_by": null,
+        "note": "first-swap-blocked: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 the-original-opening-follows-the-door",
+      "player": "first",
+      "typed": "/move East Yard",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "East Yard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Mobile Workshop",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "workshop key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> East Yard",
+        "resolved_by": "grammar",
+        "note": "cross-moved-door: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 the-return-direction-keeps-the-opening-too",
+      "player": "first",
+      "typed": "/move Mobile Workshop",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Mobile Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "East Yard",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Mobile Gallery",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "workshop key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Mobile Workshop",
+        "resolved_by": "grammar",
+        "note": "return-moved-door: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 the-bridge-crosses-the-next-hour",
+      "player": "first",
+      "typed": "/move Mobile Gallery",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Mobile Gallery",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Mobile Workshop",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "West Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "workshop key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Mobile Gallery",
+        "resolved_by": "grammar",
+        "note": "bridge: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 60.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 a-second-swap-still-does-not-unlock-the-other-game (second)",
+      "player": "second",
+      "typed": "/move West Yard",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Mobile Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Mobile Gallery",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "West Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000003,
+            "name": "workshop key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "The way to West Yard is locked. Open it before crossing or throwing anything through it. Nothing has changed.",
+        "understood": null,
+        "resolved_by": null,
+        "note": "second-swap-blocked: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

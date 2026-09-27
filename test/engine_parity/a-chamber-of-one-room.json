@@ -1,0 +1,224 @@
+{
+  "script": "a-chamber-of-one-room",
+  "story": "A Chamber of One Room",
+  "steps": [
+    {
+      "step": "step 1 up-into-the-shaft",
+      "player": "first",
+      "typed": "/move Maintenance Shaft",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Maintenance Shaft",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Cargo Deck",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Core Access Chamber",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Maintenance Shaft",
+        "resolved_by": "grammar",
+        "note": "into-the-shaft: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 3.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 up-into-the-chamber",
+      "player": "first",
+      "typed": "/move Core Access Chamber",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Core Access Chamber",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Maintenance Shaft",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Core Access Chamber",
+        "resolved_by": "grammar",
+        "note": "into-the-chamber: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 3.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 back-down-the-ladder",
+      "player": "first",
+      "typed": "/move Maintenance Shaft",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Maintenance Shaft",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Cargo Deck",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Core Access Chamber",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Maintenance Shaft",
+        "resolved_by": "grammar",
+        "note": "back-down: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 3.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 and-up-again",
+      "player": "first",
+      "typed": "/move Core Access Chamber",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Core Access Chamber",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Maintenance Shaft",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Core Access Chamber",
+        "resolved_by": "grammar",
+        "note": "up-again: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 3.0,
+        "shown": null
+      }
+    }
+  ]
+}

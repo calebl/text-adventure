@@ -1,0 +1,571 @@
+{
+  "script": "walking-in-off-the-quay",
+  "story": "The Landing Stair",
+  "steps": [
+    {
+      "step": "step 1 on-the-quay",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Quay",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Landing Stair House room 1",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 in-through-the-door",
+      "player": "first",
+      "typed": "go to The Landing Stair House room 1",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Landing Stair House room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Landing Stair House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Quay -> The Landing Stair House room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Landing Stair House room 1",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 along-the-ground-floor",
+      "player": "first",
+      "typed": "go to The Landing Stair House room 2",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "The Landing Stair House room 2",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Landing Stair House room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000006,
+            "name": "The Landing Stair House room 4",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Landing Stair House room 1 -> The Landing Stair House room 2 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Landing Stair House room 2",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 up-the-stairs",
+      "player": "first",
+      "typed": "go to The Landing Stair House room 4",
+      "dump": {
+        "location": {
+          "id": 1000000006,
+          "name": "The Landing Stair House room 4",
+          "detail": "stub"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Landing Stair House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000005,
+            "name": "The Landing Stair House room 3",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Landing Stair House room 5",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Landing Stair House room 2 -> The Landing Stair House room 4 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Landing Stair House room 4",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 along-the-floor-above",
+      "player": "first",
+      "typed": "go to The Landing Stair House room 5",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Landing Stair House room 5",
+          "detail": "stub"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000006,
+            "name": "The Landing Stair House room 4",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Landing Stair House room 4 -> The Landing Stair House room 5 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Landing Stair House room 5",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 back-to-the-stairwell",
+      "player": "first",
+      "typed": "go to The Landing Stair House room 4",
+      "dump": {
+        "location": {
+          "id": 1000000006,
+          "name": "The Landing Stair House room 4",
+          "detail": "stub"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Landing Stair House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000005,
+            "name": "The Landing Stair House room 3",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Landing Stair House room 5",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Landing Stair House room 5 -> The Landing Stair House room 4 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Landing Stair House room 4",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 down-the-stairs",
+      "player": "first",
+      "typed": "go to The Landing Stair House room 2",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "The Landing Stair House room 2",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Landing Stair House room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000006,
+            "name": "The Landing Stair House room 4",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Landing Stair House room 4 -> The Landing Stair House room 2 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Landing Stair House room 2",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 back-to-the-entry-room",
+      "player": "first",
+      "typed": "go to The Landing Stair House room 1",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Landing Stair House room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Landing Stair House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Landing Stair House room 2 -> The Landing Stair House room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Landing Stair House room 1",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 back-out-onto-the-quay",
+      "player": "first",
+      "typed": "go to The Quay",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Quay",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Landing Stair House room 1",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Landing Stair House room 1 -> The Quay",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Quay",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10 asking-for-the-building-lands-in-a-room-of-it",
+      "player": "first",
+      "typed": "go to The Landing Stair House",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Landing Stair House room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Landing Stair House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Quay -> The Landing Stair House room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Landing Stair House room 1",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

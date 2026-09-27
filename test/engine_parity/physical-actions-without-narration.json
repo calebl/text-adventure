@@ -1,0 +1,950 @@
+{
+  "script": "physical-actions-without-narration",
+  "story": "A Dose Beyond Two Doors",
+  "steps": [
+    {
+      "step": "step 1 begin-with-a-wound",
+      "player": "first",
+      "typed": "harm 15",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000006,
+            "name": "healing draught"
+          },
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000005,
+            "name": "travel ration"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 3,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "harmed: Cal unhurt -> badly hurt (3 of 18)",
+        "refused": false,
+        "offers": null,
+        "understood": "harm -> 15 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 eat-without-a-narrator",
+      "player": "first",
+      "typed": "/consume travel ration",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000006,
+            "name": "healing draught"
+          },
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 3,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "You consumed travel ration. It is gone from your possessions. You recovered 0 hit points.",
+        "refused": false,
+        "offers": null,
+        "understood": "use -> travel ration",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 take-the-dose",
+      "player": "first",
+      "typed": "/take healing draught",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000006,
+            "name": "healing draught"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 3,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: healing draught (was lying in Workshop, now carried by Cal)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> healing draught",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 drink-without-a-narrator",
+      "player": "first",
+      "typed": "/drink healing draught",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "You consumed healing draught. It is gone from your possessions. You recovered 8 hit points.",
+        "refused": false,
+        "offers": null,
+        "understood": "use -> healing draught",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 the-dose-is-spent",
+      "player": "first",
+      "typed": "/drink healing draught",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "These items and doorways offer no matching physical action. Nothing has changed. A Playthrough::Drift row was written.",
+        "understood": "use -> nothing",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 take-the-key",
+      "player": "first",
+      "typed": "/take brass key",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: brass key (was lying in Workshop, now carried by Cal)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> brass key",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 the-locked-door-rejects-a-throw",
+      "player": "first",
+      "typed": "/throw brass key at Storeroom",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "The way to Storeroom is locked. Open it before crossing or throwing anything through it. Nothing has changed.",
+        "understood": "throw -> brass key at Storeroom",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 the-locked-door-rejects-movement",
+      "player": "first",
+      "typed": "/move Storeroom",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "The way to Storeroom is locked. Open it before crossing or throwing anything through it. Nothing has changed.",
+        "understood": "move -> Storeroom",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 unlock-without-a-narrator",
+      "player": "first",
+      "typed": "/unlock Storeroom with brass key",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "You opened the way to Storeroom. You have not crossed it; you remain in Workshop.",
+        "refused": false,
+        "offers": null,
+        "understood": "use -> Storeroom",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10 cross-the-open-door",
+      "player": "first",
+      "typed": "/move Storeroom",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Storeroom",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "Loft",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000001,
+            "name": "Workshop",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Workshop -> Storeroom",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Storeroom",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 11 strength-three-cannot-force-the-jammed-door",
+      "player": "first",
+      "typed": "/force Loft",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Storeroom",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "Loft",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000001,
+            "name": "Workshop",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "use -> Loft",
+        "resolved_by": "grammar",
+        "note": "You tried to force open the jammed way to loft. strength -> 3 - 4 = -1, IMPOSSIBLE (no roll). The way remains closed; you stay here.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 12 the-failed-attempt-did-not-open-it",
+      "player": "first",
+      "typed": "/move Loft",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Storeroom",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "Loft",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000001,
+            "name": "Workshop",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "The way to Loft is jammed. Open it before crossing or throwing anything through it. Nothing has changed.",
+        "understood": "move -> Loft",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 13 the-open-door-permits-a-return",
+      "player": "first",
+      "typed": "/move Workshop",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Storeroom -> Workshop",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Workshop",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 14 a-second-game-keeps-its-supplies-and-locked-door (second)",
+      "player": "second",
+      "typed": "/move Storeroom",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000011,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000010,
+            "name": "healing draught"
+          },
+          {
+            "id": 1000000012,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000009,
+            "name": "travel ration"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "The way to Storeroom is locked. Open it before crossing or throwing anything through it. Nothing has changed.",
+        "understood": "move -> Storeroom",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

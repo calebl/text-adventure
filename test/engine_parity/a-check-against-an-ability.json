@@ -1,0 +1,1413 @@
+{
+  "script": "a-check-against-an-ability",
+  "story": "The Unrecorded Hour",
+  "steps": [
+    {
+      "step": "step 1 the-sheet-as-seeded",
+      "player": "first",
+      "typed": "stats",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 a-check-throws-one-die-at-the-score",
+      "player": "first",
+      "typed": "check strength",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "check -> strength",
+        "resolved_by": "engine_view",
+        "note": "check strength -> d20(11) <= 9 FAIL",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 the-penalty-comes-off-the-target",
+      "player": "first",
+      "typed": "check will 5",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "check -> will (penalty 5)",
+        "resolved_by": "engine_view",
+        "note": "check will -> d20(14) <= 10 FAIL",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 a-penalty-of-zero-is-the-plain-check",
+      "player": "first",
+      "typed": "check dexterity 0",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "check -> dexterity",
+        "resolved_by": "engine_view",
+        "note": "check dexterity -> d20(8) <= 11 PASS",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 an-ability-by-an-unambiguous-prefix",
+      "player": "first",
+      "typed": "check dex",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "check -> dexterity",
+        "resolved_by": "engine_view",
+        "note": "check dexterity -> d20(8) <= 11 PASS",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 and-not-by-a-fragment",
+      "player": "first",
+      "typed": "check ill",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "\"ill\" is not one of the three abilities. There is: strength, dexterity, will",
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 a-check-it-cannot-win-is-refused-and-not-rolled",
+      "player": "first",
+      "typed": "check strength 9",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "Odile Vance cannot do it at all: strength 9 less a penalty of 9 is 0, and no d20 comes up that low. No die was thrown.",
+        "understood": "check -> strength (penalty 9)",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 past-impossible-is-still-impossible",
+      "player": "first",
+      "typed": "check strength 12",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "Odile Vance cannot do it at all: strength 9 less a penalty of 12 is -3, and no d20 comes up that low. No die was thrown.",
+        "understood": "check -> strength (penalty 12)",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 no-ability-at-all-is-refused-with-the-three-there-are",
+      "player": "first",
+      "typed": "check",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "check what? `check <ability> [penalty]`, and an ability is: strength, dexterity, will",
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10 a-penalty-that-is-not-a-number-is-refused",
+      "player": "first",
+      "typed": "check will lots",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "a penalty is a whole number of points taken off the target, and \"lots\" is not one",
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 11 a-take-does-not-touch-the-sheet",
+      "player": "first",
+      "typed": "take the ward stamp",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: ward stamp (was lying in Ward Office 12, now carried by Odile Vance)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> ward stamp",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 12 a-move-does-not-touch-the-sheet",
+      "player": "first",
+      "typed": "go the supply closet",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Supply Closet",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Ward Office 12",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index"
+          },
+          {
+            "id": 1000000012,
+            "name": "copy-room apron"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index",
+            "text": "11 Frost — 0714/12 — closed, no query raised\n2 Thaw — 0902/12 — closed, no query raised\n19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open\nThis day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L."
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Ward Office 12 -> The Supply Closet",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Supply Closet",
+        "resolved_by": "grammar",
+        "note": "the story: Open the one door in this office nobody has audited in eleven years.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 13 harm-moves-the-condition-and-not-the-sheet",
+      "player": "first",
+      "typed": "harm 2",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Supply Closet",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Ward Office 12",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index"
+          },
+          {
+            "id": 1000000012,
+            "name": "copy-room apron"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index",
+            "text": "11 Frost — 0714/12 — closed, no query raised\n2 Thaw — 0902/12 — closed, no query raised\n19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open\nThis day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L."
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          }
+        ],
+        "hp": 16,
+        "hp_of": {},
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": true,
+        "change": "harmed: Odile Vance unhurt -> hurt (16 of 18)",
+        "refused": false,
+        "offers": null,
+        "understood": "harm -> 2 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 14 and-a-check-still-reads-the-world-after-being-hurt",
+      "player": "first",
+      "typed": "check will",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Supply Closet",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Ward Office 12",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index"
+          },
+          {
+            "id": 1000000012,
+            "name": "copy-room apron"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index",
+            "text": "11 Frost — 0714/12 — closed, no query raised\n2 Thaw — 0902/12 — closed, no query raised\n19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open\nThis day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L."
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          }
+        ],
+        "hp": 16,
+        "hp_of": {},
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "check -> will",
+        "resolved_by": "engine_view",
+        "note": "check will -> d20(14) <= 15 PASS",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 15 mend-is-the-mirror-and-the-sheet-is-still-the-file's",
+      "player": "first",
+      "typed": "mend 2",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Supply Closet",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Ward Office 12",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index"
+          },
+          {
+            "id": 1000000012,
+            "name": "copy-room apron"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index",
+            "text": "11 Frost — 0714/12 — closed, no query raised\n2 Thaw — 0902/12 — closed, no query raised\n19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open\nThis day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L."
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": true,
+        "change": "mended: Odile Vance hurt (16 of 18) -> unhurt",
+        "refused": false,
+        "offers": null,
+        "understood": "mend -> 2 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

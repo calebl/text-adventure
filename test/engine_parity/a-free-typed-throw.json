@@ -1,0 +1,200 @@
+{
+  "script": "a-free-typed-throw",
+  "story": "The Unrecorded Hour",
+  "steps": [
+    {
+      "step": "step 1 a-free-throw-at-scenery-is-refused",
+      "player": "first",
+      "typed": "throw the daybook at the window",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "Nothing was thrown: the Ward Office 12 daybook stays in your hands. A throw is aimed at somebody here or through a way out, and that did not resolve to either. Nothing has changed.",
+        "understood": null,
+        "resolved_by": null,
+        "note": "scenery: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 a-free-throw-at-somebody-here-is-played",
+      "player": "first",
+      "typed": "throw the ward stamp at Halkett Rowe",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "throw -> ward stamp",
+        "resolved_by": "model",
+        "note": "at-rowe: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 5.0,
+        "shown": null
+      }
+    }
+  ]
+}

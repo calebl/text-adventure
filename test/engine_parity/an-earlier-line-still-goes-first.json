@@ -1,0 +1,130 @@
+{
+  "script": "an-earlier-line-still-goes-first",
+  "story": "A Turn at the Gate",
+  "steps": [
+    {
+      "step": "step 1 a-later-job-cannot-overtake-an-earlier-line",
+      "player": "first",
+      "typed": "/move Courtyard",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Courtyard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Tower",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 44,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Courtyard",
+        "resolved_by": "grammar",
+        "note": "pickup: completed\ncrossing: completed",
+        "drifts": 0,
+        "blows": 2,
+        "hazards": 1,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 16.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 the-overtaken-job-finds-its-line-already-played",
+      "player": "first",
+      "typed": "/take red coin",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Courtyard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Tower",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 44,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "take -> red coin",
+        "resolved_by": "grammar",
+        "note": "pickup: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

@@ -42,8 +42,13 @@ class EngineSweep::Walk
 
   attr_reader :script
 
-  def initialize(script)
+  # `on_step`, when given, is called after every step with the step and its
+  # `EngineSweep::Dump` -- the records the step's expectation was checked
+  # against, written down whole. It observes and never steers: the walk plays
+  # and asserts exactly as it does without one (`EngineSweep::Parity`).
+  def initialize(script, on_step: nil)
     @script = script
+    @on_step = on_step
   end
 
   # Returns an `EngineSweep::Result`. Raises only on a broken script or a model
@@ -126,6 +131,9 @@ class EngineSweep::Walk
     acts = Playthrough::Volition::Record.applied.count - acted
     elapsed_minutes = (mechanics.playthrough.story_now - started) / 60
 
+    observe(step, report, drifts: drifts, blows: blows, hazards: hazards,
+                          elapsed_minutes: elapsed_minutes, shown: browser&.shown,
+                          volitions: volitions, acts: acts)
     failures(step, report, drifts: drifts, blows: blows, hazards: hazards,
              elapsed_minutes: elapsed_minutes, shown: browser&.shown,
              volitions: volitions, acts: acts) +
@@ -207,7 +215,13 @@ class EngineSweep::Walk
   # expectation on a `reseed:` step is a statement about what the load did to
   # the world, and `changed: false` is true of it by construction.
   def check(mechanics, step, note:)
-    failures(step, mechanics.read(note: note), drifts: 0)
+    report = mechanics.read(note: note)
+    observe(step, report, drifts: 0)
+    failures(step, report, drifts: 0)
+  end
+
+  def observe(step, report, **counts)
+    @on_step&.call(step, EngineSweep::Dump.new(report, **counts))
   end
 
   def failures(step, report, drifts:, blows: 0, hazards: 0, elapsed_minutes: 0, shown: nil,

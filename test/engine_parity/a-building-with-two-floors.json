@@ -1,0 +1,849 @@
+{
+  "script": "a-building-with-two-floors",
+  "story": "The Quay House",
+  "steps": [
+    {
+      "step": "step 1 the-quay-as-seeded",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Quay",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000014,
+            "name": "The Bonded Cellar room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000003,
+            "name": "The Custom House room 1",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 in-through-the-door",
+      "player": "first",
+      "typed": "go to The Custom House room 1",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Custom House room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Quay -> The Custom House room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 1",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 along-the-ground-floor",
+      "player": "first",
+      "typed": "go to The Custom House room 2",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "The Custom House room 2",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Custom House room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000005,
+            "name": "The Custom House room 3",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Custom House room 1 -> The Custom House room 2 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 2",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 into-a-room-somebody-has-written",
+      "player": "first",
+      "typed": "go to The Custom House room 3",
+      "dump": {
+        "location": {
+          "id": 1000000005,
+          "name": "The Custom House room 3",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000006,
+            "name": "The Custom House room 4",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Custom House room 2 -> The Custom House room 3",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 3",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 on-to-the-dead-end",
+      "player": "first",
+      "typed": "go to The Custom House room 4",
+      "dump": {
+        "location": {
+          "id": 1000000006,
+          "name": "The Custom House room 4",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000005,
+            "name": "The Custom House room 3",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Custom House room 3 -> The Custom House room 4",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 4",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 back-out-of-the-dead-end",
+      "player": "first",
+      "typed": "go to The Custom House room 3",
+      "dump": {
+        "location": {
+          "id": 1000000005,
+          "name": "The Custom House room 3",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000006,
+            "name": "The Custom House room 4",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Custom House room 4 -> The Custom House room 3",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 3",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 back-along-the-ground-floor",
+      "player": "first",
+      "typed": "go to The Custom House room 2",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "The Custom House room 2",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Custom House room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000005,
+            "name": "The Custom House room 3",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Custom House room 3 -> The Custom House room 2 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 2",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 and-back-the-way-we-came",
+      "player": "first",
+      "typed": "go to The Custom House room 1",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Custom House room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Custom House room 2 -> The Custom House room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 1",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 up-the-stairs",
+      "player": "first",
+      "typed": "go to The Custom House room 5",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Custom House room 5",
+          "detail": "stub"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Custom House room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000008,
+            "name": "The Custom House room 6",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Custom House room 1 -> The Custom House room 5 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 5",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10 along-the-floor-above",
+      "player": "first",
+      "typed": "go to The Custom House room 6",
+      "dump": {
+        "location": {
+          "id": 1000000008,
+          "name": "The Custom House room 6",
+          "detail": "stub"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000009,
+            "name": "The Custom House room 7",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Custom House room 5 -> The Custom House room 6 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 6",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 11 down-the-stairs-again",
+      "player": "first",
+      "typed": "go to The Custom House room 5",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Custom House room 5",
+          "detail": "stub"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Custom House room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000008,
+            "name": "The Custom House room 6",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Custom House room 6 -> The Custom House room 5 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 5",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 12 and-down-to-the-ground-floor",
+      "player": "first",
+      "typed": "go to The Custom House room 1",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Custom House room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Custom House room 5 -> The Custom House room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 1",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 13 the-building-is-not-somewhere-you-stand",
+      "player": "first",
+      "typed": "go to The Custom House",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Custom House room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "\"to The Custom House\" matches more than one way out: The Custom House room 2, The Custom House room 5",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 14 a-room-you-cannot-get-to-from-here",
+      "player": "first",
+      "typed": "go to The Custom House room 3",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Custom House room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no way out called \"to The Custom House room 3\". There is: The Quay, The Custom House room 2, The Custom House room 5",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

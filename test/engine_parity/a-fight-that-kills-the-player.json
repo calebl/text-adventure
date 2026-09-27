@@ -1,0 +1,1112 @@
+{
+  "script": "a-fight-that-kills-the-player",
+  "story": "The Salt Assizes",
+  "steps": [
+    {
+      "step": "step 1 the-court-has-a-justicar-in-it-and-no-foes",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Causeway Court",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Tide Post",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "The Vestry Hulk",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000005,
+            "name": "Assize hand-bell"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Ammon Brace"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Ammon Brace": 6
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 out-to-the-post",
+      "player": "first",
+      "typed": "go to the Tide Post",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 17,
+        "hp_of": {
+          "Neb Halloran": 10
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Causeway Court -> The Tide Post",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Tide Post",
+        "resolved_by": "grammar",
+        "note": "someone here: Ammon Brace walked out of The Causeway Court to The Vestry Hulk and is no longer in The Causeway Court.\nthe world: flooded on The Tide Post cost Coraith Vell 1 hit point (the water takes your legs); Coraith Vell is hurt (17 of 18)\nthe story: Go out to the tide post and read the stain band against the water yourself.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 1,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 and-he-is-somebody-the-grammar-offers-to-attack",
+      "player": "first",
+      "typed": "attack Neb Halloran",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 15,
+        "hp_of": {
+          "Neb Halloran": 9
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": true,
+        "change": "struck: Coraith Vell hit Neb Halloran for 1 (round 1); Neb Halloran is hurt (9 of 10)",
+        "refused": false,
+        "offers": null,
+        "understood": "attack -> Neb Halloran",
+        "resolved_by": "grammar",
+        "note": "answered: Neb Halloran hit Coraith Vell for 2 (round 1); Coraith Vell is hurt (15 of 18)",
+        "drifts": 0,
+        "blows": 2,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 a-refused-line-buys-him-no-round",
+      "player": "first",
+      "typed": "take the mayor's chain",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 15,
+        "hp_of": {
+          "Neb Halloran": 9
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no thing lying here called \"the mayor's chain\". There is: nothing",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 nor-does-an-engine-instrument",
+      "player": "first",
+      "typed": "vitals",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 15,
+        "hp_of": {
+          "Neb Halloran": 9
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 back-to-a-known-number",
+      "player": "first",
+      "typed": "mend 20",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Neb Halloran": 9
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": true,
+        "change": "mended: Coraith Vell hurt (15 of 18) -> unhurt",
+        "refused": false,
+        "offers": null,
+        "understood": "mend -> 20 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 down-to-one-hit-point",
+      "player": "first",
+      "typed": "harm 17",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 1,
+        "hp_of": {
+          "Neb Halloran": 9
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": true,
+        "change": "harmed: Coraith Vell unhurt -> badly hurt (1 of 18)",
+        "refused": false,
+        "offers": null,
+        "understood": "harm -> 17 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 reading-a-slate-is-a-turn-and-he-takes-it",
+      "player": "first",
+      "typed": "read the tide-slate",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 0,
+        "hp_of": {
+          "Neb Halloran": 9
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": true,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "examine -> Assize tide-slate",
+        "resolved_by": "grammar",
+        "note": "reads: Assize tide-slate\n  HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway.\nanswered: Neb Halloran hit Coraith Vell for 9 (round 2); Coraith Vell is dead\nthe fight is over: The fight in The Tide Post is over after 2 rounds. Coraith Vell is dead. 3 blows landed: Coraith Vell hit Neb Halloran for 1 (round 1); Neb Halloran is hurt (9 of 10); Neb Halloran hit Coraith Vell for 2 (round 1); Coraith Vell is hurt (15 of 18); Neb Halloran hit Coraith Vell for 9 (round 2); Coraith Vell is dead.",
+        "drifts": 0,
+        "blows": 1,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 and-every-line-after-it-is-refused",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 0,
+        "hp_of": {
+          "Neb Halloran": 9
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": true,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "Coraith Vell is dead, and this playthrough is over. Nothing you type can change it. Start a new playthrough to play this world again.",
+        "understood": null,
+        "resolved_by": null,
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10 including-another-attack",
+      "player": "first",
+      "typed": "attack Neb Halloran",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 0,
+        "hp_of": {
+          "Neb Halloran": 9
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": true,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "Coraith Vell is dead, and this playthrough is over. Nothing you type can change it. Start a new playthrough to play this world again.",
+        "understood": null,
+        "resolved_by": null,
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 11 and-a-move",
+      "player": "first",
+      "typed": "go to the Causeway Court",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 0,
+        "hp_of": {
+          "Neb Halloran": 9
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": true,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "Coraith Vell is dead, and this playthrough is over. Nothing you type can change it. Start a new playthrough to play this world again.",
+        "understood": null,
+        "resolved_by": null,
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 12 and-a-drop",
+      "player": "first",
+      "typed": "drop the tide-slate",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 0,
+        "hp_of": {
+          "Neb Halloran": 9
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": true,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "Coraith Vell is dead, and this playthrough is over. Nothing you type can change it. Start a new playthrough to play this world again.",
+        "understood": null,
+        "resolved_by": null,
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 13 and-a-mend-cannot-raise-the-dead",
+      "player": "first",
+      "typed": "mend 18",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 0,
+        "hp_of": {
+          "Neb Halloran": 9
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": true,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "Coraith Vell is dead, and this playthrough is over. Nothing you type can change it. Start a new playthrough to play this world again.",
+        "understood": null,
+        "resolved_by": null,
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 14 the-man-who-killed-her-is-still-standing-and-still-not-hostile",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 0,
+        "hp_of": {
+          "Neb Halloran": 9
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": true,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "Coraith Vell is dead, and this playthrough is over. Nothing you type can change it. Start a new playthrough to play this world again.",
+        "understood": null,
+        "resolved_by": null,
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

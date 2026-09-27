@@ -1,0 +1,779 @@
+{
+  "script": "npc-experience-survives-small-talk",
+  "story": "A Turn at the Gate",
+  "steps": [
+    {
+      "step": "step 1",
+      "player": "first",
+      "typed": "/attack Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "struck: Cal hit Maren for 6 (round 1); Maren is hurt (47 of 53)",
+        "refused": false,
+        "offers": null,
+        "understood": "attack -> Maren",
+        "resolved_by": "grammar",
+        "note": "answered: Maren hit Cal for 7 (round 1); Cal is hurt (46 of 53)",
+        "drifts": 0,
+        "blows": 2,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 exchange-1",
+      "player": "first",
+      "typed": "/talk Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": "experience-1: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 15.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 exchange-2",
+      "player": "first",
+      "typed": "/talk Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": "experience-2: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 exchange-3",
+      "player": "first",
+      "typed": "/talk Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": "experience-3: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 exchange-4",
+      "player": "first",
+      "typed": "/talk Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": "experience-4: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 exchange-5",
+      "player": "first",
+      "typed": "/talk Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": "experience-5: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 exchange-6",
+      "player": "first",
+      "typed": "/talk Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": "experience-6: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 exchange-7",
+      "player": "first",
+      "typed": "/talk Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": "experience-7: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 exchange-8",
+      "player": "first",
+      "typed": "/talk Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": "experience-8: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10 exchange-9",
+      "player": "first",
+      "typed": "/talk Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": "experience-9: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 11 exchange-10",
+      "player": "first",
+      "typed": "/talk Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": "experience-10: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 12 recall-old-promise",
+      "player": "first",
+      "typed": "/talk Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": "experience-11: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    }
+  ]
+}

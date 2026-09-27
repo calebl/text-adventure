@@ -1,0 +1,639 @@
+{
+  "script": "npc-promises-have-consequences",
+  "story": "A Conversation at the Gate",
+  "steps": [
+    {
+      "step": "step 1",
+      "player": "first",
+      "typed": "talk to Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Maren": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "Maren stopped fighting the player. The ceasefire holds unless the player attacks again.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2",
+      "player": "first",
+      "typed": "talk to Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "brass key"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Maren": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "Maren gave brass key to Cal; the player now carries it.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3",
+      "player": "first",
+      "typed": "talk to Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "brass key"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Maren": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "Maren is now accompanying Cal and will travel with them.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4",
+      "player": "first",
+      "typed": "go to Courtyard",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Courtyard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "brass key"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Maren": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Market -> Courtyard",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Courtyard",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5",
+      "player": "first",
+      "typed": "talk to Maren",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Courtyard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "brass key"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Maren": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "Maren stopped accompanying the player and remains in Courtyard.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6",
+      "player": "first",
+      "typed": "go to Market",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "brass key"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Courtyard -> Market",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Market",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 (second)",
+      "player": "second",
+      "typed": "talk to Maren",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "inscription": [],
+        "hp": 47,
+        "hp_of": {
+          "Maren": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": "Maren changes no possessions, travel agreement or ceasefire.\nanswered: Maren hit Cal for 6 (round 1); Cal is hurt (47 of 53)",
+        "drifts": 0,
+        "blows": 1,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8",
+      "player": "first",
+      "typed": "go to Courtyard",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Courtyard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "brass key"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Maren": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Market -> Courtyard",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Courtyard",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9",
+      "player": "first",
+      "typed": "attack Maren",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Courtyard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "brass key"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "struck: Cal hit Maren for 6 (round 1); Maren is hurt (47 of 53)",
+        "refused": false,
+        "offers": null,
+        "understood": "attack -> Maren",
+        "resolved_by": "grammar",
+        "note": "answered: Maren hit Cal for 7 (round 1); Cal is hurt (46 of 53)",
+        "drifts": 0,
+        "blows": 2,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10",
+      "player": "first",
+      "typed": "talk to Maren",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Courtyard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "brass key"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 46,
+        "hp_of": {
+          "Maren": 47
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "Maren stopped fighting the player. The ceasefire holds unless the player attacks again.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "grammar",
+        "note": "the fight is over: The fight in Courtyard is over after 1 round. Nobody was killed: the fighting stopped. 2 blows landed: Cal hit Maren for 6 (round 1); Maren is hurt (47 of 53); Maren hit Cal for 7 (round 1); Cal is hurt (46 of 53).",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 5.0,
+        "shown": null
+      }
+    }
+  ]
+}

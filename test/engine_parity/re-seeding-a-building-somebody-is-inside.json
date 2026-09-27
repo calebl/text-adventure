@@ -1,0 +1,522 @@
+{
+  "script": "re-seeding-a-building-somebody-is-inside",
+  "story": "The Quay House",
+  "steps": [
+    {
+      "step": "step 1 the-quay-as-seeded",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Quay",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000014,
+            "name": "The Bonded Cellar room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000003,
+            "name": "The Custom House room 1",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 in-through-the-door",
+      "player": "first",
+      "typed": "go to The Custom House room 1",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Custom House room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Quay -> The Custom House room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 1",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 the-room-is-named-and-the-file-is-loaded-over-it",
+      "player": "first",
+      "typed": null,
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "the counting room",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": null,
+        "note": "re-seeded from the-quay-house.yml\nreconciled: location \"The Custom House room 1\" is \"the counting room\" in the file, so the row was renamed rather than a second location created beside it (#1000000003, unchanged otherwise)",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 and-the-quay-still-has-one-way-into-the-building",
+      "player": "first",
+      "typed": "go to the quay",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Quay",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000014,
+            "name": "The Bonded Cellar room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000003,
+            "name": "the counting room",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: the counting room -> The Quay",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Quay",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 and-the-player-can-still-walk-in-by-the-name-they-are-shown",
+      "player": "first",
+      "typed": "go to the counting room",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "the counting room",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Quay -> the counting room (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> the counting room",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 and-the-file-does-not-take-the-name-back-off-it",
+      "player": "first",
+      "typed": null,
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "the counting room",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": null,
+        "note": "re-seeded from the-quay-house.yml\nreconciled: location \"the counting room\" is \"The Custom House room 1\" in the file, which is one of its place's provisional numbers, so the row kept the name it has (#1000000003, unchanged otherwise)",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 and-the-player-is-still-in-the-room-they-were-standing-in",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "the counting room",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 and-the-file-catches-up-with-the-name-the-room-has",
+      "player": "first",
+      "typed": null,
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "the counting room",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": null,
+        "note": "re-seeded from the-quay-house.yml",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0,
+        "shown": null
+      }
+    }
+  ]
+}

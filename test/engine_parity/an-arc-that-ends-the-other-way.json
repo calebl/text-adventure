@@ -1,0 +1,841 @@
+{
+  "script": "an-arc-that-ends-the-other-way",
+  "story": "The Iron Gate Descends",
+  "steps": [
+    {
+      "step": "step 1 nothing-has-ended-yet",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Iron Gate Chamber",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "obsidian maw",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "tunnel upward",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000013,
+            "name": "iron key"
+          },
+          {
+            "id": 1000000014,
+            "name": "prince's signet ring"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 8,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 7,
+          "will": 10
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 past-the-ring-and-down",
+      "player": "first",
+      "typed": "go to the obsidian maw",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "obsidian maw",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "Blackfang Tunnel",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000001,
+            "name": "Iron Gate Chamber",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000015,
+            "name": "damp scroll"
+          },
+          {
+            "id": 1000000016,
+            "name": "iron shard"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000015,
+            "name": "damp scroll",
+            "text": "Beware the teeth of the dark. They hunger."
+          }
+        ],
+        "hp": 8,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 7,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Iron Gate Chamber -> obsidian maw",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> obsidian maw",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 and-on-into-the-tunnel",
+      "player": "first",
+      "typed": "go to Blackfang Tunnel",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "Blackfang Tunnel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000012,
+            "name": "Blackfang Warren room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000003,
+            "name": "obsidian maw",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "tunnel upward",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000017,
+            "name": "rusted dagger"
+          },
+          {
+            "id": 1000000018,
+            "name": "tattered cloth"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 8,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 7,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: obsidian maw -> Blackfang Tunnel",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Blackfang Tunnel",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 in-through-the-way-in",
+      "player": "first",
+      "typed": "go to Blackfang Warren room 1",
+      "dump": {
+        "location": {
+          "id": 1000000012,
+          "name": "Blackfang Warren room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "Blackfang Tunnel",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000013,
+            "name": "Blackfang Warren room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000015,
+            "name": "Blackfang Warren room 4",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 8,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 7,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Blackfang Tunnel -> Blackfang Warren room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Blackfang Warren room 1",
+        "resolved_by": "grammar",
+        "note": "the story: Get inside the warren where the Blackfang keep what they take.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "reached",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 through-the-guards-room",
+      "player": "first",
+      "typed": "go to Blackfang Warren room 2",
+      "dump": {
+        "location": {
+          "id": 1000000013,
+          "name": "Blackfang Warren room 2",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000012,
+            "name": "Blackfang Warren room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000014,
+            "name": "the dry cell",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 8,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 7,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Blackfang Warren room 1 -> Blackfang Warren room 2 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Blackfang Warren room 2",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "reached",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 the-cell-with-nothing-to-show-for-it",
+      "player": "first",
+      "typed": "go to the dry cell",
+      "dump": {
+        "location": {
+          "id": 1000000014,
+          "name": "the dry cell",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000013,
+            "name": "Blackfang Warren room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000015,
+            "name": "Blackfang Warren room 4",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000004,
+            "name": "Prince Aurel Durn"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 8,
+        "hp_of": {
+          "Prince Aurel Durn": 6
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 7,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Blackfang Warren room 2 -> the dry cell",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> the dry cell",
+        "resolved_by": "grammar",
+        "note": "the story: Find the cell they are keeping him in.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "reached",
+          "3": "reached"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 back-through-the-warren",
+      "player": "first",
+      "typed": "go to Blackfang Warren room 2",
+      "dump": {
+        "location": {
+          "id": 1000000013,
+          "name": "Blackfang Warren room 2",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000012,
+            "name": "Blackfang Warren room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000014,
+            "name": "the dry cell",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 8,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 7,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: the dry cell -> Blackfang Warren room 2 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Blackfang Warren room 2",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "reached",
+          "3": "reached"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 and-out-of-it",
+      "player": "first",
+      "typed": "go to Blackfang Warren room 1",
+      "dump": {
+        "location": {
+          "id": 1000000012,
+          "name": "Blackfang Warren room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "Blackfang Tunnel",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000013,
+            "name": "Blackfang Warren room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000015,
+            "name": "Blackfang Warren room 4",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 8,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 7,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Blackfang Warren room 2 -> Blackfang Warren room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Blackfang Warren room 1",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "reached",
+          "3": "reached"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 up-the-tunnel",
+      "player": "first",
+      "typed": "go to Blackfang Tunnel",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "Blackfang Tunnel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000012,
+            "name": "Blackfang Warren room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000003,
+            "name": "obsidian maw",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "tunnel upward",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000017,
+            "name": "rusted dagger"
+          },
+          {
+            "id": 1000000018,
+            "name": "tattered cloth"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 8,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 7,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Blackfang Warren room 1 -> Blackfang Tunnel",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Blackfang Tunnel",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "reached",
+          "3": "reached"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10 and-up-through-the-maw",
+      "player": "first",
+      "typed": "go to the obsidian maw",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "obsidian maw",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "Blackfang Tunnel",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000001,
+            "name": "Iron Gate Chamber",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000015,
+            "name": "damp scroll"
+          },
+          {
+            "id": 1000000016,
+            "name": "iron shard"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000015,
+            "name": "damp scroll",
+            "text": "Beware the teeth of the dark. They hunger."
+          }
+        ],
+        "hp": 8,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 7,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Blackfang Tunnel -> obsidian maw",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> obsidian maw",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "reached",
+          "3": "reached"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 11 back-where-it-started",
+      "player": "first",
+      "typed": "go to Iron Gate Chamber",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Iron Gate Chamber",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "obsidian maw",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "tunnel upward",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000013,
+            "name": "iron key"
+          },
+          {
+            "id": 1000000014,
+            "name": "prince's signet ring"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 8,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 7,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: obsidian maw -> Iron Gate Chamber",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Iron Gate Chamber",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "reached",
+          "3": "reached"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 12 the-last-beat-is-the-first-one",
+      "player": "first",
+      "typed": "take the signet ring",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Iron Gate Chamber",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "obsidian maw",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "tunnel upward",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000013,
+            "name": "iron key"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000014,
+            "name": "prince's signet ring"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 8,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 7,
+          "will": 10
+        },
+        "dead": true,
+        "changed": true,
+        "change": "took: prince's signet ring (was lying in Iron Gate Chamber, now carried by Veythra the Silent)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> prince's signet ring",
+        "resolved_by": "grammar",
+        "note": "the story: Take the signet ring that proves he came this way.\nthe story is over: The cell is opened and the prince is already cold; the decree is answered, and not the way anybody wanted.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "reached",
+          "3": "reached"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "too-late",
+        "ending_words": "The cell is opened and the prince is already cold; the decree is answered, and not the way anybody wanted.",
+        "scheduled": 1,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}
