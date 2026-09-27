@@ -1,0 +1,286 @@
+{
+  "script": "a-room-written-while-the-arc-waits",
+  "story": "A Bell Nobody Has Rung",
+  "steps": [
+    {
+      "step": "step 1 into-the-cloister-nobody-has-written",
+      "player": "first",
+      "typed": "/move Lower Cloister",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Lower Cloister",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Chapter Hall",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "the Bell Tower",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000006,
+            "name": "brass censer"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Brother Anselm"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 28,
+        "hp_of": {
+          "Brother Anselm": 10
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 12,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Lower Cloister",
+        "resolved_by": "grammar",
+        "note": "cloister: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 the-censer-the-arc-waited-for",
+      "player": "first",
+      "typed": "/take brass censer",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Lower Cloister",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Chapter Hall",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "the Bell Tower",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000006,
+            "name": "brass censer"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Brother Anselm"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 28,
+        "hp_of": {
+          "Brother Anselm": 10
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 12,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: brass censer (was lying in Lower Cloister, now carried by Ilse)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> brass censer",
+        "resolved_by": "grammar",
+        "note": "the story: Take up the brass censer the bell-keeper carried.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 the-brother-the-arc-waited-for",
+      "player": "first",
+      "typed": "/talk Brother Anselm",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Lower Cloister",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Chapter Hall",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "the Bell Tower",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000006,
+            "name": "brass censer"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Brother Anselm"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 28,
+        "hp_of": {
+          "Brother Anselm": 10
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 12,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Brother Anselm",
+        "resolved_by": "grammar",
+        "note": "anselm: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "reached",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 up-the-tower-and-the-end-of-the-story",
+      "player": "first",
+      "typed": "/move the Bell Tower",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "the Bell Tower",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Lower Cloister",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000006,
+            "name": "brass censer"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 28,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 12,
+          "will": 13
+        },
+        "dead": true,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": null,
+        "note": "tower: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "reached",
+          "3": "reached"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "rung",
+        "ending_words": "You haul on the rope, and the bell rings out over the valley for the first time in a generation.",
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+# A world whose arc waits for a place, a person and a thing that no room has
+# admitted, and that has already written three rooms: one more and it is past
+# its grace (`Quest::Deadline::GRACE_ROOMS`), so the engine stops asking a
+# model for what the arc needs and places it itself, one step for each room
+# written after that. The yard's four doorways are all spoken for, so what is
+# placed hangs off the loft behind the kitchen.
+format: 2
+universe:
+  physics: Ordinary physics.
+  technology: Carts, lanterns and iron tools.
+  weapons: Cudgels.
+  geographies: A farmstead in a salt-marsh valley.
+  civilizations: Scattered farms under a warden's charter.
+  history: The salt road closed three winters ago.
+  economics: Salt is traded for grain.
+  politics: The warden's word is law on the marsh.
+  religion: The farms keep a harvest feast.
+  races:
+  - name: Marsh folk
+    description: Ordinary people of the salt marsh.
+story:
+  title: A Yard Before the Winter
+  genre: rural mystery
+  start_time: '2026-09-12T06:00:00Z'
+  preface: The salt road is closed and winter is coming.
+  summary: Tamsin must reopen the salt road before the first snow.
+opening_scene:
+  location: Yard
+  characters: [Tamsin]
+  description: You stand in the farmyard as the frost lifts.
+  summary: Tamsin starts the day in the yard.
+characters:
+- fullname: Tamsin
+  nickname: Tamsin
+  race: Marsh folk
+  age: 34
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: A salt-carter with no road to cart on.
+  personality: Blunt and tireless.
+  appearance: A salt-stained coat.
+  likes: An open road.
+  dislikes: Waiting.
+  fears: A hungry winter.
+  stats: {level: 4, hit_die: 8, strength: 13, dexterity: 11, will: 10}
+locations:
+- name: Yard
+  detail_level: realized
+  opening: true
+  teaser: The farmyard.
+  description: A muddy yard between the house and the outbuildings.
+  lore: The farm has stood here since the road was cut.
+- name: Kitchen
+  detail_level: realized
+  teaser: The farm kitchen.
+  description: A low kitchen with a cold hearth.
+  lore: The family eats here in winter.
+- name: Loft
+  detail_level: realized
+  teaser: The loft over the kitchen.
+  description: A dusty loft under the thatch.
+  lore: Old harness hangs from the beams.
+- name: Cold Store
+  detail_level: stub
+  population: nobody
+  teaser: A stone store half sunk into the ground.
+- name: Wash House
+  detail_level: stub
+  population: nobody
+  teaser: A lean-to with a copper and a mangle.
+- name: Byre
+  detail_level: stub
+  population: nobody
+  teaser: The cattle byre, empty since the autumn.
+connections:
+- between: [Yard, Kitchen]
+  distance: adjacent
+  travel_method: walking
+- between: [Kitchen, Loft]
+  distance: adjacent
+  travel_method: walking
+- between: [Yard, Cold Store]
+  distance: adjacent
+  travel_method: walking
+- between: [Yard, Wash House]
+  distance: adjacent
+  travel_method: walking
+- between: [Yard, Byre]
+  distance: adjacent
+  travel_method: walking
+quests:
+- title: The Salt Road
+  premise: Reopen the salt road before the first snow.
+  status: open
+  contributes: true
+  steps:
+  - summary: Win over Warden Hesk, who keeps the road shut.
+    trigger: speak_to
+    target: Warden Hesk
+    teaser: A broad woman with the warden's chain about her neck.
+  - summary: Find the Salt Stair down to the old road.
+    trigger: reach_location
+    target: the Salt Stair
+    teaser: A stair cut down through the salt to the old road.
+  - summary: Take up the iron seal that opens the road gate.
+    trigger: hold_item
+    target: iron seal
+  outcomes:
+  - name: reopened
+    summary: The salt road opens before the snow.
+    default: true

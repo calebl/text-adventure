@@ -1,0 +1,112 @@
+# A world whose arc names three things the world does not hold yet: a thing,
+# a person and a place. Nothing in the file answers to any of them, so every
+# step starts unbound and binds only when a room's writing admits what it
+# names. Two rooms are written, so the arc is still asking rather than
+# placing (`Quest::Deadline::GRACE_ROOMS`). The hall also holds a readable
+# letter with no words on it yet, and a cup to offer the sexton.
+format: 2
+universe:
+  physics: Ordinary physics.
+  technology: Bells, candles and iron locks.
+  weapons: Walking staves.
+  geographies: A hill abbey and the valley below it.
+  civilizations: A small order of lay brothers.
+  history: The abbey bell has not rung in a generation.
+  economics: The order trades honey for lamp oil.
+  politics: The prior settles every dispute.
+  religion: The order keeps the hours by the bell.
+  races:
+  - name: Valley folk
+    description: Ordinary people of the valley.
+story:
+  title: A Bell Nobody Has Rung
+  genre: quiet mystery
+  start_time: '2026-09-10T08:00:00Z'
+  preface: The abbey bell has been silent since before you were born.
+  summary: Ilse climbs to the abbey to find out why its bell no longer rings.
+opening_scene:
+  location: Chapter Hall
+  characters: [Ilse, Oda]
+  description: You stand in the chapter hall with Oda, the sexton.
+  summary: Ilse arrives at the abbey's chapter hall.
+characters:
+- fullname: Ilse
+  nickname: Ilse
+  race: Valley folk
+  age: 27
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: A bell-founder's daughter from the valley.
+  personality: Curious and stubborn.
+  appearance: A mended wool cloak.
+  likes: Clear tones.
+  dislikes: Silence kept for its own sake.
+  fears: Heights.
+  stats: {level: 5, hit_die: 8, strength: 11, dexterity: 12, will: 13}
+- fullname: Oda
+  nickname: Oda
+  race: Valley folk
+  location: Chapter Hall
+  age: 61
+  sex: female
+  is_protagonist: false
+  is_companion: false
+  backstory: The sexton, who has swept the hall for forty years.
+  personality: Patient and dry.
+  appearance: A grey apron and a ring of keys.
+  likes: A swept floor.
+  dislikes: Visitors who touch things.
+  fears: The bell tower stair.
+  stats: {level: 3, hit_die: 6, strength: 9, dexterity: 10, will: 12}
+locations:
+- name: Chapter Hall
+  detail_level: realized
+  opening: true
+  teaser: The abbey's chapter hall.
+  description: A long stone hall with benches along both walls.
+  lore: The brothers meet here each morning.
+  items:
+  - name: pewter cup
+    description: A dented pewter cup.
+    properties: '{}'
+  - name: sealed letter
+    description: A folded letter under a cracked wax seal.
+    readable: true
+    properties: '{}'
+- name: Gatehouse
+  detail_level: realized
+  teaser: The abbey gatehouse.
+  description: A squat gatehouse with a barred window.
+  lore: Pilgrims once waited here for the bell.
+- name: Lower Cloister
+  detail_level: stub
+  population: a person or two
+  teaser: A cloister below the hall, where the older brothers walk.
+connections:
+- between: [Chapter Hall, Gatehouse]
+  distance: adjacent
+  travel_method: walking
+- between: [Chapter Hall, Lower Cloister]
+  distance: adjacent
+  travel_method: walking
+quests:
+- title: The Silent Bell
+  premise: Find out why the abbey bell no longer rings, and ring it.
+  status: open
+  contributes: true
+  steps:
+  - summary: Take up the brass censer the bell-keeper carried.
+    trigger: hold_item
+    target: brass censer
+  - summary: Hear Brother Anselm out about the last time the bell rang.
+    trigger: speak_to
+    target: Brother Anselm
+  - summary: Climb to the Bell Tower.
+    trigger: reach_location
+    target: the Bell Tower
+    teaser: The tower stands over the cloister, its door long unlocked.
+  outcomes:
+  - name: rung
+    summary: The bell rings over the valley for the first time in a generation.
+    default: true

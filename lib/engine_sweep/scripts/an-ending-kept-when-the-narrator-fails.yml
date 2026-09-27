@@ -1,0 +1,69 @@
+# The narrator is asked for the last paragraph of a game only after the arc
+# has written its ending, so every way that call can go wrong leaves the
+# engine's own sentence standing on the closing scene. The first player's
+# narrator is unavailable; the second player's stops mid-sentence, and a
+# last paragraph cut in half is not kept.
+story: The Iron Gate Descends
+steps:
+- id: first-the-ring
+  type: take the signet ring
+- id: first-down-into-the-maw
+  type: go to the obsidian maw
+- id: first-on-down-the-tunnel
+  type: go to Blackfang Tunnel
+- id: first-in-through-the-low-door
+  type: go to Blackfang Warren room 1
+- id: first-past-the-guards
+  type: go to Blackfang Warren room 2
+- id: first-the-cell-and-the-end
+  type: "/move the dry cell"
+  browser:
+    token: first-cell
+    replies:
+    - purpose: arrival
+      content:
+        description: You push open the dry cell and find the prince alive.
+        summary: The dry cell is opened.
+    - purpose: ending
+      unavailable: true
+  expect:
+    location: the dry cell (realized)
+    ending: rescued
+    ending_words:
+    - The prince is found alive in the dry cell, and the iron gate opens outward at last.
+    dead: true
+    note: completed
+- id: second-the-ring
+  type: take the signet ring
+  player: second
+- id: second-down-into-the-maw
+  type: go to the obsidian maw
+  player: second
+- id: second-on-down-the-tunnel
+  type: go to Blackfang Tunnel
+  player: second
+- id: second-in-through-the-low-door
+  type: go to Blackfang Warren room 1
+  player: second
+- id: second-past-the-guards
+  type: go to Blackfang Warren room 2
+  player: second
+- id: second-the-cell-and-the-end
+  type: "/move the dry cell"
+  player: second
+  browser:
+    token: second-cell
+    replies:
+    - purpose: arrival
+      content:
+        description: You push open the dry cell and find the prince alive.
+        summary: The dry cell is opened.
+    - purpose: ending
+      content: You lift the prince to his feet, and the iron gate
+  expect:
+    location: the dry cell (realized)
+    ending: rescued
+    ending_words:
+    - The prince is found alive in the dry cell, and the iron gate opens outward at last.
+    dead: true
+    note: completed
