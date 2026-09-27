@@ -7,7 +7,7 @@
 # extension, and once by the Ruby engine, its twin, on a copy of its own. Then:
 #
 # 1. PARITY: every step's dump from the Rust walk equals the committed golden
-#    (`test/engine_parity/`), and no step fell back to Ruby.
+#    (`test/engine_parity/`), and the engine played every step.
 # 2. INVARIANTS: `EngineSweep::Invariants` holds over the database the Rust
 #    engine wrote, against the world file as last loaded -- the same whole-world
 #    checks `rake game:sweep` makes of a Ruby walk.
@@ -40,7 +40,8 @@ module EngineSweep::RustGates
       *compared("doctor", rust.on_file(played.file) { doctor(script) }, ruby.on_file(twin.file) { doctor(script) }),
       *compared("audit", rust.on_file(played.file) { audit(script) }, ruby.on_file(twin.file) { audit(script) })
     ].compact
-  rescue EngineSweep::InvalidScript, EngineSweep::ModelCalled, EngineSweep::RustMechanics::Failed => e
+  rescue EngineSweep::InvalidScript, EngineSweep::ModelCalled, EngineSweep::RustMechanics::Failed,
+         Playthrough::RustEngine::EngineError => e
     [ "#{script.name}: #{e.message}" ]
   end
 

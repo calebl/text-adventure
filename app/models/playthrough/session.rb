@@ -122,6 +122,10 @@ class Playthrough::Session
     when BaseAgent::CrisisResponseError
       Rails.logger.warn { "Narration intercepted: #{error.class}: #{error.message}" }
       Ending.new(error: nil, safety_notice: true, refusal: nil)
+    when Playthrough::RustEngine::EngineError
+      # The engine's own words: a turn it could not play is never played again
+      # on Ruby, so the player is told what stopped it, as it said it.
+      Ending.new(error: error.notice, safety_notice: false, refusal: nil)
     when *Playthrough::SetupNotice::FAILURES
       # Nothing here is internal: the install has no model to ask, and whoever
       # is running it can say so in one environment variable. Nothing was
@@ -172,30 +176,26 @@ class Playthrough::Session
   # front end that has to know the turn's own ending was already delivered.
   # Returns the turn's outcome.
   #
-  # WHICH ENGINE PLAYS IT is decided here and nowhere else: with
-  # `TA_ENGINE=rust` the whole turn is handed to the Rust engine, and a turn it
-  # hands back plays on the Ruby engine below, from the same journal. Both
-  # engines answer through the same callbacks and the same `Ending`; see
-  # `Playthrough::RustEngine`.
+  # THE RUST ENGINE PLAYS IT, the whole turn, through its extension; see
+  # `Playthrough::RustEngine`. A line with no request token is given one, since
+  # the engine keeps every line in the submission queue. The Ruby loop plays
+  # only where `Playthrough::RustEngine.engine` says the parity reference is
+  # wanted -- the gates, the engine sweep, the test suite -- and never for a
+  # player.
   def play(line, request_token: nil, on_start: nil, on_finish: nil, on_error: nil, &block)
     failure = lambda do |error|
       told = self.class.ending_for(error, playthrough_id: playthrough.id)
       on_finish&.call(told) if told
       on_error&.call(error)
     end
+    turn = if Playthrough::RustEngine.engine == :rust
+      request_token ||= SecureRandom.uuid
+      Playthrough::RustEngine::Turn.new(playthrough)
+    else
+      Playthrough::Turn.new(playthrough)
+    end
     # Every call this turn makes is spent on the game's player; see `Current`.
     Current.set(player: playthrough.player, playthrough: playthrough) do
-      if Playthrough::RustEngine.wanted?
-        rust = Playthrough::RustEngine::Turn.new(playthrough)
-        played = rust.play(line, request_token: request_token, on_start: on_start,
-                                 on_finish: ->(outcome) { on_finish&.call(ending(outcome, rust)) },
-                                 on_error: failure, &block)
-        next played unless played.equal?(Playthrough::RustEngine::Turn::HANDED_BACK)
-
-        playthrough.reload
-      end
-
-      turn = Playthrough::Turn.new(playthrough)
       turn.play(line, request_token: request_token, on_start: on_start,
                 on_finish: ->(outcome) { on_finish&.call(ending(outcome, turn)) }, on_error: failure, &block)
     end

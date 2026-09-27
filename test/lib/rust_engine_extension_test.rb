@@ -36,34 +36,34 @@ class RustEngineExtensionTest < ActiveSupport::TestCase
     assert_equal [ [] ], EngineSweep::RustGates.check([ script ]).map(&:problems)
   end
 
-  test "a newer schema that changes a table the engine writes is refused, and the turn plays on Ruby" do
+  test "a newer schema that changes a table the engine writes is refused in the engine's words" do
     script = EngineSweep.scripts.find { |candidate| candidate.name == "a-thing-can-be-thrown" }
-    before = Playthrough::RustEngine.fallbacks.fetch("schema_changed", 0)
+    before = Playthrough::RustEngine.failures.fetch("schema_changed", 0)
+    finished = []
 
     Dir.mktmpdir do |directory|
       file = File.join(directory, "newer.sqlite3")
       EngineSweep::Parity.copy_database!(file)
       engine = EngineSweep::Parity::InProcess.new(:rust)
-      outcome = engine.on_file(file) do
-        walk = EngineSweep::Walk.new(script)
-        walk.prepare!
-        ActiveRecord::Base.connection.execute("INSERT INTO schema_migrations (version) VALUES ('99990101000000')")
-        # A trigger on a table the engine writes, which it would not know fires.
-        ActiveRecord::Base.connection.execute(<<~SQL)
-          CREATE TRIGGER a_newer_rule AFTER INSERT ON playthrough_commands BEGIN SELECT 1; END
-        SQL
-        game = walk.game_of(script.steps.first.player)
-        # No live model on either engine: an empty replay for Rust, a stand-in
-        # narrator for the Ruby engine that plays the line in the end.
-        Playthrough::RustEngine.replaying([]) do
-          BaseAgent.stub(:new, ->(*, **) { FakeAgent.new("The yard is quiet.") }) do
-            Playthrough::Session.new(game).play("/look", request_token: "newer-schema")
+      error = assert_raises(Playthrough::RustEngine::EngineError) do
+        engine.on_file(file) do
+          walk = EngineSweep::Walk.new(script)
+          walk.prepare!
+          ActiveRecord::Base.connection.execute("INSERT INTO schema_migrations (version) VALUES ('99990101000000')")
+          # A trigger on a table the engine writes, which it would not know fires.
+          ActiveRecord::Base.connection.execute(<<~SQL)
+            CREATE TRIGGER a_newer_rule AFTER INSERT ON playthrough_commands BEGIN SELECT 1; END
+          SQL
+          game = walk.game_of(script.steps.first.player)
+          Playthrough::RustEngine.replaying([]) do
+            Playthrough::Session.new(game).play("/look", request_token: "newer-schema", on_finish: ->(ending) { finished << ending })
           end
         end
       end
 
-      assert_kind_of Scene, outcome
+      assert_equal "schema_changed", error.kind
     end
-    assert_equal before + 1, Playthrough::RustEngine.fallbacks["schema_changed"]
+    assert_match "a_newer_rule", finished.sole.error
+    assert_equal before + 1, Playthrough::RustEngine.failures["schema_changed"]
   end
 end

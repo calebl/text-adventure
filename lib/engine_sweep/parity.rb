@@ -111,10 +111,9 @@ module EngineSweep::Parity
   # steps. `engine` says which engine plays them: `:ruby`, or `:rust`, which is
   # the Rust engine through its extension -- the typed steps through
   # `EngineSweep::RustMechanics`, the browser steps through
-  # `Playthrough::Session` with the switch on. So a Rust walk plays through
-  # the same seam the front ends do, and a turn that silently fell back to Ruby
-  # would be a turn nobody tested: `fallbacks` counts them, and a step that
-  # had one fails.
+  # `Playthrough::Session`. So a Rust walk plays through the same seam the
+  # front ends do, and a turn the engine could not play fails the step with
+  # the engine's own error.
   class InProcess
     attr_reader :engine
 
@@ -136,7 +135,7 @@ module EngineSweep::Parity
       walk = EngineSweep::Walk.new(script, engine: engine)
       on_file(file) { walk.prepare! }
       dumps = script.steps.map do |step|
-        on_file(file) { step.reseed? ? walk.reseed_step(step) : played(script, step) { walk.play_step(step) } }
+        on_file(file) { step.reseed? ? walk.reseed_step(step) : walk.play_step(step) }
           .then { |dump| JSON.parse(dump.to_h.to_json) }
       end
       Played.new(dumps: dumps, file: file, walk: walk)
@@ -146,19 +145,6 @@ module EngineSweep::Parity
       EngineSweep::Parity.on_database(file) do
         EngineSweep.without_a_model { Playthrough::RustEngine.using(engine, &block) }
       end
-    end
-
-    private
-
-    def played(script, step)
-      before = Playthrough::RustEngine.fallbacks
-      dump = yield
-      fell = Playthrough::RustEngine.fallbacks.select { |reason, count| count > before.fetch(reason, 0) }
-      if engine == :rust && fell.any?
-        raise EngineSweep::InvalidScript, "#{script.name} #{step.label}: the turn fell back to Ruby (#{fell.keys.join(", ")})"
-      end
-
-      dump
     end
   end
 

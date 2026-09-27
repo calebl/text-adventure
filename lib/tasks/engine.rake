@@ -27,9 +27,9 @@ namespace :engine do
   end
 end
 
-# THE RUST ENGINE: see `Playthrough::RustEngine` and README.md ("The Rust engine").
+# THE RUST ENGINE, which plays every turn: see `Playthrough::RustEngine` and README.md ("The Rust engine").
 namespace :engine do
-  desc "Build the Rust engine's extension into ext/renderedstep/build/ (needs a Rust toolchain). ENGINE_SOURCE=<checkout> builds against a local copy of the engine instead of the pinned commit"
+  desc "Build the Rust engine's extension into ext/renderedstep/build/, which every turn is played through (needs a Rust toolchain). ENGINE_SOURCE=<checkout> builds against a local copy of the engine instead of the pinned commit"
   task :build do
     crate = File.expand_path("../../ext/renderedstep", __dir__)
     arguments = %w[cargo build --release --locked]
@@ -45,7 +45,7 @@ namespace :engine do
     FileUtils.mkdir_p(File.join(crate, "build"))
     built = File.join(crate, "build", "renderedstep_native.#{RbConfig::CONFIG.fetch("DLEXT")}")
     FileUtils.cp(library, built)
-    puts "Built #{built}. TA_ENGINE=rust hands every turn to it."
+    puts "Built #{built}. Restart the app to play on it."
   end
 
   desc "Run the engine's own golden-vector tests, the kept-set request equality among them, against this checkout's test/engine_vectors/, at the commit the extension is pinned to (or ENGINE_SOURCE=<checkout>). Offline; needs a Rust toolchain"
@@ -71,7 +71,7 @@ namespace :engine do
     puts "The engine reproduces every golden vector and every kept request this checkout exports."
   end
 
-  desc "Play every sweep script through the Rust engine and check the gates: the goldens, the invariants, and the doctor and audit against a Ruby-played twin. SCRIPT=<name> for one. Offline; plays on scratch copies"
+  desc "Play every sweep script through the Rust engine and check the gates: the goldens, the invariants, and the doctor and audit against a twin played by the Ruby reference loop. SCRIPT=<name> for one. Offline; plays on scratch copies"
   task rust_gates: :environment do
     abort "The extension is not built (#{Playthrough::RustEngine.load_error}); run bin/rails engine:build." if Playthrough::RustEngine.extension.nil?
     abort "A provider key is set; the gates run with neither OPENROUTER_API_KEY nor TYPESAFE_API_KEY." if EngineSweep::Parity::WITHHELD.any? { |key| ENV[key].present? }
@@ -84,6 +84,6 @@ namespace :engine do
     abort "FAILED: #{failed.size} of #{scripts.size} script(s)." if failed.any?
 
     puts "PASSED: #{scripts.size} script(s) on the Rust engine: every step matches its golden, " \
-         "the invariants hold, and the doctor and audit agree with the Ruby-played twin."
+         "the invariants hold, and the doctor and audit agree with the twin the Ruby reference played."
   end
 end

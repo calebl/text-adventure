@@ -1,10 +1,10 @@
 require "test_helper"
 
-# `Playthrough::Session#play` with the switch on, against a stand-in for the
+# `Playthrough::Session#play` on the Rust engine, against a stand-in for the
 # extension: it writes the rows the engine would write and answers the engine's
 # document, so these pin Ruby's half of the crossing -- the callbacks, the
-# outcome, the fallback and the hand-back -- without a Rust toolchain. The
-# engine itself is held to the sweep by `bin/rails engine:rust_gates`.
+# outcome, and a turn the engine could not play -- without a Rust toolchain.
+# The engine itself is held to the sweep by `bin/rails engine:rust_gates`.
 class Playthrough::RustEngine::TurnTest < ActiveSupport::TestCase
   # What `RenderedStep` answers to, with the turn played by a block.
   class Extension
@@ -69,38 +69,54 @@ class Playthrough::RustEngine::TurnTest < ActiveSupport::TestCase
     assert_equal outcome, finished.sole.refusal
   end
 
-  test "an engine error hands the turn back, and the Ruby engine plays it from the same submission" do
+  test "a turn the engine could not play fails in its words, is counted, and never plays on Ruby" do
     extension = Extension.new do |game, line, token, _block|
-      Playthrough::Command.accept!(game, line, token).update!(status: "failed", error_kind: "error",
-                                                              journal: { "version" => 1, "steps" => {} })
-      { error: { kind: "unsupported", failure: nil, message: "this engine does not play that yet" } }
+      Playthrough::Command.accept!(game, line, token).update!(status: "failed", error_kind: "error")
+      { error: { kind: "unsupported", failure: nil, message: "this engine does not play an offer yet" } }
     end
-    before = Playthrough::RustEngine.fallbacks.fetch("unsupported", 0)
+    before = Playthrough::RustEngine.failures.fetch("unsupported", 0)
+    finished = []
 
-    outcome = on_rust(extension) do
-      BaseAgent.stub(:new, ->(*, **) { FakeAgent.new("The room is quiet.") }) do
-        Playthrough::Session.new(@game).play("/look", request_token: "t-3")
+    error = assert_raises(Playthrough::RustEngine::EngineError) do
+      on_rust(extension) do
+        BaseAgent.stub(:new, ->(*, **) { flunk "the Ruby engine was asked to play the line" }) do
+          Playthrough::Session.new(@game).play("give the key to the warden", request_token: "t-3",
+                                               on_finish: ->(ending) { finished << ending })
+        end
       end
     end
 
-    assert_kind_of Scene, outcome
-    assert_equal "completed", @game.commands.find_by!(request_token: "t-3").status
-    assert_equal 1, @game.commands.count
-    assert_equal before + 1, Playthrough::RustEngine.fallbacks.fetch("unsupported")
+    assert_equal "unsupported", error.kind
+    assert_equal "The engine could not play that turn: this engine does not play an offer yet", finished.sole.error
+    assert_equal "failed", @game.commands.find_by!(request_token: "t-3").status
+    assert_equal before + 1, Playthrough::RustEngine.failures.fetch("unsupported")
   end
 
-  test "a turn Rust cannot take plays on Ruby and is counted, without asking the extension" do
-    extension = Extension.new { raise "the extension must not be asked" }
-    before = Playthrough::RustEngine.fallbacks.fetch("no_request_token", 0)
+  test "without the extension a turn fails and says how to build it" do
+    submission = Playthrough::Session.new(@game).accept!("/look", "t-5")
+    finished = []
 
-    Playthrough::RustEngine.stub(:extension, extension) do
-      Playthrough::RustEngine.using(:rust) do
-        BaseAgent.stub(:new, ->(*, **) { FakeAgent.new("The room is quiet.") }) { Playthrough::Session.new(@game).play("/look") }
+    Playthrough::RustEngine.stub(:extension, nil) do
+      assert_raises(Playthrough::RustEngine::EngineError) do
+        Playthrough::RustEngine.using(:rust) do
+          Playthrough::Session.new(@game).play("/look", request_token: "t-5", on_finish: ->(ending) { finished << ending })
+        end
       end
     end
 
-    assert_empty extension.submitted
-    assert_equal before + 1, Playthrough::RustEngine.fallbacks.fetch("no_request_token")
+    assert_match "bin/rails engine:build", finished.sole.error
+    assert_equal "failed", submission.reload.status
+  end
+
+  test "a line with no token is given one, since the engine keeps every line in the queue" do
+    extension = Extension.new do |game, line, token, _block|
+      Playthrough::Command.accept!(game, line, token).update!(status: "completed")
+      { turned: { scene: nil, refusal: nil, safety_notice: false, setup: false }, state: {} }
+    end
+
+    on_rust(extension) { Playthrough::Session.new(@game).play("/look") }
+
+    assert_predicate extension.submitted.sole[:token], :present?
   end
 
   test "a model failure is how the turn ended, told in the app's words and never replayed on Ruby" do
@@ -124,44 +140,11 @@ class Playthrough::RustEngine::TurnTest < ActiveSupport::TestCase
     assert_equal "failed", @game.commands.find_by!(request_token: "t-4").status
   end
 
-  test "handing back leaves each submission the engine failed as a stopped worker leaves it" do
-    earlier = create(:playthrough_command, playthrough: @game, status: "failed", error_kind: "error")
-    untouched = create(:playthrough_command, playthrough: @game, status: "pending")
-    started = create(:playthrough_command, playthrough: @game, status: "pending")
-    turn = Playthrough::RustEngine::Turn.new(@game)
-    before = turn.send(:queue)
-    untouched.update!(status: "failed", error_kind: "error", journal: { "version" => 1, "steps" => {} })
-    started.update!(status: "failed", error_kind: "error", journal: { "version" => 1, "steps" => { "world_clock" => nil } })
-
-    turn.send(:hand_back!, before)
-
-    assert_equal %w[failed error], earlier.reload.then { |row| [ row.status, row.error_kind ] }
-    assert_equal [ "pending", nil ], untouched.reload.then { |row| [ row.status, row.error_kind ] }
-    assert_equal [ "running", nil ], started.reload.then { |row| [ row.status, row.error_kind ] }
-    assert_predicate started, :recoverable?
-  end
-
-  test "an ending the engine reached is written back into the arc step, so Ruby tells it" do
-    quest = create(:quest, :with_an_ending, story: @game.story)
-    closing = create(:scene, story: @game.story, location: @game.current_location)
-    turn = Playthrough::RustEngine::Turn.new(@game)
-    submission = create(:playthrough_command, playthrough: @game, status: "pending")
-    before = turn.send(:queue)
-    ending = Playthrough::Ending.create!(playthrough: @game, quest_outcome: quest.outcomes.sole, reached_at: @game.story_now)
-    @game.update!(current_scene: closing)
-    submission.update!(status: "failed", error_kind: "error", journal: { "version" => 1, "steps" => { "arc" => nil } })
-
-    turn.send(:hand_back!, before)
-
-    concluded = Playthrough::Command::Journal.new(submission.reload).read("arc")
-    assert_equal [ ending, quest.outcomes.sole, closing ], [ concluded.ending, concluded.outcome, concluded.scene ]
-  end
-
   private
 
-  # The switch on and the stand-in loaded, with the transaction every test runs
-  # in set aside: the engine is on another connection in life, here it is the
-  # stand-in's block on this one.
+  # The Rust engine, with the stand-in loaded and the transaction every test
+  # runs in set aside: the engine is on another connection in life, here it is
+  # the stand-in's block on this one.
   def on_rust(extension, &)
     Playthrough::RustEngine.stub(:extension, extension) do
       Playthrough::RustEngine.stub(:unplayable, nil) do

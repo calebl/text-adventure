@@ -56,10 +56,13 @@ class Playthrough::Command::Journal
     raise
   end
 
-  # A value as a step's receipt holds it. Public for the one writer of a
-  # receipt that is not a step: `Playthrough::RustEngine::Turn`, handing a
-  # turn the Rust engine journaled back to this one.
-  def self.encode(value) = new(nil).encode(value)
+  private
+
+  def save(key, value)
+    steps = @command.journal.fetch("steps", {}).merge(key => encode(value))
+    @command.update!(journal: @command.journal.merge("steps" => steps))
+    value
+  end
 
   def encode(value)
     case value
@@ -106,13 +109,5 @@ class Playthrough::Command::Journal
       row.rendering_error = BaseAgent::NoModelConfiguredError.new if value["setup"]
     end
     row
-  end
-
-  private
-
-  def save(key, value)
-    steps = @command.journal.fetch("steps", {}).merge(key => encode(value))
-    @command.update!(journal: @command.journal.merge("steps" => steps))
-    value
   end
 end

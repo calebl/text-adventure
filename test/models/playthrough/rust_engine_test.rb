@@ -1,35 +1,40 @@
 require "test_helper"
 
-# `Playthrough::RustEngine` is the switch and what Ruby knows about the Rust
-# engine: when a turn may be handed over, where its model calls go, how a
-# fallback is counted, and which Ruby exception an engine turn ended in. None of
-# it needs the extension built; `test/lib/rust_engine_extension_test.rb` is
+# `Playthrough::RustEngine` is what Ruby knows about the Rust engine: which
+# engine plays, when a turn cannot be handed to it, where its model calls go,
+# how a failure is counted, and which exception an engine turn ended in. None
+# of it needs the extension built; `test/lib/rust_engine_extension_test.rb` is
 # what runs against the real one.
 class Playthrough::RustEngineTest < ActiveSupport::TestCase
-  test "the switch is the environment variable, and a thread may set it either way" do
-    with_env("TA_ENGINE" => nil) { assert_not Playthrough::RustEngine.wanted? }
-    with_env("TA_ENGINE" => "ruby") { assert_not Playthrough::RustEngine.wanted? }
-    with_env("TA_ENGINE" => " Rust ") do
-      assert Playthrough::RustEngine.wanted?
-      Playthrough::RustEngine.using(:ruby) { assert_not Playthrough::RustEngine.wanted? }
+  test "the Rust engine plays unless a block asks for the Ruby reference" do
+    Playthrough::RustEngine.using(:rust) do
+      assert_equal :rust, Playthrough::RustEngine.engine
+      Playthrough::RustEngine.using(:ruby) { assert_equal :ruby, Playthrough::RustEngine.engine }
     end
-    Playthrough::RustEngine.using(:rust) { assert Playthrough::RustEngine.wanted? }
+    # The suite's own default, set once in test_helper.
+    assert_equal :ruby, Playthrough::RustEngine.engine
     assert_raises(ArgumentError) { Playthrough::RustEngine.using(:python) { nil } }
   end
 
-  test "a missing extension is nil with its reason kept, never an exception" do
-    Playthrough::RustEngine.stub(:extension, nil) do
-      assert_equal :not_built, Playthrough::RustEngine.unplayable("token")
+  test "the Ruby reference cannot be made the default outside the test environment" do
+    Rails.env.stub(:test?, false) do
+      assert_raises(Playthrough::RustEngine::EngineError) { Playthrough::RustEngine.reference_by_default! }
     end
   end
 
-  test "a turn is handed over only with a token, the extension, no local models and no open transaction" do
+  test "a missing extension is an error in words, never a load error" do
+    Playthrough::RustEngine.stub(:extension, nil) do
+      error = Playthrough::RustEngine.unplayable
+
+      assert_equal "not_built", error.kind
+      assert_match "bin/rails engine:build", error.notice
+    end
+  end
+
+  test "an open transaction is an error too: the engine writes on a connection of its own" do
     Playthrough::RustEngine.stub(:extension, Module.new) do
-      assert_equal :no_request_token, Playthrough::RustEngine.unplayable(nil)
-      with_env("TA_LOCAL_MODELS" => "1") { assert_equal :local_models, Playthrough::RustEngine.unplayable("token") }
-      # Every test here runs inside a transaction, which is exactly the case:
-      # the engine could neither write nor see this connection's rows.
-      assert_equal :transaction_open, Playthrough::RustEngine.unplayable("token")
+      # Every test here runs inside a transaction, which is exactly the case.
+      assert_equal "transaction_open", Playthrough::RustEngine.unplayable.kind
     end
   end
 
@@ -53,18 +58,19 @@ class Playthrough::RustEngineTest < ActiveSupport::TestCase
     assert_nil Playthrough::RustEngine.live_models_guard
   end
 
-  test "a fallback is logged, counted and published, and says nothing of a key" do
+  test "a turn the engine could not play is logged, counted and published, and says nothing of a key" do
     events = []
-    subscriber = ActiveSupport::Notifications.subscribe("fallback.rust_engine") { |*, payload| events << payload }
+    subscriber = ActiveSupport::Notifications.subscribe("failure.rust_engine") { |*, payload| events << payload }
     log = StringIO.new
-    before = Playthrough::RustEngine.fallbacks.fetch("unsupported", 0)
+    before = Playthrough::RustEngine.failures.fetch("unsupported", 0)
+    error = Playthrough::RustEngine::EngineError.new(:unsupported, "this engine does not play an offer yet")
     with_env("OPENROUTER_API_KEY" => "sk-or-secret") do
-      with_logger(Logger.new(log)) { Playthrough::RustEngine.fell_back!(:unsupported, "an offer through the models") }
+      with_logger(Logger.new(log)) { Playthrough::RustEngine.failed!(error) }
     end
 
-    assert_equal before + 1, Playthrough::RustEngine.fallbacks.fetch("unsupported")
-    assert_equal [ { reason: "unsupported", detail: "an offer through the models" } ], events
-    assert_match "this turn plays on Ruby (unsupported: an offer through the models)", log.string
+    assert_equal before + 1, Playthrough::RustEngine.failures.fetch("unsupported")
+    assert_equal [ { kind: "unsupported", message: "this engine does not play an offer yet" } ], events
+    assert_match "a turn failed (unsupported): this engine does not play an offer yet", log.string
     assert_no_match "sk-or-secret", log.string
   ensure
     ActiveSupport::Notifications.unsubscribe(subscriber)
@@ -86,11 +92,8 @@ class Playthrough::RustEngineTest < ActiveSupport::TestCase
     assert_kind_of Playthrough::Command::InterruptedError, raised.call("interrupted")
     assert_kind_of Playthrough::Command::PreviouslyFailedError, raised.call("previously_failed")
     assert_kind_of Interrupt, raised.call("stopped")
-  end
-
-  test "the engine errors that hand a turn back are the engine's, never a model's" do
-    assert_equal %w[database no_such_playthrough no_such_story panicked schema_changed schema_mismatch unsupported],
-                 Playthrough::RustEngine::HANDED_BACK.sort
+    assert_kind_of Playthrough::RustEngine::EngineError, raised.call("unsupported")
+    assert_equal "The engine could not play that turn: m", Playthrough::Session.ending_for(raised.call("panicked")).error
   end
 
   private

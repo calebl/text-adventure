@@ -35,10 +35,6 @@ ENV["RAILS_ENV"] ||= "test"
 #   RELAY_OPENROUTER_API_KEY   `Relay.configured?` is the whole of the model
 #                              relay's switch; the relay tests set a fake key
 #                              themselves and stub the upstream.
-#   TA_ENGINE                  `Playthrough::RustEngine.wanted?`: with `rust`
-#                              every turn a test plays is offered to the Rust
-#                              engine first. The switch's own tests set it
-#                              themselves (`Playthrough::RustEngine.using`).
 #
 # It takes TWO passes, and the second one is not belt-and-braces. `dotenv-rails`
 # is in the `:development, :test` group, so it loads `.env` while
@@ -55,7 +51,7 @@ ENV["RAILS_ENV"] ||= "test"
 declare_environment = lambda do
   %w[
     OPENROUTER_API_KEY OPENROUTER_MODEL TA_DEBUG_VIEW
-    TA_CHAT_KEEP_TURNS TA_CHAT_HISTORY_EXCHANGES TYPESAFE_API_KEY RELAY_OPENROUTER_API_KEY TA_ENGINE
+    TA_CHAT_KEEP_TURNS TA_CHAT_HISTORY_EXCHANGES TYPESAFE_API_KEY RELAY_OPENROUTER_API_KEY
   ].each { |key| ENV.delete(key) }
 end
 
@@ -68,6 +64,13 @@ declare_environment.call
 # `RubyLLM.config` itself and restores it (see `with_openrouter_key` in
 # `test/models/chat_test.rb`).
 RubyLLM.config.openrouter_api_key = nil
+
+# THE SUITE PLAYS THE RUBY TURN LOOP, the parity reference, by default: almost
+# every test runs inside a transaction the Rust engine, on a connection of its
+# own, could neither see into nor write past. The Rust engine's own tests ask
+# for it (`Playthrough::RustEngine.using(:rust)`), and `bin/rails
+# engine:rust_gates` holds it to this loop. See `Playthrough::RustEngine`.
+Playthrough::RustEngine.reference_by_default!
 
 require "rails/test_help"
 require "minitest/mock"

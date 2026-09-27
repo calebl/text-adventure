@@ -67,7 +67,7 @@ class EngineSweep::Walk
     # `requires_new` because this may be called from inside the suite's own
     # transaction, where a plain nested `transaction` shares its parent and
     # `ActiveRecord::Rollback` silently does nothing at all.
-    ActiveRecord::Base.transaction(requires_new: true) do
+    on_the_reference do
       pin_ids!
       story = load_world!
       games = {}
@@ -147,6 +147,13 @@ class EngineSweep::Walk
   end
 
   private
+
+  # THE RUBY TURN LOOP, the parity reference, in one transaction: a whole walk
+  # is rolled back, and the Rust engine could not play inside it.
+  # `EngineSweep::Parity::InProcess` is how a script plays on Rust.
+  def on_the_reference(&)
+    Playthrough::RustEngine.using(:ruby) { ActiveRecord::Base.transaction(requires_new: true, &) }
+  end
 
   def walk(mechanics, step)
     realization = before_realization(mechanics.playthrough.story, step)

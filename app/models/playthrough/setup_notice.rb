@@ -20,8 +20,9 @@ module Playthrough::SetupNotice
   # another model cannot fix either of them.
   FAILURES = [ BaseAgent::NoModelConfiguredError, BaseAgent::UnauthorizedProviderError ].freeze
 
-  WAYS_OUT = "Set OPENROUTER_API_KEY for the hosted rotation, or TA_LOCAL_MODELS=1 to use the " \
-             "models installed on this machine. The server log names the exact reason.".freeze
+  # Only the hosted rotation: the Rust engine plays every turn, and the local
+  # rotation (`TA_LOCAL_MODELS`) is the Ruby app's alone.
+  WAYS_OUT = "Set OPENROUTER_API_KEY for the hosted rotation. The server log names the exact reason.".freeze
 
   # TWO SENTENCES BECAUSE THERE ARE TWO OUTCOMES, and one of them is not a
   # finished turn. A committed action falls back to the engine's own prose and

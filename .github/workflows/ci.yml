@@ -73,7 +73,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RAILS_ENV: test
-      TA_ENGINE: rust
     steps:
       - name: Install packages
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y curl libjemalloc2 libvips sqlite3 libclang-dev

@@ -32,7 +32,10 @@ module PerStepEngine
     raise EngineSweep::InvalidScript, "#{script.name} has no step #{step_index}" if step.nil? || step.reseed?
 
     dump = EngineSweep::Parity.on_database(database) do
-      EngineSweep.without_a_model { EngineSweep::Walk.new(script).play_step(step).to_h }
+      EngineSweep.without_a_model do
+        # The Ruby engine, the parity reference: this is its per-step engine.
+        Playthrough::RustEngine.using(:ruby) { EngineSweep::Walk.new(script).play_step(step).to_h }
+      end
     end
     # The notices are the runner's to render, not an engine's.
     "#{dump.merge("shown" => nil).to_json}\n"
