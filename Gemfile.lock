@@ -136,6 +136,7 @@ GEM
       raabro (~> 1.4)
     globalid (1.4.0)
       activesupport (>= 6.1)
+    hana (1.3.7)
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
     importmap-rails (2.2.3)
@@ -150,6 +151,11 @@ GEM
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
     json (2.21.2)
+    json_schemer (2.5.0)
+      bigdecimal
+      hana (~> 1.3)
+      regexp_parser (~> 2.0)
+      simpleidn (~> 0.2)
     kamal (2.12.0)
       activesupport (>= 7.0)
       base64 (~> 0.2)
@@ -331,6 +337,7 @@ GEM
     ruby_llm-schema (0.4.0)
     schematist (1.1.0)
     securerandom (0.4.1)
+    simpleidn (0.3.0)
     solid_cable (4.0.2)
       actioncable (>= 7.2)
       activejob (>= 7.2)
@@ -408,6 +415,7 @@ DEPENDENCIES
   dotenv-rails
   factory_bot_rails
   importmap-rails
+  json_schemer (~> 2.5)
   kamal
   minitest-mock
   open_router (~> 0.3.3)

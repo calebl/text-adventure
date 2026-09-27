@@ -33,5 +33,15 @@ module TextAdventure
     # `load_defaults 8.0` already supplies the CookieStore, so nothing else is needed.
     # This also makes the generators produce views again, which is wanted.
     config.api_only = false
+
+    # THE HOSTED MODE SERVES THE ENGINE API AND NOTHING ELSE. With
+    # `TA_HOSTED_API_ONLY=1`, config/routes.rb draws only `/api/v1` and `/up`:
+    # the browser play page has no login, and debug, map, lab and machinery are
+    # windows into every game, so none of them may be reachable from a hosted
+    # instance. Action Cable is not mounted either -- it only ever carried the
+    # play page. Where the instance listens is the operator's configuration
+    # (bind it to a loopback address), never something this app assumes.
+    config.x.hosted_api_only = ENV["TA_HOSTED_API_ONLY"] == "1"
+    config.action_cable.mount_path = nil if config.x.hosted_api_only
   end
 end

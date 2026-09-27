@@ -3,6 +3,26 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # THE ENGINE API, drawn in every mode. docs/protocol/v1.md is the contract;
+  # `Api::V1::BaseController` has who may reach what.
+  namespace :api, defaults: { format: :json } do
+    namespace :v1 do
+      get "/", to: "service#show", as: :service
+      resources :worlds, only: [ :index ]
+      resources :games, only: [ :index, :create, :show ] do
+        resources :turns, only: [ :create ] do
+          resources :events, only: [ :index ], controller: "turn_events"
+        end
+        post "interruptions/:turn_id/acknowledge", to: "interruptions#acknowledge", as: :acknowledge_interruption
+      end
+    end
+  end
+
+  # HOSTED, THAT IS ALL THERE IS: see `config.x.hosted_api_only` in
+  # config/application.rb. Everything below is the browser's and the
+  # maintainer's, and none of it has a login.
+  next if Rails.configuration.x.hosted_api_only
+
   # The browser interface only *plays* stories. Generating them is still
   # `rake game:new[premise]`.
   resources :playthroughs, only: [ :index, :create, :show ] do

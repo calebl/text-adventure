@@ -103,6 +103,10 @@ class Chat < ApplicationRecord
   def self.capped? = !KEEP_TURNS.nil?
 
   belongs_to :playthrough, optional: true
+  # WHOSE ALLOWANCE THE CALL WAS SPENT FROM -- stamped by `BaseAgent` from
+  # `Current`, and read by `Player::Allowance`. Separate from `playthrough`
+  # because a room realized during a turn is filed under no playthrough.
+  belongs_to :player, optional: true
   belongs_to :character, optional: true
 
   validates :purpose, inclusion: { in: PURPOSES }, allow_nil: true

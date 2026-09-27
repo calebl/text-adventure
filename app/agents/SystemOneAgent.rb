@@ -146,7 +146,10 @@ class SystemOneAgent
     raise Unavailable, "a System One request with no questions" if questions.blank?
 
     body = { model: model_id, state: state, questions: questions }
-    Answers.new(parse(transport.call(body)), questions)
+    # THE RECEIPT IS WRITTEN BEFORE THE REQUEST GOES, because a request that
+    # fails after it was sent may still have been billed. See SystemOneReceipt.
+    receipt = SystemOneReceipt.record!(purpose: @purpose, transport: transport_name)
+    Answers.new(parse(transport.call(body)), questions).tap { |answers| receipt.reported!(answers.usage) }
   end
 
   private

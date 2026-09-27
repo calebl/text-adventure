@@ -1,16 +1,9 @@
 class TurnsController < ApplicationController
-  # Pre-journal workers left no evidence from which to replay safely. Only an
-  # explicit player acknowledgement may close that old interruption, retaining
-  # every saved effect. Taking the same lock waits for any still-live worker;
-  # it cannot discard a new recoverable command or a completed turn.
+  # Letting go of an old interruption is `Playthrough::Session`'s; see
+  # `#acknowledge_interruption!` for what it may and may not close.
   def acknowledge_interruption
     playthrough = Playthrough.find(params[:playthrough_id])
-    GameLock.synchronize("playthrough", playthrough.id) do
-      submission = playthrough.commands.find(params[:command_id])
-      if submission.status == "running" && submission.journal.blank?
-        submission.update!(status: "failed", error_kind: "interruption_acknowledged")
-      end
-    end
+    Playthrough::Session.new(playthrough).acknowledge_interruption!(params[:command_id])
     redirect_to playthrough_path(playthrough, anchor: "bottom"), status: :see_other
   end
 
@@ -62,5 +55,9 @@ class TurnsController < ApplicationController
     end
   rescue ActiveRecord::RecordInvalid
     head :conflict
+  rescue Player::Allowance::LimitReached
+    # A game an API player owns, typed into from the browser: the allowance
+    # binds here too, and nothing was written.
+    head :payment_required
   end
 end

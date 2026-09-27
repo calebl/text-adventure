@@ -157,7 +157,8 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
   its input and its transport and nothing else — no dispatch, no prompt, no
   notice wording and no writer of its own; what it needs and the driver does
   not answer is added to the driver, never to the front end. The browser
-  (`NarrationJob`), `bin/play` and the MCP narrated mode are its consumers.
+  (`NarrationJob`), the engine API (`/api/v1`), `bin/play` and the MCP
+  narrated mode are its consumers.
   `rake game:mechanics` stays the prose-free console. There is still no
   `rake game:play`: a play loop in a rake task is the thing this rule
   prevents. `README.md` carries the command surface in full.

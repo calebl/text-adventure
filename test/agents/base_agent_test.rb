@@ -746,4 +746,14 @@ class BaseAgentTest < ActiveSupport::TestCase
       Struct.new(:content).new(@content)
     end
   end
+
+  # WHOSE ALLOWANCE A CALL IS SPENT FROM is stamped on the conversation when it
+  # is opened, from `Current` -- including for a call filed under no game.
+  test "a new conversation is filed under the current player" do
+    player = create(:player)
+    chat = Current.set(player: player) { BaseAgent.new(model_options: OPTIONS, purpose: "location").chat }
+    assert_equal player, chat.reload.player
+
+    assert_nil BaseAgent.new(model_options: OPTIONS, purpose: "location").chat.reload.player
+  end
 end
