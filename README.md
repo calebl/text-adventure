@@ -177,6 +177,25 @@ seed files; generation currently creates open passages. See the
 [physical item parameters](db/seeds/worlds/README.md#use_kind-and-combustible-physical-parameters)
 and [door barriers](db/seeds/worlds/README.md#barrier-and-key_template-a-doorways-initial-state).
 
+## Play over the engine API
+
+A client in another process (a terminal client, say) plays through `/api/v1`,
+an HTTP + Server-Sent Events protocol. [docs/protocol/v1.md](docs/protocol/v1.md)
+is the contract and `docs/protocol/v1/openapi.json` its schemas. Players are
+invited, not signed up, and each has a monthly spend limit the engine enforces
+before it accepts a turn:
+
+```bash
+rake players:invite[ada]          # prints ada's token once; LIMIT_USD=2 to change the default of $1
+rake players:limit[ada,2.50]      # dollars a calendar month
+rake players:revoke[ada]          # the token stops working; games and receipts are kept
+```
+
+`TA_HOSTED_API_ONLY=1` boots an instance that serves only `/api/v1` and `/up`:
+no play page, no debug, map, lab or machinery, and no cable. Bind it to a
+loopback address and put whatever reaches it in front; the app assumes no
+address of its own.
+
 ## Play the mechanics on their own
 
 `rake game:mechanics` walks a world with **the narration switched off and
@@ -482,9 +501,9 @@ that produced all of this and says defect by defect how far the walk gets.
 ## How a turn works
 
 The loop is `Playthrough::Turn` (`app/models/playthrough/turn.rb`). It lives in
-`app/models` because the browser is the only front end and its whole share of a
-turn is handing the class a string and a block to write chunks into — there is
-no `rake game:play`.
+`app/models` so that no front end owns it: every front end reaches it through
+one driver, `Playthrough::Session`, and its whole share of a turn is handing the
+session a string and a block to write chunks into — there is no `rake game:play`.
 
 Read the colours first. **Purple is a model call. Teal is the app deciding from
 records it already holds. Orange is a gap — something not built yet.** That

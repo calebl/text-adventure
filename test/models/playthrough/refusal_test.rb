@@ -154,6 +154,25 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
     assert_match(/There is nobody here to fight/, refuse(intent(:attack)).reason)
   end
 
+  # "/attack the core" named scenery: the refusal says what an attack can be
+  # aimed at and what the player could do instead, and still plays nothing.
+  test "an attack in an empty room says attacks are aimed at people, not the room" do
+    refusal = refuse(intent(:attack), typed: "attack the core")
+
+    assert_equal :unresolved, refusal.kind
+    assert_match(/aimed at a person standing here, not at the room or anything built into it/, refusal.reason)
+    assert_match(/look around, or use, take or throw something you can reach/, refusal.reason)
+    assert_match(/Nothing has changed/, refusal.text)
+  end
+
+  test "a thing named with its own article is not given a second one" do
+    @press.update!(name: "a bolted filing press")
+    refusal = Playthrough::Refusal.for(intent(:throw, item: @press, at: @rowe), typed: "throw the press at Rowe")
+
+    assert_match(/The bolted filing press is immovable/, refusal.text)
+    assert_no_match(/the a /i, refusal.text)
+  end
+
   test "a set with something in it is refused by saying the command did not land on it" do
     refusal = refuse(intent(:take), offered: [ @index, @apron ])
 

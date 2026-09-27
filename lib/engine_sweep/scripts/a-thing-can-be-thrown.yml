@@ -112,7 +112,22 @@ steps:
     refused: true
     offers:
     - nothing called "the moon"
+    - 'Nothing was thrown: the Ward Office 12 daybook stays in your hands'
     - Halkett Rowe
+    changed: false
+    carrying: [Ward Office 12 daybook]
+
+- id: scenery-is-not-a-target-and-the-thing-stays-on-the-floor
+  type: throw the ward stamp at the desk
+  why: >-
+    A fixture is not a record a throw can land on, and the thing that would have
+    been lifted for the throw was never lifted -- the engine says where it still
+    is, so no paragraph can skid it across the floor.
+  expect:
+    refused: true
+    offers:
+    - nothing called "the desk"
+    - 'Nothing was thrown: the ward stamp stays where it is lying'
     changed: false
     carrying: [Ward Office 12 daybook]
 

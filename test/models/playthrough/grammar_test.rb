@@ -383,7 +383,17 @@ class Playthrough::GrammarTest < ActiveSupport::TestCase
 
     assert_not_predicate reading, :resolved?
     assert_match(/matches more than one thing to throw it at/, reading.refusal)
+    assert_match(/stays in your hands/, reading.refusal)
     assert_match(/The Supply Closet/, reading.refusal)
+  end
+
+  # SCENERY IS NOT A TARGET, and a thing picked up off the floor for the throw
+  # was never picked up: the refusal says it is still lying where it was.
+  test "a thing lying here that is aimed at nothing is said to stay where it is lying" do
+    reading = read("/throw the ward stamp at the core")
+
+    assert_not_predicate reading, :resolved?
+    assert_match(/Nothing was thrown: the ward stamp stays where it is lying/, reading.refusal)
   end
 
   test "an aim that is neither somebody here nor a way out is refused" do
@@ -391,6 +401,7 @@ class Playthrough::GrammarTest < ActiveSupport::TestCase
 
     assert_not_predicate reading, :resolved?
     assert_match(/nothing called "the moon" to throw it at/, reading.refusal)
+    assert_match(/Nothing was thrown: the Ward Office 12 daybook stays in your hands/, reading.refusal)
   end
 
   # BOTH OF A THROW'S NAMES COME OUT BEFORE `JOINING_WORDS` IS LOOKED FOR, or a

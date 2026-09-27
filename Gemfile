@@ -59,6 +59,8 @@ end
 group :test do
   # Minitest 6 extracted minitest/mock into its own gem
   gem "minitest-mock"
+  # The API's contract tests validate every response against docs/protocol/v1.
+  gem "json_schemer", "~> 2.5"
 end
 
 

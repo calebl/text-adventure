@@ -203,6 +203,72 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
     end
   end
 
+  # --- a thing thrown ------------------------------------------------------
+
+  # A THROW RESOLVES TWO NAMES: `target` out of the hands and the floor, and
+  # `thrown_at` out of the people here and the ways out.
+  test "a throw resolves the thing carried and the person it was aimed at" do
+    maren = create(:character, story: @story, fullname: "Maren Vosk", nickname: "Maren", location: @here)
+    lamp = create(:item, :carried, playthrough: @playthrough, name: "tin lamp")
+
+    intent, = classify({ "intent" => "throw", "target" => "tin lamp", "also_named" => "nothing",
+                         "thrown_at" => "Maren" })
+
+    assert intent.throw?
+    assert_equal lamp, intent.item
+    assert_equal maren, intent.at
+    assert_nil intent.also_named
+    assert_not intent.refused?
+  end
+
+  test "a throw through a way out resolves the exit, and a thing lying here can be thrown" do
+    stair = connect("The Sunken Stair")
+    stone = lying_here(@playthrough, @here, name: "loose cobble")
+
+    intent, = classify({ "intent" => "throw", "target" => "loose cobble", "thrown_at" => "The Sunken Stair" })
+
+    assert_equal stone, intent.item
+    assert_equal stair, intent.at
+    assert_not intent.refused?
+  end
+
+  # EITHER NAME MISSING AND NOTHING WAS THROWN. The refusal says where the thing
+  # still is, and neither counter is written: `throw` is not a drift action.
+  test "a throw aimed at nothing on either list is refused and the thing stays in the hands" do
+    connect("The Sunken Stair")
+    lamp = create(:item, :carried, playthrough: @playthrough, name: "tin lamp")
+
+    intent, = classify({ "intent" => "throw", "target" => "tin lamp", "thrown_at" => "nothing" })
+    refusal = Playthrough::Refusal.for(intent, typed: "throw the lamp at the wall")
+
+    assert_equal lamp, intent.item
+    assert_nil intent.at
+    assert_predicate intent, :throws_at_nothing?
+    assert_equal :unresolved, refusal.kind
+    assert_match(/\ANothing was thrown: the tin lamp stays in your hands\./, refusal.fact)
+    assert_equal 0, @playthrough.drifts.count
+  end
+
+  test "a throw of nothing named is refused before anything is aimed" do
+    maren = create(:character, story: @story, fullname: "Maren Vosk", location: @here)
+
+    intent, = classify({ "intent" => "throw", "target" => "nothing", "thrown_at" => "Maren Vosk" })
+    refusal = Playthrough::Refusal.for(intent, typed: "throw it at Maren")
+
+    assert_nil intent.item
+    assert_equal maren, intent.at
+    assert_equal :unresolved, refusal.kind
+    assert_match(/\ANothing was thrown: that did not resolve to anything in your hands or lying here\./, refusal.fact)
+  end
+
+  test "the instructions offer throw after use and say a thrown switch is other" do
+    _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
+
+    assert_match(/use     - consume.*\n  throw   - they are throwing/, agent.instructions)
+    assert_match(/"Throw the switch" or "throw a party" is not\s+a throw of a thing: answer `other`\./,
+                 agent.instructions)
+  end
+
   # --- looking at something -------------------------------------------------
 
   # `examine` IS THE ONLY ACTION THAT READS BOTH ITEM SETS. Looking at a thing

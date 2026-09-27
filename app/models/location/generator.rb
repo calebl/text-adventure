@@ -87,7 +87,10 @@ class Location::Generator
   # the sides are drawn independently of everything else keyed on this row (see
   # `Roll`'s header for what an axis buys). Nil for every caller with no band --
   # `Location::Interior`'s rooms, `Quest::Deadline`'s places and every stub named
-  # by an answer that picked `no inside`.
+  # by an answer that picked `no inside` -- and nil for `one room` too, which is
+  # the named place itself rather than a building around one room
+  # (`Location::Parameters::ONE_ROOM`), so it is realized with the room schema,
+  # keeps the doorway that named it, and is stood in under that name.
   def self.create_stub!(story, name:, teaser:, inside: nil, population: nil)
     room = story.locations.create!(name: name, teaser: teaser, detail_level: :stub,
                                    danger: Location::Danger.for_a_new_room(story),
@@ -151,11 +154,12 @@ class Location::Generator
   # the app that already means that.
   #
   # `Location#place?` IS THE WHOLE OF THE DECISION, and it is narrow on purpose.
-  # It is true only of a row that already carries a FOOTPRINT, which today only
-  # a seed file writes -- so no generated world's behaviour changes: every stub
-  # this class creates carries no extent and answers false. WHICH generated
-  # stubs should become places is a decision about the Iron Gate's scope and is
-  # deliberately not made here.
+  # It is true only of a row that already carries a FOOTPRINT, which a seed file
+  # writes and `.create_stub!` writes for an exit picked with a band of several
+  # rooms. A stub picked `one room` carries none and answers false, so it is
+  # realized as the room it is and never split into a single child that fills it.
+  # WHICH stubs become places is decided where the footprint is written, and not
+  # here.
   #
   # BEFORE THE FLIP TO `realized`, in the detail checkpoint's transaction.
   # A layout that raises rolls back every admission and leaves its paid answer
@@ -1369,10 +1373,11 @@ class Location::Generator
   # AND THE `inside` PICK IS WRITTEN HERE, AS A FOOTPRINT AND NOT AS A COLUMN OF
   # ITS OWN. `Location::Parameters::INSIDE` is the band each label names in paces
   # and the engine rolls both sides inside it, so `Location#place?` -- which is
-  # `interior? && !placed?`, a footprint and no position -- starts answering true
-  # for a generated stub with no new column and no new writer. That predicate's
-  # own header said this is how it would happen and that it would not have to
-  # move; this is the day, and it did not.
+  # `interior? && !placed?`, a footprint and no position -- answers true for a
+  # generated stub with no new column and no new writer. ONLY A BAND OF SEVERAL
+  # ROOMS WRITES ONE: `one room` is the named place itself and gets no footprint
+  # (`Location::Parameters::ONE_ROOM`), because a place laid out as a single room
+  # that fills it puts the player in "X room 1" instead of in X.
   #
   # ONLY A STUB BEING BORN, never a place that already exists: a footprint is a
   # world's parameter and this does not overrule one (`Location::Interior`'s

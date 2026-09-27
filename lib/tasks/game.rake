@@ -749,7 +749,7 @@ namespace :game do
       puts "key, no network. A room nobody has written stays unwritten. `help` for the grammar."
     end
     puts "Playing as #{playthrough.character&.fullname || "nobody"}, playthrough ##{playthrough.id}."
-    puts "`help` for what this understands, `quit` to stop."
+    puts "`help` for what this understands, `glance` for the panels, `quit` to stop."
     puts
     puts mechanics.read
     puts
@@ -771,6 +771,14 @@ namespace :game do
       # was rather than dying on it: the classifier is the only thing here that
       # can fail that way, and a session that ends on a rate limit loses the walk
       # that was being set up.
+      # THE PANELS A FRONT END WOULD DRAW, out of the same reader the driver
+      # answers (`Playthrough::Session#glance`). Reads only; not a turn.
+      if line.strip.downcase == "glance"
+        puts Playthrough::Session.new(playthrough).glance
+        puts
+        next
+      end
+
       begin
         puts mechanics.run(line)
       rescue StandardError => e

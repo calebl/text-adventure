@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_031841) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -65,11 +65,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
     t.integer "character_id"
     t.datetime "created_at", null: false
     t.string "model_id_string"
+    t.integer "player_id"
     t.integer "playthrough_id"
     t.string "purpose"
     t.integer "ruby_llm_model_id"
     t.datetime "updated_at", null: false
     t.index ["character_id"], name: "index_chats_on_character_id"
+    t.index ["player_id"], name: "index_chats_on_player_id"
     t.index ["playthrough_id", "character_id", "purpose"], name: "index_chats_on_conversation_key"
     t.index ["playthrough_id"], name: "index_chats_on_playthrough_id"
     t.index ["ruby_llm_model_id"], name: "index_chats_on_ruby_llm_model_id"
@@ -271,6 +273,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
     t.index ["tool_call_id"], name: "index_messages_on_tool_call_id"
   end
 
+  create_table "players", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.decimal "monthly_limit_usd", precision: 10, scale: 4, default: "1.0", null: false
+    t.string "name", null: false
+    t.datetime "revoked_at"
+    t.string "token_digest", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_players_on_name", unique: true
+    t.index ["token_digest"], name: "index_players_on_token_digest", unique: true
+  end
+
   create_table "playthrough_beats", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "playthrough_id", null: false
@@ -438,6 +451,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
     t.index ["scene_id"], name: "index_playthrough_tolls_on_scene_id"
   end
 
+  create_table "playthrough_turn_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.json "data", default: {}, null: false
+    t.string "kind", null: false
+    t.integer "playthrough_command_id", null: false
+    t.integer "sequence", null: false
+    t.datetime "updated_at", null: false
+    t.index ["playthrough_command_id", "sequence"], name: "index_playthrough_turn_events_on_command_and_sequence", unique: true
+    t.index ["playthrough_command_id"], name: "index_playthrough_turn_events_on_playthrough_command_id"
+  end
+
   create_table "playthrough_vitals", force: :cascade do |t|
     t.integer "character_id", null: false
     t.datetime "created_at", null: false
@@ -454,6 +478,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
     t.integer "character_id", null: false
     t.string "chosen", null: false
     t.datetime "created_at", null: false
+    t.string "decided_by"
     t.text "fact", null: false
     t.integer "location_id", null: false
     t.integer "playthrough_id", null: false
@@ -461,6 +486,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
     t.integer "scene_id"
     t.string "serves", null: false
     t.string "status", null: false
+    t.string "system_one_error"
     t.datetime "updated_at", null: false
     t.index ["character_id"], name: "index_playthrough_volitions_on_character_id"
     t.index ["location_id"], name: "index_playthrough_volitions_on_location_id"
@@ -475,12 +501,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
     t.integer "current_location_id"
     t.integer "current_scene_id"
     t.datetime "ended_at"
+    t.integer "player_id"
     t.integer "story_id", null: false
     t.string "token", null: false
     t.datetime "updated_at", null: false
     t.index ["character_id"], name: "index_playthroughs_on_character_id"
     t.index ["current_location_id"], name: "index_playthroughs_on_current_location_id"
     t.index ["current_scene_id"], name: "index_playthroughs_on_current_scene_id"
+    t.index ["player_id"], name: "index_playthroughs_on_player_id"
     t.index ["story_id"], name: "index_playthroughs_on_story_id"
     t.index ["token"], name: "index_playthroughs_on_token", unique: true
   end
@@ -676,6 +704,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
     t.index ["universe_id"], name: "index_stories_on_universe_id"
   end
 
+  create_table "system_one_receipts", force: :cascade do |t|
+    t.decimal "cost_usd", precision: 12, scale: 6, null: false
+    t.datetime "created_at", null: false
+    t.integer "player_id"
+    t.integer "playthrough_id"
+    t.string "purpose"
+    t.string "transport"
+    t.datetime "updated_at", null: false
+    t.index ["player_id", "created_at"], name: "index_system_one_receipts_on_player_id_and_created_at"
+    t.index ["player_id"], name: "index_system_one_receipts_on_player_id"
+    t.index ["playthrough_id"], name: "index_system_one_receipts_on_playthrough_id"
+  end
+
   create_table "universes", force: :cascade do |t|
     t.text "civilizations"
     t.datetime "created_at", null: false
@@ -725,6 +766,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
   add_foreign_key "characters", "races"
   add_foreign_key "characters", "stories"
   add_foreign_key "chats", "characters"
+  add_foreign_key "chats", "players"
   add_foreign_key "chats", "playthroughs"
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "interactions", "characters"
@@ -776,6 +818,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
   add_foreign_key "playthrough_tolls", "locations"
   add_foreign_key "playthrough_tolls", "playthroughs"
   add_foreign_key "playthrough_tolls", "scenes"
+  add_foreign_key "playthrough_turn_events", "playthrough_commands"
   add_foreign_key "playthrough_vitals", "characters"
   add_foreign_key "playthrough_vitals", "playthroughs"
   add_foreign_key "playthrough_volitions", "characters"
@@ -784,6 +827,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
   add_foreign_key "playthrough_volitions", "scenes"
   add_foreign_key "playthroughs", "characters"
   add_foreign_key "playthroughs", "locations", column: "current_location_id"
+  add_foreign_key "playthroughs", "players"
   add_foreign_key "playthroughs", "scenes", column: "current_scene_id"
   add_foreign_key "playthroughs", "stories"
   add_foreign_key "quest_outcomes", "quests"
@@ -795,6 +839,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141619) do
   add_foreign_key "scenes", "scenes", column: "previous_scene_id"
   add_foreign_key "scenes", "stories"
   add_foreign_key "stories", "universes"
+  add_foreign_key "system_one_receipts", "players"
+  add_foreign_key "system_one_receipts", "playthroughs"
   add_foreign_key "world_events", "stories"
   add_foreign_key "world_events", "world_mechanics"
   add_foreign_key "world_mechanics", "stories"

@@ -89,7 +89,8 @@ module Eval::Classifier
   # model.
   def self.digest(corpus = self.corpus)
     Digest::SHA256.hexdigest(corpus.lines.map { |line| [ line.id, line.typed, line.intent,
-                                                         line.target, line.also_named ].join("\u0000") }.join("\n"))
+                                                         line.target, line.also_named,
+                                                         *line.thrown_at ].join("\u0000") }.join("\n"))
                   .first(16)
   end
 

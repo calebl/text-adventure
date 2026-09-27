@@ -5,6 +5,10 @@
 class Playthrough < ApplicationRecord
   belongs_to :story
   belongs_to :character, optional: true
+  # WHO MAY PLAY THIS GAME OVER THE API, or nil for a game started in the
+  # browser. See `Player`: a player reaches only the games carrying their id.
+  belongs_to :player, optional: true
+  has_many :system_one_receipts, dependent: :nullify
   has_many :passages, class_name: "Playthrough::Passage", dependent: :destroy
   belongs_to :current_location, class_name: "Location", optional: true
   belongs_to :current_scene, class_name: "Scene", optional: true

@@ -168,6 +168,31 @@ class ChatTest < ActiveSupport::TestCase
     assert_equal [ "system" ], chat.messages.reload.pluck(:role)
   end
 
+  # A worker killed during a call leaves its prompt, and a streamed answer's
+  # empty placeholder, after the last answer. Nothing a finished attempt wrote
+  # is touched, including a structured answer held in `content_raw`.
+  test "drop_unanswered! removes what follows the last answer and nothing before it" do
+    chat = create(:chat)
+    create(:message, :system, chat: chat)
+    create(:message, chat: chat, content: "asked")
+    create(:message, :assistant, chat: chat, content: nil, content_raw: { "action" => "I nod." })
+    create(:message, chat: chat, content: "asked again")
+    create(:message, :assistant, chat: chat, content: "")
+
+    assert_equal 2, chat.drop_unanswered!
+    assert_equal %w[system user assistant], chat.messages.reload.reorder(:id).pluck(:role)
+    assert_equal 0, chat.drop_unanswered!
+  end
+
+  test "drop_unanswered! on a first exchange that never finished keeps only the instructions" do
+    chat = create(:chat)
+    create(:message, :system, chat: chat)
+    create(:message, chat: chat)
+
+    assert_equal 1, chat.drop_unanswered!
+    assert_equal [ "system" ], chat.messages.reload.pluck(:role)
+  end
+
   # --- what it cost, and who answered ---------------------------------------
 
   test "reports what the conversation cost and which model actually answered" do

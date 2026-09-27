@@ -1,0 +1,52 @@
+# A THROW TYPED WITHOUT A SLASH, READ BY THE CLASSIFIER.
+#
+# `a-thing-can-be-thrown.yml` walks the fixed grammar, which reads a slashed or
+# verb-first throw offline. A free line goes to `Playthrough::Classifier`, and
+# until `throw` was in `Playthrough::IntentSchema::INTENTS` the classifier had
+# no word for it: "throw the access panel at the core" came back `other`, no
+# engine fact was written, the narrator described a drop, and the panel stayed
+# carried (issue #202). This walk types two free throws through the browser path
+# with the classifier's reply declared as a fixture:
+#
+#   * one aimed at scenery, which the classifier answers `throw` with
+#     `thrown_at: nothing`. The engine refuses it, nothing is narrated and the
+#     daybook stays in the hands;
+#   * one aimed at the person standing here, which resolves both names and goes
+#     down the same write-before-prose path a slashed throw does. The ward stamp
+#     is lying in this room and Halkett Rowe is standing in it, so whichever way
+#     the die falls it is still lying in Ward Office 12 afterwards.
+#
+# Offline throughout: the classifier and the narrator are fixtures, and the
+# resolution, the refusal, the branch and the rows are the real ones.
+story: The Unrecorded Hour
+why: a free-typed throw is read by the classifier as a throw, and one aimed at scenery is refused
+steps:
+- id: a-free-throw-at-scenery-is-refused
+  type: throw the daybook at the window
+  why: the aim is on neither list, so nothing is thrown and nothing is narrated
+  browser:
+    token: scenery
+    replies:
+    - purpose: classifier
+      prompt_includes: [Ward Office 12 daybook, Halkett Rowe]
+      content: {intent: throw, target: Ward Office 12 daybook, also_named: nothing, thrown_at: nothing}
+  expect:
+    refused: true
+    changed: false
+    carrying: [Ward Office 12 daybook]
+
+- id: a-free-throw-at-somebody-here-is-played
+  type: throw the ward stamp at Halkett Rowe
+  why: both names resolve, so the engine throws before the narrator is asked for a word
+  browser:
+    token: at-rowe
+    replies:
+    - purpose: classifier
+      prompt_includes: [ward stamp, Halkett Rowe]
+      content: {intent: throw, target: ward stamp, also_named: nothing, thrown_at: Halkett Rowe}
+    - purpose: narration
+      content: The stamp flies across the office.
+  expect:
+    resolved_by: model
+    refused: false
+    carrying: [Ward Office 12 daybook]

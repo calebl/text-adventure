@@ -35,6 +35,8 @@ class Playthrough::Volition::Record < ApplicationRecord
   validates :status, presence: true, inclusion: { in: Playthrough::Volition::STATUSES }
   validates :fact, presence: true
   validates :serves, presence: true, inclusion: { in: Playthrough::Volition::SERVES }
+  # NIL ON A ROW WRITTEN BEFORE THE COLUMN EXISTED, and only there.
+  validates :decided_by, inclusion: { in: Playthrough::Volition::DECIDERS }, allow_nil: true
   validates :round, presence: true, numericality: { only_integer: true, greater_than: 0 }
   validate :same_story
   validate :not_the_player

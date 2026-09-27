@@ -103,6 +103,10 @@ class Chat < ApplicationRecord
   def self.capped? = !KEEP_TURNS.nil?
 
   belongs_to :playthrough, optional: true
+  # WHOSE ALLOWANCE THE CALL WAS SPENT FROM -- stamped by `BaseAgent` from
+  # `Current`, and read by `Player::Allowance`. Separate from `playthrough`
+  # because a room realized during a turn is filed under no playthrough.
+  belongs_to :player, optional: true
   belongs_to :character, optional: true
 
   validates :purpose, inclusion: { in: PURPOSES }, allow_nil: true
@@ -128,6 +132,25 @@ class Chat < ApplicationRecord
   # are common and their order is the whole meaning of a conversation.
   def exchange_messages
     messages.where.not(role: "system").reorder(:id)
+  end
+
+  # WHAT A WORKER THAT DIED MID-CALL LEFT BEHIND, taken out before the
+  # conversation is sent again. RubyLLM persists a prompt before it sends it,
+  # and a streamed answer's empty placeholder before the first chunk.
+  # `BaseAgent#ask` rewinds both when an attempt fails, but a killed process
+  # never reaches that rescue. Every attempt that finished ends on an answer, so
+  # whatever follows the last answer is a prompt nobody answered. Left in place,
+  # the retry sends it again right after the old copy, and a durable
+  # conversation keeps both copies from then on.
+  #
+  # Only whoever serializes the conversation's writers may call this: for a
+  # character that is the playthrough's `GameLock`, and for a room it is the
+  # location's. Otherwise a live attempt's prompt could look abandoned.
+  #
+  # Returns how many messages were dropped.
+  def drop_unanswered!
+    answered = messages.where(role: "assistant").where("content <> '' OR content_raw IS NOT NULL").maximum(:id)
+    exchange_messages.where("id > ?", answered || 0).destroy_all.size
   end
 
   # TRIMS THE REPLAY so resuming a conversation cannot outgrow the context

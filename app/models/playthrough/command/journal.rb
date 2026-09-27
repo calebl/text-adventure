@@ -1,6 +1,8 @@
 # A turn's restart points, under its existing GameLock. Engine writes and their
 # receipts share a short transaction; a model answer is remembered only AFTER
-# the call returns. Never put a provider call inside #commit.
+# the call returns. Never put a provider call inside #commit. The prompt a
+# killed call left in a durable conversation is not a receipt: it is dropped
+# when that conversation is next picked up (`Chat#drop_unanswered!`).
 #
 # The scope is thread-local because the turn calls several existing writers.
 # It is installed only by Command#execute! and always removed, including on

@@ -27,6 +27,19 @@ class EngineSweep::Walk
   # word enough to keep two worlds apart.
   TITLE_SUFFIX = " (engine sweep)"
 
+  # WHERE EVERY TABLE'S IDS START FOR THE LENGTH OF ONE WALK. `Roll.seed` is
+  # built out of row ids -- the story's, the playthrough's, a room's, a
+  # person's -- so a copy that took whatever id came next would roll different
+  # dice on a database that had seeded three worlds than on an empty one, and a
+  # script that passed in the suite failed on a freshly prepared development
+  # database. Every walk therefore starts every table at this same id, inside
+  # the transaction that is rolled back, so the copy is born with the same ids
+  # wherever it is walked and the database's own counters come back untouched.
+  # Far above any id a played database reaches; `#pin_ids!` refuses rather
+  # than collide if one ever does. See `Roll`'s header for why the ids are
+  # pinned here rather than the seed changed.
+  ID_BASE = 1_000_000_000
+
   attr_reader :script
 
   def initialize(script)
@@ -44,6 +57,7 @@ class EngineSweep::Walk
     # transaction, where a plain nested `transaction` shares its parent and
     # `ActiveRecord::Rollback` silently does nothing at all.
     ActiveRecord::Base.transaction(requires_new: true) do
+      pin_ids!
       story = load_world!
       games = {}
       engines = {}
@@ -130,7 +144,8 @@ class EngineSweep::Walk
     unless room.stub?
       raise EngineSweep::InvalidScript, "#{step.label}: realizes must name a stub, got #{name.inspect}"
     end
-    { room: room, characters: story.characters.pluck(:id), items: Item.in_story(story).templates.pluck(:id) }
+    { room: room, characters: story.characters.pluck(:id), items: Item.in_story(story).templates.pluck(:id),
+      locations: story.locations.pluck(:id), connections: LocationConnection.where(location: story.locations).pluck(:id) }
   end
 
   def record_realization!(before)
@@ -146,6 +161,25 @@ class EngineSweep::Walk
     @loaded["characters"] = Array(@loaded["characters"]) + new_people
     new_items = room.items.templates.where.not(id: before.fetch(:items)).map { |item| item.attributes.slice("name", "x", "y") }
     expected_room["items"] = Array(expected_room["items"]) + new_items
+    record_born_rooms!(room.story, before)
+  end
+
+  # AND THE ROOMS AND DOORS ITS EXITS ANSWER NAMED. A stub the answer created is
+  # a world row born of the one declared realization, exactly as its people and
+  # things are, so it joins the reference as it stands -- name, detail level,
+  # the rolled danger and population, and whatever extent it was born with --
+  # and every later turn must keep it that way. So a script can walk into a
+  # room the realization before it named, and assert what that room became.
+  def record_born_rooms!(story, before)
+    born = story.locations.where.not(id: before.fetch(:locations)).order(:id).map do |location|
+      location.attributes.slice("name", "detail_level", "danger", "population", "hazard", *Location::Box::COLUMNS)
+              .merge("parent" => location.parent_location&.name).compact
+    end
+    doors = LocationConnection.where(location: story.locations).where.not(id: before.fetch(:connections))
+                              .includes(:location, :connected_location)
+                              .map { |row| [ row.location.name, row.connected_location.name ].sort }.uniq
+    @loaded["locations"] = Array(@loaded["locations"]) + born
+    @loaded["connections"] = Array(@loaded["connections"]) + doors.map { |pair| { "between" => pair } }
   end
 
   # Mechanics moves without asking for arrival prose. Read the generator's
@@ -210,6 +244,24 @@ class EngineSweep::Walk
       end
 
       WorldSeed.parse(File.read(script.seed_file))
+    end
+  end
+
+  # Sets every AUTOINCREMENT table's counter to `ID_BASE`. SQLite keeps those
+  # counters in `sqlite_sequence`, an ordinary table, so the rollback at the end
+  # of `#play` puts them back exactly as they were.
+  def pin_ids!
+    connection = ActiveRecord::Base.connection
+    tables = connection.select_values(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND sql LIKE '%AUTOINCREMENT%'"
+    )
+    tables.each do |table|
+      quoted = connection.quote_table_name(table)
+      highest = connection.select_value("SELECT MAX(id) FROM #{quoted}").to_i
+      raise EngineSweep::InvalidScript, "#{table} already holds id #{highest}, past the sweep's #{ID_BASE}" if highest >= ID_BASE
+
+      connection.exec_delete("DELETE FROM sqlite_sequence WHERE name = #{connection.quote(table)}")
+      connection.exec_insert("INSERT INTO sqlite_sequence (name, seq) VALUES (#{connection.quote(table)}, #{ID_BASE})")
     end
   end
 

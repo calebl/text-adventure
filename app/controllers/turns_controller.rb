@@ -1,16 +1,9 @@
 class TurnsController < ApplicationController
-  # Pre-journal workers left no evidence from which to replay safely. Only an
-  # explicit player acknowledgement may close that old interruption, retaining
-  # every saved effect. Taking the same lock waits for any still-live worker;
-  # it cannot discard a new recoverable command or a completed turn.
+  # Letting go of an old interruption is `Playthrough::Session`'s; see
+  # `#acknowledge_interruption!` for what it may and may not close.
   def acknowledge_interruption
     playthrough = Playthrough.find(params[:playthrough_id])
-    GameLock.synchronize("playthrough", playthrough.id) do
-      submission = playthrough.commands.find(params[:command_id])
-      if submission.status == "running" && submission.journal.blank?
-        submission.update!(status: "failed", error_kind: "interruption_acknowledged")
-      end
-    end
+    Playthrough::Session.new(playthrough).acknowledge_interruption!(params[:command_id])
     redirect_to playthrough_path(playthrough, anchor: "bottom"), status: :see_other
   end
 
@@ -41,17 +34,16 @@ class TurnsController < ApplicationController
   # that order -- see both headers.
   def create
     playthrough = Playthrough.find(params[:playthrough_id])
-    command = params[:command].to_s.strip
+    submission = Playthrough::Session.new(playthrough).accept!(params[:command], params[:request_token])
 
     # Nothing typed is not a turn. Send the player back to an untouched page
     # rather than enqueuing a job to narrate the empty string.
-    if command.empty?
+    if submission.nil?
       redirect_to playthrough_path(playthrough)
       return
     end
 
-    submission = Playthrough::Command.accept!(playthrough, command, params[:request_token].presence || SecureRandom.uuid)
-    NarrationJob.perform_later(playthrough.id, command, submission.request_token)
+    NarrationJob.perform_later(playthrough.id, submission.command, submission.request_token)
     @request_token = SecureRandom.uuid
 
     respond_to do |format|
@@ -63,5 +55,9 @@ class TurnsController < ApplicationController
     end
   rescue ActiveRecord::RecordInvalid
     head :conflict
+  rescue Player::Allowance::LimitReached
+    # A game an API player owns, typed into from the browser: the allowance
+    # binds here too, and nothing was written.
+    head :payment_required
   end
 end

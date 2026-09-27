@@ -106,8 +106,12 @@ class Playthrough::Classifier::RequestTest < ActiveSupport::TestCase
                                  .map { |id| asked[id]["type"] }.uniq
   end
 
-  test "the intent question offers the closed enum and nothing else" do
-    assert_equal Playthrough::IntentSchema::INTENTS, questions["intent"]["criteria"].keys
+  # `throw` IS THE ONE WORD THE TYPED READER DOES NOT OFFER. It joined the
+  # model call's enum with its own measurement; this request is a separate
+  # measured arm, and adding a criterion to it is a change to that arm's bytes
+  # that nobody has baselined. So a throw reaches the model call only.
+  test "the intent question offers the closed enum less throw, and nothing else" do
+    assert_equal Playthrough::IntentSchema::INTENTS - %w[throw], questions["intent"]["criteria"].keys
   end
 
   # --- the one wording change -----------------------------------------------

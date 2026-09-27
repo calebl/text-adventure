@@ -208,7 +208,10 @@ module Eval::Prompt
     unreachable_transition: "a case is one turn, and the one turn that moves walks an edge the records have",
     reached_for_nothing: "a drift row needs the turn AFTER the narration, and a case has no next turn",
     named_more_than_one: "a case types a fixed line, so what it named measures the corpus, not the game",
-    still_run: "four turns of nothing needs four turns"
+    still_run: "four turns of nothing needs four turns",
+    dead_shown_alive: "a case keeps its staged facts, not the scene's engine receipt these three read",
+    carried_shown_lying: "a case keeps its staged facts, not the scene's engine receipt these three read",
+    handover_invented: "a case keeps its staged facts, not the scene's engine receipt these three read"
   }.freeze
 
   def self.unavailable_to_a_case?(code) = UNAVAILABLE_TO_A_CASE.key?(code.to_sym)

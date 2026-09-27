@@ -447,9 +447,9 @@ class Playthrough::TurnRoutingTest < ActiveSupport::TestCase
 
   # --- a thing thrown, in the browser ---------------------------------------
   #
-  # `throw` is in the fixed grammar and NOT in `Playthrough::IntentSchema::INTENTS`
-  # either, so a slashed throw resolves two records offline and the only call it
-  # makes is the narration -- exactly what a `take` costs.
+  # A slashed throw resolves two records offline in the fixed grammar, and the
+  # only call it makes is the narration -- exactly what a `take` costs. An
+  # unslashed one goes to the classifier.
 
   test "a slashed throw resolves two records offline and narrates once" do
     scene, agent = play("/throw the daybook at Halkett Rowe", "The daybook goes past his ear.")
@@ -502,12 +502,36 @@ class Playthrough::TurnRoutingTest < ActiveSupport::TestCase
     assert_equal 0, @playthrough.overreaches.count
   end
 
-  test "an unslashed throw goes to the classifier like any other line" do
-    _, agent = play("throw the daybook at Halkett Rowe",
-                    CLASSIFY.call("other", "nothing"), "You weigh it in your hand and stop.")
+  # AN UNSLASHED THROW IS READ BY THE CLASSIFIER, WHICH CAN NOW ANSWER `throw`.
+  # This used to pin the answer `other`, back when the model enum had no word
+  # for a throw -- and `other` is how issue #202's thrown panel was narrated as
+  # a drop while the records kept it carried. A resolved throw goes down the
+  # same write-before-prose path a slashed one does.
+  test "an unslashed throw goes to the classifier and is written before it is narrated" do
+    scene, agent = play("throw the daybook at Halkett Rowe",
+                        { "intent" => "throw", "target" => "Ward Office 12 daybook", "also_named" => "nothing",
+                          "thrown_at" => "Halkett Rowe" },
+                        "The daybook goes past his ear.")
 
-    assert_equal 2, agent.prompts.count
+    assert_equal 2, agent.prompts.count, "the classifier, then the narration"
+    assert_equal "throw", scene.resolved_action
+    assert_equal @daybook, scene.acted_on
+    assert_equal "model", scene.resolved_by
+    assert_match(/NOTHING WAS THROWN|NO LONGER\s+CARRIED/, agent.prompts.last)
+  end
+
+  test "an unslashed throw at scenery is refused and the thing stays carried" do
+    before = @story.clock
+
+    outcome, agent = play("throw the daybook at the window",
+                          { "intent" => "throw", "target" => "Ward Office 12 daybook", "also_named" => "nothing",
+                            "thrown_at" => "nothing" })
+
+    assert_instance_of Playthrough::Refusal, outcome
+    assert_match(/Nothing was thrown: the Ward Office 12 daybook stays in your hands/, outcome.text)
+    assert_equal 1, agent.prompts.count, "the classifier only; nothing is narrated"
     assert_predicate @daybook.reload, :carried?
+    assert_equal before, @story.reload.clock
   end
 
   test "a dead playthrough is refused in front of both readers" do

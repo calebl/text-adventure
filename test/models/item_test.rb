@@ -492,4 +492,17 @@ class ItemTest < ActiveSupport::TestCase
 
     assert_equal [ placed, partial ].map(&:id).sort, Item.positioned.pluck(:id).sort
   end
+
+  # A GENERATED NAME CAN CARRY ITS OWN ARTICLE, and an engine sentence that
+  # names the thing must not put a second one in front of it.
+  test "the name an engine sentence uses drops a leading a, an or the" do
+    { "a frayed cable tie" => "frayed cable tie", "An iron key" => "iron key",
+      "the loose access panel" => "loose access panel", "brass key" => "brass key",
+      "Anvil" => "Anvil", "Theodora's locket" => "Theodora's locket" }.each do |name, bare|
+      item = build(:item, name: name)
+
+      assert_equal bare, item.bare_name, name
+      assert_equal "the #{bare}", item.definite_name, name
+    end
+  end
 end

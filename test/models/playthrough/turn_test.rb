@@ -148,6 +148,52 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     assert_includes @here.reload.exits, entry, "the way back out is the same edge said the other way"
   end
 
+  # --- a chamber picked as one room -----------------------------------------
+  #
+  # A ROOM NAMED BY AN EXITS ANSWER WITH `inside: one room` IS THAT ROOM. It used
+  # to be born a place, laid out as a single child that filled it, with the
+  # doorway moved onto the child -- so the player chose "Core Access Chamber"
+  # and stood in "Core Access Chamber room 1". See `Location::Parameters::ONE_ROOM`.
+
+  ONE_ROOM_EXITS = {
+    "exits" => [ { "name" => "Core Access Chamber", "teaser" => "A hatch at the top of the ladder.",
+                   "distance" => "adjacent", "travel_method" => "climbing", "inside" => "one room" } ]
+  }.freeze
+
+  def climb_to_the_chamber
+    connect("Maintenance Shaft", detail_level: "stub", description: nil, lore: nil)
+    play("go to the shaft", CLASSIFY.call("move", "Maintenance Shaft"), DETAIL, ONE_ROOM_EXITS, ARRIVAL)
+    play("climb to the core access chamber", CLASSIFY.call("move", "Core Access Chamber"),
+         DETAIL, { "exits" => [] }, ARRIVAL)
+  end
+
+  test "moving to a chamber picked as one room lands on that chamber, by the name the player chose" do
+    travel_to(Time.utc(2026, 9, 20, 12)) do
+      scene, = climb_to_the_chamber
+
+      chamber = Location.find_by!(story: @story, name: "Core Access Chamber")
+      @playthrough.reload
+      assert_equal chamber, @playthrough.current_location
+      assert_equal chamber, scene.location
+      assert_predicate chamber, :realized?
+      assert_equal DETAIL["description"], chamber.description, "realized once, as a room"
+      assert_not_nil chamber.last_protagonist_visit
+      assert_not_predicate chamber, :place?
+      assert_empty chamber.child_locations
+    end
+  end
+
+  test "the doorway onto a chamber picked as one room stays on the chamber, both ways" do
+    climb_to_the_chamber
+
+    shaft = Location.find_by!(story: @story, name: "Maintenance Shaft")
+    chamber = Location.find_by!(story: @story, name: "Core Access Chamber")
+    assert_includes shaft.exits, chamber
+    assert_includes chamber.exits, shaft
+    assert_empty @story.locations.select { |room| room.name.match?(/ room \d+\z/) },
+                 "no endpoint anywhere carries a placeholder name"
+  end
+
   # --- moving back into somewhere already written --------------------------
 
   # THE POINT OF THE WHOLE THING. A realized location is not regenerated, so

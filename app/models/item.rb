@@ -360,6 +360,17 @@ class Item < ApplicationRecord
   # second is what `Playthrough::Turn#read_fact` can quote.
   def inscribed? = readable? && inscription.present?
 
+  # WHAT THE ENGINE CALLS IT IN A SENTENCE OF ITS OWN. A generated name can
+  # arrive with its own article ("a frayed cable tie"), and an engine fact that
+  # puts "the" in front of the column wrote "the a frayed cable tie". The row
+  # keeps what it was given -- seeded and already-generated worlds carry such
+  # names too -- and every engine sentence that names a thing asks here instead
+  # of prepending an article to `name`.
+  LEADING_ARTICLE = /\A(?:a|an|the)\s+(?=\S)/i
+
+  def bare_name = name.to_s.sub(LEADING_ARTICLE, "")
+  def definite_name = "the #{bare_name}"
+
   # Where it is, in one sentence, for a report a person reads. THE LAYER IS PART
   # OF THE ANSWER: "lying in Ward Office 12" is two different facts depending on
   # whether it is the world's row or one game's copy of it, and a doctor finding

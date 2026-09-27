@@ -749,7 +749,7 @@ class Playthrough::Grammar
     aim = resolve(classifier.characters_here, aimed)
     aim = resolve(aims, aimed) unless aim.found?
     unless aim.found?
-      return Reading.new(refusal: cannot_aim(aimed, aim))
+      return Reading.new(refusal: cannot_aim(aimed, aim, match.record))
     end
 
     intent(:throw, item: match.record, at: aim.record)
@@ -769,10 +769,19 @@ class Playthrough::Grammar
   # WHY THE AIM RESOLVED TO NOTHING, and the two answers are told apart because
   # they are different mistakes -- `#cannot_find`'s rule, said for a set that is
   # really two sets.
-  def cannot_aim(aimed, aim)
-    return "#{aimed.inspect} matches more than one thing to throw it at: #{names(aim.candidates)}" if aim.ambiguous?
+  #
+  # EITHER WAY NOTHING WAS THROWN, and the refusal says where the thing still is
+  # -- the engine's sentence, so no paragraph gets the chance to skid it across
+  # a floor it never left.
+  def cannot_aim(aimed, aim, item)
+    stays = "Nothing was thrown: #{stays_put(item)}."
+    return "#{aimed.inspect} matches more than one thing to throw it at: #{names(aim.candidates)}. #{stays}" if aim.ambiguous?
 
-    "there is nothing called #{aimed.inspect} to throw it at. #{aim_offer}"
+    "there is nothing called #{aimed.inspect} to throw it at. #{stays} #{aim_offer}"
+  end
+
+  def stays_put(item)
+    item.carried? ? "#{item.definite_name} stays in your hands" : "#{item.definite_name} stays where it is lying"
   end
 
   # WHAT THERE IS TO THROW SOMETHING AT, which is two closed sets and is said as

@@ -81,6 +81,9 @@ module Update
   #                            what writes that column on an older database. Run
   #                            the other way round and every turn it would have
   #                            labelled reads as an arrival and keeps nil.
+  #   one-room folds before         the fold removes a row and moves a doorway;
+  #   repairs                       repairing first would report and act on
+  #                                 the row that is about to go.
   #   doctor last                   it reports and never writes, so it is the
   #                                 summary of everything above it.
   REGISTRY = [
@@ -89,6 +92,7 @@ module Update
     Update::Steps::BackfillItems,
     Update::Steps::BackfillStatBlocks,
     Update::Steps::StampResolvedBy,
+    Update::Steps::FoldOneRoomPlaces,
     Update::Steps::SafeRepairs,
     Update::Steps::Doctor
   ].freeze

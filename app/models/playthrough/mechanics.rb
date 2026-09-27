@@ -76,7 +76,8 @@
 #
 # WHAT IT IS NOT is `rake game:play`, which is still ruled out. It renders no
 # prose and duplicates no part of the loop; the moment it grew a narrator it
-# would be the second UI that rule exists to prevent. The dispatch below is the
+# would be a play loop in a rake task, which that rule exists to prevent -- a
+# front end that narrates goes through `Playthrough::Session`. The dispatch below is the
 # one thing it does not share with `Playthrough::Turn#play`, and deliberately:
 # that method returns a Scene and streams prose into a block, and this one has
 # to be able to say what changed, what was refused and why.
@@ -346,7 +347,7 @@ class Playthrough::Mechanics
         act(reading.intent, command, reading.understood, reading.resolved_by)
       end
 
-    report = answered_by_the_world(report, reading, from: from)
+    report = answered_by_the_world(report, reading, from: from, line: command)
 
     # WHICH READER ANSWERED THE LINE, carried onto the report from the reading
     # rather than worked out again here. `rake game:sweep` asserts it
@@ -370,7 +371,7 @@ class Playthrough::Mechanics
   #
   # The report is rebuilt on fresh state, because the read-out printed under a
   # line has to be the records after everything that line caused.
-  def answered_by_the_world(report, reading, from:)
+  def answered_by_the_world(report, reading, from:, line: nil)
     intent = reading.intent
     return report if intent.nil? || intent.refused? || @engine_refused
 
@@ -389,7 +390,7 @@ class Playthrough::Mechanics
     # AND IT IS THE WHOLE FEATURE IN THIS MODE, not a reduced one: the decision
     # is a seeded die off this game's own records and makes no model call, so
     # an offline walk reaches every branch a played turn reaches.
-    volitions = Playthrough::Volition.run!(playthrough, location: from, round: round)
+    volitions = Playthrough::Volition.run!(playthrough, location: from, round: round, line: line)
 
     # AND THE PLACE ITSELF GETS ITS TURN, beside the foes and after them, on the
     # room the turn began in -- the same call `Playthrough::Turn#play` makes in
@@ -954,13 +955,13 @@ class Playthrough::Mechanics
   #   on it            says this thing has no writing on it at all.
   def recite(item, understood)
     unless item.readable?
-      return refuse("there is nothing written on the #{item.name}. Looking at something that has no " \
+      return refuse("there is nothing written on #{item.definite_name}. Looking at something that has no " \
                     "writing on it is prose, and this mode writes none. Nothing changed.",
                     understood: understood)
     end
 
     unless item.inscribed?
-      return refuse("the #{item.name} has writing on it and the records do not hold the words yet. " \
+      return refuse("#{item.definite_name} has writing on it and the records do not hold the words yet. " \
                     "Writing them down is one model call (Item::Inscriber) and this mode makes none " \
                     "here. Read it in the browser once and it is a record from then on.",
                     understood: understood)

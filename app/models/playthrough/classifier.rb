@@ -55,12 +55,9 @@ class Playthrough::Classifier
   # object and an indirect object -- `throw the slate at Neb Halloran` -- which
   # is the first act in the game that legitimately names two records, and
   # neither `#subject` nor `#also_named` means that (`also_named` is the
-  # opposite of a second target: it is the name a turn is NOT acting on). See
-  # `data/ta-combat-scout` §13.4, and note that this field is on the intent the
-  # FIXED GRAMMAR builds and NOT on `Playthrough::IntentSchema`: the model-facing
-  # schema stays THREE FIELDS, which is the captain's call C6, and it is why
-  # widening the closed enum by `attack` in slice 8 did not widen it by `throw`
-  # too. `Playthrough::Grammar#read_throw` is the only writer.
+  # opposite of a second target: it is the name a turn is NOT acting on). Two
+  # readers write it: `Playthrough::Grammar#read_throw` behind a slash, and
+  # `#build_intent` out of the model's `thrown_at`.
   # `physical` binds one closed attempt token to its engine-owned records.
   # It is internal only: the model still returns intent, target, also_named.
   Intent = Data.define(:action, :destination, :speaker, :item, :at, :also_named, :unknown_action, :physical) do
@@ -89,13 +86,8 @@ class Playthrough::Classifier
     # taken after are not the same denominator. See those two classes' headers.
     def attack? = action == :attack
 
-    # AND THE ONE ACTION NO MODEL EVER ANSWERS WITH, which is what `attack` used
-    # to be. `throw` is NOT in `Playthrough::IntentSchema::INTENTS` and it is not
-    # next in line either: it names TWO records -- the thing and what it is aimed
-    # at -- and that schema holds one `target` by construction. So this is only
-    # ever true of an `Intent` the FIXED GRAMMAR built, behind a slash or in
-    # `rake game:mechanics`, and `#at` below is the field that says why no model
-    # can answer it. The captain's call C6 kept the two objects offline first.
+    # THE LAST WORD IN `Playthrough::IntentSchema::INTENTS`, and the one that
+    # names two records: the thing (`#item`) and what it was aimed at (`#at`).
     def throw? = action == :throw
 
     # The record the loop acts on, whichever kind it turned out to be. There is
@@ -150,7 +142,16 @@ class Playthrough::Classifier
     def takes_the_immovable? = take? && !item.nil? && !item.throwable?
     def moves_the_immovable? = throws_the_immovable? || takes_the_immovable?
 
-    def refused? = named_more_than_one? || reached_for_nothing? || unreadable? || moves_the_immovable?
+    # A THROW WITH ONE OF ITS TWO RECORDS MISSING: the thing named nothing in
+    # the hands or on the floor, or the aim named nobody here and no way out --
+    # a wall, a machine, the room. Nothing was thrown, and the thing stays
+    # where it was. Counted by nothing: `Playthrough::Drift::ACTIONS` does not
+    # carry `throw`, so neither counter's denominator moved when the word did.
+    def throws_at_nothing? = throw? && (item.nil? || at.nil?)
+
+    def refused?
+      named_more_than_one? || reached_for_nothing? || unreadable? || throws_at_nothing? || moves_the_immovable?
+    end
   end
 
   # WHICH SLOT AN ACTION'S RESOLVED RECORD LANDS IN. One table, because two
@@ -230,6 +231,8 @@ class Playthrough::Classifier
       drop    - they are putting down, leaving or giving up something they carry
       attack  - they are trying to hurt someone who is here
       use     - consume an item, offer it to someone, burn it, or open a barrier
+      throw   - they are throwing, hurling or tossing a thing at someone who
+                is here or through a way out
       other   - anything else
 
     Then pick what they aimed it at from the lists you are given, copied
@@ -263,6 +266,13 @@ class Playthrough::Classifier
     has no listed Physical Action, answer `use` with `nothing`. Drinking and
     eating consume the item. An unrelated observation, waiting or musing is
     `other`.
+
+    For `throw`, `target` is the thing thrown, from the things they carry or
+    the things lying here, and `thrown_at` is the person here or the way out it
+    was aimed at. If it was aimed at anything else -- a wall, a machine, a
+    fixture, the room -- answer `thrown_at` with `nothing`; do not pick a
+    person or a way out instead. "Throw the switch" or "throw a party" is not
+    a throw of a thing: answer `other`.
 
     `talk` and `attack` read the SAME list of people, so what tells them apart
     is only what the player is doing to that person. Hitting, punching, kicking,
@@ -544,7 +554,8 @@ class Playthrough::Classifier
       .ask(command_prompt(command, exits, cast, items, carried))
       .content
 
-    build_intent(answer["intent"], answer["target"], exits, cast, items, carried, answer["also_named"])
+    build_intent(answer["intent"], answer["target"], exits, cast, items, carried, answer["also_named"],
+                 answer["thrown_at"])
   end
 
   # Only ever one slot, and only when the name resolved. `other` carries no
@@ -561,7 +572,12 @@ class Playthrough::Classifier
   # nearer one, stably. `Playthrough::Turn#read_item` is what is on the other
   # side of the seam: a readable thing is read out of the records, and anything
   # else narrates exactly as it always did.
-  def build_intent(intent, target, exits, cast, items = [], carried = [], also = nil)
+  #
+  # A `throw` resolves TWO names: `target` against the hands and the floor, and
+  # `thrown_at` against the people here and the ways out, people first -- the
+  # order `Playthrough::Grammar#read_throw` resolves an aim in. It carries no
+  # `also_named`: on a throw the second name in the line is the aim.
+  def build_intent(intent, target, exits, cast, items = [], carried = [], also = nil, thrown_at = nil)
     known = Playthrough::IntentSchema::INTENTS.include?(intent)
     action = known ? intent.to_sym : :other
     name = target.to_s
@@ -581,6 +597,12 @@ class Playthrough::Classifier
         self.class.label_for(record) == also && !found&.records&.include?(record)
       end
       return Intent.new(action: action, physical: found, also_named: extra_record)
+    end
+
+    if action == :throw
+      aim = thrown_at.to_s.strip
+      return Intent.new(action: action, item: find_item(carried + items, name),
+                        at: find_character(cast, aim) || find_exit(exits, aim))
     end
 
     # The closed set this action resolves against, the matcher that reads a

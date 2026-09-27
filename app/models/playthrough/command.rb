@@ -33,6 +33,8 @@ class Playthrough::Command < ApplicationRecord
 
   belongs_to :playthrough
   belongs_to :result_scene, class_name: "Scene", optional: true
+  has_many :turn_events, class_name: "Playthrough::TurnEvent", foreign_key: :playthrough_command_id,
+                         inverse_of: :command, dependent: :delete_all
 
   validates :request_token, presence: true, length: { maximum: 128 }
   validates :command, presence: true
