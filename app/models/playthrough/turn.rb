@@ -806,6 +806,7 @@ class Playthrough::Turn
         )
         playthrough.update!(current_scene: scene)
       end
+      scene.narrated_volition_ids = [] if exchange.fallback?
       scene.safety_notice = exchange.safety_notice
       scene.rendering_error = exchange.rendering_error
       scene
@@ -1303,13 +1304,19 @@ class Playthrough::Turn
     tolls.update_all(scene_id: scene.id, updated_at: Time.current)
   end
 
-  # `#claim_tolls!` one table over. No `narrated_*_ids` narrowing, because
-  # nothing in the render path decides per-row which of these a paragraph
-  # carried: they are stated together in one sentence and claimed together.
+  # `#claim_tolls!` one table over. The acts are stated together in one
+  # sentence, so a paragraph that carried the sentence claims them together
+  # (nil). A scene whose prompt never stated it -- an arrival, whose prompt is
+  # `Scene::Generator`'s and not a `Playthrough::Moment`, or a fallback --
+  # says so with an empty list, and the acts wait for the next paragraph whose
+  # prompt does carry them. Claiming them on the arrival would record a
+  # departure as told that nobody told.
   def claim_volitions!(scene)
     return if scene.nil?
 
-    playthrough.volitions.untold.update_all(scene_id: scene.id, updated_at: Time.current)
+    volitions = playthrough.volitions.untold
+    volitions = volitions.where(id: scene.narrated_volition_ids) unless scene.narrated_volition_ids.nil?
+    volitions.update_all(scene_id: scene.id, updated_at: Time.current)
   end
 
   # Attribution is an audit receipt, after the action and its scene landed.
