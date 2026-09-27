@@ -82,16 +82,7 @@ class Item::Inscriber
 
   def asked? = !@agent.nil?
 
-  INSTRUCTIONS = <<~PROMPT.freeze
-    You write the words that are actually written on objects in a text
-    adventure: what is on a note, a letter, a docket, a label, a sign, a page.
-
-    You are not narrating and you are not describing the object. You write only
-    the text a person would read off it, in the hand and the register of the
-    world it belongs to.
-
-    DO NOT INCLUDE EMOJIS IN YOUR RESPONSE.
-  PROMPT
+  INSTRUCTIONS = EngineData.fetch("item/inscriber").fetch("instructions")
 
   private
 

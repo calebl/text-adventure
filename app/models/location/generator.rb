@@ -22,11 +22,7 @@ class Location::Generator
   # which line of a prompt holds the engine's roll without reading two of them
   # out of a heredoc. The heading is the same heading, on purpose -- see that
   # method.
-  NOBODY_HERE = <<~PROMPT.rstrip
-    ## Who Is Here
-    Write NOBODY into this place. There is nobody here, and the description
-    should read like somewhere nobody is standing.
-  PROMPT
+  NOBODY_HERE = EngineData.fetch("location/generator").fetch("nobody_here")
 
   DETAIL_PENDING = "detail_pending".freeze
   EXITS_PENDING = "exits_pending".freeze
@@ -574,16 +570,7 @@ class Location::Generator
     end
   end
 
-  def system_prompt
-    <<~PROMPT
-      You build the rooms of a text adventure one at a time. You write places a
-      player can stand in and walk out of: concrete, specific, and consistent
-      with the world they belong to. Every exit you name is somewhere the player
-      could actually go.
-
-      DO NOT INCLUDE EMOJIS IN YOUR RESPONSE.
-    PROMPT
-  end
+  def system_prompt = EngineData.fetch("location/generator").fetch("system_prompt")
 
   # A BUILDING GETS A PROMPT OF ITS OWN, and the ordinary one below is not
   # touched -- not one byte, which is `#geometry_facts`' rule applied to a whole
@@ -663,24 +650,7 @@ class Location::Generator
   # they are FOR and what the quiet answer is. The captain's own words for what
   # he wanted: *"we should provide some direction on how to make that
   # decision."*
-  def parameters_instructions
-    <<~PROMPT.rstrip
-      ## What Kind Of Building This Is
-      The game lays the inside out itself -- every room, every door, every stair
-      -- from the answers to these, and then writes each room as the player
-      reaches it. You are choosing what KIND of place this is, not drawing it.
-      - Answer for the place you have just described and for the story it stands in
-      - Every one of them can be left out, and the quietest answer is usually the
-        right one: one floor, nothing underneath, nothing dangerous, nothing that
-        hurts you
-      - A HAZARD is not atmosphere. It takes hit points off everybody who walks
-        through those rooms, every turn in some cases, so pick one only for a
-        place that really is flooded, unlit, silent or airless
-      - A GRADIENT is only worth saying when the place itself makes it true: a
-        cellar that gets worse the further down you go, a tower that gets worse
-        the higher you climb
-    PROMPT
-  end
+  def parameters_instructions = EngineData.fetch("location/generator").fetch("parameters_instructions")
 
   # WHERE THIS ROOM IS, AS FACTS THE ENGINE HAS ALREADY DECIDED -- how big it
   # is, which storey of which place it stands on, which wall each door is in and

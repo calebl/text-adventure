@@ -69,17 +69,7 @@ class Quest::Generator
     end
   end
 
-  def system_prompt
-    <<~PROMPT
-      You say where a story is going, in the fewest moving parts that can carry
-      it. You name a place, a person or a thing per beat and nothing else: no
-      route between them, no scenes, no chapter headings, and never how the
-      player gets from one to the next. The world is built by somebody else and
-      may take a long time to grow what you name.
-
-      DO NOT INCLUDE EMOJIS IN YOUR RESPONSE.
-    PROMPT
-  end
+  def system_prompt = EngineData.fetch("quest/generator").fetch("system_prompt")
 
   # WHAT IT IS TOLD: the universe, the story's own two paragraphs, and the room
   # it opens in. Everything else the world has is one unrealized stub and a

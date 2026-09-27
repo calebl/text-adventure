@@ -1,0 +1,96 @@
+# Read by Playthrough::Grammar through EngineData (app/models/engine_data.rb), which
+# declares this file's shape. Why each value says what it says is in the
+# header of Playthrough::Grammar, beside the constant that names it. Every byte here is
+# sent or rolled: an edit is a prompt change and needs a baseline (AGENTS.md).
+---
+verbs:
+  look: look
+  l: look
+  where: look
+  state: look
+  inventory: look
+  inv: look
+  i: look
+  exits: look
+  items: look
+  who: look
+  go: go
+  move: go
+  walk: go
+  enter: go
+  take: take
+  get: take
+  grab: take
+  pick up: take
+  drop: drop
+  put down: drop
+  leave: drop
+  # TALKING IS PROSE AND `Playthrough::Mechanics` WRITES NONE, so a `talk`
+  # there resolves a person and then refuses -- which is the whole point of
+  # it. Who is standing here is `Character.present_in`, a record, so whether a
+  # `talk` RESOLVES is an engine question that can be answered with no model
+  # at all, and answering it offline is what lets `rake game:sweep`
+  # regression-test presence. In the browser the same resolution goes straight
+  # to `InteractionAgent`, and the prose is written as it always was.
+  talk: talk
+  speak: talk
+  ask: talk
+  inspect: read
+  read: read
+  examine: read
+  x: read
+  look at: read
+  # THE ENGINE-VIEW COMMANDS FOR A BODY. `vitals` only reads, so it goes to
+  # `:look` with everything else that does; `harm` and `mend` are the two
+  # writers `Playthrough::Turn` owns, reached from here the way `go` reaches
+  # `#stand_in!`. They take a number rather than a name, which is the one
+  # shape no other verb in this table has -- see `#read_wound`.
+  vitals: look
+  hp: look
+  condition: look
+  harm: harm
+  hurt: harm
+  damage: harm
+  mend: mend
+  heal: mend
+  # THE THREE ABILITIES, AND THE ONE THING A GAME DOES WITH THEM. `stats` and
+  # `abilities` only read, so they go to `:look`; `check` throws a d20 and
+  # writes NOTHING AT ALL, which makes it the first verb in this table that
+  # changes the world in no way and is still worth typing -- the whole point
+  # of it is that the roll it prints is the roll the engine would make.
+  stats: look
+  abilities: look
+  check: check
+  # THE ONE VERB IN THIS TABLE THAT HURTS SOMEBODY, and it takes a NAME out of
+  # a closed set where `harm` takes a number -- so it is the first entry here
+  # that is both one of the engine's own instruments and a real act in the
+  # fiction. `Playthrough::IntentSchema::INTENTS` GAINED THE WORD in combat
+  # slice 8, so the classifier can read a free line as an attack now; reading
+  # a SLASHED one here still costs nothing and still makes a whole fight
+  # walkable with no key at all, which is what `model: false` needs.
+  attack: attack
+  hit: attack
+  strike: attack
+  # THE ONE VERB IN THIS TABLE THAT NAMES TWO RECORDS, and the only one that
+  # does: `throw <thing> at <somebody or a way out>` is one act with an object
+  # and an indirect object (the owner's request of 2026-09-05). It is split
+  # on ` at `, both halves go through the same
+  # `#resolve` matcher against the same closed sets the model would have been
+  # offered, and `Playthrough::IntentSchema` is untouched -- it holds ONE
+  # target by design and `also_named` means the opposite of a second one, so
+  # the closed enum cannot express a throw and the engine reads it here
+  # instead (the owner's call).
+  throw: throw
+  hurl: throw
+  toss: throw
+  consume: consume
+  drink: consume
+  eat: consume
+  offer: offer
+  give: offer
+  burn: burn
+  unlock: unlock
+  pick: pick
+  pry: pry
+  force: force
+  help: help

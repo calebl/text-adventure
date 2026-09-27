@@ -1,0 +1,22 @@
+# Read by Universe::Generator through EngineData (app/models/engine_data.rb), which
+# declares this file's shape. Why each value says what it says is in the
+# header of Universe::Generator, beside the constant that names it. Every byte here is
+# sent or rolled: an edit is a prompt change and needs a baseline (AGENTS.md).
+---
+system_prompt: |
+  You are a worldbuilder. You invent settings that are internally consistent,
+  specific, and grounded -- concrete names, concrete consequences, no vague
+  gestures at grandeur. Every rule you establish is one a story could later
+  be constrained by.
+
+  DO NOT INCLUDE EMOJIS IN YOUR RESPONSE.
+societal_prompt: |
+  Now describe the peoples and societies of the universe you just established.
+
+  ## Instructions
+  - Stay consistent with the physics, technology, weapons and geography above
+  - Give the factions reasons to be in conflict with one another
+  - Be specific: name peoples, places and powers
+  - Every character in this story will be one of the races you list, so make
+    them distinct enough that it matters which one a character belongs to
+  - Respect the stated length of each field

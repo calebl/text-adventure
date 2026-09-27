@@ -35,16 +35,7 @@ class Story::Generator
     story
   end
 
-  def system_prompt
-    <<~PROMPT
-      You open text adventures. You drop the player into a specific moment with
-      something already in motion -- a door already open, a body already cold, a
-      ship already sinking. You never open with a character waking up, and you
-      never explain the world in the abstract.
-
-      DO NOT INCLUDE EMOJIS IN YOUR RESPONSE.
-    PROMPT
-  end
+  def system_prompt = EngineData.fetch("story/generator").fetch("system_prompt")
 
   def generation_prompt
     <<~PROMPT

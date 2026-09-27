@@ -71,25 +71,7 @@ module Character::Desires
   # THE HALF-GOAL RULE IS IN IT because it is the failure this prompt has to
   # avoid rather than a preference: "stop being afraid" names nothing beyond the
   # fear, so the field is dead the moment it is written.
-  SYSTEM_PROMPT = <<~SYSTEM.freeze
-    You write the story-scale forces that organize a person's life. You work from the
-    four objects of desire: the future they knowingly build toward, the deeper reward
-    they repeatedly pursue without admitting it, the obligation they knowingly carry,
-    and the change or relationship they need but cannot yet see.
-
-    Each object was already shaping choices before the opening scene and can keep
-    creating pressure after today's errand succeeds or fails. A deadline, clue, delivery,
-    inspection or escape may be today's tactic; it is not the whole object of desire.
-
-    Write each object as something to move TOWARD. "Stop being afraid" is a half-goal;
-    "build a life in which she can trust another keeper with the bell" names the state
-    beyond the fear.
-
-    Do not resolve anybody. Name the enduring pressure that can drive choices across the
-    story.
-
-    DO NOT INCLUDE EMOJIS IN YOUR RESPONSE.
-  SYSTEM
+  SYSTEM_PROMPT = EngineData.fetch("character/desires").fetch("system_prompt")
 
   def self.system_prompt = SYSTEM_PROMPT
 
@@ -180,11 +162,5 @@ module Character::Desires
   # without the first of these the three people in it come out wanting the same
   # thing in the same words; without the second, nothing in the room presses on
   # the life-scale objects the common block asks for.
-  MORE_THAN_ONE = <<~MORE.freeze
-    - Each person in this room gets their own four. Two people in one room must not
-      want the same thing in the same words.
-    - At least one person's enduring object should be visibly pressed by something in
-      this room or one step away. The nearby thing is today's tactic or test, not the
-      whole object.
-  MORE
+  MORE_THAN_ONE = EngineData.fetch("character/desires").fetch("more_than_one")
 end
