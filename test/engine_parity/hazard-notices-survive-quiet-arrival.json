@@ -1,0 +1,124 @@
+{
+  "script": "hazard-notices-survive-quiet-arrival",
+  "story": "A Turn at the Gate",
+  "steps": [
+    {
+      "step": "step 1 quiet-prose-still-shows-the-crossing",
+      "player": "first",
+      "typed": "/move Courtyard",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Courtyard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Tower",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 51,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Courtyard",
+        "resolved_by": "grammar",
+        "note": "crossing-receipt: completed",
+        "drifts": 0,
+        "blows": 1,
+        "hazards": 1,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 6.0,
+        "shown": [
+          "Cal got clear of drop on the way from Market into Courtyard"
+        ]
+      }
+    },
+    {
+      "step": "step 2 one-receipt-after-redelivery",
+      "player": "first",
+      "typed": "/move Courtyard",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Courtyard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Tower",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 51,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Courtyard",
+        "resolved_by": "grammar",
+        "note": "crossing-receipt: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": [
+          "Cal got clear of drop on the way from Market into Courtyard"
+        ]
+      }
+    }
+  ]
+}

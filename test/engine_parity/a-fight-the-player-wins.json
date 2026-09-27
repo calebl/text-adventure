@@ -1,0 +1,2208 @@
+{
+  "script": "a-fight-the-player-wins",
+  "story": "The Lunar Cartographer",
+  "steps": [
+    {
+      "step": "step 1 nobody-to-fight-in-the-room-the-game-opens-in",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Grenn's Boarding House, Room 3",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000004,
+            "name": "Larkspur Quarter rooftops",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "Mournwell Lane",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Grenn Ollivar"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {
+          "Grenn Ollivar": 6
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 up-the-stairs",
+      "player": "first",
+      "typed": "go to the hallway",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Grenn's Boarding House hallway",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Grenn's Boarding House, Room 3",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Bell of Saint Aravel",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Grenn's Boarding House, Room 3 -> Grenn's Boarding House hallway (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Grenn's Boarding House hallway",
+        "resolved_by": "grammar",
+        "note": "someone here: Grenn Ollivar walked out of Grenn's Boarding House, Room 3 to Mournwell Lane and is no longer in Grenn's Boarding House, Room 3.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 into-the-tower",
+      "player": "first",
+      "typed": "go to the bell",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Marek Sollen": 10
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Grenn's Boarding House hallway -> The Bell of Saint Aravel",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Bell of Saint Aravel",
+        "resolved_by": "grammar",
+        "note": "the story: Climb to the bell of Saint Aravel, the one bearing in the city that means the same thing tomorrow.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 the-first-round",
+      "player": "first",
+      "typed": "attack Marek Sollen",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 16,
+        "hp_of": {
+          "Marek Sollen": 5
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "struck: Isbet Marrow hit Marek Sollen for 5 (round 1); Marek Sollen is badly hurt (5 of 10)",
+        "refused": false,
+        "offers": null,
+        "understood": "attack -> Marek Sollen",
+        "resolved_by": "grammar",
+        "note": "answered: Marek Sollen hit Isbet Marrow for 2 (round 1); Isbet Marrow is hurt (16 of 18)",
+        "drifts": 0,
+        "blows": 2,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 patched-up-1",
+      "player": "first",
+      "typed": "mend 20",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Marek Sollen": 5
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "mended: Isbet Marrow hurt (16 of 18) -> unhurt",
+        "refused": false,
+        "offers": null,
+        "understood": "mend -> 20 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 round-2",
+      "player": "first",
+      "typed": "attack Marek Sollen",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 17,
+        "hp_of": {
+          "Marek Sollen": 3
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "struck: Isbet Marrow hit Marek Sollen for 2 (round 2); Marek Sollen is badly hurt (3 of 10)",
+        "refused": false,
+        "offers": null,
+        "understood": "attack -> Marek Sollen",
+        "resolved_by": "grammar",
+        "note": "answered: Marek Sollen hit Isbet Marrow for 1 (round 2); Isbet Marrow is hurt (17 of 18)",
+        "drifts": 0,
+        "blows": 2,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 patched-up-2",
+      "player": "first",
+      "typed": "mend 20",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Marek Sollen": 3
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "mended: Isbet Marrow hurt (17 of 18) -> unhurt",
+        "refused": false,
+        "offers": null,
+        "understood": "mend -> 20 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 round-3",
+      "player": "first",
+      "typed": "attack Marek Sollen",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "struck: Isbet Marrow hit Marek Sollen for 3 (round 3); Marek Sollen is dead",
+        "refused": false,
+        "offers": null,
+        "understood": "attack -> Marek Sollen",
+        "resolved_by": "grammar",
+        "note": "the fight is over: The fight in The Bell of Saint Aravel is over after 3 rounds. Marek Sollen is dead. 5 blows landed: Isbet Marrow hit Marek Sollen for 5 (round 1); Marek Sollen is badly hurt (5 of 10); Marek Sollen hit Isbet Marrow for 2 (round 1); Isbet Marrow is hurt (16 of 18); Isbet Marrow hit Marek Sollen for 2 (round 2); Marek Sollen is badly hurt (3 of 10); Marek Sollen hit Isbet Marrow for 1 (round 2); Isbet Marrow is hurt (17 of 18); Isbet Marrow hit Marek Sollen for 3 (round 3); Marek Sollen is dead.",
+        "drifts": 0,
+        "blows": 1,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 15.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 patched-up-3",
+      "player": "first",
+      "typed": "mend 20",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "mended: Isbet Marrow unhurt -> unhurt",
+        "refused": false,
+        "offers": null,
+        "understood": "mend -> 20 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10 round-4",
+      "player": "first",
+      "typed": "attack Marek Sollen",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no person here called \"Marek Sollen\". There is: nothing",
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 11 patched-up-4",
+      "player": "first",
+      "typed": "mend 20",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "mended: Isbet Marrow unhurt -> unhurt",
+        "refused": false,
+        "offers": null,
+        "understood": "mend -> 20 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 12 round-5",
+      "player": "first",
+      "typed": "attack Marek Sollen",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no person here called \"Marek Sollen\". There is: nothing",
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 13 patched-up-5",
+      "player": "first",
+      "typed": "mend 20",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "mended: Isbet Marrow unhurt -> unhurt",
+        "refused": false,
+        "offers": null,
+        "understood": "mend -> 20 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 14 round-6",
+      "player": "first",
+      "typed": "attack Marek Sollen",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no person here called \"Marek Sollen\". There is: nothing",
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 15 patched-up-6",
+      "player": "first",
+      "typed": "mend 20",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "mended: Isbet Marrow unhurt -> unhurt",
+        "refused": false,
+        "offers": null,
+        "understood": "mend -> 20 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 16 round-7",
+      "player": "first",
+      "typed": "attack Marek Sollen",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no person here called \"Marek Sollen\". There is: nothing",
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 17 patched-up-7",
+      "player": "first",
+      "typed": "mend 20",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "mended: Isbet Marrow unhurt -> unhurt",
+        "refused": false,
+        "offers": null,
+        "understood": "mend -> 20 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 18 round-8",
+      "player": "first",
+      "typed": "attack Marek Sollen",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no person here called \"Marek Sollen\". There is: nothing",
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 19 patched-up-8",
+      "player": "first",
+      "typed": "mend 20",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "mended: Isbet Marrow unhurt -> unhurt",
+        "refused": false,
+        "offers": null,
+        "understood": "mend -> 20 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 20 round-9",
+      "player": "first",
+      "typed": "attack Marek Sollen",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no person here called \"Marek Sollen\". There is: nothing",
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 21 patched-up-9",
+      "player": "first",
+      "typed": "mend 20",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "mended: Isbet Marrow unhurt -> unhurt",
+        "refused": false,
+        "offers": null,
+        "understood": "mend -> 20 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 22 round-10-is-the-last-one-the-arithmetic-allows",
+      "player": "first",
+      "typed": "attack Marek Sollen",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no person here called \"Marek Sollen\". There is: nothing",
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 23 the-fight-is-over-and-the-body-let-go-of-what-it-held",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 24 and-it-can-be-picked-up",
+      "player": "first",
+      "typed": "take the tally",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: bell-rope tally (was lying in The Bell of Saint Aravel, now carried by Isbet Marrow)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> bell-rope tally",
+        "resolved_by": "grammar",
+        "note": "the story: Get the Ringer's tally, twenty-nine years of hours counted from a fixed point.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "reached",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 25 what-is-written-on-it-came-with-the-copy",
+      "player": "first",
+      "typed": "read the tally",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "examine -> bell-rope tally",
+        "resolved_by": "grammar",
+        "note": "reads: bell-rope tally\n  XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "reached",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 26 a-corpse-cannot-be-hit-again",
+      "player": "first",
+      "typed": "attack Marek Sollen",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no person here called \"Marek Sollen\". There is: nothing",
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "reached",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 27 and-cannot-be-talked-to-either",
+      "player": "first",
+      "typed": "talk to Marek Sollen",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no person here called \"to Marek Sollen\". There is: nothing",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "reached",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 28 leave-the-body-and-the-empty-floor-behind",
+      "player": "first",
+      "typed": "go to the hallway",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Grenn's Boarding House hallway",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Grenn's Boarding House, Room 3",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Bell of Saint Aravel",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Bell of Saint Aravel -> Grenn's Boarding House hallway (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Grenn's Boarding House hallway",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "reached",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 29 returning-does-not-revive-the-bell-keeper-or-restore-his-tally",
+      "player": "first",
+      "typed": "go to the bell",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "bell-rope tally",
+            "text": "XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.\n————————————————————————————————"
+          },
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Grenn's Boarding House hallway -> The Bell of Saint Aravel",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Bell of Saint Aravel",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "reached",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

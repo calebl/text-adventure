@@ -1,0 +1,679 @@
+{
+  "script": "consumption-survives-interruption-and-revisit",
+  "story": "A Dose Beyond Two Doors",
+  "steps": [
+    {
+      "step": "step 1 an-injury-before-using-supplies",
+      "player": "first",
+      "typed": "harm 15",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000006,
+            "name": "healing draught"
+          },
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000005,
+            "name": "travel ration"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 3,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "harmed: Cal unhurt -> badly hurt (3 of 18)",
+        "refused": false,
+        "offers": null,
+        "understood": "harm -> 15 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 food-is-spent-without-healing-a-wound",
+      "player": "first",
+      "typed": "/consume travel ration",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000006,
+            "name": "healing draught"
+          },
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 3,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "use -> travel ration",
+        "resolved_by": "grammar",
+        "note": "meal: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 5.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 take-the-only-dose",
+      "player": "first",
+      "typed": "/take healing draught",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000006,
+            "name": "healing draught"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 3,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> healing draught",
+        "resolved_by": "grammar",
+        "note": "pickup: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 5.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 worker-stops-after-drinking",
+      "player": "first",
+      "typed": "/drink healing draught",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": null,
+        "note": "dose: running",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 a-later-move-finishes-the-drink-before-leaving",
+      "player": "first",
+      "typed": "/move Yard",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Yard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Workshop",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Yard",
+        "resolved_by": "grammar",
+        "note": "leave: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 6.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 returning-does-not-refill-the-bottle",
+      "player": "first",
+      "typed": "/move Workshop",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Workshop",
+        "resolved_by": "grammar",
+        "note": "return: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 the-used-dose-cannot-be-picked-up-again",
+      "player": "first",
+      "typed": "/take healing draught",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no thing lying here called \"healing draught\". There is: brass key, iron lever",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 a-new-command-cannot-drink-the-spent-dose",
+      "player": "first",
+      "typed": "/drink healing draught",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "These items and doorways offer no matching physical action. Nothing has changed.",
+        "understood": null,
+        "resolved_by": null,
+        "note": "drink-again: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 redelivering-the-original-drink-is-free",
+      "player": "first",
+      "typed": "/drink healing draught",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000008,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 11,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "use -> healing draught",
+        "resolved_by": "grammar",
+        "note": "dose: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10 another-game-keeps-its-own-supplies-and-health (second)",
+      "player": "second",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Storeroom",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000011,
+            "name": "brass key"
+          },
+          {
+            "id": 1000000010,
+            "name": "healing draught"
+          },
+          {
+            "id": 1000000012,
+            "name": "iron lever"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000009,
+            "name": "travel ration"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 3,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

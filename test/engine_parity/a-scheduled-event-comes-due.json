@@ -1,0 +1,560 @@
+{
+  "script": "a-scheduled-event-comes-due",
+  "story": "The Lunar Cartographer",
+  "steps": [
+    {
+      "step": "step 1 two-things-are-going-to-happen-and-neither-has",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Grenn's Boarding House, Room 3",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000004,
+            "name": "Larkspur Quarter rooftops",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "Mournwell Lane",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Grenn Ollivar"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {
+          "Grenn Ollivar": 6
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 a-turn-is-not-an-hour",
+      "player": "first",
+      "typed": "go to the hallway",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Grenn's Boarding House hallway",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Grenn's Boarding House, Room 3",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Bell of Saint Aravel",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Grenn's Boarding House, Room 3 -> Grenn's Boarding House hallway (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Grenn's Boarding House hallway",
+        "resolved_by": "grammar",
+        "note": "someone here: Grenn Ollivar walked out of Grenn's Boarding House, Room 3 to Mournwell Lane and is no longer in Grenn's Boarding House, Room 3.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 into-the-tower",
+      "player": "first",
+      "typed": "go to the bell",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Marek Sollen": 10
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Grenn's Boarding House hallway -> The Bell of Saint Aravel",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Bell of Saint Aravel",
+        "resolved_by": "grammar",
+        "note": "the story: Climb to the bell of Saint Aravel, the one bearing in the city that means the same thing tomorrow.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 one-round",
+      "player": "first",
+      "typed": "attack Marek Sollen",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 16,
+        "hp_of": {
+          "Marek Sollen": 5
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "struck: Isbet Marrow hit Marek Sollen for 5 (round 1); Marek Sollen is badly hurt (5 of 10)",
+        "refused": false,
+        "offers": null,
+        "understood": "attack -> Marek Sollen",
+        "resolved_by": "grammar",
+        "note": "answered: Marek Sollen hit Isbet Marrow for 2 (round 1); Isbet Marrow is hurt (16 of 18)",
+        "drifts": 0,
+        "blows": 2,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 patched-up",
+      "player": "first",
+      "typed": "mend 20",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Bell of Saint Aravel",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Grenn's Boarding House hallway",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Marek Sollen"
+          }
+        ],
+        "inscription": [
+          {
+            "id": 1000000003,
+            "name": "climbers' bearing book",
+            "text": "From the bell, true: Celestial Spire 041. Sovereign's Circle 118. Larkspur, tonight -- (unfinished)\nRung the eleven. Rung the eleven. Rung the"
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Marek Sollen": 5
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "mended: Isbet Marrow hurt (16 of 18) -> unhurt",
+        "refused": false,
+        "offers": null,
+        "understood": "mend -> 20 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 back-down-the-stair",
+      "player": "first",
+      "typed": "go to the hallway",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Grenn's Boarding House hallway",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Grenn's Boarding House, Room 3",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Bell of Saint Aravel",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 16,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Bell of Saint Aravel -> Grenn's Boarding House hallway (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Grenn's Boarding House hallway",
+        "resolved_by": "grammar",
+        "note": "answered: Marek Sollen hit Isbet Marrow for 2 (round 2); Isbet Marrow is hurt (16 of 18)\nthe fight is over: The fight in The Bell of Saint Aravel is over after 2 rounds. Nobody was killed: the party is no longer standing in it. 3 blows landed: Isbet Marrow hit Marek Sollen for 5 (round 1); Marek Sollen is badly hurt (5 of 10); Marek Sollen hit Isbet Marrow for 2 (round 1); Isbet Marrow is hurt (16 of 18); Marek Sollen hit Isbet Marrow for 2 (round 2); Isbet Marrow is hurt (16 of 18).",
+        "drifts": 0,
+        "blows": 1,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 2,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 and-the-hour-came",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Grenn's Boarding House hallway",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Grenn's Boarding House, Room 3",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Bell of Saint Aravel",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 16,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 and-it-does-not-fire-twice",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Grenn's Boarding House hallway",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Grenn's Boarding House, Room 3",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Bell of Saint Aravel",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 16,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 14,
+          "will": 13
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 1,
+        "fired": 1,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

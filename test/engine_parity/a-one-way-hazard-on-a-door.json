@@ -1,0 +1,856 @@
+{
+  "script": "a-one-way-hazard-on-a-door",
+  "story": "The Salt Assizes",
+  "steps": [
+    {
+      "step": "step 1 the-court-is-free-and-says-what-leaving-it-costs",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Causeway Court",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Tide Post",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "The Vestry Hulk",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000005,
+            "name": "Assize hand-bell"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Ammon Brace"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Ammon Brace": 6
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 down-through-the-hatch",
+      "player": "first",
+      "typed": "go to the Vestry Hulk",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Vestry Hulk",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Ammon Brace"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 17,
+        "hp_of": {
+          "Ammon Brace": 6
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Causeway Court -> The Vestry Hulk (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Vestry Hulk",
+        "resolved_by": "grammar",
+        "note": "someone here: Ammon Brace walked out of The Causeway Court to The Vestry Hulk and is no longer in The Causeway Court.\nthe world: drop on the way from The Causeway Court into The Vestry Hulk cost Coraith Vell 1 hit point (the way down is further than it looks from the top); Coraith Vell is hurt (17 of 18)",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 1,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 and-climbing-back-out-is-free",
+      "player": "first",
+      "typed": "go to the Causeway Court",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Causeway Court",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Tide Post",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "The Vestry Hulk",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000005,
+            "name": "Assize hand-bell"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Ammon Brace"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 17,
+        "hp_of": {
+          "Ammon Brace": 6
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Vestry Hulk -> The Causeway Court",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Causeway Court",
+        "resolved_by": "grammar",
+        "note": "someone here: Ammon Brace walked out of The Vestry Hulk to The Causeway Court and is no longer in The Vestry Hulk.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 and-in-again-costs-again",
+      "player": "first",
+      "typed": "go into the Vestry Hulk",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Vestry Hulk",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Ammon Brace"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 15,
+        "hp_of": {
+          "Ammon Brace": 6
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Causeway Court -> The Vestry Hulk (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Vestry Hulk",
+        "resolved_by": "grammar",
+        "note": "someone here: Ammon Brace walked out of The Causeway Court to The Vestry Hulk and is no longer in The Causeway Court.\nthe world: drop on the way from The Causeway Court into The Vestry Hulk cost Coraith Vell 2 hit points (the way down is further than it looks from the top); Coraith Vell is hurt (15 of 18)",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 1,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 standing-in-it-costs-nothing",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Vestry Hulk",
+          "detail": "stub"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Ammon Brace"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 15,
+        "hp_of": {
+          "Ammon Brace": 6
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 back-onto-the-rock",
+      "player": "first",
+      "typed": "go to the Causeway Court",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Causeway Court",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Tide Post",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "The Vestry Hulk",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000005,
+            "name": "Assize hand-bell"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Ammon Brace"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 15,
+        "hp_of": {
+          "Ammon Brace": 6
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Vestry Hulk -> The Causeway Court",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Causeway Court",
+        "resolved_by": "grammar",
+        "note": "someone here: Ammon Brace walked out of The Vestry Hulk to The Causeway Court and is no longer in The Vestry Hulk.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 patched-up-before-the-water",
+      "player": "first",
+      "typed": "mend 20",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Causeway Court",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Tide Post",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "The Vestry Hulk",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000005,
+            "name": "Assize hand-bell"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Ammon Brace"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Ammon Brace": 6
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": true,
+        "change": "mended: Coraith Vell hurt (15 of 18) -> unhurt",
+        "refused": false,
+        "offers": null,
+        "understood": "mend -> 20 hit points",
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 out-across-the-wet-side-of-the-rock",
+      "player": "first",
+      "typed": "go to the Tide Post",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 14,
+        "hp_of": {
+          "Neb Halloran": 10
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Causeway Court -> The Tide Post",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Tide Post",
+        "resolved_by": "grammar",
+        "note": "someone here: Ammon Brace walked out of The Causeway Court to The Vestry Hulk and is no longer in The Causeway Court.\nthe world: flooded on The Tide Post cost Coraith Vell 4 hit points (the water takes your legs); Coraith Vell is hurt (14 of 18)\nthe story: Go out to the tide post and read the stain band against the water yourself.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 1,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 and-standing-at-the-post-is-free",
+      "player": "first",
+      "typed": "talk to Neb Halloran",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 14,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "Neb Halloran is here and the classifier resolved them, but talking is prose and this mode writes none. Nothing changed. Play the browser game to speak to somebody.",
+        "understood": "talk -> Neb Halloran",
+        "resolved_by": "grammar",
+        "note": "someone here: Neb Halloran walked out of The Tide Post to The Causeway Court and is no longer in The Tide Post.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10 a-refused-line-pays-nothing",
+      "player": "first",
+      "typed": "take the mayor's chain",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Tide Post",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Causeway Court",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 14,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no thing lying here called \"the mayor's chain\". There is: nothing",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 11 and-back-in-is-paid-again",
+      "player": "first",
+      "typed": "go to the Causeway Court",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Causeway Court",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Tide Post",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "The Vestry Hulk",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000005,
+            "name": "Assize hand-bell"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "Assize tide-slate",
+            "text": "HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway."
+          }
+        ],
+        "hp": 14,
+        "hp_of": {
+          "Neb Halloran": 10
+        },
+        "abilities": {
+          "strength": 13,
+          "dexterity": 10,
+          "will": 14
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Tide Post -> The Causeway Court",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Causeway Court",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

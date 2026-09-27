@@ -1,0 +1,307 @@
+{
+  "script": "unfinished-realization-resumes-on-entry",
+  "story": "The Unfinished Workshop",
+  "steps": [
+    {
+      "step": "step 1 exits-provider-interrupts-first-entry",
+      "player": "first",
+      "typed": "/move Workshop",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Workshop",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": null,
+        "note": "first-entry: failed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 retry-finishes-only-the-missing-phase",
+      "player": "first",
+      "typed": "/move Workshop",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "brass token"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Sella Reed"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Sella Reed": 6
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Workshop",
+        "resolved_by": "grammar",
+        "note": "retry-entry: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 take-the-generated-item",
+      "player": "first",
+      "typed": "/take brass token",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "brass token"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Sella Reed"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Sella Reed": 6
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: brass token (was lying in Workshop, now carried by Cal)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> brass token",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 leave-the-generated-room",
+      "player": "first",
+      "typed": "/move Market",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Workshop",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "brass token"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Market",
+        "resolved_by": "grammar",
+        "note": "leave: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 revisit-reuses-location-and-admissions",
+      "player": "first",
+      "typed": "/move Workshop",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "brass token"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Sella Reed"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Sella Reed": 6
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Workshop",
+        "resolved_by": "grammar",
+        "note": "revisit: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,995 @@
+{
+  "script": "one-act-per-line",
+  "story": "The Unrecorded Hour",
+  "steps": [
+    {
+      "step": "step 1 the-office-as-seeded",
+      "player": "first",
+      "typed": "stats",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 somebody-who-is-not-here",
+      "player": "first",
+      "typed": "talk to Perrin Lasco",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no person here called \"to Perrin Lasco\". There is: Halkett Rowe",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 unreadable-offline",
+      "player": "first",
+      "typed": "ponder the ward stamp",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "I do not understand \"ponder\". The no-model grammar is fixed:",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": "go <exit>        move into one of the ways out (also: move, walk, enter)\ntake <item>      pick up something lying here (also: get, grab, pick up)\ndrop <item>      put down something you are carrying (also: put down, leave)\ntalk <person>    resolve somebody standing here (also: speak, ask). The\n                 talking itself is prose, so this mode names them and stops\ninspect <item>   what is written on something, out of the records (also:\n                 read, examine, x, look at). Only a thing marked readable has\n                 words; this mode prints them and never writes them\nlook             the engine's whole view of where you are (also: where,\n                 inventory, exits, items, who, state, vitals)\nstats            the player's level, hit die and three abilities, out of\n                 the world's own records (also: abilities)\nattack <person>  swing at somebody standing here (also: hit, strike). One\n                 blow of your own hit die, it always connects, and every\n                 live foe in the room answers in the same turn. Anybody\n                 can be attacked, and being attacked makes them a foe for\n                 this playthrough\nthrow <thing> at <name|exit>\n                 throw something in your hands, or lying here, at somebody\n                 standing here or through one of the ways out (also: hurl,\n                 toss). Picking it up is part of the throw, not a turn of\n                 its own. One d20 under strength less what it weighs, and no\n                 second roll: if it leaves your hands it goes where you\n                 aimed it. A hit deals one die by bulk -- light d4, handy\n                 d6, heavy d8 -- and lands the thing at their feet. A\n                 failed lift is a spent turn and the thing stays in your\n                 hands. Something immovable is refused and costs nothing\ncheck <ability> [penalty]\n                 throw one d20 against strength, dexterity or will and\n                 print what it came up: d20-under the score, with the\n                 penalty taken off the TARGET. It writes nothing, and at a\n                 target of zero or less it says so instead of rolling\nharm <n>         take n hit points off the player, through\n                 Playthrough::Turn#harm!. Zero is death and death ends the\n                 playthrough (also: hurt, damage)\nmend <n>         put n back, up to the maximum. It never raises the dead\n                 (also: heal)\nhelp             this list\n\nA leading / is optional and is stripped: `/take slate` and `take slate` are\nthe same line. A name is matched against the records: exactly first, then as\nan unambiguous prefix, then as an unambiguous fragment -- and a fragment is\nread both ways round, so `drop the tide-slate` finds the Assize\ntide-slate. A leading the/a/an/to/into/through/onto/at is dropped before\nany of that. Case and extra spaces do not matter. This is the no-model\nfallback -- drop it to have the classifier read what you type and the\nworld generate as you walk.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 into-the-room-with-two-things-in-it",
+      "player": "first",
+      "typed": "go to the Supply Closet",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Supply Closet",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Ward Office 12",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index"
+          },
+          {
+            "id": 1000000012,
+            "name": "copy-room apron"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index",
+            "text": "11 Frost — 0714/12 — closed, no query raised\n2 Thaw — 0902/12 — closed, no query raised\n19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open\nThis day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L."
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Ward Office 12 -> The Supply Closet",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Supply Closet",
+        "resolved_by": "grammar",
+        "note": "the story: Open the one door in this office nobody has audited in eleven years.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 1,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 both-names-in-full",
+      "player": "first",
+      "typed": "take Perrin's private index and copy-room apron",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Supply Closet",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Ward Office 12",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index"
+          },
+          {
+            "id": 1000000012,
+            "name": "copy-room apron"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index",
+            "text": "11 Frost — 0714/12 — closed, no query raised\n2 Thaw — 0902/12 — closed, no query raised\n19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open\nThis day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L."
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "\"Perrin's private index and copy-room apron\" matches more than one thing lying here: Perrin's private index, copy-room apron",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 two-readable-names-in-full",
+      "player": "first",
+      "typed": "read Perrin's private index and Ward Office 12 daybook",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Supply Closet",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Ward Office 12",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index"
+          },
+          {
+            "id": 1000000012,
+            "name": "copy-room apron"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index",
+            "text": "11 Frost — 0714/12 — closed, no query raised\n2 Thaw — 0902/12 — closed, no query raised\n19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open\nThis day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L."
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "\"Perrin's private index and Ward Office 12 daybook\" matches more than one thing here or in your hands: Perrin's private index, Ward Office 12 daybook",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 and-one-of-them-on-its-own-still-reads",
+      "player": "first",
+      "typed": "read the private index",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Supply Closet",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Ward Office 12",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index"
+          },
+          {
+            "id": 1000000012,
+            "name": "copy-room apron"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index",
+            "text": "11 Frost — 0714/12 — closed, no query raised\n2 Thaw — 0902/12 — closed, no query raised\n19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open\nThis day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L."
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "examine -> Perrin's private index",
+        "resolved_by": "grammar",
+        "note": "reads: Perrin's private index\n  11 Frost — 0714/12 — closed, no query raised\n2 Thaw — 0902/12 — closed, no query raised\n19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open\nThis day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 and-the-next-line-plays",
+      "player": "first",
+      "typed": "take the index",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Supply Closet",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Ward Office 12",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000012,
+            "name": "copy-room apron"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index"
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index",
+            "text": "11 Frost — 0714/12 — closed, no query raised\n2 Thaw — 0902/12 — closed, no query raised\n19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open\nThis day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L."
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: Perrin's private index (was lying in The Supply Closet, now carried by Odile Vance)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> Perrin's private index",
+        "resolved_by": "grammar",
+        "note": "the story: Take the private index that names the hand behind the amendments.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "reached",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 a-name-that-lands-on-nothing",
+      "player": "first",
+      "typed": "take the tide-slate",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Supply Closet",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Ward Office 12",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000012,
+            "name": "copy-room apron"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index"
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index",
+            "text": "11 Frost — 0714/12 — closed, no query raised\n2 Thaw — 0902/12 — closed, no query raised\n19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open\nThis day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L."
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no thing lying here called \"the tide-slate\". There is: copy-room apron",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "reached",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10 back-to-the-office",
+      "player": "first",
+      "typed": "go to Ward Office 12",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index"
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index",
+            "text": "11 Frost — 0714/12 — closed, no query raised\n2 Thaw — 0902/12 — closed, no query raised\n19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open\nThis day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L."
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Supply Closet -> Ward Office 12",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Ward Office 12",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "reached",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 11 two-acts-across-two-sets",
+      "player": "first",
+      "typed": "take the filing press and the daybook",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Ward Office 12",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Long Hallway",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Supply Closet",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000008,
+            "name": "blank closure writ"
+          },
+          {
+            "id": 1000000009,
+            "name": "filing press"
+          },
+          {
+            "id": 1000000010,
+            "name": "ward stamp"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index"
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Halkett Rowe"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000011,
+            "name": "Perrin's private index",
+            "text": "11 Frost — 0714/12 — closed, no query raised\n2 Thaw — 0902/12 — closed, no query raised\n19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open\nThis day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L."
+          },
+          {
+            "id": 1000000007,
+            "name": "Ward Office 12 daybook",
+            "text": "3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.\n4.00 —\n5.00 —\n5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V."
+          },
+          {
+            "id": 1000000008,
+            "name": "blank closure writ",
+            "text": "WRIT OF CLOSURE — Ward 12. The file of ______________________ is closed, no query to be raised. By order of the Inspectorate. Countersigned."
+          }
+        ],
+        "hp": 18,
+        "hp_of": {
+          "Halkett Rowe": 8
+        },
+        "abilities": {
+          "strength": 9,
+          "dexterity": 11,
+          "will": 15
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "The filing press is immovable and does not move for anybody: it cannot be picked up. Nothing has changed.",
+        "understood": "take -> filing press",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "reached",
+          "2": "reached",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

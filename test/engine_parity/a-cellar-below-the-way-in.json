@@ -1,0 +1,673 @@
+{
+  "script": "a-cellar-below-the-way-in",
+  "story": "The Quay House",
+  "steps": [
+    {
+      "step": "step 1 the-quay-as-seeded",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Quay",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000014,
+            "name": "The Bonded Cellar room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000003,
+            "name": "The Custom House room 1",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 in-through-the-sealed-door",
+      "player": "first",
+      "typed": "go to The Bonded Cellar room 1",
+      "dump": {
+        "location": {
+          "id": 1000000014,
+          "name": "The Bonded Cellar room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000015,
+            "name": "The Bonded Cellar room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000016,
+            "name": "The Bonded Cellar room 3",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Quay -> The Bonded Cellar room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Bonded Cellar room 1",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 across-the-ground-floor",
+      "player": "first",
+      "typed": "go to The Bonded Cellar room 2",
+      "dump": {
+        "location": {
+          "id": 1000000015,
+          "name": "The Bonded Cellar room 2",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000014,
+            "name": "The Bonded Cellar room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000017,
+            "name": "The Bonded Cellar room 4",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000018,
+            "name": "The Bonded Cellar room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000019,
+            "name": "The Bonded Cellar room 6",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Bonded Cellar room 1 -> The Bonded Cellar room 2 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Bonded Cellar room 2",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 down-the-stair",
+      "player": "first",
+      "typed": "go to The Bonded Cellar room 5",
+      "dump": {
+        "location": {
+          "id": 1000000018,
+          "name": "The Bonded Cellar room 5",
+          "detail": "stub"
+        },
+        "storey": -1,
+        "exits": [
+          {
+            "id": 1000000015,
+            "name": "The Bonded Cellar room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000019,
+            "name": "The Bonded Cellar room 6",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Bonded Cellar room 2 -> The Bonded Cellar room 5 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Bonded Cellar room 5",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 along-the-cellar",
+      "player": "first",
+      "typed": "go to The Bonded Cellar room 6",
+      "dump": {
+        "location": {
+          "id": 1000000019,
+          "name": "The Bonded Cellar room 6",
+          "detail": "stub"
+        },
+        "storey": -1,
+        "exits": [
+          {
+            "id": 1000000015,
+            "name": "The Bonded Cellar room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000018,
+            "name": "The Bonded Cellar room 5",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Bonded Cellar room 5 -> The Bonded Cellar room 6 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Bonded Cellar room 6",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 up-out-of-the-cellar",
+      "player": "first",
+      "typed": "go to The Bonded Cellar room 2",
+      "dump": {
+        "location": {
+          "id": 1000000015,
+          "name": "The Bonded Cellar room 2",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000014,
+            "name": "The Bonded Cellar room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000017,
+            "name": "The Bonded Cellar room 4",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000018,
+            "name": "The Bonded Cellar room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000019,
+            "name": "The Bonded Cellar room 6",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Bonded Cellar room 6 -> The Bonded Cellar room 2 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Bonded Cellar room 2",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 on-up-past-the-entry",
+      "player": "first",
+      "typed": "go to The Bonded Cellar room 4",
+      "dump": {
+        "location": {
+          "id": 1000000017,
+          "name": "The Bonded Cellar room 4",
+          "detail": "stub"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000015,
+            "name": "The Bonded Cellar room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000016,
+            "name": "The Bonded Cellar room 3",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Bonded Cellar room 2 -> The Bonded Cellar room 4 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Bonded Cellar room 4",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 along-the-floor-above",
+      "player": "first",
+      "typed": "go to The Bonded Cellar room 3",
+      "dump": {
+        "location": {
+          "id": 1000000016,
+          "name": "The Bonded Cellar room 3",
+          "detail": "stub"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000014,
+            "name": "The Bonded Cellar room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000017,
+            "name": "The Bonded Cellar room 4",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Bonded Cellar room 4 -> The Bonded Cellar room 3 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Bonded Cellar room 3",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 down-to-the-entry-again",
+      "player": "first",
+      "typed": "go to The Bonded Cellar room 1",
+      "dump": {
+        "location": {
+          "id": 1000000014,
+          "name": "The Bonded Cellar room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000015,
+            "name": "The Bonded Cellar room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000016,
+            "name": "The Bonded Cellar room 3",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Bonded Cellar room 3 -> The Bonded Cellar room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Bonded Cellar room 1",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10 no-shortcut-into-the-cellar",
+      "player": "first",
+      "typed": "go to The Bonded Cellar room 5",
+      "dump": {
+        "location": {
+          "id": 1000000014,
+          "name": "The Bonded Cellar room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000015,
+            "name": "The Bonded Cellar room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000016,
+            "name": "The Bonded Cellar room 3",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no way out called \"to The Bonded Cellar room 5\". There is: The Quay, The Bonded Cellar room 2, The Bonded Cellar room 3",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 11 the-cellar-is-not-somewhere-you-stand",
+      "player": "first",
+      "typed": "go to The Bonded Cellar",
+      "dump": {
+        "location": {
+          "id": 1000000014,
+          "name": "The Bonded Cellar room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000015,
+            "name": "The Bonded Cellar room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000016,
+            "name": "The Bonded Cellar room 3",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "\"to The Bonded Cellar\" matches more than one way out: The Bonded Cellar room 2, The Bonded Cellar room 3",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

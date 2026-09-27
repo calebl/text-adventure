@@ -1,0 +1,569 @@
+{
+  "script": "things-land-somewhere-in-a-room",
+  "story": "The Quay House",
+  "steps": [
+    {
+      "step": "step 1 the-quay-as-seeded",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Quay",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000014,
+            "name": "The Bonded Cellar room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000003,
+            "name": "The Custom House room 1",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 in-through-the-door",
+      "player": "first",
+      "typed": "go to The Custom House room 1",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Custom House room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Quay -> The Custom House room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 1",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 off-the-floor-and-into-a-hand",
+      "player": "first",
+      "typed": "take the seal ledger",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Custom House room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: seal ledger (was lying in The Custom House room 1, now carried by Nell Cawsand)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> seal ledger",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 up-the-stairs-with-it",
+      "player": "first",
+      "typed": "go to The Custom House room 5",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Custom House room 5",
+          "detail": "stub"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Custom House room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000008,
+            "name": "The Custom House room 6",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Custom House room 1 -> The Custom House room 5 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 5",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 and-down-somewhere-in-this-room",
+      "player": "first",
+      "typed": "drop the seal ledger",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Custom House room 5",
+          "detail": "stub"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Custom House room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000008,
+            "name": "The Custom House room 6",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "dropped: seal ledger (was carried by Nell Cawsand, now lying in The Custom House room 5)",
+        "refused": false,
+        "offers": null,
+        "understood": "drop -> seal ledger",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 and-it-is-still-there-when-we-come-back",
+      "player": "first",
+      "typed": "go to The Custom House room 1",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Custom House room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Custom House room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000007,
+            "name": "The Custom House room 5",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Quay",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Custom House room 5 -> The Custom House room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 1",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 picked-up-again-on-the-floor-above",
+      "player": "first",
+      "typed": "go to The Custom House room 5",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Custom House room 5",
+          "detail": "stub"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Custom House room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000008,
+            "name": "The Custom House room 6",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Custom House room 1 -> The Custom House room 5 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Custom House room 5",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 taken-a-second-time",
+      "player": "first",
+      "typed": "take the seal ledger",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Custom House room 5",
+          "detail": "stub"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Custom House room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000008,
+            "name": "The Custom House room 6",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: seal ledger (was lying in The Custom House room 5, now carried by Nell Cawsand)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> seal ledger",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 and-put-down-once-more-so-the-records-end-with-it-placed",
+      "player": "first",
+      "typed": "drop the seal ledger",
+      "dump": {
+        "location": {
+          "id": 1000000007,
+          "name": "The Custom House room 5",
+          "detail": "stub"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "The Custom House room 1",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000008,
+            "name": "The Custom House room 6",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "seal ledger"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 11,
+          "dexterity": 13,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "dropped: seal ledger (was carried by Nell Cawsand, now lying in The Custom House room 5)",
+        "refused": false,
+        "offers": null,
+        "understood": "drop -> seal ledger",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

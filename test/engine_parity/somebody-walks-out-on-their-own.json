@@ -1,0 +1,255 @@
+{
+  "script": "somebody-walks-out-on-their-own",
+  "story": "A Clerk With Somewhere To Be",
+  "steps": [
+    {
+      "step": "step 1",
+      "player": "first",
+      "typed": "stats",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Records Office",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Landing",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "quarter receipt"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Bell"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Bell": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "engine_view",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2",
+      "player": "first",
+      "typed": "take the moon",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Records Office",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Landing",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000002,
+            "name": "quarter receipt"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Bell"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Bell": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is no thing lying here called \"the moon\". There is: quarter receipt",
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3",
+      "player": "first",
+      "typed": "take the quarter receipt",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Records Office",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Landing",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "quarter receipt"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: quarter receipt (was lying in The Records Office, now carried by Wick)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> quarter receipt",
+        "resolved_by": "grammar",
+        "note": "someone here: Bell walked out of The Records Office to The Landing and is no longer in The Records Office.",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4",
+      "player": "first",
+      "typed": "go to The Landing",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Landing",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Records Office",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000002,
+            "name": "quarter receipt"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Bell"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Bell": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Records Office -> The Landing",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Landing",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}
