@@ -1,0 +1,133 @@
+# GOLDEN VECTORS: THE ENGINE'S PURE RULES, WRITTEN DOWN AS INPUTS AND ANSWERS.
+#
+# Every file under `DIRECTORY` holds one portion of the engine -- the dice, a
+# box's geometry, an interior's layout -- as a list of cases, each a set of
+# named inputs and the exact output this Ruby code gives for them. A second
+# implementation of the same rules (a port to another language) is tested by
+# reading these files and reproducing every output. So the files are a
+# contract, and `docs/engine-vectors.md` says how to use and change them.
+#
+# THE FILES ARE GENERATED, NEVER HAND-EDITED. `rake engine:vectors` writes
+# them and `test/lib/engine_vectors_test.rb` regenerates them in memory and
+# compares, so any change to the Ruby behaviour shows up as a vector diff in
+# the same PR that made it.
+#
+# OFFLINE AND WRITING NOTHING. No portion makes a model call. The portions
+# that need rows (an interior, a shuffle, a deadline's anchor) build them with
+# explicit ids inside a transaction that is always rolled back, so the answer
+# does not depend on what else the database holds. The rake task goes further
+# and runs against a fresh in-memory database loaded from `db/schema.rb`, so it
+# never opens a database file at all.
+#
+# DETERMINISTIC BYTE FOR BYTE. Inputs come from plain arithmetic over fixed
+# lists, every seed is an integer, and nothing reads the wall clock or a
+# salted hash. Running the task twice gives identical files.
+#
+# THE FORMAT, VERSION `FORMAT_VERSION`. Each file is one JSON object:
+#
+#   format    always "engine-vectors"
+#   version   `FORMAT_VERSION`; bumped when the shape of a file changes
+#   portion   the file's name without `.json`
+#   sources   the Ruby files whose behaviour the cases record
+#   notes     how to read this portion's inputs and outputs
+#   constants the tables the portion reads, where a port needs them verbatim
+#             (a table is a list of [key, value] pairs, so key order is kept)
+#   cases     one object per line: { "name", "input", "output" }
+#
+# A seed that can pass 2**53 is written as a decimal string; every other
+# number is a JSON integer. A time is whole seconds since the Unix epoch, UTC.
+module EngineVectors
+  FORMAT = "engine-vectors".freeze
+  FORMAT_VERSION = 1
+  DIRECTORY = "test/engine_vectors".freeze
+
+  PORTIONS = {
+    "roll" => "EngineVectors::Dice",
+    "stat_block" => "EngineVectors::StatBlock",
+    "spot" => "EngineVectors::Spots",
+    "placement" => "EngineVectors::Placements",
+    "population" => "EngineVectors::Population",
+    "danger" => "EngineVectors::Danger",
+    "parameters" => "EngineVectors::Parameters",
+    "box" => "EngineVectors::Boxes",
+    "interior" => "EngineVectors::Interior",
+    "shuffle_connections" => "EngineVectors::Shuffle",
+    "world_mechanic" => "EngineVectors::Boundaries",
+    "deadline" => "EngineVectors::Deadline",
+    "cast" => "EngineVectors::Cast"
+  }.freeze
+
+  # EVERY PORTION'S FILE CONTENTS, keyed by file name. Needs a database with
+  # the current schema for the portions that build rows; nothing is kept.
+  def self.files
+    PORTIONS.to_h { |portion, builder| [ "#{portion}.json", render(document(portion, builder.constantize)) ] }
+  end
+
+  def self.document(portion, builder)
+    {
+      "format" => FORMAT,
+      "version" => FORMAT_VERSION,
+      "portion" => portion,
+      "sources" => builder::SOURCES,
+      "notes" => builder::NOTES,
+      "constants" => builder.constants_table,
+      "cases" => builder.cases
+    }
+  end
+
+  # ONE CASE PER LINE, so a behaviour change reads as the lines it changed.
+  def self.render(document)
+    cases = document.fetch("cases")
+    lines = [ "{" ]
+    document.except("cases").each { |key, value| lines << "  #{JSON.generate(key)}: #{JSON.generate(value)}," }
+    lines << '  "cases": ['
+    cases.each_with_index do |one, index|
+      lines << "    #{JSON.generate(one)}#{"," unless index == cases.size - 1}"
+    end
+    lines << "  ]"
+    lines << "}"
+    "#{lines.join("\n")}\n"
+  end
+
+  def self.write!(root = Rails.root)
+    directory = root.join(DIRECTORY)
+    FileUtils.mkdir_p(directory)
+    files.each { |name, body| File.write(directory.join(name), body) }
+  end
+
+  # RUNS THE BLOCK AGAINST A FRESH IN-MEMORY DATABASE, then puts the app's own
+  # connection back. What the rake task uses, so it never touches a file.
+  def self.in_memory_database
+    config = ActiveRecord::Base.connection_db_config
+    ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
+    ActiveRecord::Schema.verbose = false
+    load Rails.root.join("db/schema.rb").to_s
+    yield
+  ensure
+    ActiveRecord::Base.establish_connection(config)
+  end
+
+  # A CASE THAT NEEDS ROWS builds them in here, and they never outlive it.
+  def self.rolled_back
+    result = nil
+    ActiveRecord::Base.transaction(requires_new: true) do
+      result = yield
+      raise ActiveRecord::Rollback
+    end
+    result
+  end
+
+  def self.case_for(name, input, output) = { "name" => name, "input" => input, "output" => output }
+
+  # A table as [key, value] pairs, so a reader in any language keeps its order.
+  def self.pairs(hash) = hash.map { |key, value| [ key, plain(value) ] }
+
+  def self.plain(value)
+    case value
+    when Range then [ value.min, value.max ]
+    when Hash then pairs(value)
+    when Array then value.map { |item| plain(item) }
+    else value
+    end
+  end
+end
