@@ -187,6 +187,25 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   THROW_DIGEST = "1ebd2f0c35908933".freeze
   ARC_DIGEST = "027013dd5a020328".freeze
 
+  # THE REPORTED-INTENT RELABEL, after every kept set was bought: telling a
+  # listener where you mean to go stopped accepting `move`, and three lines of
+  # the same kind joined it. Every kept set was scored with move accepted and
+  # without those lines, so each historical corpus below starts from today's
+  # corpus with this taken back out.
+  ADDED_SINCE_CURRENT = %w[two-sets-talk-and-move-nobody-here two-sets-talk-intent-market
+                           two-sets-talk-intent-tide-post].freeze
+  FORMER_ACCEPTS = {
+    "two-sets-talk-and-move" => [ { intent: :move, target: "The Supply Closet", also_named: nil, thrown_at: nil } ]
+  }.freeze
+
+  def before_the_reported_intent_relabel(corpus)
+    kept = corpus.subset { |line| !ADDED_SINCE_CURRENT.include?(line.id) }
+    Eval::Classifier::Corpus.new(path: kept.path, positions: kept.positions,
+                                 lines: kept.lines.map { |line| FORMER_ACCEPTS[line.id] ? line.with(also_accept: FORMER_ACCEPTS[line.id]) : line })
+  end
+
+  def current_corpus = before_the_reported_intent_relabel(Eval::Classifier.corpus)
+
   def labelled_before_the_writ(corpus)
     Eval::Classifier::Corpus.new(path: corpus.path, positions: corpus.positions,
                                  lines: corpus.lines.map { |line| FORMER_LABELS[line.id] ? line.with(**FORMER_LABELS[line.id]) : line })
@@ -194,11 +213,11 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
 
   def without_the_throw_lines(corpus) = corpus.subset { |line| !ADDED_SINCE_FROZEN.include?(line.id) }
 
-  def frozen_corpus = labelled_before_the_writ(without_the_throw_lines(Eval::Classifier.corpus))
+  def frozen_corpus = labelled_before_the_writ(without_the_throw_lines(current_corpus))
 
-  def throw_corpus = labelled_before_the_writ(Eval::Classifier.corpus)
+  def throw_corpus = labelled_before_the_writ(current_corpus)
 
-  def arc_corpus = without_the_throw_lines(Eval::Classifier.corpus)
+  def arc_corpus = without_the_throw_lines(current_corpus)
 
   test "each historical corpus is today's corpus less what changed since, exactly, by digest" do
     assert_equal THROW_DIGEST, Eval::Classifier.digest(throw_corpus)
@@ -244,8 +263,8 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
 
   test "the current single arm baseline matches the corpus and schema request" do
     result = load_kept(CURRENT)
-    assert_equal Eval::Classifier.digest, result.corpus_digest
-    assert_equal Eval::Classifier.corpus.size, result.corpus_size
+    assert_equal Eval::Classifier.digest(current_corpus), result.corpus_digest
+    assert_equal current_corpus.size, result.corpus_size
     assert_equal Eval::Classifier::Version.offline, result.request_identity
     assert_equal [ BaseAgent::REMOTE_MODEL_IDS.first ], result.arms
     assert_equal result.arms, result.answered_by
@@ -457,8 +476,8 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
 
   test "the current classifier floor can be recomputed offline" do
     floor = JSON.parse(Eval.kept_root.join(CURRENT, "offline.json").read)
-    assert_equal Eval::Classifier.digest, floor.fetch("corpus_digest")
-    assert_equal JSON.parse(Eval::Classifier::Offline.new.summary.to_h.to_json), floor.fetch("floor")
+    assert_equal Eval::Classifier.digest(current_corpus), floor.fetch("corpus_digest")
+    assert_equal JSON.parse(Eval::Classifier::Offline.new(corpus: current_corpus).summary.to_h.to_json), floor.fetch("floor")
   end
 
   test "the initial physical candidate keeps every exact request and its single model receipt" do
