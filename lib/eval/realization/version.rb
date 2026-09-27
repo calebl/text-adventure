@@ -33,10 +33,8 @@
 #
 # `Character::Registry#slots` rolls the race, age and sex of each person the
 # call may name, and `Location::Generator#slot_details` states them in the
-# prompt. Two of those three are NOT SEEDED AT ALL -- `rand(18..80)` and
-# `Character.sexes.values.sample` are Kernel's own generator -- and the third is
-# seeded on `story_id` and `location.id`, which a staged copy of a world
-# re-issues on every load. So those lines legitimately differ between two
+# prompt. All three are seeded on `story_id` and `location.id`, which a staged
+# copy of a world re-issues on every load. So those lines legitimately differ between two
 # repetitions of one case, and a digest over them would call every run a
 # different prompt version and every run unstable.
 #

@@ -30,6 +30,7 @@ class Api::V1Test < ActionDispatch::IntegrationTest
     get api_v1_service_path
     assert_response :unauthorized
     assert_protocol "Error", json
+    assert_like_example ProtocolV1.example(:get, "/api/v1", 401), json
     assert_equal "unauthorized", json.dig("error", "code")
 
     get api_v1_service_path, headers: auth("not-a-token")
@@ -71,6 +72,7 @@ class Api::V1Test < ActionDispatch::IntegrationTest
     get api_v1_service_path, headers: auth
     assert_response :ok
     assert_protocol "Service", json
+    assert_like_example ProtocolV1.example(:get, "/api/v1", 200), json
     assert_equal 1, json["version"]
     assert_includes json["capabilities"], "turn_events"
     assert_equal ActiveRecord::Base.connection_pool.migration_context.current_version.to_s, json["world_schema"]
@@ -83,6 +85,7 @@ class Api::V1Test < ActionDispatch::IntegrationTest
     get api_v1_worlds_path, headers: auth
     assert_response :ok
     assert_protocol "WorldList", json
+    assert_like_example ProtocolV1.example(:get, "/api/v1/worlds", 200), json
     assert_equal [ "The Ward" ], json["worlds"].map { |world| world["title"] }
   end
 
@@ -92,15 +95,18 @@ class Api::V1Test < ActionDispatch::IntegrationTest
     post api_v1_games_path, params: { world: @world.id.to_s }, headers: auth, as: :json
     assert_response :created
     assert_protocol "Screen", json
+    assert_like_example ProtocolV1.example(:post, "/api/v1/games", 201), json
     assert_equal "Ward Office 12", json.dig("glance", "room", "name")
     assert_equal @player, Playthrough.find_by!(token: json.dig("game", "id")).player
 
     get api_v1_game_path(json.dig("game", "id")), headers: auth
     assert_response :ok
     assert_protocol "Screen", json
+    assert_like_example ProtocolV1.example(:get, "/api/v1/games/{game}", 200), json
 
     get api_v1_games_path, headers: auth
     assert_protocol "GameList", json
+    assert_like_example ProtocolV1.example(:get, "/api/v1/games", 200), json
     assert_equal 1, json["games"].size
   end
 
@@ -110,6 +116,7 @@ class Api::V1Test < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
     assert_protocol "Error", json
     assert_equal "unplayable", json.dig("error", "code")
+    assert_like_example ProtocolV1.example(:post, "/api/v1/games", 422), json
   end
 
   test "a player cannot be assigned by a parameter" do
@@ -128,6 +135,7 @@ class Api::V1Test < ActionDispatch::IntegrationTest
 
     get api_v1_game_path(theirs), headers: auth(token)
     assert_response :not_found
+    assert_like_example ProtocolV1.example(:get, "/api/v1/games/{game}", 404), json
     missing = response.body
     get api_v1_game_path("no-such-game"), headers: auth(token)
     assert_equal missing, response.body, "a foreign id and a made-up id cannot be told apart"
@@ -159,6 +167,7 @@ class Api::V1Test < ActionDispatch::IntegrationTest
     end
     assert_response :accepted
     assert_protocol "TurnAccepted", json
+    assert_like_example ProtocolV1.example(:post, "/api/v1/games/{game}/turns", 202), json
   end
 
   test "a blank line is not a turn" do
@@ -168,6 +177,7 @@ class Api::V1Test < ActionDispatch::IntegrationTest
     end
     assert_response :unprocessable_content
     assert_equal "blank_line", json.dig("error", "code")
+    assert_like_example ProtocolV1.example(:post, "/api/v1/games/{game}/turns", 422), json
   end
 
   test "at the limit a turn is refused with 402, nothing is written or enqueued, and reads still work" do
@@ -185,6 +195,7 @@ class Api::V1Test < ActionDispatch::IntegrationTest
     assert_response :payment_required
     assert_protocol "Error", json
     assert_equal "limit_reached", json.dig("error", "code")
+    assert_like_example ProtocolV1.example(:post, "/api/v1/games/{game}/turns", 402), json
     assert_includes json.dig("error", "message"), "allowance is used up"
 
     get api_v1_game_path(game), headers: auth
@@ -214,6 +225,7 @@ class Api::V1Test < ActionDispatch::IntegrationTest
     assert_response :too_many_requests
     assert_protocol "Error", json
     assert_equal "rate_limited", json.dig("error", "code")
+    assert_like_example ProtocolV1.example(:post, "/api/v1/games/{game}/turns", 429), json
   end
 
   # --- events --------------------------------------------------------------
@@ -267,6 +279,45 @@ class Api::V1Test < ActionDispatch::IntegrationTest
     assert_not_includes response.body, "someone else's"
   end
 
+  test "a busy game names the turn in hand, and its events are reachable by that id" do
+    game = start_game
+    assert_nil json.dig("standing", "running_turn")
+    post api_v1_game_turns_path(game), params: { line: "/look", request_token: "busy-1" }, headers: auth, as: :json
+    turn = json.dig("turn", "id")
+
+    get api_v1_game_path(game), headers: auth
+    assert_protocol "Screen", json
+    assert_equal [ true, turn ], [ json.dig("standing", "busy"), json.dig("standing", "running_turn") ]
+
+    command = Playthrough.find_by!(token: game).commands.find(turn)
+    Playthrough::TurnEvent.append!(command, "started", { turn: turn, line: "/look" })
+    Playthrough::TurnEvent.append!(command, "finished", { turn: turn })
+    get api_v1_game_turn_events_path(game, json.dig("standing", "running_turn")), headers: auth
+    assert_response :ok
+    assert_equal %w[started finished], sse_events(response.body).map { |event| event[:event] }
+
+    _other, token = Player.invite!("Grace")
+    get api_v1_game_turn_events_path(game, turn), headers: auth(token)
+    assert_response :not_found
+  end
+
+  test "the glance names each verb's word, and a use line sent as given is the attempt it names" do
+    game = start_game
+    playthrough = Playthrough.find_by!(token: game)
+    create(:item, :carried, playthrough: playthrough, name: "flask of water", use_kind: "drink")
+    get api_v1_game_path(game), headers: auth
+    verbs = json.dig("glance", "verbs").index_by { |verb| verb["name"] }
+    assert_equal "go", verbs.dig("move", "word")
+    assert_equal "inspect", verbs.dig("examine", "word")
+    assert_nil verbs.dig("take", "lines")
+
+    use = verbs.fetch("use")
+    assert_equal [ "Consume flask of water" ], use["targets"]
+    assert_equal [ "/consume flask of water" ], use["lines"]
+    choice = Playthrough::Availability.new(playthrough.reload).verb(:use).targets.first
+    assert_equal choice, Playthrough::Grammar.new(playthrough).reading_first(use["lines"].first).intent.physical
+  end
+
   # --- interruptions -------------------------------------------------------
 
   test "acknowledging a legacy interruption answers the standing" do
@@ -279,6 +330,7 @@ class Api::V1Test < ActionDispatch::IntegrationTest
     post api_v1_game_acknowledge_interruption_path(game, stuck.id), headers: auth
     assert_response :ok
     assert_protocol "StandingResponse", json
+    assert_like_example ProtocolV1.example(:post, "/api/v1/games/{game}/interruptions/{turn}/acknowledge", 200), json
     assert_nil json.dig("standing", "saved_turn")
     assert_equal "interruption_acknowledged", stuck.reload.error_kind
   end

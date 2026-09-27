@@ -27,12 +27,21 @@ class Character::Generator
   # Everything else about them is generated exactly as anybody else is,
   # including the race -- drawn from `Universe#peoples` below, which is the
   # line that was already written for this caller.
-  def initialize(story, protagonist: false)
+  #
+  # `rng:` IS THE ONE GENERATOR EVERY PREDETERMINED DETAIL IS DRAWN FROM, in
+  # this fixed order: race, age, sex, attractiveness, birthplace, raised-by.
+  # Inserting a draw ahead of another moves every answer after it (`Roll`'s
+  # standing rule). The default is seeded on the story and on how many people
+  # it already has, so the same world at the same point writes the same person
+  # twice; these used to be Kernel's own unseeded dice. A caller with a seed of
+  # its own hands one in (`Eval::Genesis::Stage`).
+  def initialize(story, protagonist: false, rng: nil)
     @story = story
     @protagonist = protagonist
+    @rng = rng || Roll.generator(story: story.id, sequence: story.characters.count, kind: Roll::CAST)
     # Race, age and sex are decided here rather than by the model. Race comes
     # from the universe's generated list so every character belongs to one of
-    # its peoples; age and sex are rolled so repeated runs diverge. All three
+    # its peoples; age and sex are rolled so different people differ. All three
     # are stated in the prompt, and none of them is in the schema -- asking for
     # a value the prompt just supplied is a decision bought twice.
     #
@@ -45,9 +54,9 @@ class Character::Generator
     # the only place in the app that draws from the other pool. A universe whose
     # every race is monstrous falls back to the whole list, because a generator
     # with nobody to write is worse than an odd protagonist.
-    @race = (story.universe.peoples.presence || story.universe.races).sample
-    @age = rand(18..120)
-    @sex = Character.sexes.values.sample
+    @race = Roll.one_of((story.universe.peoples.presence || story.universe.races).to_a, rng: @rng)
+    @age = @rng.rand(18..120)
+    @sex = Roll.one_of(Character.sexes.values, rng: @rng)
     @character_generation_prompt = generation_prompt(story)
   end
 
@@ -124,10 +133,10 @@ class Character::Generator
       #{protagonist_section}## Predetermined Character Details for the new character
       sex: #{sex}
       age: #{age}
-      attractiveness: #{ATTRACTIVENESS_VALUES.sample}
+      attractiveness: #{Roll.one_of(ATTRACTIVENESS_VALUES, rng: @rng)}
       race: #{race&.name} -- #{race&.description}
-      born in a: #{BIRTH_PLACES.sample}
-      raised by: #{RAISED_BY.sample}
+      born in a: #{Roll.one_of(BIRTH_PLACES, rng: @rng)}
+      raised by: #{Roll.one_of(RAISED_BY, rng: @rng)}
 
       ## Character Generation Instructions
       - The character is a #{race&.name}. Write them as one, and do not assign

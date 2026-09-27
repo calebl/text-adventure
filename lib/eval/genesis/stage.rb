@@ -42,7 +42,10 @@ class Eval::Genesis::Stage
     fixed_player = @fixed_character.dup
     story.characters.destroy_all unless kase.producer == "retry"
     @taken_names = story.characters.pluck(:fullname)
-    @character = seeded { Character::Generator.new(story, protagonist: true) }
+    # The same seed `#seeded` would have put under Kernel's dice, handed in
+    # directly: the generator draws from it in the order Kernel was drawn, so
+    # the staged protagonist is byte for byte what it was.
+    @character = Character::Generator.new(story, protagonist: true, rng: Roll.generator(story: kase.seed))
     roll_context = Struct.new(:id, :clock).new(kase.seed, story.clock)
     @body = Character::StatBlock.for_a_protagonist(roll_context)
     body = @body

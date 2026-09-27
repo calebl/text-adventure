@@ -392,6 +392,14 @@ class Playthrough::Grammar
 
   def self.slashed?(command) = command.to_s.strip.start_with?(SLASH)
 
+  # THE WORD A PLAYER TYPES AFTER THE SLASH FOR ONE OF
+  # `Playthrough::Availability::VERBS`, read off this file's own tables so a
+  # front end never keeps a copy: `RESOLVING` names the six that resolve one
+  # record, and `throw` is its own word in `VERBS`. `use` has no single word --
+  # each attempt is typed with its own (`consume`, `offer`, ...), which is why
+  # `#line_for` exists -- so it answers nil.
+  def self.word_for(action) = RESOLVING.key(action) || (action.to_s if VERBS[action.to_s] == action)
+
   # HOW A LINE WAS READ, in one line, for a person -- printed by
   # `rake game:mechanics` above every report and stored as
   # `Playthrough::Mechanics::Report#understood`.
@@ -448,6 +456,17 @@ class Playthrough::Grammar
     return reading.with(intent: nil, understood: nil, refusal: MORE_THAN_ONE_ACT) if joins_two_acts?(command, reading.intent)
 
     reading
+  end
+
+  # THE LINE THAT PLAYS ONE `Playthrough::PhysicalAction::Choice`, as this
+  # grammar reads it back: the attempt's own word and its argument behind a
+  # slash, the same completion `Playthrough::SlashMenu` offers. It is kept only
+  # if `#reading_first` resolves it to that very choice, so a line this returns
+  # is one the engine plays as that attempt; nil where two attempts share their
+  # names and the line would play the other one.
+  def line_for(choice)
+    line = "#{SLASH}#{choice.kind} #{choice.argument}"
+    line if reading_first(line)&.intent&.physical == choice
   end
 
   # WHETHER THE LINE STILL JOINS SOMETHING ON, once the names it resolved to are

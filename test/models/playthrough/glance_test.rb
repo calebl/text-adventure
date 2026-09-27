@@ -167,6 +167,39 @@ class Playthrough::GlanceTest < ActiveSupport::TestCase
     assert_includes tokens, Playthrough::PhysicalAction::Choice.new(kind: "consume", item: water).token
   end
 
+  test "each verb's word is the grammar's own, and use has none of its own" do
+    words = Playthrough::Availability::VERBS.to_h { |name| [ name, Playthrough::Grammar.word_for(name) ] }
+    assert_equal({ move: "go", talk: "talk", examine: "inspect", take: "take", drop: "drop",
+                   attack: "attack", throw: "throw", use: nil }, words)
+    words.compact.each_value { |word| assert Playthrough::Grammar::VERBS.key?(word), word }
+  end
+
+  test "the line given for each use target is read back as that very target" do
+    LocationConnection.where(location: @office, connected_location: @closet).update_all(barrier: "jammed")
+    create(:item, :carried, playthrough: @playthrough, name: "flask of water", use_kind: "drink")
+    g = glance
+    targets = offline { g.verb(:use).targets }
+    assert_operator targets.map(&:kind).uniq.size, :>=, 3, targets.map(&:kind).inspect
+    grammar = Playthrough::Grammar.new(@playthrough)
+    targets.each do |choice|
+      line = offline { g.line_for(choice) }
+      assert_not_nil line, choice.name
+      assert line.start_with?("/#{choice.kind} "), line
+      assert_equal choice, offline { grammar.reading_first(line) }.intent.physical, line
+    end
+  end
+
+  test "of two attempts one line cannot tell apart, only the one it plays gets it" do
+    2.times { create(:item, :carried, playthrough: @playthrough, name: "flask of water", use_kind: "drink") }
+    g = glance
+    flasks = offline { g.verb(:use).targets }.select { |choice| choice.kind == "consume" }
+    assert_equal 2, flasks.size
+    lines = flasks.map { |choice| offline { g.line_for(choice) } }
+    assert_equal [ "/consume flask of water" ], lines.compact
+    played = offline { Playthrough::Grammar.new(@playthrough).reading_first(lines.compact.first) }.intent.physical
+    assert_equal flasks[lines.index(lines.compact.first)], played
+  end
+
   # --- the resolver and the engine agree ------------------------------------
 
   test "every target offered is one the engine plays" do

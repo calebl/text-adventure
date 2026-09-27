@@ -15,3 +15,20 @@ namespace :eval do
     puts JSON.pretty_generate(Eval::VolitionProbe.price(set, project: (ENV["PROJECT"] || 48).to_i))
   end
 end
+
+# The twelve staged rooms, as the typed volition baseline.
+namespace :eval do
+  desc "Send every staged volition room REPS times (default 4) under CAP USD (default 0.05). SET=<name> required"
+  task volition_baseline: :environment do
+    set = ENV["SET"].presence or abort "SET=<name> names the kept set under db/eval"
+    dir = Eval::VolitionProbe.run_rooms!(set: set, reps: (ENV["REPS"] || 4).to_i, cap: (ENV["CAP"] || 0.05).to_f)
+    puts "kept #{dir.relative_path_from(Rails.root)}"
+    puts Eval::VolitionProbe::Baseline.report(set)
+  end
+
+  desc "What a kept volition baseline set shows, recomputed for free. SET=<name>"
+  task volition_baseline_summary: :environment do
+    set = ENV["SET"].presence or abort "SET=<name> names the kept set under db/eval"
+    puts Eval::VolitionProbe::Baseline.report(set)
+  end
+end

@@ -271,16 +271,27 @@ class Character::Registry
   # room's id -- unchanged by the 2026-09-07 ruling, so a seeded world's cast
   # comes out exactly as it did before wherever the count matches.
   #
-  # ONE `monstrous?` THROW PER SLOT, IN ORDER, out of one generator --
-  # `Roll`'s standing rule, and the order is fixed here rather than incidental:
+  # EVERY DRAW OUT OF THAT ONE GENERATOR, IN A FIXED ORDER -- `Roll`'s
+  # standing rule, and the order is fixed here rather than incidental:
   # inserting a roll ahead of another one moves every answer after it.
+  #
+  #   1. one `monstrous?` throw per slot, slot by slot;
+  #   2. then, slot by slot, that slot's race, age and sex, in that order.
+  #
+  # ALL THE THROWS COME FIRST so that whether a slot is a monster is exactly
+  # what it was before race, age and sex were drawn from this generator too --
+  # they used to be Kernel's own unseeded dice, so the same room realized twice
+  # got a different cast and `rake game:doctor` could not re-derive one.
+  # Seeding them changed the cast every future realization of a seeded world
+  # draws; rows already written keep what they were given.
   def slots
     @slots ||= begin
       rng = Location::Danger.generator_for(location)
+      throws = Array.new(drawn) { Location::Danger.monstrous?(location, rng: rng) }
 
-      Array.new(drawn) do
-        { race: race_from(Location::Danger.monstrous?(location, rng: rng)),
-          age: rand(18..80), sex: Character.sexes.values.sample }
+      throws.map do |monstrous|
+        { race: race_from(monstrous, rng: rng),
+          age: rng.rand(18..80), sex: Roll.one_of(Character.sexes.values, rng: rng) }
       end
     end
   end
@@ -353,10 +364,10 @@ class Character::Registry
   #                       nothing in the app can put one there;
   #                       `Character::GeneratorTest` pins the same fallback for a
   #                       protagonist.
-  def race_from(monstrous)
+  def race_from(monstrous, rng:)
     pool = monstrous ? story.universe.monstrous_races : story.universe.peoples
 
-    (pool.presence || story.universe.races).sample
+    Roll.one_of((pool.presence || story.universe.races).to_a, rng: rng)
   end
 
   def admit_one(candidate, slot)

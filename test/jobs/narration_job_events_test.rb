@@ -30,6 +30,7 @@ class NarrationJobEventsTest < ActiveJob::TestCase
     assert_equal NARRATION, events.select { |event| event.kind == "prose" }.map { |event| event.data["text"] }.join
     schemas = { "started" => "StartedEvent", "prose" => "ProseEvent", "glance" => "GlanceEvent", "finished" => "FinishedEvent" }
     events.each { |event| assert_protocol schemas.fetch(event.kind), event.data }
+    events.each { |event| assert_like_example ProtocolV1.event_example(event.kind), event.data }
 
     finished = events.last.data
     assert_equal "narrated", finished.dig("outcome", "kind")
@@ -45,6 +46,7 @@ class NarrationJobEventsTest < ActiveJob::TestCase
     finished = command.turn_events.find_by!(kind: "finished").data
 
     assert_protocol "FinishedEvent", finished
+    assert_like_example ProtocolV1.event_example("finished"), finished
     assert_equal "completed", command.status
     assert_equal "refused", finished.dig("outcome", "kind")
     assert_includes Playthrough::Refusal::KINDS.map(&:to_s), finished.dig("refusal", "kind")

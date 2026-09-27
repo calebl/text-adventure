@@ -1,0 +1,695 @@
+[
+  {
+    "room": "room3-grenn",
+    "state": {
+      "location": "Grenn's Boarding House, Room 3",
+      "characters": {
+        "person_1": {
+          "name": "Grenn Ollivar",
+          "conscious_desire": "Grenn Ollivar wants to obtain the overdue rent before the Bell of Saint Aravel rings again.",
+          "unconscious_desire": "Grenn Ollivar wants to reach someone who will ask him about the foundations.",
+          "recognized_need": "Grenn Ollivar needs to keep his boarding-house ledger settled.",
+          "unrecognized_need": "Grenn Ollivar needs to reach the third floor after dark and inspect his house.",
+          "desire_pursuit": "obtain",
+          "need_pursuit": "reach",
+          "witnessed": []
+        }
+      },
+      "player_action": "measure the window frame"
+    },
+    "questions": {
+      "person_1:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of Grenn's Boarding House, Room 3 to Mournwell Lane.",
+          "act_3": "Walk out of Grenn's Boarding House, Room 3 to Grenn's Boarding House hallway.",
+          "act_4": "Walk out of Grenn's Boarding House, Room 3 to Larkspur Quarter rooftops.",
+          "act_5": "Accompany Isbet Marrow when they leave this room."
+        }
+      },
+      "person_1:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_1:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      }
+    }
+  },
+  {
+    "room": "room3-grenn-rent",
+    "state": {
+      "location": "Grenn's Boarding House, Room 3",
+      "characters": {
+        "person_1": {
+          "name": "Grenn Ollivar",
+          "conscious_desire": "Grenn Ollivar wants to obtain the overdue rent before the Bell of Saint Aravel rings again.",
+          "unconscious_desire": "Grenn Ollivar wants to reach someone who will ask him about the foundations.",
+          "recognized_need": "Grenn Ollivar needs to keep his boarding-house ledger settled.",
+          "unrecognized_need": "Grenn Ollivar needs to reach the third floor after dark and inspect his house.",
+          "desire_pursuit": "obtain",
+          "need_pursuit": "reach",
+          "witnessed": [
+            "You: Grenn Ollivar stayed in Grenn's Boarding House, Room 3 and changed nothing.",
+            "You: Grenn Ollivar stayed in Grenn's Boarding House, Room 3 and changed nothing."
+          ]
+        }
+      },
+      "player_action": "put the rent on the table"
+    },
+    "questions": {
+      "person_1:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of Grenn's Boarding House, Room 3 to Mournwell Lane.",
+          "act_3": "Walk out of Grenn's Boarding House, Room 3 to Grenn's Boarding House hallway.",
+          "act_4": "Walk out of Grenn's Boarding House, Room 3 to Larkspur Quarter rooftops.",
+          "act_5": "Pick up an envelope of rent money from Grenn's Boarding House, Room 3.",
+          "act_6": "Accompany Isbet Marrow when they leave this room."
+        }
+      },
+      "person_1:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_1:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      }
+    }
+  },
+  {
+    "room": "hallway-grenn-alone",
+    "state": {
+      "location": "Grenn's Boarding House hallway",
+      "characters": {
+        "person_1": {
+          "name": "Grenn Ollivar",
+          "conscious_desire": "Grenn Ollivar wants to obtain the overdue rent before the Bell of Saint Aravel rings again.",
+          "unconscious_desire": "Grenn Ollivar wants to reach someone who will ask him about the foundations.",
+          "recognized_need": "Grenn Ollivar needs to keep his boarding-house ledger settled.",
+          "unrecognized_need": "Grenn Ollivar needs to reach the third floor after dark and inspect his house.",
+          "desire_pursuit": "obtain",
+          "need_pursuit": "reach",
+          "witnessed": []
+        }
+      },
+      "player_action": "climb out onto the rooftops"
+    },
+    "questions": {
+      "person_1:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of Grenn's Boarding House hallway to Grenn's Boarding House, Room 3.",
+          "act_3": "Walk out of Grenn's Boarding House hallway to The Bell of Saint Aravel.",
+          "act_4": "Pick up the boarding-house ledger from Grenn's Boarding House hallway."
+        }
+      },
+      "person_1:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_1:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      }
+    }
+  },
+  {
+    "room": "bell-marek",
+    "state": {
+      "location": "The Bell of Saint Aravel",
+      "characters": {
+        "person_1": {
+          "name": "Marek Sollen",
+          "conscious_desire": "Marek Sollen wants to keep the bell ringing at the appointed hour.",
+          "unconscious_desire": "Marek Sollen wants to avoid every name spoken in the tower.",
+          "recognized_need": "Marek Sollen needs to attend the rope until the city hears its hour.",
+          "unrecognized_need": "Marek Sollen needs to reach the person he was before the bell took his name.",
+          "desire_pursuit": "keep",
+          "need_pursuit": "avoid",
+          "witnessed": []
+        }
+      },
+      "player_action": "ask him what his name was"
+    },
+    "questions": {
+      "person_1:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of The Bell of Saint Aravel to Grenn's Boarding House hallway.",
+          "act_3": "Give bell-rope tally to Isbet Marrow.",
+          "act_4": "Accompany Isbet Marrow when they leave this room."
+        }
+      },
+      "person_1:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_1:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      }
+    }
+  },
+  {
+    "room": "bell-marek-struck",
+    "state": {
+      "location": "The Bell of Saint Aravel",
+      "characters": {
+        "person_1": {
+          "name": "Marek Sollen",
+          "conscious_desire": "Marek Sollen wants to keep the bell ringing at the appointed hour.",
+          "unconscious_desire": "Marek Sollen wants to avoid every name spoken in the tower.",
+          "recognized_need": "Marek Sollen needs to attend the rope until the city hears its hour.",
+          "unrecognized_need": "Marek Sollen needs to reach the person he was before the bell took his name.",
+          "desire_pursuit": "keep",
+          "need_pursuit": "avoid",
+          "witnessed": [
+            "You experienced this recorded blow: Grenn Ollivar struck Marek Sollen for 3 hit points in The Bell of Saint Aravel. This is a past event; your condition above is current."
+          ]
+        }
+      },
+      "player_action": "ring the bell"
+    },
+    "questions": {
+      "person_1:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of The Bell of Saint Aravel to Grenn's Boarding House hallway.",
+          "act_3": "Give bell-rope tally to Isbet Marrow.",
+          "act_4": "Accompany Isbet Marrow when they leave this room."
+        }
+      },
+      "person_1:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_1:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      }
+    }
+  },
+  {
+    "room": "court-ammon",
+    "state": {
+      "location": "The Causeway Court",
+      "characters": {
+        "person_1": {
+          "name": "Ammon Brace",
+          "conscious_desire": "Ammon Brace wants to reach the hearing before the tide closes the causeway.",
+          "unconscious_desire": "Ammon Brace wants to obtain certainty that the law has not failed the accused.",
+          "recognized_need": "Ammon Brace needs to attend every witness until the hearing is complete.",
+          "unrecognized_need": "Ammon Brace needs to reach a judgment that accounts for the water beyond the law.",
+          "desire_pursuit": "reach",
+          "need_pursuit": "attend",
+          "witnessed": []
+        }
+      },
+      "player_action": "ring the court bell"
+    },
+    "questions": {
+      "person_1:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of The Causeway Court to The Tide Post.",
+          "act_3": "Walk out of The Causeway Court to The Vestry Hulk.",
+          "act_4": "Pick up Assize tide-slate from The Causeway Court.",
+          "act_5": "Accompany Coraith Vell when they leave this room."
+        }
+      },
+      "person_1:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_1:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      }
+    }
+  },
+  {
+    "room": "court-ammon-neb",
+    "state": {
+      "location": "The Causeway Court",
+      "characters": {
+        "person_1": {
+          "name": "Ammon Brace",
+          "conscious_desire": "Ammon Brace wants to reach the hearing before the tide closes the causeway.",
+          "unconscious_desire": "Ammon Brace wants to obtain certainty that the law has not failed the accused.",
+          "recognized_need": "Ammon Brace needs to attend every witness until the hearing is complete.",
+          "unrecognized_need": "Ammon Brace needs to reach a judgment that accounts for the water beyond the law.",
+          "desire_pursuit": "reach",
+          "need_pursuit": "attend",
+          "witnessed": []
+        },
+        "person_2": {
+          "name": "Neb Halloran",
+          "conscious_desire": "Neb Halloran wants to obtain a hearing before the water reaches the tide post.",
+          "unconscious_desire": "Neb Halloran wants to avoid naming the five cousins who paid for his mother's roof.",
+          "recognized_need": "Neb Halloran needs to keep his mother's roof secure through the trial.",
+          "unrecognized_need": "Neb Halloran needs to reach the truth without leaving his cousins to drown in his place.",
+          "desire_pursuit": "obtain",
+          "need_pursuit": "avoid",
+          "witnessed": []
+        }
+      },
+      "player_action": "call the next witness"
+    },
+    "questions": {
+      "person_1:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of The Causeway Court to The Tide Post.",
+          "act_3": "Walk out of The Causeway Court to The Vestry Hulk.",
+          "act_4": "Accompany Coraith Vell when they leave this room."
+        }
+      },
+      "person_1:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_1:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      },
+      "person_2:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of The Causeway Court to The Tide Post.",
+          "act_3": "Walk out of The Causeway Court to The Vestry Hulk.",
+          "act_4": "Accompany Coraith Vell when they leave this room."
+        }
+      },
+      "person_2:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_2:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      }
+    }
+  },
+  {
+    "room": "tidepost-neb-alone",
+    "state": {
+      "location": "The Tide Post",
+      "characters": {
+        "person_1": {
+          "name": "Neb Halloran",
+          "conscious_desire": "Neb Halloran wants to obtain a hearing before the water reaches the tide post.",
+          "unconscious_desire": "Neb Halloran wants to avoid naming the five cousins who paid for his mother's roof.",
+          "recognized_need": "Neb Halloran needs to keep his mother's roof secure through the trial.",
+          "unrecognized_need": "Neb Halloran needs to reach the truth without leaving his cousins to drown in his place.",
+          "desire_pursuit": "obtain",
+          "need_pursuit": "avoid",
+          "witnessed": [
+            "You: Neb Halloran walked out of The Tide Post to The Causeway Court and is no longer in The Tide Post.",
+            "You: Neb Halloran walked out of The Causeway Court to The Tide Post and is no longer in The Causeway Court."
+          ]
+        }
+      },
+      "player_action": "read the tide-slate"
+    },
+    "questions": {
+      "person_1:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of The Tide Post to The Causeway Court."
+        }
+      },
+      "person_1:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_1:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      }
+    }
+  },
+  {
+    "room": "tidepost-neb-deed",
+    "state": {
+      "location": "The Tide Post",
+      "characters": {
+        "person_1": {
+          "name": "Neb Halloran",
+          "conscious_desire": "Neb Halloran wants to obtain a hearing before the water reaches the tide post.",
+          "unconscious_desire": "Neb Halloran wants to avoid naming the five cousins who paid for his mother's roof.",
+          "recognized_need": "Neb Halloran needs to keep his mother's roof secure through the trial.",
+          "unrecognized_need": "Neb Halloran needs to reach the truth without leaving his cousins to drown in his place.",
+          "desire_pursuit": "obtain",
+          "need_pursuit": "avoid",
+          "witnessed": []
+        }
+      },
+      "player_action": "ask who paid for the roof"
+    },
+    "questions": {
+      "person_1:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of The Tide Post to The Causeway Court.",
+          "act_3": "Give the deed to his mother's roof to Coraith Vell.",
+          "act_4": "Accompany Coraith Vell when they leave this room."
+        }
+      },
+      "person_1:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_1:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      }
+    }
+  },
+  {
+    "room": "office-halkett",
+    "state": {
+      "location": "Ward Office 12",
+      "characters": {
+        "person_1": {
+          "name": "Halkett Rowe",
+          "conscious_desire": "Halkett Rowe wants to close Ward Office 12 with every query answered and the file clean.",
+          "unconscious_desire": "Halkett Rowe wants to obtain the Registry's absolution for his eleven closures.",
+          "recognized_need": "Halkett Rowe needs to keep his appointment at the next ward on time.",
+          "unrecognized_need": "Halkett Rowe needs to reach one supporting file and read it before he signs.",
+          "desire_pursuit": "keep",
+          "need_pursuit": "obtain",
+          "witnessed": []
+        }
+      },
+      "player_action": "read the daybook"
+    },
+    "questions": {
+      "person_1:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of Ward Office 12 to The Supply Closet.",
+          "act_3": "Walk out of Ward Office 12 to The Long Hallway.",
+          "act_4": "Pick up Ward Office 12 daybook from Ward Office 12.",
+          "act_5": "Accompany Odile Vance when they leave this room."
+        }
+      },
+      "person_1:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_1:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      }
+    }
+  },
+  {
+    "room": "office-halkett-perrin",
+    "state": {
+      "location": "Ward Office 12",
+      "characters": {
+        "person_1": {
+          "name": "Halkett Rowe",
+          "conscious_desire": "Halkett Rowe wants to close Ward Office 12 with every query answered and the file clean.",
+          "unconscious_desire": "Halkett Rowe wants to obtain the Registry's absolution for his eleven closures.",
+          "recognized_need": "Halkett Rowe needs to keep his appointment at the next ward on time.",
+          "unrecognized_need": "Halkett Rowe needs to reach one supporting file and read it before he signs.",
+          "desire_pursuit": "keep",
+          "need_pursuit": "obtain",
+          "witnessed": []
+        },
+        "person_2": {
+          "name": "Perrin Lasco",
+          "conscious_desire": "Perrin Lasco wants to place his private index in the hands of a clerk whose file remains open.",
+          "unconscious_desire": "Perrin Lasco wants to obtain a name that will remember him after his file closes.",
+          "recognized_need": "Perrin Lasco needs to keep two copies of every amendment.",
+          "unrecognized_need": "Perrin Lasco needs to reach a person who will hear his own name and not use him.",
+          "desire_pursuit": "keep",
+          "need_pursuit": "withhold",
+          "witnessed": []
+        }
+      },
+      "player_action": "ask about the amendment"
+    },
+    "questions": {
+      "person_1:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of Ward Office 12 to The Supply Closet.",
+          "act_3": "Walk out of Ward Office 12 to The Long Hallway.",
+          "act_4": "Pick up a closure form, unsigned from Ward Office 12.",
+          "act_5": "Accompany Odile Vance when they leave this room."
+        }
+      },
+      "person_1:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_1:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      },
+      "person_2:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of Ward Office 12 to The Supply Closet.",
+          "act_3": "Walk out of Ward Office 12 to The Long Hallway.",
+          "act_4": "Pick up a closure form, unsigned from Ward Office 12.",
+          "act_5": "Give a private index of amendments to Odile Vance.",
+          "act_6": "Accompany Odile Vance when they leave this room."
+        }
+      },
+      "person_2:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_2:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      }
+    }
+  },
+  {
+    "room": "closet-perrin-following",
+    "state": {
+      "location": "The Supply Closet",
+      "characters": {
+        "person_1": {
+          "name": "Perrin Lasco",
+          "conscious_desire": "Perrin Lasco wants to place his private index in the hands of a clerk whose file remains open.",
+          "unconscious_desire": "Perrin Lasco wants to obtain a name that will remember him after his file closes.",
+          "recognized_need": "Perrin Lasco needs to keep two copies of every amendment.",
+          "unrecognized_need": "Perrin Lasco needs to reach a person who will hear his own name and not use him.",
+          "desire_pursuit": "keep",
+          "need_pursuit": "withhold",
+          "witnessed": [
+            "You: Perrin Lasco decided to go with Odile Vance and will travel with them."
+          ]
+        }
+      },
+      "player_action": "go back to the office"
+    },
+    "questions": {
+      "person_1:act": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "act_1": "Stay where you are and change nothing.",
+          "act_2": "Walk out of The Supply Closet to Ward Office 12.",
+          "act_3": "Stay in The Supply Closet when the player leaves."
+        }
+      },
+      "person_1:serves": {
+        "type": "choice",
+        "instructions": "Choose one option.",
+        "criteria": {
+          "conscious": "conscious",
+          "unconscious": "unconscious",
+          "recognized": "recognized",
+          "unrecognized": "unrecognized",
+          "none": "none"
+        }
+      },
+      "person_1:pressure": {
+        "type": "noul",
+        "instructions": "How strongly is this person pressured toward what they will not face?",
+        "criteria": {
+          "true": "This person is pressured toward what they will not face.",
+          "false": "Nothing here presses this person toward what they will not face."
+        }
+      }
+    }
+  }
+]
