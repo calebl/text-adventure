@@ -36,12 +36,12 @@ module Playthrough::Volition::Weights
   # is the vocabulary they are weighted in, and the two lists have to agree --
   # `Playthrough::VolitionTest` asserts that every shape a turn can offer has a
   # column here.
-  SHAPES = %w[wait move take give follow stop_following].freeze
+  SHAPES = EngineData.fetch("playthrough/volition/weights").fetch("shapes")
 
   # THE FLOOR UNDER EVERY OFFERED TOKEN. Small enough that a pursuit's own
   # weights decide the ordinary case, large enough that no token the engine
   # offered is unreachable.
-  BASE = 1
+  BASE = EngineData.fetch("playthrough/volition/weights").fetch("base")
 
   # WHAT EACH PURSUIT PULLS TOWARD, in weight added on top of `BASE`.
   #
@@ -56,15 +56,7 @@ module Playthrough::Volition::Weights
   # over is a character for whom handing it over is merely unlikely, and an
   # impossible act is not a reluctance, it is a rule the engine would be
   # enforcing on somebody's behalf.
-  TABLE = {
-    "keep" => { "wait" => 6, "move" => 1, "take" => 2, "give" => 0, "follow" => 1, "stop_following" => 3 },
-    "obtain" => { "wait" => 2, "move" => 3, "take" => 8, "give" => 0, "follow" => 2, "stop_following" => 1 },
-    "reach" => { "wait" => 1, "move" => 8, "take" => 1, "give" => 0, "follow" => 1, "stop_following" => 2 },
-    "attend" => { "wait" => 5, "move" => 1, "take" => 1, "give" => 1, "follow" => 8, "stop_following" => 0 },
-    "avoid" => { "wait" => 1, "move" => 8, "take" => 0, "give" => 1, "follow" => 0, "stop_following" => 3 },
-    "withhold" => { "wait" => 6, "move" => 2, "take" => 6, "give" => 0, "follow" => 1, "stop_following" => 2 },
-    "offer" => { "wait" => 2, "move" => 2, "take" => 1, "give" => 9, "follow" => 3, "stop_following" => 0 }
-  }.freeze
+  TABLE = EngineData.fetch("playthrough/volition/weights").fetch("table")
 
   # AND SOMEBODY THE WORLD HAS NOT SAID ANYTHING ABOUT DOES NOTHING AT ALL.
   #

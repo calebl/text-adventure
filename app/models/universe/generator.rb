@@ -44,16 +44,7 @@ class Universe::Generator
     universe
   end
 
-  def system_prompt
-    <<~PROMPT
-      You are a worldbuilder. You invent settings that are internally consistent,
-      specific, and grounded -- concrete names, concrete consequences, no vague
-      gestures at grandeur. Every rule you establish is one a story could later
-      be constrained by.
-
-      DO NOT INCLUDE EMOJIS IN YOUR RESPONSE.
-    PROMPT
-  end
+  def system_prompt = EngineData.fetch("universe/generator").fetch("system_prompt")
 
   def physical_prompt
     <<~PROMPT
@@ -73,17 +64,5 @@ class Universe::Generator
     PROMPT
   end
 
-  def societal_prompt
-    <<~PROMPT
-      Now describe the peoples and societies of the universe you just established.
-
-      ## Instructions
-      - Stay consistent with the physics, technology, weapons and geography above
-      - Give the factions reasons to be in conflict with one another
-      - Be specific: name peoples, places and powers
-      - Every character in this story will be one of the races you list, so make
-        them distinct enough that it matters which one a character belongs to
-      - Respect the stated length of each field
-    PROMPT
-  end
+  def societal_prompt = EngineData.fetch("universe/generator").fetch("societal_prompt")
 end

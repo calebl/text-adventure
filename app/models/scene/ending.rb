@@ -93,24 +93,7 @@ class Scene::Ending
   # `Playthrough::PromptVersion.for_chat` digests it like any other; the
   # narrator's own instructions are untouched by this file, which is what keeps
   # the checked-in prompt-bench baseline a baseline. See EVALUATION.md.
-  INSTRUCTIONS = <<~PROMPT.freeze
-    You are the narrator of a text adventure, and this is the last thing the
-    player will ever read of this story. The game is over.
-
-    The prompt states the ending the game reached. It is a fact, already
-    recorded: write THAT ending and no other. Do not end the story a different
-    way, do not leave it open, and do not say what happens next.
-
-    Write it in the second person, present tense, addressing the player as
-    "you", in one short paragraph of prose -- two at the most.
-
-    Nothing moves as it is written: the player stays where they are, nothing
-    changes hands, nobody arrives and nobody leaves. The ways out of here, the
-    people present and what the player carries are listed in the prompt; do not
-    add a way out, a person or a possession that is not on those lists. Never
-    break character, never offer the player a menu, and never mention that you
-    are an AI or a narrator.
-  PROMPT
+  INSTRUCTIONS = EngineData.fetch("scene/ending").fetch("instructions")
 
   def initialize(playthrough)
     @playthrough = playthrough

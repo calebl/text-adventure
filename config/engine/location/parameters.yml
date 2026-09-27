@@ -1,0 +1,65 @@
+# Read by Location::Parameters through EngineData (app/models/engine_data.rb), which
+# declares this file's shape. Why each value says what it says is in the
+# header of Location::Parameters, beside the constant that names it. Every byte here is
+# sent or rolled: an edit is a prompt change and needs a baseline (AGENTS.md).
+---
+no_inside: no inside
+one_room: one room
+flat: the same throughout
+no_hazard: none
+inside:
+  no inside:
+  one room:
+  a few rooms:
+  - 6
+  - 9
+  a warren of rooms:
+  - 12
+  - 18
+rooms_a_band_promises:
+  one room: 1
+  a few rooms: 2
+  a warren of rooms: 4
+storeys_above:
+  ground floor only: 1
+  one storey up: 2
+  two storeys up: 3
+storeys_below:
+  none: 0
+  a cellar: 1
+  two levels down: 2
+  deep: 3
+danger:
+  safe:
+  - safe
+  - safe
+  - safe
+  - safe
+  - safe
+  - safe
+  - safe
+  - uneasy
+  uneasy:
+  - safe
+  - safe
+  - safe
+  - safe
+  - uneasy
+  - uneasy
+  - uneasy
+  - dangerous
+  dangerous:
+  - safe
+  - safe
+  - uneasy
+  - uneasy
+  - uneasy
+  - dangerous
+  - dangerous
+  - dangerous
+gradient:
+  the same throughout: 0
+  worse the deeper you go: -1
+  worse the higher you climb: 1
+hazard_die: 6
+hazard_share: 2

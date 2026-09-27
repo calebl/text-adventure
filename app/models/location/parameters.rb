@@ -59,6 +59,8 @@
 # what measure how often that happens, because a prompt that quietly stopped
 # building anything would otherwise clear every rate in the bench.
 class Location::Parameters
+  TABLES = EngineData.fetch("location/parameters")
+
   # --- whether it has an inside, and how big -----------------------------------
 
   # THE QUIETEST OPTION AND THE DEFAULT: this exit leads to a stretch of road, a
@@ -67,7 +69,7 @@ class Location::Parameters
   # model's own first pick, with 'no inside' on the list every stub gets*): there
   # is no separate question of which stubs are asked, because a road answers this
   # and costs nothing further.
-  NO_INSIDE = "no inside".freeze
+  NO_INSIDE = TABLES.fetch("no_inside")
 
   # ONE ROOM IS THE NAMED PLACE ITSELF, and not a container with one room in it.
   # A building laid out on a footprint this small is divided into exactly one
@@ -81,7 +83,7 @@ class Location::Parameters
   # chamber picked `one room` and a tavern picked `one room` are the same answer.
   # The label stays on the list, because a model that wants a small building
   # still has a truthful word to say it with.
-  ONE_ROOM = "one room".freeze
+  ONE_ROOM = TABLES.fetch("one_room")
 
   # THE BAND A LABEL NAMES, IN PACES A SIDE. `Location::Interior::FOOTPRINT_SIDES`'
   # shape, and the engine rolls each side independently inside the band. Nil for
@@ -96,12 +98,7 @@ class Location::Parameters
   # the label is phrased in ROOMS, because rooms are what he named and what a
   # model reasons about better than paces, and the number behind it is the
   # footprint.
-  INSIDE = {
-    NO_INSIDE => nil,
-    ONE_ROOM => nil,
-    "a few rooms" => (6..9),
-    "a warren of rooms" => (12..18)
-  }.freeze
+  INSIDE = TABLES.fetch("inside").transform_values { |band| band && Range.new(*band) }.freeze
 
   # THE FEWEST ROOMS A BAND PROMISES, and the ONLY consumer is the bench --
   # `Eval::Realization::Scorer#judge_parameters_the_engine_narrowed`, which is
@@ -109,7 +106,7 @@ class Location::Parameters
   # of an argument. Deliberately below what each band usually produces: the
   # division is rolled, so a band that came out at its own floor was not
   # narrowed, it was rolled small.
-  ROOMS_A_BAND_PROMISES = { "one room" => 1, "a few rooms" => 2, "a warren of rooms" => 4 }.freeze
+  ROOMS_A_BAND_PROMISES = TABLES.fetch("rooms_a_band_promises")
 
   # --- how far up and how far down ---------------------------------------------
   #
@@ -122,8 +119,8 @@ class Location::Parameters
   # THE VALUE IS A COUNT OF STOREYS, at and above the ground floor for the first
   # and below it for the second -- `Location::Interior::STOREYS` and `BASEMENTS`'
   # own units, so a pick is handed over in the numbers that file already speaks.
-  STOREYS_ABOVE = { "ground floor only" => 1, "one storey up" => 2, "two storeys up" => 3 }.freeze
-  STOREYS_BELOW = { "none" => 0, "a cellar" => 1, "two levels down" => 2, "deep" => 3 }.freeze
+  STOREYS_ABOVE = TABLES.fetch("storeys_above")
+  STOREYS_BELOW = TABLES.fetch("storeys_below")
 
   # --- how dangerous, and which way it runs ------------------------------------
 
@@ -142,11 +139,7 @@ class Location::Parameters
   # `Location::DANGERS`' own rule: a room where every inhabitant is a monster is a
   # decision somebody made about a world, not an accident of a die, and certainly
   # not a label a model picked in passing.
-  DANGER = {
-    Location::SAFE => [ Location::SAFE ] * 7 + [ "uneasy" ],
-    "uneasy" => [ Location::SAFE ] * 4 + [ "uneasy" ] * 3 + [ "dangerous" ],
-    "dangerous" => [ Location::SAFE ] * 2 + [ "uneasy" ] * 3 + [ "dangerous" ] * 3
-  }.freeze
+  DANGER = TABLES.fetch("danger")
 
   # THE LADDER THE GRADIENT WALKS, quietest first. It is `DANGER`'s own keys in
   # order, named so `#danger_for` can step along it rather than each caller
@@ -157,12 +150,12 @@ class Location::Parameters
   # is a gradient of nothing, which is why there is no separate "flat or not" to
   # ask: a base level and a direction are one parameter with two fields, and a
   # gradient with no base level is a slope from nothing.
-  FLAT = "the same throughout".freeze
-  GRADIENT = { FLAT => 0, "worse the deeper you go" => -1, "worse the higher you climb" => 1 }.freeze
+  FLAT = TABLES.fetch("flat")
+  GRADIENT = TABLES.fetch("gradient")
 
   # --- what the place does to somebody standing in it --------------------------
 
-  NO_HAZARD = "none".freeze
+  NO_HAZARD = TABLES.fetch("no_hazard")
 
   # THE KEYS `Location::HAZARDS` ALREADY HAS, and not one more. The table is
   # closed, the die list is closed, and an entry with a new `when:` would need a
@@ -188,8 +181,8 @@ class Location::Parameters
   # This is not a preference -- `Location#a_hazard_is_whole` refuses a row
   # carrying a key without a die, so a pick that did not roll one would be an
   # invalid record.
-  HAZARD_DIE = 6
-  HAZARD_SHARE = 2
+  HAZARD_DIE = TABLES.fetch("hazard_die")
+  HAZARD_SHARE = TABLES.fetch("hazard_share")
 
   # THE PICKS AS A VALUE, off whatever came back -- an absent block, an absent
   # field, or a label outside the list all fall to the quietest option. The

@@ -34,18 +34,7 @@ class Scene::Narrator
   # `#dropped_fact` say it, on the turns that moved a row, and
   # `Playthrough::Moment::Handled` marks the row in the standing lists beside
   # them. Same rule, and it is read only by a turn it is true of.
-  INSTRUCTIONS = <<~PROMPT.freeze
-    You are the narrator of a text adventure. Write in the second person,
-    present tense, addressing the player as "you". Describe what happens in
-    response to what they did, in one or two short paragraphs of prose.
-
-    Never break character, never offer the player a numbered menu, and never
-    mention that you are an AI or a narrator. The ways out of here, the people
-    present and what the player carries are listed in the prompt: do not add a
-    way out, a person or a possession that is not on those lists. If the
-    player tries something impossible, narrate the failure rather than
-    refusing.
-  PROMPT
+  INSTRUCTIONS = EngineData.fetch("scene/narrator").fetch("instructions")
 
   # ONE LINE ABOUT WHAT THE PLAYER IS DOING, keyed on the intent the classifier
   # resolved. Only the intents where the narrator's job changes get one:
@@ -53,17 +42,12 @@ class Scene::Narrator
   # the narrator indistinguishable from `other`. A resolved `move`, `talk`,
   # `take` or `drop` never reaches this class at all, and one that resolved to
   # nothing arrives with a `fact:` instead (`Playthrough::Turn#reach_fact`).
-  DOING = {
-    examine: "The player is looking more closely at something that is here. " \
-             "Describe it. Nothing changes hands, nobody arrives and nobody leaves.",
-    # The physical-action corpus caught the same state/event confusion as the
-    # pickup corpus: a consumed item is absent because THIS turn consumed it.
-    # Keep this clarification on physical turns so other measured inputs stay
-    # unchanged. The receipt still owns state; this sentence owns no guarantee.
-    use: "The physical result above belongs to this exact typed command. " \
-         "Narrate the attempt and its immediate result now. The post-action inventory " \
-         "is why a consumed or burned item is absent; do not portray this command as a redundant repeat."
-  }.freeze
+  #
+  # `use`: the physical-action corpus caught the same state/event confusion as
+  # the pickup corpus: a consumed item is absent because THIS turn consumed it.
+  # Keep this clarification on physical turns so other measured inputs stay
+  # unchanged. The receipt still owns state; this sentence owns no guarantee.
+  DOING = EngineData.fetch("scene/narrator").fetch("doing").transform_keys(&:to_sym).freeze
 
   def initialize(playthrough)
     @playthrough = playthrough

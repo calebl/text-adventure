@@ -285,7 +285,7 @@ class Character < ApplicationRecord
   # hard to put down. It is a closed list rather than a range because it is what
   # `Roll.one_of` draws from -- the engine picks one of three, and a number
   # outside them arrived from somewhere that is not the engine.
-  HIT_DICE = [ 6, 8, 10 ].freeze
+  HIT_DICE = EngineData.fetch("character").fetch("hit_dice")
 
   # WHAT A LEVEL MAY BE. Stored and inert (see the header), so this bounds a
   # column nothing advances -- which is exactly when a bound is cheap and worth

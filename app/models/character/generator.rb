@@ -106,13 +106,7 @@ class Character::Generator
     PROMPT
   end
 
-  def system_prompt
-    <<~PROMPT
-      You are creative and imaginative while also being realistic. You pay attention to detail and you are able to generate characters that are consistent with realistic human behavior.
-
-      DO NOT INCLUDE EMOJIS IN YOUR RESPONSE.
-    PROMPT
-  end
+  def system_prompt = EngineData.fetch("character/generator").fetch("system_prompt")
 
   def generation_prompt(story)
     <<~PROMPT
@@ -171,18 +165,7 @@ class Character::Generator
   def protagonist_section
     return "" unless protagonist?
 
-    <<~PROMPT
-
-      ## Who This Character Is
-      This is the PLAYER CHARACTER: the person the preface and the summary
-      above are written about, and the person whose hands the player will be
-      looking out of. Write that person, not somebody who happens to be nearby.
-      - Do not write them as a narrator, a guide or a companion to the player.
-        They ARE the player
-      - The backstory is the life that brought them to the moment the preface
-        describes
-
-    PROMPT
+    EngineData.fetch("character/generator").fetch("protagonist_section")
   end
 
   private

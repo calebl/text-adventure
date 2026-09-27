@@ -214,16 +214,7 @@ class Scene::Generator
     @agent ||= BaseAgent.new(purpose: "arrival", playthrough: @playthrough).with_instructions(system_prompt)
   end
 
-  def system_prompt
-    <<~PROMPT
-      You narrate a text adventure. You write the moment a player walks into a
-      place: what reaches them first, in the second person and the present
-      tense. You never break character, never offer a numbered menu, and never
-      mention that you are a narrator.
-
-      DO NOT INCLUDE EMOJIS IN YOUR RESPONSE.
-    PROMPT
-  end
+  def system_prompt = EngineData.fetch("scene/generator").fetch("system_prompt")
 
   def arrival_prompt(returning, elapsed, cast)
     prompt = <<~PROMPT
@@ -309,21 +300,10 @@ class Scene::Generator
 
   # The two shapes this generator exists to tell apart.
   def arrival_instructions(returning, elapsed)
-    if returning
-      <<~PROMPT.strip
-        - The player has stood here before. They were last here #{distance_of_time_in_words(elapsed)} ago
-        - Narrate coming back, not finding. They already know what this place
-          is, so write recognition: what has changed while they were gone, or
-          what pointedly has not. Do not introduce it to them again
-      PROMPT
-    else
-      <<~PROMPT.strip
-        - The player has never been here. This is the first time they have set
-          foot in it
-        - Narrate discovery: what catches them first on the way in, before they
-          have made sense of the rest
-      PROMPT
-    end
+    texts = EngineData.fetch("scene/generator")
+    return texts.fetch("arrival_first") unless returning
+
+    format(texts.fetch("arrival_returning"), elapsed: distance_of_time_in_words(elapsed))
   end
 
   # Name, nickname and race -- the same ~15-token line `Character::Generator`
