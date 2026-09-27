@@ -1973,10 +1973,42 @@ lines:
   why: >-
     A TALK AND A MOVE. The closet is in the exit set and Rowe is in the cast, so
     the second name is in a different set and invisible -- one act, and the act
-    is the talking
-  also_accept:
-  - intent: move
-    target: The Supply Closet
+    is the talking. Move is NOT also accepted: the player is telling Rowe where
+    they mean to go, and saying so is not going. A move reading walks the
+    player out on a line they only said
+
+- id: two-sets-talk-and-move-nobody-here
+  position: closet
+  typed: tell Rowe I am going back to the office
+  intent: talk
+  refusal: unresolved
+  shape: two-sets
+  why: >-
+    the same reported intention with NOBODY TO TELL. The office is a real way
+    out and Rowe is not here, so the right answer is the refused talk and not
+    the move the named room invites
+
+- id: two-sets-talk-intent-market
+  position: office
+  typed: tell him I'm heading to the market
+  intent: talk
+  target: Halkett Rowe
+  refusal: none
+  shape: two-sets
+  why: >-
+    a reported intention to a listener who is here, naming a place that is not
+    a way out: talk, by pronoun, and nothing about it is a move
+
+- id: two-sets-talk-intent-tide-post
+  position: court
+  typed: tell Brace I'm off to the Tide Post
+  intent: talk
+  target: Ammon Brace
+  refusal: none
+  shape: two-sets
+  why: >-
+    the held-out world's version: the Tide Post IS a way out, so the move
+    reading is in reach and must still lose to the talk
 
 - id: two-sets-take-and-move
   position: court-slate-down
