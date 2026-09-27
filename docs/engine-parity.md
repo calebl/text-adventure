@@ -42,11 +42,47 @@ script's world as `EngineSweep::Walk` does, under the title with
 `EngineSweep::Walk::TITLE_SUFFIX` and ids from `ID_BASE`, and leaves the
 database as it found it.
 
+## The shared-database contract
+
+A second, optional way to run a command engine, where the runner owns the
+database. It is on when `ENGINE_DATABASE` is set (to anything but empty); the
+whole-script contract above is unchanged and stays the default.
+
+- The runner copies the database it is connected to into a scratch file, in
+  a temporary directory it deletes when the script is done. The engine never
+  sees the database the copy came from. On that file the runner prepares the
+  world exactly as `EngineSweep::Walk` does: ids pinned at `ID_BASE`, the
+  world loaded under the title with `TITLE_SUFFIX`, and it commits.
+- For each typed step it runs
+  `<command> --database <file> --player <name> <script>` with
+  `ENGINE_STEP=<n>`, where `n` is the step's number as its label gives it
+  (from 1), and without the provider keys, as above. The engine plays that
+  one step on that file, leaves what it wrote there, prints that step's one
+  dump on one line and exits zero. A nonzero exit fails the step.
+- A player's playthrough is found on the file: players get playthroughs in
+  the order they first appear in the script, so the n-th player's is the
+  story's n-th playthrough by id, and a player not seen before gets the next
+  one, created as the walk creates it. The counts in the dump (`drifts`,
+  `blows` and the rest) are what the one step added.
+- The runner plays every `reseed:` step itself, on the same file, with
+  `WorldSeed::Loader`, and dumps it with the Ruby read-out, as `Walk` does.
+- The engine prints `shown: null`. For a browser step whose expectation
+  asserts `shown`, the runner fills it by rendering the playthrough's turn log
+  from the same file.
+- A `browser:` step's `replies` are the engine's to consume, in order,
+  whichever provider asks. It exits nonzero when a call's purpose is out of
+  order, when a reply is left over, or on a `prompt_includes` or
+  `prompt_excludes` miss, as `EngineSweep::BrowserTurn` raises.
+
+`test/support/per_step_engine.rb` is an engine of this shape made of the Ruby
+engine, and `test/lib/engine_parity_test.rb` plays every script through it.
+
 ## Commands
 
 ```bash
 bin/rails engine:parity                         # rewrite the goldens from the Ruby engine
 ENGINE="<command>" bin/rails engine:parity_diff # play every script through it and diff
+ENGINE_DATABASE=1 ENGINE="<command>" bin/rails engine:parity_diff # one call per step, shared database
 ```
 
 `engine:parity_diff` prints the first divergence per script: the step, the

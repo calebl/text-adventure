@@ -100,10 +100,49 @@ class EngineSweep::Walk
     EngineSweep::Result.new(script: script, steps: steps, failures: failures)
   end
 
+  # THE SAME WALK, ONE STEP AT A TIME, on a database committed between steps --
+  # the shared-database mode of `EngineSweep::Parity`. `#prepare!` does what
+  # `#play` does before its first step, without the transaction, and each of
+  # the others plays or reads one step and answers its `EngineSweep::Dump`.
+  # Nothing here checks an expectation or an invariant: this is what a second
+  # engine is compared on, not the sweep.
+  def prepare!
+    pin_ids!
+    load_world!
+  end
+
+  def play_step(step)
+    report, counts = measure(engine_for(game_of(step.player)), step)
+    EngineSweep::Dump.new(report, **counts)
+  end
+
+  def reseed_step(step)
+    note = reseed!(step.renames)
+    EngineSweep::Dump.new(engine_for(game_of(step.player)).read(note: note), drifts: 0)
+  end
+
+  # A player's playthrough, found on the database rather than in memory: the
+  # players get playthroughs in the order they first appear, so the n-th
+  # player's is the story's n-th by id, and a player seen for the first time
+  # gets the next one.
+  def game_of(player)
+    story = Story.find_by!(title: "#{script.story}#{TITLE_SUFFIX}")
+    story.playthroughs.order(:id).offset(script.players.index(player)).first || playthrough_for(story)
+  end
+
   private
 
   def walk(mechanics, step)
     realization = before_realization(mechanics.playthrough.story, step)
+    report, counts = measure(mechanics, step)
+    record_realization!(realization) if realization
+
+    observe(step, report, **counts)
+    failures(step, report, **counts) + arrival_cast_failures(mechanics.playthrough, step, report)
+  end
+
+  # One typed step, played, with what it added counted around it.
+  def measure(mechanics, step)
     started = mechanics.playthrough.story_now
     before = Playthrough::Drift.count
     struck = Playthrough::Blow.count
@@ -123,21 +162,13 @@ class EngineSweep::Walk
     else
       mechanics.with_choice(step.npc_action) { mechanics.run(step.typed) }
     end
-    record_realization!(realization) if realization
-    drifts = Playthrough::Drift.count - before
-    blows = Playthrough::Blow.count - struck
-    hazards = Playthrough::Toll.count - paid
-    volitions = Playthrough::Volition::Record.count - decided
-    acts = Playthrough::Volition::Record.applied.count - acted
-    elapsed_minutes = (mechanics.playthrough.story_now - started) / 60
-
-    observe(step, report, drifts: drifts, blows: blows, hazards: hazards,
-                          elapsed_minutes: elapsed_minutes, shown: browser&.shown,
-                          volitions: volitions, acts: acts)
-    failures(step, report, drifts: drifts, blows: blows, hazards: hazards,
-             elapsed_minutes: elapsed_minutes, shown: browser&.shown,
-             volitions: volitions, acts: acts) +
-      arrival_cast_failures(mechanics.playthrough, step, report)
+    counts = { drifts: Playthrough::Drift.count - before, blows: Playthrough::Blow.count - struck,
+               hazards: Playthrough::Toll.count - paid,
+               volitions: Playthrough::Volition::Record.count - decided,
+               acts: Playthrough::Volition::Record.applied.count - acted,
+               elapsed_minutes: (mechanics.playthrough.story_now - started) / 60,
+               shown: browser&.shown }
+    [ report, counts ]
   end
 
   # A declared first-entry fixture may generate ONE named stub. Its newly born
