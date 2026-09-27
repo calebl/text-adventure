@@ -1,0 +1,56 @@
+# A readable letter that arrived with no words on it gets them once, on its
+# first reading, as a record before any prose (`Item::Inscriber`): the
+# player's copy and the world's own letter both keep them. The second
+# reading asks for no words at all and is told the same ones, and so is
+# another player reading the same letter in a game of their own.
+story: A Bell Nobody Has Rung
+steps:
+- id: the-first-reading-writes-the-words
+  type: "/read sealed letter"
+  browser:
+    token: first-reading
+    replies:
+    - purpose: inscription
+      content:
+        inscription: Ring it at vespers, and not before. The rope is in the tower.
+      prompt_includes:
+      - "name: sealed letter"
+      - "what it is: A folded letter under a cracked wax seal."
+    - purpose: narration
+      content: You break the cracked seal and read the letter.
+      prompt_includes:
+      - Ring it at vespers, and not before. The rope is in the tower.
+  expect:
+    inscription:
+      sealed letter: Ring it at vespers, and not before.
+    changed: true
+    note: completed
+- id: the-second-reading-reads-the-record
+  type: "/read sealed letter"
+  browser:
+    token: second-reading
+    replies:
+    - purpose: narration
+      content: You read the letter again.
+      prompt_includes:
+      - Ring it at vespers, and not before. The rope is in the tower.
+  expect:
+    inscription:
+      sealed letter: Ring it at vespers, and not before.
+    changed: true
+    note: completed
+- id: another-game-reads-the-same-words
+  player: second
+  type: "/read sealed letter"
+  browser:
+    token: another-reading
+    replies:
+    - purpose: narration
+      content: You read the letter.
+      prompt_includes:
+      - Ring it at vespers, and not before. The rope is in the tower.
+  expect:
+    inscription:
+      sealed letter: Ring it at vespers, and not before.
+    changed: true
+    note: completed

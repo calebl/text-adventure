@@ -1,0 +1,327 @@
+{
+  "script": "an-offer-taken-through-the-models",
+  "story": "A Bell Nobody Has Rung",
+  "steps": [
+    {
+      "step": "step 1 the-cup-in-hand",
+      "player": "first",
+      "typed": "/take pewter cup",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Chapter Hall",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Gatehouse",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Lower Cloister",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "sealed letter"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000003,
+            "name": "pewter cup"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Oda"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "sealed letter",
+            "text": null
+          }
+        ],
+        "hp": 28,
+        "hp_of": {
+          "Oda": 14
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 12,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: pewter cup (was lying in Chapter Hall, now carried by Ilse)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> pewter cup",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "unbound",
+          "2": "unbound",
+          "3": "unbound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 the-sexton-takes-the-cup",
+      "player": "first",
+      "typed": "/give pewter cup to Oda",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Chapter Hall",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Gatehouse",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Lower Cloister",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "sealed letter"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Oda"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "sealed letter",
+            "text": null
+          }
+        ],
+        "hp": 28,
+        "hp_of": {
+          "Oda": 14
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 12,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "use -> pewter cup",
+        "resolved_by": "grammar",
+        "note": "cup: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "unbound",
+          "2": "unbound",
+          "3": "unbound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 the-letter-in-hand",
+      "player": "first",
+      "typed": "/take sealed letter",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Chapter Hall",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Gatehouse",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Lower Cloister",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "sealed letter"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Oda"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "sealed letter",
+            "text": null
+          }
+        ],
+        "hp": 28,
+        "hp_of": {
+          "Oda": 14
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 12,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: sealed letter (was lying in Chapter Hall, now carried by Ilse)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> sealed letter",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "unbound",
+          "2": "unbound",
+          "3": "unbound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 the-sexton-turns-the-letter-down",
+      "player": "first",
+      "typed": "/give sealed letter to Oda",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Chapter Hall",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Gatehouse",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Lower Cloister",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "sealed letter"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Oda"
+          }
+        ],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000004,
+            "name": "sealed letter",
+            "text": null
+          }
+        ],
+        "hp": 28,
+        "hp_of": {
+          "Oda": 14
+        },
+        "abilities": {
+          "strength": 11,
+          "dexterity": 12,
+          "will": 13
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "use -> sealed letter",
+        "resolved_by": "grammar",
+        "note": "letter: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "unbound",
+          "2": "unbound",
+          "3": "unbound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    }
+  ]
+}
