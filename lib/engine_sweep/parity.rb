@@ -40,18 +40,100 @@ module EngineSweep::Parity
   class Command
     attr_reader :name
 
-    def initialize(command)
+    # `shared_database` turns on the second contract in docs/engine-parity.md,
+    # where this side owns the database and the engine plays one step per call
+    # (`ENGINE_DATABASE`). `launch` is how a command is run, `Open3.capture2`'s
+    # signature; a test hands in an engine that runs in-process.
+    def initialize(command, shared_database: false, launch: Open3.method(:capture2))
       @command = command
       @name = command
+      @shared_database = shared_database
+      @launch = launch
     end
 
     def play(script)
-      environment = WITHHELD.to_h { |key| [ key, nil ] }
-      output, status = Open3.capture2(environment, *Shellwords.split(@command), script.path.to_s)
+      @shared_database ? play_shared(script) : play_whole(script)
+    end
+
+    private
+
+    def environment = WITHHELD.to_h { |key| [ key, nil ] }
+
+    def play_whole(script)
+      output, status = @launch.call(environment, *Shellwords.split(@command), script.path.to_s)
       raise EngineSweep::InvalidScript, "#{@command} failed on #{script.name} (#{status})" unless status.success?
 
       output.lines.map(&:strip).reject(&:empty?).map { |line| JSON.parse(line) }
     end
+
+    # THIS SIDE PREPARES THE WORLD, PLAYS THE RE-SEEDS AND RENDERS THE NOTICES;
+    # the engine plays every typed step, one call each, on the same file. The
+    # file is a scratch copy of this database, in a directory that is deleted
+    # when the script is done, so neither side can write the database it came
+    # from.
+    def play_shared(script)
+      Dir.mktmpdir("engine-parity") do |directory|
+        file = File.join(directory, "#{script.name}.sqlite3")
+        EngineSweep::Parity.copy_database!(file)
+        walk = EngineSweep::Walk.new(script)
+        on_file(file) { walk.prepare! }
+
+        script.steps.map do |step|
+          next on_file(file) { JSON.parse(walk.reseed_step(step).to_h.to_json) } if step.reseed?
+
+          dump = play_one(script, step, file)
+          if step.browser && step.expectation.document.key?("shown")
+            dump["shown"] = on_file(file) { EngineSweep::BrowserTurn.visible_notices(walk.game_of(step.player)) }
+          end
+          dump
+        end
+      end
+    end
+
+    def play_one(script, step, file)
+      output, status = @launch.call(environment.merge("ENGINE_STEP" => step.index.to_s), *Shellwords.split(@command),
+                                    "--database", file, "--player", step.player, script.path.to_s)
+      raise EngineSweep::InvalidScript, "#{@command} failed on #{script.name} #{step.label} (#{status})" unless status.success?
+
+      lines = output.lines.map(&:strip).reject(&:empty?)
+      raise EngineSweep::InvalidScript, "#{@command} printed #{lines.size} dump(s) for #{script.name} #{step.label}" unless lines.size == 1
+
+      JSON.parse(lines.first)
+    end
+
+    def on_file(file, &) = EngineSweep::Parity.on_database(file) { EngineSweep.without_a_model(&) }
+  end
+
+  # A copy of the database this process is connected to, written to `file` with
+  # SQLite's backup: every table, row and counter as last committed. Refuses to
+  # write over the database itself.
+  def self.copy_database!(file)
+    source = ActiveRecord::Base.connection_db_config.database
+    raise EngineSweep::InvalidScript, "no database file to copy (#{source.inspect})" unless source && File.file?(source)
+    raise EngineSweep::InvalidScript, "#{file} is the database itself" if File.expand_path(file) == File.expand_path(source)
+
+    from = SQLite3::Database.new(source, readonly: true)
+    to = SQLite3::Database.new(file)
+    backup = SQLite3::Backup.new(to, "main", from, "main")
+    backup.step(-1)
+    backup.finish
+  ensure
+    to&.close
+    from&.close
+  end
+
+  # Runs the block with every model connected to `file` instead, and puts the
+  # connection back afterwards. A handler of its own, so a transaction open on
+  # the usual connection -- the suite's, say -- is left exactly as it was.
+  def self.on_database(file)
+    original = ActiveRecord::Base.connection_handler
+    handler = ActiveRecord::ConnectionAdapters::ConnectionHandler.new
+    ActiveRecord::Base.connection_handler = handler
+    ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: file.to_s)
+    yield
+  ensure
+    handler&.clear_all_connections!
+    ActiveRecord::Base.connection_handler = original if original
   end
 
   # One engine's play of one script, as the golden file holds it: each step's

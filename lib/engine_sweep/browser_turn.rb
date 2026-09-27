@@ -110,6 +110,20 @@ class EngineSweep::BrowserTurn
     @mechanics = mechanics
   end
 
+  # Read the actual player-facing entries, with the debug instrument off. Only
+  # the engine notices are asserted: model prose is still outside this sweep.
+  # Public, because the shared-database mode of `EngineSweep::Parity` renders
+  # them itself for an engine that cannot.
+  def self.visible_notices(game)
+    original = Playthrough::Debug.method(:enabled?)
+    Playthrough::Debug.define_singleton_method(:enabled?) { false }
+    html = ApplicationController.render(partial: "turns/turn", collection: game.turn_log, as: :turn,
+                                        locals: { playthrough: game })
+    Nokogiri::HTML.fragment(html).css(".said > .notice").map { |notice| notice.text.squish }
+  ensure
+    Playthrough::Debug.define_singleton_method(:enabled?, original)
+  end
+
   def run(step)
     game = @mechanics.playthrough
     before = game.current_scene_id
@@ -152,7 +166,7 @@ class EngineSweep::BrowserTurn
     end
 
     game.reload
-    @shown = visible_notices(game) if step.expectation.document.key?("shown")
+    @shown = self.class.visible_notices(game) if step.expectation.document.key?("shown")
     scene = outcome if outcome.is_a?(Scene)
     target = scene&.acted_on_record
     understood = "#{scene.resolved_action} -> #{Playthrough::Classifier.label_for(target)}" if target
@@ -183,18 +197,6 @@ class EngineSweep::BrowserTurn
     yield
   ensure
     Playthrough::Command::Journal.define_singleton_method(:commit, original) if original
-  end
-
-  # Read the actual player-facing entries, with the debug instrument off. Only
-  # the engine notices are asserted: model prose is still outside this sweep.
-  def visible_notices(game)
-    original = Playthrough::Debug.method(:enabled?)
-    Playthrough::Debug.define_singleton_method(:enabled?) { false }
-    html = ApplicationController.render(partial: "turns/turn", collection: game.turn_log, as: :turn,
-                                        locals: { playthrough: game })
-    Nokogiri::HTML.fragment(html).css(".said > .notice").map { |notice| notice.text.squish }
-  ensure
-    Playthrough::Debug.define_singleton_method(:enabled?, original)
   end
 
   # BOTH PROVIDERS, OFF ONE QUEUE. The replies are consumed in the order a script

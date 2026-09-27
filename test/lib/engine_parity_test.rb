@@ -1,4 +1,5 @@
 require "test_helper"
+require_relative "../support/per_step_engine"
 
 # THE COMMITTED DUMPS ARE WHAT THE RUBY ENGINE PLAYS TODAY. Every sweep script
 # is played again and compared byte for byte, so an engine change that moves
@@ -55,5 +56,61 @@ class EngineParityTest < ActiveSupport::TestCase
     assert_empty EngineSweep::Parity.diff(engine, scripts: [ script ])
   ensure
     ENV["OPENROUTER_API_KEY"] = saved
+  end
+end
+
+# THE SHARED-DATABASE CONTRACT, with a per-step engine that is the Ruby engine
+# played one step at a time (test/support/per_step_engine.rb). Not transactional:
+# the runner's scratch database is a connection of its own, and it has to commit
+# for the engine to read it; the suite's database is only read, to copy it.
+class EngineParitySharedDatabaseTest < ActiveSupport::TestCase
+  self.use_transactional_tests = false
+
+  # THE SHARED-DATABASE CONTRACT, with a per-step engine that is the Ruby
+  # engine played one step at a time: every script, re-seeds and browser steps
+  # included, agrees with the goldens when the runner owns the database.
+  test "a per-step engine on a shared database agrees with every golden" do
+    engine = EngineSweep::Parity::Command.new("per-step", shared_database: true, launch: PerStepEngine.method(:launch))
+
+    assert_empty EngineSweep::Parity.diff(engine)
+  end
+
+  # And once as a real subprocess, on a script with a re-seed in it, so the
+  # command line and the environment are the ones the contract names.
+  test "a per-step engine runs as a subprocess, one call per typed step, without the provider keys" do
+    script = EngineSweep::Script.load(EngineSweep::DIRECTORY.join("reseed-a-played-world.yml"))
+    calls = []
+    launch = lambda do |environment, *arguments|
+      calls << [ environment.slice("ENGINE_STEP", *EngineSweep::Parity::WITHHELD), arguments.drop(3) ]
+      Open3.capture2(environment, *arguments)
+    end
+    engine = EngineSweep::Parity::Command.new("bin/rails runner test/support/per_step_engine.rb",
+                                              shared_database: true, launch: launch)
+
+    ENV["OPENROUTER_API_KEY"], saved = "not-a-key", ENV["OPENROUTER_API_KEY"]
+    assert_empty EngineSweep::Parity.diff(engine, scripts: [ script ])
+    typed = script.steps.reject(&:reseed?)
+    assert_equal typed.map { |step| step.index.to_s }, calls.map { |environment, _| environment["ENGINE_STEP"] }
+    assert calls.all? { |environment, _| EngineSweep::Parity::WITHHELD.all? { |key| environment.key?(key) && environment[key].nil? } }
+    assert_equal typed.map { |step| [ "--database", "--player", step.player, script.path.to_s ] },
+                 calls.map { |_, arguments| arguments.values_at(0, 2, 3, 4) }
+  ensure
+    ENV["OPENROUTER_API_KEY"] = saved
+  end
+
+  test "a per-step engine that fails fails the step, and the scratch database is gone afterwards" do
+    script = EngineSweep::Script.load(EngineSweep::DIRECTORY.join("a-thing-can-be-thrown.yml"))
+    files = []
+    launch = lambda do |_environment, *arguments|
+      files << arguments[arguments.index("--database") + 1]
+      [ "", PerStepEngine::Status.new(3) ]
+    end
+    engine = EngineSweep::Parity::Command.new("broken", shared_database: true, launch: launch)
+
+    error = assert_raises(EngineSweep::InvalidScript) { engine.play(script) }
+    assert_includes error.message, script.steps.first.label
+    assert_equal 1, files.size
+    refute File.exist?(files.first)
+    refute_equal File.expand_path(ActiveRecord::Base.connection_db_config.database), File.expand_path(files.first)
   end
 end
