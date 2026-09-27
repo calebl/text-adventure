@@ -161,6 +161,11 @@ class Playthrough::Session
               on_finish: completion, on_error: failure, &block)
   end
 
+  # WHAT THE SIDE PANELS SHOW NOW, and which verbs are open from here: a fresh
+  # read of the records every call, so a front end asks again after a turn.
+  # Reads only; see `Playthrough::Glance`.
+  def glance = Playthrough::Glance.new(playthrough.reload)
+
   private
 
   # A committed turn whose prose fell back to the engine's own words because the
