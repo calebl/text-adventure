@@ -85,15 +85,20 @@ module Protocol::V1
       story_time: glance.story_now&.iso8601,
       over: glance.over? ? true : false,
       ended: glance.ended,
-      verbs: glance.verbs.map { |verb| verb(verb) }
+      verbs: glance.verbs.map { |verb| verb(verb, glance) }
     }
   end
 
-  def verb(verb)
+  # `word` is what follows the slash for this verb, and `lines` -- for `use`
+  # alone, whose targets are attempts rather than names -- the line that plays
+  # each target, in the targets' order. Both are the grammar's, never a copy.
+  def verb(verb, glance)
     {
       name: verb.name.to_s, available: verb.available?, reason: verb.reason,
       targets: verb.targets.map { |target| Playthrough::Classifier.label_for(target) },
-      aims: verb.aims&.map { |aim| Playthrough::Classifier.label_for(aim) }
+      aims: verb.aims&.map { |aim| Playthrough::Classifier.label_for(aim) },
+      word: Playthrough::Grammar.word_for(verb.name),
+      lines: (verb.targets.map { |choice| glance.line_for(choice) } if verb.name == :use)
     }
   end
 
@@ -101,6 +106,7 @@ module Protocol::V1
     saved = standing.saved_turn
     {
       over: standing.over, ended: standing.ended, busy: standing.busy,
+      running_turn: standing.running_turn && id(standing.running_turn),
       saved_turn: saved && { turn: id(saved), line: saved.command, request_token: saved.request_token,
                             action: standing.saved_action.to_s }
     }

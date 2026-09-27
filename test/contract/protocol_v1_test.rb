@@ -36,6 +36,33 @@ class ProtocolV1Test < ActionDispatch::IntegrationTest
     ProtocolV1.document["x-events"].each_value { |name| assert ProtocolV1.document.dig("components", "schemas", name) }
   end
 
+  test "every endpoint and every event kind carries an example, and each conforms to its schema" do
+    ProtocolV1.document["paths"].each do |path, operations|
+      operations.each do |verb, operation|
+        operation["responses"].each do |status, response|
+          response["content"].each_value { |content| assert content["examples"].present?, "#{verb} #{path} #{status}" }
+        end
+        assert operation.dig("requestBody", "content", "application/json", "examples").present?, "#{verb} #{path}" if operation["requestBody"]
+      end
+    end
+    ProtocolV1.document["x-events"].each_key { |kind| assert ProtocolV1.event_example(kind), kind }
+
+    ProtocolV1.examples.each do |pointer, value|
+      next if pointer.include?("text~1event-stream")
+
+      errors = ProtocolV1.openapi.ref(pointer).validate(value).map { |error| error["error"] }
+      assert_empty errors, "the example at #{pointer} does not conform"
+    end
+  end
+
+  test "the event stream's example is frames of the event examples" do
+    stream = ProtocolV1.document.dig("paths", "/api/v1/games/{game}/turns/{turn}/events", "get", "responses", "200",
+                                     "content", "text/event-stream", "examples", "example", "value")
+    frames = sse_events(stream)
+    assert_equal ProtocolV1.document["x-events"].keys.sort, frames.map { |frame| frame[:event] }.sort
+    frames.each { |frame| assert_equal ProtocolV1.event_example(frame[:event]), frame[:data] }
+  end
+
   test "the spec's closed lists are the engine's" do
     schemas = ProtocolV1.document.dig("components", "schemas")
     assert_equal Playthrough::Availability::VERBS.map(&:to_s), schemas.dig("Verb", "properties", "name", "enum")

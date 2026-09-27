@@ -148,10 +148,12 @@ class Playthrough::SessionTest < ActiveSupport::TestCase
     legacy = create(:playthrough_command, playthrough: game, status: "running")
     standing = Playthrough::Session.new(game).standing
     assert standing.busy
+    assert_equal legacy, standing.running_turn
     assert_equal [ legacy, :acknowledge ], [ standing.saved_turn, standing.saved_action ]
 
     Playthrough::Session.new(game).acknowledge_interruption!(legacy.id)
     assert_equal "interruption_acknowledged", legacy.reload.error_kind
+    assert_nil Playthrough::Session.new(game).standing.running_turn
     assert_raises(ActiveRecord::RecordNotFound) do
       Playthrough::Session.new(game).acknowledge_interruption!(create(:playthrough_command).id)
     end

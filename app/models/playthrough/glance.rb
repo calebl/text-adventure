@@ -66,6 +66,9 @@ class Playthrough::Glance
   def verbs = availability.verbs
   def verb(name) = availability.verb(name)
 
+  # THE LINE TO SEND FOR ONE `use` TARGET; see `Playthrough::Grammar#line_for`.
+  def line_for(choice) = grammar.line_for(choice)
+
   # THE SAME PANELS AS PLAIN LINES, for `rake game:mechanics`' `glance`. Names
   # only; ids and formatting beyond that are a front end's business.
   def to_s
@@ -87,6 +90,8 @@ class Playthrough::Glance
   def state = @state ||= Playthrough::Mechanics.new(playthrough, model: false).state
 
   def availability = @availability ||= Playthrough::Availability.new(playthrough)
+
+  def grammar = @grammar ||= Playthrough::Grammar.new(playthrough, classifier: availability.classifier)
 
   def line(label, values, empty, separator = ", ")
     format("  %-11s %s", label, values.presence&.join(separator) || empty)

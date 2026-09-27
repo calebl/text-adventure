@@ -44,8 +44,10 @@ class Playthrough::Session
   # the log: whether it is over, whether a turn is still in hand, and the saved
   # turn a player may have to resume or let go (`saved_turn`, a
   # `Playthrough::Command`, and `saved_action`, `:resume` or `:acknowledge`
-  # or `:none` -- the same three states the play page draws).
-  Standing = Data.define(:over, :ended, :busy, :saved_turn, :saved_action)
+  # or `:none` -- the same three states the play page draws). `running_turn`
+  # is the command still in hand while `busy`, oldest first, so a front end
+  # that reconnects mid-turn can find the turn it is waiting on.
+  Standing = Data.define(:over, :ended, :busy, :saved_turn, :saved_action, :running_turn)
 
   # STARTING A GAME, which is the protagonist's arrival in the story's first
   # realized room. A story that has neither cannot be played, and the answer is
@@ -188,6 +190,7 @@ class Playthrough::Session
   def standing
     playthrough.reload
     saved = Playthrough::Command.resume_target(playthrough)
+    running = playthrough.commands.where(status: %w[pending running]).order(:id).first
     action =
       if saved.nil? then nil
       elsif saved.status == "running" && !saved.recoverable?
@@ -196,7 +199,7 @@ class Playthrough::Session
       end
     Standing.new(over: playthrough.over?,
                  ended: (Playthrough::EndNotice.for(playthrough).sentence if playthrough.over?),
-                 busy: playthrough.commands.where(status: %w[pending running]).exists?,
+                 busy: !running.nil?, running_turn: running,
                  saved_turn: saved, saved_action: action)
   end
 
