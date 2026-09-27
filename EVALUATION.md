@@ -1213,10 +1213,13 @@ bin/rails runner 'Eval::Prompt::Result.load(Eval.root.join("my-set")) \
 
 **Re-bought when every checked-in world gained an arc.** The arcs, and the
 things they need on the floor, moved what the benches stage, so
-`prompt-2026-09-26`, `classifier-2026-09-26`, `realization-2026-09-26`,
+`prompt-2026-09-26`, `classifier-2026-09-27`, `realization-2026-09-26`,
 `inscription-2026-09-26`, `classifier-cascade-state-20260927` and
 `classifier-cascade-openrouter-20260927` replace the sets named below as the
-current before sides; `prompt-ending-2026-09-10` and `prompt-branches-2026-09-10`
+current before sides. `classifier-2026-09-27` is the request with `throw` in
+the enum on the worlds with arcs; `classifier-2026-09-26` is the same worlds
+before `throw`, and the two cascade sets were bought beside it, so all three
+are history read at the corpus they scored; `prompt-ending-2026-09-10` and `prompt-branches-2026-09-10`
 still match today's requests and were not re-bought. Three classifier labels
 moved with the world -- see `db/eval/classifier-2026-09-26/README.md`, which
 also has why the classifier readings were scored twice. Every set's README has

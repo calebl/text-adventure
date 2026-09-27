@@ -346,6 +346,10 @@ module Eval
     db/eval/classifier-2026-09-26/offline.json
     db/eval/classifier-2026-09-26/receipts.json
     db/eval/classifier-2026-09-26/README.md
+    db/eval/classifier-2026-09-27/classifier.json
+    db/eval/classifier-2026-09-27/offline.json
+    db/eval/classifier-2026-09-27/receipts.json
+    db/eval/classifier-2026-09-27/README.md
     db/eval/classifier-cascade-before-20260919/classifier.json
     db/eval/classifier-cascade-before-20260919/offline.json
     db/eval/classifier-cascade-before-20260919/README.md

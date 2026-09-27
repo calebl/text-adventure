@@ -5,8 +5,8 @@ That moved what the prompt, classifier, realization and inscription benches
 stage, so their kept sets stopped being baselines for this tree and the tests
 that hold them to it failed. The owner approved re-buying them: the priced sets
 under a stop-rather-than-exceed ceiling (first $2.00, raised by the owner to
-$2.75 when it stopped the realization run), the cascade sets under their own
-$1.00 cap, bracketed by OpenRouter credit readings. No prompt, schema, sampling
+$2.75 when it stopped the realization run), the cascade sets and the final
+classifier set under their own cap (first $1.00, raised to $1.20), bracketed by OpenRouter credit readings. No prompt, schema, sampling
 parameter or scorer changed.
 
 ## Spend
@@ -14,7 +14,20 @@ parameter or scorer changed.
 | group | actual | how it is known |
 |---|---:|---|
 | priced sets | **$0.977590** | provider-reported charge on every settled call (`receipts.json`, `summarize.py`) |
-| cascade sets | **$0.378191** | OpenRouter credit delta, 59.583860295 -> 59.962051233 (`credit-readings.log`); $0.197911 of it provider-reported Mistral escalations (`cascade-receipts.json`) |
+| cascade sets, and the final classifier set | **$1.039500** | OpenRouter credit readings (`credit-readings.log`), in three brackets below |
+| **total** | **$2.017090** | |
+
+The cascade group's cap was $1.00, raised by the owner to $1.20 for the final
+classifier set. Its three brackets:
+
+- the two cascade sets: 59.583860295 -> 59.962051233, $0.378191, of which
+  $0.197911 is provider-reported Mistral escalations (`cascade-receipts.json`);
+- a first attempt at the final classifier set, stopped by its own ledger at
+  552 of 1373 calls and not resumable: 59.962051233 -> 60.154424033, $0.192373
+  (`classifier-final-receipts.json`);
+- the final classifier set, one call at a time: 60.154424033 -> 60.623360273,
+  $0.468936, equal to its provider-reported receipts
+  (`classifier-final-rerun-receipts.json`).
 
 Priced sets, per set: classifier $0.323243, main prompt $0.198463, realization
 $0.360226 (plus $0.063227 settled on the run the ceiling stopped), inscription
@@ -42,7 +55,11 @@ One requests appear in no reading at all.
   `classifier-misses.txt`, `classifier_positions.rb` and `rescore.rb` are the
   offline diagnosis.
 - **cascade** (`classifier-cascade-state-20260927`): its lead over the model
-  call alone is inside the noise on today's worlds; intent accuracy REAL worse.
+  call alone is inside the noise on the worlds with arcs; intent accuracy REAL
+  worse.
+- **classifier after the merge** (`classifier-2026-09-27`, `throw` in the enum on
+  the worlds with arcs): NOISE on every figure against
+  `classifier-throw-after-20260926`.
 
 ## Files
 

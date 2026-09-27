@@ -1,0 +1,12 @@
+{
+  "source": "doc/evidence/seed-world-arcs-rebuy/classifier-final-rerun-receipts.json",
+  "transport_retries": 0,
+  "calls_including_warmups": 1405,
+  "settled": 1405,
+  "interrupted": 0,
+  "provider_reported_usd": 0.468936,
+  "provider_cost_available_calls": 1405,
+  "registry_priced_usd": 0.468936,
+  "actual_settled_usd": 0.468936,
+  "accounted_usd": 0.468936
+}

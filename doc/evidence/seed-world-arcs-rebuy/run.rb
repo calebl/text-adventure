@@ -40,6 +40,11 @@ module ArcRebaselineSpend
     output_bound = model.max_output_tokens
     raise Halt, "Missing output bound" unless output_bound&.positive?
     reserve = price.of(bytes + 4096, output_bound)
+    # A STATED BOUND IN PLACE OF THE WHOLE OUTPUT ALLOWANCE, for a run whose
+    # request shape already has settled receipts: RESERVE_USD must be at least
+    # ten times the highest charge observed for that shape. A call that comes
+    # back costing more than it still halts the run below.
+    reserve = Float(ENV["RESERVE_USD"]) if ENV["RESERVE_USD"].present?
     row = { "set" => ENV.fetch("SET"), "purpose" => purpose, "reserved_usd" => reserve,
             "accounted_usd" => reserve, "state" => "reserved" }
     index = ArcRebaselineSpend.edit do |ledger|

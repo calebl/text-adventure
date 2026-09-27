@@ -1,0 +1,130 @@
+{
+  "name": "classifier-2026-09-27",
+  "recorded_at": "2026-09-27T10:37:22Z",
+  "corpus_size": 351,
+  "corpus_digest": "da78f0dd2cf9c1f7",
+  "request_identity": {
+    "version": 2,
+    "digest": "ba3b467f3436519f",
+    "scope": "known_physical_token_bindings"
+  },
+  "arms": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "reps": 4,
+  "concurrency": 1,
+  "cascade": false,
+  "answered_by": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "warmups": [
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "seconds": 1.0335,
+      "residency": "not_local",
+      "error": null
+    }
+  ],
+  "passes": [
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 1,
+      "accuracy": 0.9373,
+      "intent_accuracy": 0.9829,
+      "strict_accuracy": 0.9365,
+      "refusal_agreement": 0.9465,
+      "closed_set_misses": 16,
+      "out_of_set": 62,
+      "latency_median": 0.6677,
+      "latency_p95": 1.0463,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 28,
+      "also_fp": 0,
+      "also_fn": 4,
+      "also_omitted": 0,
+      "answered": 351,
+      "readings_count": 351,
+      "resolved_by_counts": {
+        "model": 351
+      },
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 2,
+      "accuracy": 0.9373,
+      "intent_accuracy": 0.9801,
+      "strict_accuracy": 0.9365,
+      "refusal_agreement": 0.9498,
+      "closed_set_misses": 15,
+      "out_of_set": 62,
+      "latency_median": 0.6327,
+      "latency_p95": 1.0488,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 29,
+      "also_fp": 0,
+      "also_fn": 3,
+      "also_omitted": 0,
+      "answered": 351,
+      "readings_count": 351,
+      "resolved_by_counts": {
+        "model": 351
+      },
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 3,
+      "accuracy": 0.9402,
+      "intent_accuracy": 0.9801,
+      "strict_accuracy": 0.9398,
+      "refusal_agreement": 0.9532,
+      "closed_set_misses": 14,
+      "out_of_set": 61,
+      "latency_median": 0.7263,
+      "latency_p95": 1.2354,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 29,
+      "also_fp": 0,
+      "also_fn": 3,
+      "also_omitted": 0,
+      "answered": 351,
+      "readings_count": 351,
+      "resolved_by_counts": {
+        "model": 351
+      },
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 4,
+      "accuracy": 0.9345,
+      "intent_accuracy": 0.9829,
+      "strict_accuracy": 0.9331,
+      "refusal_agreement": 0.9431,
+      "closed_set_misses": 17,
+      "out_of_set": 63,
+      "latency_median": 0.692,
+      "latency_p95": 1.0654,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 28,
+      "also_fp": 0,
+      "also_fn": 4,
+      "also_omitted": 0,
+      "answered": 351,
+      "readings_count": 351,
+      "resolved_by_counts": {
+        "model": 351
+      },
+      "readings": []
+    }
+  ]
+}
