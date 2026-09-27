@@ -1,0 +1,35 @@
+------------------------------------------------------------------------------
+CLASSIFIER BENCH: classifier-examine-after -> classifier-2026-09-26
+Exact rank test at p <= 0.05, 4 repetitions a side minimum.
+------------------------------------------------------------------------------
+schema request before: v2:8fc01b135f1ed5fa
+schema request after: v2:9c85ef6604541ebb
+WARNING: THE TWO SETS RECORDED DIFFERENT SCHEMA REQUEST IDENTITIES.
+classifier-examine-after measured mistralai/mistral-medium-3.1 on corpus a259e93e6b865af1
+classifier-2026-09-26 measured mistralai/mistral-medium-3.1 on corpus 027013dd5a020328
+Latencies are WARM-CACHE figures -- each arm's first call is timed apart and excluded -- at 8 and 2 calls in flight respectively.
+
+WARNING: THE TWO SETS WERE TAKEN AT DIFFERENT CONCURRENCIES (8 vs 2 calls in flight).
+latency_median and latency_p95 ARE NOT REPORTED BELOW: a latency taken with more
+calls in flight is partly the provider's queue, so a verdict on it would be a fact about
+the harness. Everything else below is unaffected -- the answers themselves were measured
+identical serial against eight in flight. Re-run one side at the other's concurrency to
+compare speed. See EVALUATION.md -> Concurrency.
+
+WARNING: THE TWO SETS SCORED DIFFERENT CORPORA (a259e93e6b865af1 vs 027013dd5a020328).
+Whatever moved below may be the labelled lines moving and not the classifier. Re-run one side.
+
+MODEL  mistralai/mistral-medium-3.1
+  strict_accuracy      0.933 -> 0.935  BETTER   NOISE (inside the 0.004 the unchanged runs already spanned)
+  accuracy             0.934 -> 0.936  BETTER   NOISE (inside the 0.003 the unchanged runs already spanned)
+  intent_accuracy      0.980 -> 0.980  unchanged NOISE (inside the 0.003 the unchanged runs already spanned)
+  refusal_agreement    0.950 -> 0.948  WORSE    REAL (p=0.0286)
+  closed_set_misses    15 -> 15  unchanged NOISE (inside the 1.000 the unchanged runs already spanned)
+  failures             0 -> 0  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  out_of_set           0 -> 62  WORSE    INCONCLUSIVE
+  first call (cold)    0.78s -> 0.97s           one observation an arm; reported, never judged
+
+A REAL verdict on `strict_accuracy` is the one that means a prompt change worked,
+or -- across two models -- that one of them reads the player better than the other.
+Everything INCONCLUSIVE at these sample sizes means: not enough repetitions.
+------------------------------------------------------------------------------

@@ -67,7 +67,7 @@ module Eval::Realization
   # while legacy prompt designation stays fixed; BranchRequests separately
   # checks the full requests, including restored history. KeptSetTest holds
   # both identities to HEAD. Historical sets remain unchanged before sides.
-  BASELINE = "desires-scale-20260920".freeze
+  BASELINE = "realization-2026-09-26".freeze
 
   # WHERE A CASE'S WORLD IS READ FROM, IN ORDER. The seeded worlds first, so a
   # case against `The Salt Assizes` measures the file every other instrument in

@@ -1,13 +1,13 @@
 {
-  "corpus_digest": "a259e93e6b865af1",
+  "corpus_digest": "027013dd5a020328",
   "floor": {
     "size": 343,
-    "accuracy": 0.4286,
+    "accuracy": 0.4257,
     "outcomes": {
       "resolved": 73,
-      "refused": 74,
+      "refused": 73,
       "wrong": 8,
-      "over_refused": 175,
+      "over_refused": 176,
       "unparsed": 13
     },
     "by_shape": {
@@ -32,9 +32,9 @@
         "rate": 0.12962962962962962
       },
       "take": {
-        "size": 23,
+        "size": 24,
         "right": 14,
-        "rate": 0.6086956521739131
+        "rate": 0.5833333333333334
       },
       "other": {
         "size": 34,
@@ -67,8 +67,8 @@
         "rate": 1.0
       },
       "unresolved-take": {
-        "size": 9,
-        "right": 9,
+        "size": 8,
+        "right": 8,
         "rate": 1.0
       },
       "unresolved-drop": {
@@ -1434,11 +1434,11 @@
       },
       {
         "id": "unresolved-take-blank-writ",
-        "shape": "unresolved-take",
+        "shape": "take",
         "typed": "take a blank writ out of the press",
-        "outcome": "refused",
+        "outcome": "over_refused",
         "expected": [
-          "take -> nothing"
+          "take -> blank closure writ"
         ],
         "got": "there is no thing lying here called \"a blank writ out of the press\". There is: blank closure writ, filing press, ward stamp"
       },
@@ -1558,7 +1558,9 @@
         "typed": "take the lot",
         "outcome": "refused",
         "expected": [
-          "take -> ward stamp (and Ward Office 12 daybook)"
+          "take -> Ward Office 12 daybook (and blank closure writ)",
+          "take -> ward stamp (and Ward Office 12 daybook)",
+          "take -> ward stamp (and blank closure writ)"
         ],
         "got": "there is no thing lying here called \"the lot\". There is: Ward Office 12 daybook, blank closure writ, filing press, ward stamp"
       },
@@ -2915,7 +2917,9 @@
         "typed": "take all of it",
         "outcome": "refused",
         "expected": [
-          "take -> ward stamp (and Ward Office 12 daybook)"
+          "take -> Ward Office 12 daybook (and blank closure writ)",
+          "take -> ward stamp (and Ward Office 12 daybook)",
+          "take -> ward stamp (and blank closure writ)"
         ],
         "got": "there is no thing lying here called \"all of it\". There is: Ward Office 12 daybook, blank closure writ, filing press, ward stamp"
       },
