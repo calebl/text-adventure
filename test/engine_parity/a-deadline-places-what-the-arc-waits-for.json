@@ -1,0 +1,570 @@
+{
+  "script": "a-deadline-places-what-the-arc-waits-for",
+  "story": "A Yard Before the Winter",
+  "steps": [
+    {
+      "step": "step 1 into-the-cold-store",
+      "player": "first",
+      "typed": "/move Cold Store",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "Cold Store",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 23,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Cold Store",
+        "resolved_by": "grammar",
+        "note": "cold-store: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "unbound",
+          "3": "unbound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 back-out-of-the-cold-store",
+      "player": "first",
+      "typed": "go to Yard",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Yard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000006,
+            "name": "Byre",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000004,
+            "name": "Cold Store",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Kitchen",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000005,
+            "name": "Wash House",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 23,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Cold Store -> Yard",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Yard",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "unbound",
+          "3": "unbound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 into-the-wash-house",
+      "player": "first",
+      "typed": "/move Wash House",
+      "dump": {
+        "location": {
+          "id": 1000000005,
+          "name": "Wash House",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 23,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Wash House",
+        "resolved_by": "grammar",
+        "note": "wash-house: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "unbound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 back-out-of-the-wash-house",
+      "player": "first",
+      "typed": "go to Yard",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Yard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000006,
+            "name": "Byre",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000004,
+            "name": "Cold Store",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Kitchen",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000005,
+            "name": "Wash House",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 23,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Wash House -> Yard",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Yard",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "unbound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 into-the-byre",
+      "player": "first",
+      "typed": "/move Byre",
+      "dump": {
+        "location": {
+          "id": 1000000006,
+          "name": "Byre",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 23,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Byre",
+        "resolved_by": "grammar",
+        "note": "byre: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 back-out-of-the-byre",
+      "player": "first",
+      "typed": "go to Yard",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Yard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000006,
+            "name": "Byre",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "Cold Store",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "Kitchen",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000005,
+            "name": "Wash House",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 23,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Byre -> Yard",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Yard",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 through-the-kitchen",
+      "player": "first",
+      "typed": "go to Kitchen",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Kitchen",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Loft",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000001,
+            "name": "Yard",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 23,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Yard -> Kitchen",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Kitchen",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 up-to-the-loft",
+      "player": "first",
+      "typed": "go to Loft",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Loft",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Kitchen",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000008,
+            "name": "where Warden Hesk is room 1",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 23,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Kitchen -> Loft",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Loft",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 to-where-the-warden-is",
+      "player": "first",
+      "typed": "go to where Warden Hesk is",
+      "dump": {
+        "location": {
+          "id": 1000000008,
+          "name": "where Warden Hesk is room 1",
+          "detail": "stub"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Loft",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000009,
+            "name": "where Warden Hesk is room 2",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 23,
+        "hp_of": {},
+        "abilities": {
+          "strength": 13,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Loft -> where Warden Hesk is room 1 (a stub -- nobody has written this room, and no-model mode cannot)",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> where Warden Hesk is room 1",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {
+          "1": "bound",
+          "2": "bound",
+          "3": "bound"
+        },
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

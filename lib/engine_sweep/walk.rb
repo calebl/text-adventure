@@ -214,9 +214,12 @@ class EngineSweep::Walk
     room = before.fetch(:room).reload
     expected_room = @loaded.fetch("locations").find { |row| row.fetch("name") == room.name }
     expected_room["detail_level"] = room.detail_level
-    new_people = room.characters.where.not(id: before.fetch(:characters)).map do |character|
+    # EVERYBODY THE REALIZATION BROUGHT INTO THE STORY, wherever they stand:
+    # the people its writing admitted stand in the room, and a person the arc
+    # was waiting for is placed by `Quest::Deadline` in a room of its own.
+    new_people = room.story.characters.where.not(id: before.fetch(:characters)).order(:id).map do |character|
       character.attributes.slice("fullname", "hostile", "x", "y").merge(
-        "location" => room.name,
+        "location" => character.location&.name,
         "stats" => character.attributes.slice(*WorldSeed::Loader::STAT_KEYS)
       )
     end

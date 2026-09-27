@@ -62,10 +62,22 @@ class EngineSweepTest < ActiveSupport::TestCase
   # second thing every walk of it could trip over -- so `no_arc` is the one
   # finding a sweep world may carry. A world somebody plays may not
   # (`SeededWorldsTest`).
+  #
+  # AND AN ARC THAT WAITS IS ONE MORE, for the worlds that exist to walk it.
+  # Every world `rake game:new` writes opens with an arc naming rows no room
+  # holds yet, which bind as the rooms are written (`Quest::Binder`) or are
+  # placed once the story is past its grace (`Quest::Deadline`). A seed file
+  # is always loaded as a seeded arc, so the doctor reads such a world's
+  # unbound steps as a file that forgot to declare them; in these worlds they
+  # are the point, and those two findings are all they may carry.
+  WAITING_ARCS = %w[a-bell-nobody-has-rung.yml a-yard-before-the-winter.yml].freeze
+  WAITING_FINDINGS = %i[quest_step_unbound story_cannot_progress].freeze
+
   test "a world of the sweep's own loads and is healthy" do
     Dir.glob(EngineSweep::WORLDS.join("*.yml")).sort.each do |path|
       story = WorldSeed::Loader.new(WorldSeed.parse(File.read(path)), source: path).load!
       findings = Story::Doctor.new(story).findings.reject { |finding| finding.code == :no_arc }
+      findings = findings.reject { |finding| WAITING_FINDINGS.include?(finding.code) } if WAITING_ARCS.include?(File.basename(path))
 
       assert_empty findings, "#{File.basename(path)}: #{findings.map(&:message).join("; ")}"
     end

@@ -1,0 +1,94 @@
+# The yard's world has written three rooms and its arc still waits for all
+# three of the things it names. Each room written from here on is past the
+# grace the arc is given, so finishing it places the arc's first waiting
+# step. Warden Hesk first: no place the party can reach has rooms to keep
+# her in, so a place is built for her off the deepest room they can reach,
+# laid out two levels down, and she is admitted to its deepest room. Then
+# the Salt Stair, and then the iron seal. The walk then climbs to the loft,
+# where the door to the warden's place now is.
+story: A Yard Before the Winter
+steps:
+- id: into-the-cold-store
+  type: "/move Cold Store"
+  browser:
+    token: cold-store
+    realizes: Cold Store
+    replies:
+    - purpose: location
+      content:
+        description: A stone store with empty salt bins.
+        lore: Nobody has used it since the road closed.
+    - purpose: location
+      content:
+        exits: []
+    - purpose: arrival
+      content:
+        description: You step into the cold store.
+        summary: Tamsin looks into the cold store.
+  expect:
+    location: Cold Store (realized)
+    note: completed
+- id: back-out-of-the-cold-store
+  type: go to Yard
+  expect:
+    location: Yard (realized)
+- id: into-the-wash-house
+  type: "/move Wash House"
+  browser:
+    token: wash-house
+    realizes: Wash House
+    replies:
+    - purpose: location
+      content:
+        description: A lean-to with a cold copper.
+        lore: Nobody has used it since the road closed.
+    - purpose: location
+      content:
+        exits: []
+    - purpose: arrival
+      content:
+        description: You step into the wash house.
+        summary: Tamsin looks into the wash house.
+  expect:
+    location: Wash House (realized)
+    note: completed
+- id: back-out-of-the-wash-house
+  type: go to Yard
+  expect:
+    location: Yard (realized)
+- id: into-the-byre
+  type: "/move Byre"
+  browser:
+    token: byre
+    realizes: Byre
+    replies:
+    - purpose: location
+      content:
+        description: An empty byre smelling of old straw.
+        lore: Nobody has used it since the road closed.
+    - purpose: location
+      content:
+        exits: []
+    - purpose: arrival
+      content:
+        description: You step into the byre.
+        summary: Tamsin looks into the byre.
+  expect:
+    location: Byre (realized)
+    note: completed
+- id: back-out-of-the-byre
+  type: go to Yard
+  expect:
+    location: Yard (realized)
+- id: through-the-kitchen
+  type: go to Kitchen
+  expect:
+    location: Kitchen (realized)
+- id: up-to-the-loft
+  type: go to Loft
+  expect:
+    location: Loft (realized)
+- id: to-where-the-warden-is
+  type: go to where Warden Hesk is
+  expect:
+    location: where Warden Hesk is room 1 (stub)

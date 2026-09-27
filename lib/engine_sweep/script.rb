@@ -222,9 +222,14 @@ class EngineSweep::Script
   # a `system_one` reply is what puts a key in the sweep's environment for that
   # one step -- see `EngineSweep::BrowserTurn#without_provider` -- so a step
   # without one walks the keyless path, which is what every other script does.
+  #
+  # `ending` and `inscription` are the two passes a turn makes after its own:
+  # the last paragraph of a game the arc has just concluded (`Scene::Ending`),
+  # and the words on a readable thing nobody has written them for yet
+  # (`Item::Inscriber`).
   REPLY_PURPOSES = %w[
     location narration arrival character interaction-narration
-    classifier system_one
+    classifier system_one ending inscription
   ].freeze
 
   # `true` for the same file again, or a mapping of what this load renames.

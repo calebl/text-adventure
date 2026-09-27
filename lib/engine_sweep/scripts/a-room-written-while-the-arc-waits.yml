@@ -1,0 +1,116 @@
+# Every step of this world's arc is waiting for a row: nothing in the world
+# file answers to the brass censer, Brother Anselm or the Bell Tower. So the
+# first room walked into is written while the arc is still binding, and what
+# its writing admits is what the arc takes: the censer on the floor, the
+# brother standing in it, and the tower its ways out name. Holding the one,
+# hearing the other and climbing the third then reach the arc's three beats
+# through the rows they bound to, and the last of them ends the story in the
+# narrator's words.
+story: A Bell Nobody Has Rung
+steps:
+- id: into-the-cloister-nobody-has-written
+  type: "/move Lower Cloister"
+  browser:
+    token: cloister
+    realizes: Lower Cloister
+    replies:
+    - purpose: location
+      content:
+        description: A square cloister of worn flagstones around a dry fountain.
+        lore: The older brothers walk here between the hours.
+        items:
+        - name: brass censer
+          description: A tarnished brass censer on a long chain.
+        people:
+        - fullname: Brother Anselm
+          nickname: Anselm
+          appearance: A stooped man in a patched habit.
+          personality: Gentle and forgetful.
+          backstory: The last brother who heard the bell ring.
+          likes: Warm bread.
+          dislikes: Draughts.
+          fears: Being forgotten.
+      prompt_includes:
+      - brass censer
+    - purpose: location
+      content:
+        exits:
+        - name: the Bell Tower
+          teaser: A narrow tower over the cloister.
+          distance: adjacent
+          travel_method: walking
+    - purpose: arrival
+      content:
+        description: You step down into the cloister, where an old brother waits by the fountain.
+        summary: Ilse walks into the Lower Cloister.
+  expect:
+    location: Lower Cloister (realized)
+    here:
+    - brass censer
+    present:
+    - Brother Anselm
+    exits_include:
+    - the Bell Tower (stub)
+    changed: true
+    note: completed
+- id: the-censer-the-arc-waited-for
+  type: "/take brass censer"
+  expect:
+    carrying:
+    - brass censer
+    quest:
+      1: reached
+- id: the-brother-the-arc-waited-for
+  type: "/talk Brother Anselm"
+  browser:
+    token: anselm
+    replies:
+    - purpose: character
+      content:
+        pre_thought: She has the censer.
+        pre_feeling: startled
+        action: Brother Anselm says the bell was stopped by the prior's order.
+        post_thought: Somebody ought to ring it.
+        post_feeling: hopeful
+        inner_resolution: I will tell her about the tower door.
+        engine_action: none
+    - purpose: interaction-narration
+      content: Brother Anselm tells you the bell was stopped by the prior's order.
+  expect:
+    changed: true
+    note: completed
+    quest:
+      1: reached
+      2: reached
+- id: up-the-tower-and-the-end-of-the-story
+  type: "/move the Bell Tower"
+  browser:
+    token: tower
+    realizes: the Bell Tower
+    replies:
+    - purpose: location
+      content:
+        description: A narrow stone tower with a rope hanging from the dark.
+        lore: The bell has hung here since the abbey was built.
+    - purpose: location
+      content:
+        exits: []
+    - purpose: arrival
+      content:
+        description: You climb the tower stair to the bell rope.
+        summary: Ilse reaches the Bell Tower.
+    - purpose: ending
+      content: You haul on the rope, and the bell rings out over the valley for the first time in a generation.
+      prompt_includes:
+      - The bell rings over the valley for the first time in a generation.
+  expect:
+    location: the Bell Tower (realized)
+    quest:
+      1: reached
+      2: reached
+      3: reached
+    ending: rung
+    ending_words:
+    - the bell rings out over the valley
+    dead: true
+    note: completed
