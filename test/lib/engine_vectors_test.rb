@@ -15,6 +15,18 @@ class EngineVectorsTest < ActiveSupport::TestCase
     assert_empty stale.keys, "run `bin/rails engine:vectors` and commit the diff; see docs/engine-vectors.md"
   end
 
+  # The model registry is not dumped, and which id a model row takes depends
+  # on which earlier test filled the table, so a chat's reference into it
+  # would make the vectors depend on the order tests ran in.
+  test "a reference into a table the dump skips is written as null" do
+    EngineVectors.rolled_back do
+      model = Model.create!(model_id: "vector-probe", name: "vector-probe", provider: "openrouter")
+      Chat.new(purpose: "location", ruby_llm_model_id: model.id).save!(validate: false)
+
+      assert_equal [ nil ], EngineVectors::Records.dump.fetch("chats").map { |row| row.fetch("ruby_llm_model_id") }
+    end
+  end
+
   test "every file in the directory is a portion that is generated here or vendored from the engine" do
     expected = (EngineVectors::PORTIONS.keys | EngineVectors::ENGINE_OWNED).map { |portion| "#{portion}.json" }.sort
 

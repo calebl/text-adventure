@@ -11,7 +11,8 @@ require "active_support/testing/time_helpers"
 #
 # A dump is { table => [row, ...] }: tables in name order, only tables with
 # rows, rows in id order (or in column order for a table with no id), every
-# column present (but `RANDOM`'s, written as `FIXED`). A boolean is true/false, a time whole seconds since the
+# column present (but `RANDOM`'s, written as `FIXED`, and a reference into a
+# `SKIPPED` table, written as null). A boolean is true/false, a time whole seconds since the
 # Unix epoch (UTC), a JSON column its parsed value and a float a JSON number.
 #
 # THE CLOCK IS STOPPED AT `EngineVectors::World::START` while a case is built
@@ -28,6 +29,14 @@ module EngineVectors::Records
   RANDOM = { "playthroughs" => %w[token] }.freeze
   FIXED = "engine-vectors".freeze
 
+  # A column that points into a skipped table is written as null: the row it
+  # names is not in the dump, and its id is whichever the registry happened
+  # to hold when the test that filled it ran first, so it would make a case
+  # depend on the order tests ran in.
+  def self.unreachable(connection, table)
+    connection.foreign_keys(table).select { |key| SKIPPED.include?(key.to_table) }.map(&:column)
+  end
+
   def self.dump
     connection = ActiveRecord::Base.connection
     (connection.tables.sort - SKIPPED).each_with_object({}) do |table, dump|
@@ -38,8 +47,13 @@ module EngineVectors::Records
       next if rows.empty?
 
       random = RANDOM.fetch(table, [])
+      unreachable = unreachable(connection, table)
       dump[table] = rows.map do |row|
-        columns.to_h { |column| [ column.name, random.include?(column.name) ? FIXED : value(column, row[column.name]) ] }
+        columns.to_h do |column|
+          next [ column.name, nil ] if unreachable.include?(column.name)
+
+          [ column.name, random.include?(column.name) ? FIXED : value(column, row[column.name]) ]
+        end
       end
     end
   end
