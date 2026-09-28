@@ -1,0 +1,97 @@
+# Two keyed doors out of one workshop and one key, which fits only the
+# cellar; a bent wire picks either. Nothing here opens the storeroom but the
+# wire, so a key is offered only for the door its template names.
+format: 2
+universe:
+  physics: Ordinary physics.
+  technology: Keys, locks and hand tools.
+  weapons: Wooden staves.
+  geographies: A workshop, a cellar and a storeroom.
+  civilizations: A small trading town.
+  history: Traders built the workshop together.
+  economics: Goods traded for coins.
+  politics: A town council keeps the peace.
+  religion: The town keeps its own festivals.
+  races:
+  - name: Townsfolk
+    description: Ordinary people of the town.
+story:
+  title: A Key for the Other Door
+  genre: town adventure
+  start_time: '2026-09-10T12:00:00Z'
+  preface: One key lies beside two locked doors.
+  summary: Mar can open one door with the key and try the other with a wire.
+opening_scene:
+  location: Workshop
+  characters: [Mar]
+  description: You stand between the cellar door and the storeroom door, both locked.
+  summary: Mar enters the workshop.
+characters:
+- fullname: Mar
+  nickname: Mar
+  race: Townsfolk
+  age: 30
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: A trader looking for stores.
+  personality: Patient and practical.
+  appearance: A travel-worn coat.
+  likes: Well-kept tools.
+  dislikes: Waste.
+  fears: Being shut in.
+  stats: {level: 3, hit_die: 8, strength: 10, dexterity: 12, will: 12}
+locations:
+- name: Workshop
+  detail_level: realized
+  population: nobody
+  opening: true
+  description: A quiet workroom with a locked cellar and a locked storeroom.
+  teaser: A workshop between two doors.
+  lore: Traders mend their tools here.
+  items:
+  - name: cellar key
+    description: The iron key to the cellar.
+    properties: '{}'
+    use_kind: key
+  - name: bent wire
+    description: A stiff wire bent to work a lock.
+    properties: '{}'
+    use_kind: lockpick
+- name: Cellar
+  detail_level: realized
+  population: nobody
+  description: A cool cellar under the workshop.
+  teaser: A locked cellar.
+  lore: The cellar key opens its door.
+- name: Storeroom
+  detail_level: realized
+  population: nobody
+  description: An empty storeroom behind the workshop.
+  teaser: A locked storeroom.
+  lore: Its key was lost long ago.
+- name: Strongbox Room
+  detail_level: realized
+  population: nobody
+  description: A small room where the lost storeroom key was last kept.
+  teaser: A small room.
+  lore: The storeroom key was kept here.
+  items:
+  - name: storeroom key
+    description: The brass key to the storeroom.
+    properties: '{}'
+    use_kind: key
+connections:
+- between: [Workshop, Cellar]
+  distance: adjacent
+  travel_method: walking
+  barrier: keyed
+  key_template: cellar key
+- between: [Workshop, Storeroom]
+  distance: adjacent
+  travel_method: walking
+  barrier: keyed
+  key_template: storeroom key
+- between: [Storeroom, Strongbox Room]
+  distance: adjacent
+  travel_method: walking

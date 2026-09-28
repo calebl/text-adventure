@@ -1,0 +1,56 @@
+# A key is offered for the doorway its template names and for no other: the
+# cellar key opens the cellar, the storeroom refuses it, and the bent wire is
+# offered for both. The pick's check is the walk's own die; the script holds
+# only that the attempt is played, not what it rolled.
+story: A Key for the Other Door
+steps:
+- id: take-the-key
+  type: /take cellar key
+  expect:
+    location: Workshop (realized)
+    carrying: [cellar key]
+    here: [bent wire]
+- id: take-the-wire
+  type: /take bent wire
+  expect:
+    carrying: [bent wire, cellar key]
+    here: []
+- id: the-key-does-not-fit-the-other-door
+  why: The storeroom's key template is the storeroom key, so no unlock is offered for it.
+  type: /unlock Storeroom with cellar key
+  expect:
+    location: Workshop (realized)
+    carrying: [bent wire, cellar key]
+    refused: true
+    changed: false
+    elapsed_minutes: 0
+- id: the-locked-storeroom-still-blocks
+  type: /move Storeroom
+  expect:
+    location: Workshop (realized)
+    refused: true
+    offers: locked
+    changed: false
+- id: the-key-opens-its-own-door
+  type: /unlock Cellar with cellar key
+  expect:
+    location: Workshop (realized)
+    carrying: [bent wire, cellar key]
+    changed: true
+    refused: false
+- id: the-opened-cellar-admits-a-move
+  type: /move Cellar
+  expect:
+    location: Cellar (realized)
+    refused: false
+- id: back-to-the-workshop
+  type: /move Workshop
+  expect:
+    location: Workshop (realized)
+- id: the-wire-is-offered-for-the-storeroom
+  type: /pick Storeroom with bent wire
+  expect:
+    location: Workshop (realized)
+    carrying: [bent wire, cellar key]
+    changed: true
+    refused: false
