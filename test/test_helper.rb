@@ -133,6 +133,16 @@ module ActiveSupport
       playthrough.items_lying_in(location).order(:id).last
     end
 
+    # A DATABASE THAT CARRIES TWO PLACES ANSWERING TO ONE NAME. The unique
+    # index on `locations (story_id, lower(name))` stops one being written now,
+    # but a database can carry rows from before it, and the checks that report
+    # them (the doctor's `duplicate_locations`, the sweep's name invariants)
+    # still have to be tested on one. SQLite drops an index inside a
+    # transaction, so it comes back when the test's transaction rolls back.
+    def without_the_location_name_index
+      Location.connection.remove_index(:locations, name: "index_locations_on_story_id_and_lower_name")
+    end
+
     # Add more helper methods to be used by all tests here...
   end
 end

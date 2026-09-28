@@ -511,6 +511,7 @@ class EngineSweepTest < ActiveSupport::TestCase
   # `#place_names_unique` below rather than to this check.
   test "two streets of one district sharing a name are not this invariant's" do
     seed, story = seeded_copy("the-unrecorded-hour")
+    without_the_location_name_index
     district = create(:location, :stub, story: story, name: "The Docks District")
     2.times { create(:location, :stub, story: story, name: "Warehouse Row", parent_location: district) }
 
@@ -1337,6 +1338,7 @@ class EngineSweepTest < ActiveSupport::TestCase
   # west half and then the east, so the two rooms are beside each other and not
   # on top of each other (`test/factories/location_connections.rb`'s rule).
   def room_names_checked(seed, story, names)
+    without_the_location_name_index
     place = create(:location, :stub, :with_a_footprint, story: story, name: "The Custom House")
     names.each_with_index do |name, index|
       create(:location, :stub, story: story, name: name, parent_location: place,

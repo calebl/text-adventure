@@ -200,7 +200,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # walking back costs one arrival call instead of three, and the room the
   # player reads is the room they left.
   test "walking back into a realized location generates nothing but the arrival" do
-    market = create(:location, story: @story, name: "Ashgate Market",
+    market = create(:location, story: @story, name: "Ashgate Fish Market",
                                description: "Stalls under wet canvas.", lore: "It was a fish market once.")
     vestibule = create(:location, story: @story, name: "Drowned Vestibule")
     create(:location_connection, location: vestibule, connected_location: market,
@@ -208,7 +208,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     @playthrough.update!(current_location: vestibule)
 
     _scene, _chunks, agent = play("back up to the market",
-                                  CLASSIFY.call("move", "Ashgate Market"), ARRIVAL)
+                                  CLASSIFY.call("move", "Ashgate Fish Market"), ARRIVAL)
 
     # Two prompts: the classification and the arrival. No detail, no exits.
     assert_equal 2, agent.prompts.count

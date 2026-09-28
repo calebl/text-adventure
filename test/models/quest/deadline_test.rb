@@ -246,8 +246,9 @@ class Quest::DeadlineTest < ActiveSupport::TestCase
   # reachable and the last is the newest thing the player could stand in.
   def open_rooms(count)
     previous = @story.locations.realized.order(:id).last
+    first = @story.locations.count
     Array.new(count) do |index|
-      room = create(:location, :realized, story: @story, name: "opened room #{@story.locations.count + index}")
+      room = create(:location, :realized, story: @story, name: "opened room #{first + index}")
       connect!(previous, room)
       previous = room
       room

@@ -808,6 +808,7 @@ class Story::DoctorTest < ActiveSupport::TestCase
 
   test "two rooms in a world with no checked-in file are nobody's to fold" do
     story = healthy_story
+    without_the_location_name_index
     create(:location, story: story, name: story.locations.first.name.downcase, detail_level: "stub", teaser: "x")
 
     assert_equal :manual, finding(story, :duplicate_locations).remedy
@@ -821,6 +822,7 @@ class Story::DoctorTest < ActiveSupport::TestCase
   # `WorldSeed.natural_key` reading the gate refuses on.
   test "two rooms of one place answering to one name are already a finding" do
     story = healthy_story
+    without_the_location_name_index
     place = create(:location, story: story, name: "The Custom House", width: 14, depth: 10)
     [ 0, 7 ].each do |x|
       create(:location, story: story, name: "the counting room", parent_location: place,
@@ -1851,7 +1853,7 @@ class Story::DoctorTest < ActiveSupport::TestCase
     place, taproom, = a_place_with_two_rooms(story)
     loft = create(:location, story: story, parent_location: place, name: "The Loft",
                              x: 0, y: 0, z: 1, width: 12, depth: 8)
-    road = create(:location, story: story, name: "The Harbour Road")
+    road = create(:location, story: story, name: "The Quay")
     door(taproom, road)
     door(road, loft)
 
