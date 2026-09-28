@@ -56,7 +56,7 @@ module Eval::Prompt::RequestVersion
     reading = nil
     Eval::Classifier::Stage.on_file([ corpus.position(kase.position) ],
                                     label: Eval::Prompt::Corpus::STAGE_LABEL, retitle: true,
-                                    roots: Eval::Prompt::WORLD_ROOTS) do |stages, file|
+                                    roots: Eval::Prompt::WORLD_ROOTS, pinned: true) do |stages, file|
       reading = bench.send(:play_case, kase, stages.fetch(kase.position), Eval::Classifier::Arm.parse("offline"), 0,
                            file, answering: answering)
     end

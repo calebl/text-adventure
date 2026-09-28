@@ -250,7 +250,7 @@ class Eval::Prompt::Bench
   def read(kase, arm, rep)
     Eval::Classifier::Stage.on_file([ corpus.position(kase.position) ],
                                     label: Eval::Prompt::Corpus::STAGE_LABEL, retitle: true,
-                                    roots: Eval::Prompt::WORLD_ROOTS) do |stages, file|
+                                    roots: Eval::Prompt::WORLD_ROOTS, pinned: true) do |stages, file|
       play_case(kase, stages.fetch(kase.position), arm, rep, file)
     end
   end
