@@ -25,6 +25,15 @@ class Playthrough::NpcActionTest < ActiveSupport::TestCase
     assert_equal [ "brass key" ], second.items_held_by(@maren).pluck(:name)
   end
 
+  test "a game with no protagonist offers no gift and still publishes the rest of the set" do
+    game = create(:playthrough, story: @story, character: nil, current_location: @room)
+    choices = Playthrough::NpcAction.new(game, @maren).choices
+
+    assert_not(choices.keys.any? { |key| key.start_with?("give:") })
+    assert_includes choices.keys, "follow"
+    assert_includes choices["follow"], "the player"
+  end
+
   test "foreign items unknown choices and absent or dead speakers cannot act" do
     outsider = create(:character, story: @story, location: @yard)
     other = create(:item, character: outsider)

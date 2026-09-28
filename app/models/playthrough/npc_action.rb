@@ -28,8 +28,10 @@ class Playthrough::NpcAction
     if offered_item && playthrough.carried.exists?(id: offered_item.id)
       available["accept:#{offered_item.id}"] = "Accept the offered #{offered_item.name} from #{playthrough.character.fullname}; it becomes yours."
     end
-    playthrough.items_held_by(character).each do |item|
-      available["give:#{item.id}"] = "Give #{item.name} to #{playthrough.character.fullname}." if playthrough.character
+    if (protagonist = playthrough.character)
+      playthrough.items_held_by(character).each do |item|
+        available["give:#{item.id}"] = "Give #{item.name} to #{protagonist.fullname}."
+      end
     end
     if playthrough.foes_in(playthrough.current_location).include?(character)
       available["ceasefire"] = "Stop fighting #{playthrough.character&.fullname || 'the player'}; another attack can break the truce."
