@@ -14,10 +14,15 @@
 # tokens on a call that has the whole moment in front of it; a later pass over
 # old scenes would be a fresh round trip with less context than this one has.
 class Scene::Schema < RubyLLM::Schema
+  # The caps the model is given, and the caps `Scene::Generator` holds an
+  # answer to: a field that arrives AT one was cut off rather than finished
+  # (`SanitizesGeneratedText`). One table, so the two cannot disagree.
+  MAX_LENGTHS = { description: 900, summary: 200 }.freeze
+
   string :description,
          description: "What the player experiences as they arrive here, right now. Second person, present tense. One paragraph, 3 to 5 sentences.",
-         max_length: 900
+         max_length: MAX_LENGTHS[:description]
   string :summary,
          description: "What happened in this moment, for the game engine rather than the player. Third person. One sentence.",
-         max_length: 200
+         max_length: MAX_LENGTHS[:summary]
 end

@@ -150,6 +150,41 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
     assert_equal "They arrive.", scene.summary
   end
 
+  # A PROVIDER THAT STOPS AT THE CAP LEAVES A FRAGMENT, and a fragment is not a
+  # shorter arrival. The description stops mid-clause at exactly the 900 the
+  # schema asked for, the way a real one did; the call fails inside the ask so
+  # the rotation can ask again, and nothing is kept.
+  test "an arrival cut off at its cap is refused rather than kept" do
+    location = realized_location
+    cut = ("The lamp is lit and the ledger lies open on the desk. " * 20)
+            .first(Scene::Schema::MAX_LENGTHS[:description] - 16) + " as though he is"
+    agent = FakeAgent.new("description" => cut, "summary" => "They arrive.")
+
+    assert_no_difference "Scene.count" do
+      assert_raises(SanitizesGeneratedText::TruncatedTextError) { generate(location, agent: agent) }
+    end
+  end
+
+  test "a summary cut off at its cap is refused too" do
+    location = realized_location
+    agent = FakeAgent.new(
+      "description" => ARRIVAL["description"],
+      "summary" => "x" * Scene::Schema::MAX_LENGTHS[:summary]
+    )
+
+    assert_raises(SanitizesGeneratedText::TruncatedTextError) { generate(location, agent: agent) }
+  end
+
+  test "an arrival one character short of its cap is kept" do
+    location = realized_location
+    kept = "#{"a" * (Scene::Schema::MAX_LENGTHS[:description] - 2)}."
+    agent = FakeAgent.new("description" => kept, "summary" => "They arrive.")
+
+    scene, = generate(location, agent: agent)
+
+    assert_equal kept, scene.description
+  end
+
   # --- first visit versus return ------------------------------------------
 
   # THIS GAME'S CHAIN: a scene in `room` `ago` before the moment it leaves
