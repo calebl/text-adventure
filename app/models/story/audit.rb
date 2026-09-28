@@ -420,10 +420,39 @@ class Story::Audit
   # without one -- every world generated before it, a seed file that declares
   # no `is_protagonist`, and a generation that failed after the story was
   # saved and before the protagonist was written.
+  #
+  # AND A RUN DATABASE OLDER THAN WHAT A CHECK READS. `rake eval:score` re-reads
+  # run sets swept months ago against today's code, and a set from before the
+  # item layers has no `items.playthrough_id` to tell the world's rows from a
+  # playthrough's, and one from before overreaches were recorded has no table
+  # for them. Those checks are UNAVAILABLE there -- never run, never zero --
+  # so the frozen baselines stay scoreable and an absent table is not read as
+  # a clean one. `SCHEMA_REQUIRED` is the whole list.
   def available_checks
-    all = CONTRADICTIONS + DEFECTS + DRIFTS + LIMITS + PACING
+    @available_checks ||= begin
+      all = CONTRADICTIONS + DEFECTS + DRIFTS + LIMITS + PACING
+      all -= %i[third_person_protagonist] unless story.protagonist
 
-    story.protagonist ? all : all - %i[third_person_protagonist]
+      all - SCHEMA_REQUIRED.reject { |_code, (table, columns)| self.class.schema_has?(table, *columns) }.keys
+    end
+  end
+
+  # WHAT EACH CHECK READS THAT AN OLD RUN DATABASE MAY NOT HAVE, by the code it
+  # reports under. See `#available_checks`.
+  SCHEMA_REQUIRED = {
+    item_not_held: [ :items, %i[playthrough_id disposition] ],
+    named_more_than_one: [ :playthrough_overreaches, [] ]
+  }.freeze
+
+  # Whether the database this process is connected to has the table, and every
+  # column named on it. Asked of the connection and not of a model, because a
+  # model caches its columns from whichever database it met first.
+  def self.schema_has?(table, *columns)
+    connection = ActiveRecord::Base.connection
+    return false unless connection.data_source_exists?(table.to_s)
+
+    names = connection.columns(table.to_s).map(&:name)
+    columns.all? { |column| names.include?(column.to_s) }
   end
 
   # HOW MANY PASSAGES THIS CHECK COULD HAVE FIRED ON -- its denominator, and it
@@ -540,7 +569,7 @@ class Story::Audit
 
     scenes.each do |scene|
       check_transition(scene)
-      check_items(scene)
+      check_items(scene) if available_checks.include?(:item_not_held)
       check_truncation(scene)
       check_third_person(scene)
       check_departure(scene)
@@ -553,7 +582,7 @@ class Story::Audit
 
     check_stillness
     check_drifts
-    check_overreaches
+    check_overreaches if available_checks.include?(:named_more_than_one)
     @flags
   end
 
@@ -611,7 +640,7 @@ class Story::Audit
   # bound is deliberately generous: a shuffle after the fact rewrites the graph
   # this check reads, whether or not it happened during the move itself.
   def graph_moved_since?(previous, scene)
-    story.world_events.of_the_world.happened
+    world_events_that_happened
          .where(occurred_at: previous.story_timestamp..)
          .joins(:locations)
          .where(locations: { id: [ previous.location_id, scene.location_id ] })
@@ -1401,7 +1430,22 @@ class Story::Audit
   # does not happen until the engine fires it, so reading the recorded hour here
   # would let a bomb that is still ticking excuse a stretch of quiet turns.
   def world_event_times
-    @world_event_times ||= story.world_events.of_the_world.happened.filter_map(&:happened_at)
+    @world_event_times ||= if self.class.schema_has?(:world_events, :playthrough_id, :scheduled_for, :fired_at)
+                             world_events_that_happened.filter_map(&:happened_at)
+    else
+                             story.world_events.pluck(:occurred_at).compact
+    end
+  end
+
+  # THE WORLD'S OWN EVENTS THAT HAVE HAPPENED, on a database from before either
+  # half of that sentence was a column. Until events were scheduled and a
+  # playthrough could own one, every row was the world's and had happened when
+  # it was written -- so on such a run database the whole table is the answer,
+  # and the checks that read it stay answerable rather than raising.
+  def world_events_that_happened
+    return story.world_events unless self.class.schema_has?(:world_events, :playthrough_id, :scheduled_for, :fired_at)
+
+    story.world_events.of_the_world.happened
   end
 
   # Whoever the game believed was standing here at this moment: the cast of the
