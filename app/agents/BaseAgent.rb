@@ -166,9 +166,18 @@ class BaseAgent
   #
   # `minimax/minimax-m3` is second.
   #
-  # Every model here MUST support structured outputs. Check before adding one:
-  #   curl -s https://openrouter.ai/api/v1/models \
-  #     | jq '.data[] | select(.id == "MODEL") | .supported_parameters'
+  # Every model here MUST support structured outputs. Check before adding one,
+  # endpoint by endpoint:
+  #   curl -s https://openrouter.ai/api/v1/models/MODEL/endpoints \
+  #     | jq '.data.endpoints[] | {provider_name, tag,
+  #            response_format: (.supported_parameters | index("response_format") != null),
+  #            structured_outputs: (.supported_parameters | index("structured_outputs") != null)}'
+  #
+  # Only a per-endpoint answer means anything. The `supported_parameters` on
+  # `/api/v1/models` is the union across every endpoint serving the model, so
+  # it reports `structured_outputs` when only some of those endpoints honor it;
+  # OpenRouter determines support per endpoint, not per model. An endpoint
+  # that lacks either parameter can serve the request and ignore the schema.
   #
   # This is not optional diligence. A model without it does not fail -- it
   # returns prose, which is far worse. OpenRouter's `:free` endpoints are the
