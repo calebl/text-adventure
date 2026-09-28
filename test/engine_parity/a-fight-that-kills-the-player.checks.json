@@ -1,0 +1,12 @@
+{
+  "script": "a-fight-that-kills-the-player",
+  "doctor": {
+    "headline": "healthy",
+    "findings": []
+  },
+  "audit": {
+    "headline": "1 scenes, nothing to report",
+    "flags": [],
+    "unjudged": []
+  }
+}

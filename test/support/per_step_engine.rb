@@ -1,11 +1,14 @@
-# A SECOND ENGINE FOR THE SHARED-DATABASE CONTRACT, made of the first one.
+# A COMMAND ENGINE FOR THE SHARED-DATABASE CONTRACT, made of the Rust engine's
+# extension.
 #
 # docs/engine-parity.md has a command engine that is handed one typed step at a
 # time, `--database <file> --player <name> <script>` with `ENGINE_STEP=<n>`, on
 # a database the runner prepared. This is that engine, answering each step by
-# playing it with `EngineSweep::Walk#play_step` on the file it was handed -- so
-# every script passing through it proves the runner's half of the contract
-# (the preparation, the re-seeds, the notices) matches the whole-script walk.
+# playing it on the Rust engine with `EngineSweep::Walk#play_step` on the file
+# it was handed -- so every script passing through it proves the runner's half
+# of the contract (the preparation, the re-seeds, the notices) matches the
+# walk the goldens were written from. The engine's own parity binary is the
+# other engine of this shape; its repository plays it through the runner.
 #
 # Two ways in: `bin/rails runner test/support/per_step_engine.rb <arguments>`
 # as a real subprocess, and `PerStepEngine.launch` in-process, with
@@ -33,8 +36,7 @@ module PerStepEngine
 
     dump = EngineSweep::Parity.on_database(database) do
       EngineSweep.without_a_model do
-        # The Ruby engine, the parity reference: this is its per-step engine.
-        Playthrough::RustEngine.using(:ruby) { EngineSweep::Walk.new(script).play_step(step).to_h }
+        Playthrough::RustEngine.using(:rust) { EngineSweep::Walk.new(script, engine: :rust).play_step(step).to_h }
       end
     end
     # The notices are the runner's to render, not an engine's.

@@ -65,11 +65,12 @@ declare_environment.call
 # `test/models/chat_test.rb`).
 RubyLLM.config.openrouter_api_key = nil
 
-# THE SUITE PLAYS THE RUBY TURN LOOP, the parity reference, by default: almost
-# every test runs inside a transaction the Rust engine, on a connection of its
-# own, could neither see into nor write past. The Rust engine's own tests ask
-# for it (`Playthrough::RustEngine.using(:rust)`), and `bin/rails
-# engine:rust_gates` holds it to this loop. See `Playthrough::RustEngine`.
+# THE SUITE PLAYS THE RUBY TURN LOOP by default: almost every test runs inside
+# a transaction the Rust engine, on a connection of its own, could neither see
+# into nor write past. The engine sweep and the Rust engine's own tests ask for
+# Rust (`Playthrough::RustEngine.using(:rust)`), on scratch copies of the
+# database. No gate holds the engine to this loop: the engine is held to its
+# own goldens. See `Playthrough::RustEngine` and docs/engine-parity.md.
 Playthrough::RustEngine.reference_by_default!
 
 require "rails/test_help"
@@ -90,6 +91,12 @@ module ActiveSupport
 
     # Include FactoryBot methods
     include FactoryBot::Syntax::Methods
+
+    # A SCRATCH COPY IS NEVER INSIDE A TEST'S TRANSACTION. The sweep walks the
+    # Rust engine on a copy of this database (`EngineSweep::Parity.on_database`),
+    # committing every step so the engine, on a connection of its own, reads
+    # it; the copy is deleted when the walk is done.
+    skip_transactional_tests_for_database EngineSweep::Parity::SCRATCH.to_sym
 
     # RubyLLM's model registry is a process-wide memoized snapshot:
     # `RubyLLM::Models.instance` is built once, out of the

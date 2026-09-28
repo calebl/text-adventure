@@ -79,9 +79,9 @@ module Playthrough::RustEngine
   # reference, or the test suite made it the default.
   def self.engine = Thread.current[:turn_engine] || @default || :rust
 
-  # Plays the block on one engine, for this thread: the parity gates play a
-  # Rust walk and its Ruby twin in one process, and the switch's own tests play
-  # Rust inside a suite whose default is the reference.
+  # Plays the block on one engine, for this thread: the sweep, the gates and
+  # the switch's own tests play Rust inside a suite whose default is the Ruby
+  # loop, and a test about the Ruby walk itself asks for that loop by name.
   def self.using(engine)
     raise ArgumentError, "an engine is one of #{ENGINES.inspect}" unless ENGINES.include?(engine)
 
@@ -97,7 +97,7 @@ module Playthrough::RustEngine
   # reference unless a test asks for Rust. Refused outside the test
   # environment: there is no way to turn the reference on for a player.
   def self.reference_by_default!
-    raise EngineError.new(:reference, "the Ruby turn loop is the parity reference, not a way to play") unless Rails.env.test?
+    raise EngineError.new(:reference, "the Ruby turn loop is the test suite's, not a way to play") unless Rails.env.test?
 
     @default = :ruby
   end

@@ -1,0 +1,80 @@
+{
+  "script": "two-readers-of-one-typed-line",
+  "doctor": {
+    "headline": "playable, 1 warning",
+    "findings": [
+      [
+        "no_arc",
+        "warning",
+        "this story has no arc, so no playthrough of it can ever reach an ending: there is no quest for a beat to belong to and no outcome to select. A world file's `quests:` block is where one is written",
+        "manual"
+      ]
+    ]
+  },
+  "audit": {
+    "headline": "7 scenes: 1 contradiction, 0 defects, 0 drifts, 1 still turn",
+    "flags": [
+      [
+        "item_not_held",
+        1000000006,
+        "the player is told they have the red coin, which the records say is lying in Market (the world's own)",
+        {
+          "item": "red coin",
+          "named as": "coin",
+          "records say": "lying in Market (the world's own)",
+          "claim": "You lift the coin off the flagstones again.",
+          "where": "Market"
+        }
+      ],
+      [
+        "still_run",
+        1000000005,
+        "4 turns running, the records show nothing changed, and Maren is in the room",
+        {
+          "run": "4 turns with no move, no conversation and no world event",
+          "present": "Maren",
+          "typed": "leave the coin on the stones",
+          "where": "Market",
+          "at": "2026-09-08T12:20:00.000Z"
+        }
+      ]
+    ],
+    "unjudged": [
+      [
+        "third_person_protagonist",
+        1000000001,
+        "this story has no protagonist on record, so there is no name to check the narration against"
+      ],
+      [
+        "third_person_protagonist",
+        1000000002,
+        "this story has no protagonist on record, so there is no name to check the narration against"
+      ],
+      [
+        "third_person_protagonist",
+        1000000003,
+        "this story has no protagonist on record, so there is no name to check the narration against"
+      ],
+      [
+        "third_person_protagonist",
+        1000000004,
+        "this story has no protagonist on record, so there is no name to check the narration against"
+      ],
+      [
+        "third_person_protagonist",
+        1000000005,
+        "this story has no protagonist on record, so there is no name to check the narration against"
+      ],
+      [
+        "third_person_protagonist",
+        1000000006,
+        "this story has no protagonist on record, so there is no name to check the narration against"
+      ],
+      [
+        "third_person_protagonist",
+        1000000007,
+        "this story has no protagonist on record, so there is no name to check the narration against"
+      ]
+    ]
+  }
+}

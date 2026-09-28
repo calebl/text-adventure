@@ -6,8 +6,8 @@ require "test_helper"
 # scripts say it does.
 #
 # IT COSTS NOTHING TO RUN HERE, which is the whole reason it can live in the
-# suite: no model, no network, no key, and each script loads its own copy of a
-# seeded world inside a transaction that is rolled back. See `EngineSweep`.
+# suite: no model, no network, no key, and each script walks the Rust engine
+# on a scratch copy of the database, deleted afterwards. See `EngineSweep`.
 #
 # THE FAILURE MESSAGE IS THE FEATURE. Whoever reads it has a CI log and nothing
 # else, so it names the script, the step, what was typed and both sides of the
@@ -105,8 +105,11 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_instance_of BaseAgent, agent
   end
 
+  # ON THE RUST ENGINE the providers are asked from inside the extension, and
+  # a browser step answers them from its replay: a classifier call the step
+  # never declared is the replay's to refuse, and it refuses it by name.
   test "a browser failure fixture must reach the named renderer and cannot allow classifier calls" do
-    error = assert_raises(EngineSweep::ModelCalled) do
+    error = assert_raises(Playthrough::RustEngine::ReplayMismatch) do
       walk(<<~SCRIPT)
         story: A Turn at the Gate
         steps:
@@ -154,6 +157,9 @@ class EngineSweepTest < ActiveSupport::TestCase
                       "characters" => 9, "items" => 7, "races" => 13, "scenes" => 3,
                       "world_events" => 2, "world_mechanics" => 1 }.freeze
 
+  # ON THE RUBY WALK, which pins its counters inside this test's transaction.
+  # A walk on the Rust engine starts from a copy of the committed file, which
+  # a transactional test cannot move; both walks pin with the same `#pin_ids!`.
   test "a walk rolls the same dice whatever ids the database has already handed out" do
     connection = ActiveRecord::Base.connection
     SEEDED_COUNTERS.each do |table, seq|
@@ -162,7 +168,7 @@ class EngineSweepTest < ActiveSupport::TestCase
     end
     fight = EngineSweep.scripts.select { |script| script.name == "a-fight-the-player-wins" }
 
-    result = EngineSweep.run(fight).sole
+    result = EngineSweep.run(fight, engine: :ruby).sole
 
     assert_predicate result, :passed?, result.report
     assert_equal 13, connection.select_value("SELECT seq FROM sqlite_sequence WHERE name = 'locations'"),

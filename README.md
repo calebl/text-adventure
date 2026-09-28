@@ -419,11 +419,12 @@ rake game:sweep                             # every stored script
 rake game:sweep SCRIPT=the-salt-assizes-grammar   # one of them
 ```
 
-The same offline mode, walked by **stored scripts instead of by a person**, with
-expectations asserted against the records after every line. It is what the
-mechanics console is for once you have stopped watching it: free, deterministic,
-offline, and it runs in `bin/rails test` so the engine is regression-tested on
-every build.
+The same offline game, walked by **stored scripts instead of by a person**, on
+the Rust engine every player plays, with expectations asserted against the
+records after every line. It is what the mechanics console is for once you have
+stopped watching it: free, deterministic, offline, and it runs in `bin/rails
+test` so the engine is regression-tested on every build. It needs the extension
+built (`bin/rails engine:build`), and says so rather than walking anything else.
 
 It prints one line per script — `ok` or a failure, the script's name, how many
 steps it walked and the world it left intact — and then a single `PASSED` or
@@ -500,8 +501,9 @@ each with what it is for.
 Three things make it repeatable. **No model**: `BaseAgent.new` is replaced for
 the length of the run, so a call from anywhere raises instead of reaching a
 provider. **Its own copy of the world**: the seed file is loaded under a title of
-the sweep's own inside a transaction that is rolled back, so running it against a
-half-played database changes neither it nor the game. **A world that does not
+the sweep's own, on a scratch copy of the database that is deleted when the walk
+is done, so running it against a half-played database changes neither it nor the
+game. **A world that does not
 move underneath it**: `WorldMechanic` runs on `Story#clock`, the clock only
 advances when a Scene is written, and an offline move writes none — so The Lunar
 Cartographer's nightly shuffle never comes due, without anything being switched
@@ -550,32 +552,52 @@ use the credentials the app uses: `OPENROUTER_API_KEY` as its Direct route,
 rotation (`TA_LOCAL_MODELS`) is not the engine's, so it never reaches a turn.
 `app/models/playthrough/rust_engine.rb` says all of this at the source.
 
-**The Ruby turn loop is the parity reference.** `Playthrough::Turn` is still in
-the code because the gates below judge the Rust engine against it, and the
-engine sweep and the test suite exercise it; the suite plays it by default
-because its tests run inside a transaction the engine, on its own connection,
-could not see into. No setting turns it on for a player.
+**The engine owns behaviour.** The goldens a Rust walk is held to
+(`test/engine_parity/<script>.json`) are the engine's own: its parity binary
+writes them, and a change to a rule rewrites them there as a reviewed diff. This
+repository vendors them, with the sweep scripts and the vector portions the
+engine owns, byte for byte at the pinned commit, and moves them only with the
+pin. They were written by the Ruby turn loop until the engine took them over;
+the commit tagged `ruby-reference-final` is where every turn moved to Rust, and
+every golden it holds was unchanged when the engine took them over. `Playthrough::Turn` is still in the
+code: the test suite plays it by default, because its tests run inside a
+transaction the engine, on its own connection, could not see into, and the
+benches and the mechanics console play it. No setting turns it on for a player,
+and no gate judges the engine against it.
 
-**The gates**, all offline and all run by CI's `rust_engine` job:
+**The judges stay Ruby.** The sweep's expectations and invariants, the doctor
+and the audit read the rows the engine wrote; none of them asks the engine what
+it thinks it did. What the doctor and the audit say after each script is kept
+beside its golden (`<script>.checks.json`), first written from the Ruby loop
+where the two engines were judged alike, and changed only as a reviewed diff
+(`bin/rails engine:checks`).
+
+**The gates**, all offline and all run by CI (the sweep by the `test` job, the
+rest by the `rust_engine` job):
 
 ```bash
 unset OPENROUTER_API_KEY TYPESAFE_API_KEY
 RAILS_ENV=test bin/rails db:test:prepare
+bin/rails game:sweep                         # every script on Rust, its expectations and the invariants
+RAILS_ENV=test bin/rails engine:vendored     # the vendored files are the pinned commit's
 RAILS_ENV=test bin/rails engine:rust_gates   # SCRIPT=<name> for one
 bin/rails engine:kept_requests
 ```
 
-`engine:rust_gates` plays every sweep script through the extension, one step
-at a time on a scratch copy of the test database, and a twin of it on the Ruby
-reference beside it. It fails when a step's dump differs from its golden
-(`test/engine_parity/`), when the engine could not play a step, when an
-`EngineSweep::Invariants` check breaks on the database Rust wrote, or when
-`Story::Doctor` or `Story::Audit` says anything different about the two
-databases. `engine:kept_requests` runs the engine's own vector tests, at the
-pinned commit, against this checkout's `test/engine_vectors/`: every pure rule
-and request builder, and every kept-set request sent through the engine's live
-client with nothing sent anywhere. Moving the pin is a change of its own, made
-when these pass on the new commit.
+`engine:vendored` fails when a golden, a sweep script (less its comments and
+`why:` notes) or an engine-owned vector portion here is not the pinned engine
+commit's, byte for byte, reading the source cargo fetched for the build.
+`engine:rust_gates` plays every sweep script through the extension, one step at
+a time on a scratch copy of the test database. It fails when a step's dump, as
+Ruby reads the rows, differs from its golden, when the engine could not play a
+step, when an `EngineSweep::Invariants` check breaks on the database Rust wrote,
+or when `Story::Doctor` or `Story::Audit` says anything its checks file does not.
+`engine:kept_requests` runs the engine's own vector tests, at the pinned commit,
+against this checkout's `test/engine_vectors/`: every pure rule and request
+builder, and every kept-set request sent through the engine's live client with
+nothing sent anywhere. Moving the pin is a change of its own, made when these
+pass on the new commit; docs/engine-parity.md says how a behaviour change moves
+through both repositories.
 
 ## How a turn works
 

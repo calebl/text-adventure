@@ -16,10 +16,13 @@ class EngineSweepPhysicalActionsTest < ActiveSupport::TestCase
     assert result.passed?, result.report
   end
 
+  # A DEFECT PLANTED IN THE RUBY REFERENCE LOOP, and the walk on that loop
+  # catches it. The sweep walks the Rust engine, where these rules are Rust,
+  # so the three below walk the Ruby loop by name (`engine: :ruby`).
   test "the consumption walk fails if the physical effect leaves the item available" do
     original = Playthrough::PhysicalAction.instance_method(:spend!)
     Playthrough::PhysicalAction.define_method(:spend!) { |*_args| nil }
-    result = EngineSweep.run([ prefix(CONSUMPTION, 4) ]).sole
+    result = EngineSweep.run([ prefix(CONSUMPTION, 4) ], engine: :ruby).sole
 
     assert_not result.passed?
     assert result.failures.any? { |failure| failure.unmet.key == "carrying" }, result.report
@@ -41,7 +44,7 @@ class EngineSweepPhysicalActionsTest < ActiveSupport::TestCase
       end
       result
     end
-    result = EngineSweep.run([ prefix(CONSUMPTION, 6) ]).sole
+    result = EngineSweep.run([ prefix(CONSUMPTION, 6) ], engine: :ruby).sole
 
     assert_not result.passed?
     assert result.failures.any? { |failure| failure.unmet.key == "here" }, result.report
@@ -59,7 +62,7 @@ class EngineSweepPhysicalActionsTest < ActiveSupport::TestCase
     end
     # The barrier refuses the move before arrival. The walk's exact provider
     # sequence must fail rather than silently skipping its declared arrival.
-    error = assert_raises(EngineSweep::ModelCalled) { EngineSweep.run([ prefix(PASSAGES, 8) ]) }
+    error = assert_raises(EngineSweep::ModelCalled) { EngineSweep.run([ prefix(PASSAGES, 8) ], engine: :ruby) }
 
     assert_includes error.message, 'expected ["arrival"] rendering calls, got []'
   ensure

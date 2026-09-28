@@ -156,7 +156,8 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
 - **Restyling is `ta-api-iface`, a stage of its own** — do not do it in passing.
 - **The rake tasks build worlds; front ends play them and never build one.**
   There is one turn loop, the Rust engine's (`Playthrough::RustEngine`;
-  `Playthrough::Turn` is the Ruby reference it is held to), and one way into it, the
+  `Playthrough::Turn` is the Ruby loop the test suite still plays, and the
+  engine is held to its own goldens, docs/engine-parity.md), and one way into it, the
   driver (`Playthrough::Session`): a front end hands it a
   line and a block and renders what it answers. A front end owns its layout,
   its input and its transport and nothing else — no dispatch, no prompt, no

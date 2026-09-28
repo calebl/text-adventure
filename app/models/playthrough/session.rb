@@ -179,9 +179,8 @@ class Playthrough::Session
   # THE RUST ENGINE PLAYS IT, the whole turn, through its extension; see
   # `Playthrough::RustEngine`. A line with no request token is given one, since
   # the engine keeps every line in the submission queue. The Ruby loop plays
-  # only where `Playthrough::RustEngine.engine` says the parity reference is
-  # wanted -- the gates, the engine sweep, the test suite -- and never for a
-  # player.
+  # only where `Playthrough::RustEngine.engine` says it is wanted -- the test
+  # suite's default -- and never for a player.
   def play(line, request_token: nil, on_start: nil, on_finish: nil, on_error: nil, &block)
     failure = lambda do |error|
       told = self.class.ending_for(error, playthrough_id: playthrough.id)

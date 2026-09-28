@@ -1,9 +1,34 @@
 # Engine parity
 
-`test/engine_parity/` holds what the Ruby engine does, step by step, when it
-plays every sweep script in `lib/engine_sweep/scripts/`. A second engine that
-plays the same scripts over the same SQLite schema is at parity when it
-writes the same dumps.
+`test/engine_parity/` holds what the Rust engine does, step by step, when it
+plays every sweep script in `lib/engine_sweep/scripts/`: one golden file per
+script, and beside it what the doctor and the audit say about the database
+the walk left (`<script>.checks.json`). An engine that plays the same scripts
+over the same SQLite schema is at parity when it writes the same dumps.
+
+## Who owns them
+
+**The goldens are the engine's.** Its repository,
+[renderedstep/engine](https://github.com/renderedstep/engine), writes them
+with its parity binary and keeps them in `parity/goldens/`; this repository
+vendors them at the commit the extension is pinned to, byte for byte, and
+`bin/rails engine:vendored` fails when a copy here is not that commit's. The
+Ruby turn loop wrote them until the engine took them over; the commit tagged
+`ruby-reference-final` is where every turn moved to Rust, and every golden it
+holds was unchanged when the engine took them over. No gate plays the Ruby
+loop now.
+
+**The checks files are this repository's.** The doctor and the audit are
+Ruby, and they judge the rows the engine wrote; nothing in them asks the
+engine what it thinks it did. Each file was first written from the Ruby loop,
+where the Rust walk and the Ruby walk were judged alike on every script, and
+changes only as a reviewed diff: `bin/rails engine:checks` rewrites them from
+the Rust walk.
+
+**Two readers of one set of rows.** A golden is the engine's own reading of
+the rows it wrote (its `parity` module). `bin/rails engine:rust_gates` reads
+the same rows with Ruby (`EngineSweep::Dump` over `Playthrough::Mechanics#state`)
+and requires the two to agree, so a golden is never only the engine's word.
 
 ## The dump
 
@@ -30,8 +55,9 @@ written with `JSON.pretty_generate` and a trailing newline.
 ## The engine contract
 
 An engine answers `play(script)` with one dump per script step, in order.
-`EngineSweep::Parity::Ruby` is the Ruby engine: `EngineSweep::Walk` with a
-listener, playing exactly as `rake game:sweep` does.
+`EngineSweep::Parity::InProcess` is the engine this app plays (below);
+`EngineSweep::Parity::Ruby`, `EngineSweep::Walk` with a listener, is the Ruby
+reference loop, kept for asking by hand where the two loops part.
 
 Any other engine is a command. It is run with the script's path as its last
 argument and prints one dump per step, one JSON object per line, on stdout,
@@ -74,35 +100,69 @@ whole-script contract above is unchanged and stays the default.
   order, when a reply is left over, or on a `prompt_includes` or
   `prompt_excludes` miss, as `EngineSweep::BrowserTurn` raises.
 
-`test/support/per_step_engine.rb` is an engine of this shape made of the Ruby
-engine, and `test/lib/engine_parity_test.rb` plays every script through it.
+`test/support/per_step_engine.rb` is an engine of this shape made of the Rust
+engine's extension, and `test/lib/engine_parity_test.rb` plays every script
+through it. The engine's own parity binary is the other: its repository plays
+it through this runner (`parity/runner.sh`).
 
 ## In process
 
 `EngineSweep::Parity::InProcess` runs the shared-database contract without a
 subprocess: this side prepares the file and plays the re-seeds as above, and
 each typed step is `EngineSweep::Walk#play_step` on the file, played by the
-engine it was built with. `:ruby` is the Ruby reference; `:rust` is the Rust
-engine through its extension (`Playthrough::RustEngine`), which plays a typed
-step with `EngineSweep::RustMechanics` and a browser step through
-`Playthrough::Session`, answering its providers from the
-step's `replies`. A step the engine could not play fails. The dump is built
-by Ruby from the rows the engine wrote. `bin/rails engine:rust_gates`
-(`EngineSweep::RustGates`) plays every script both ways and holds the Rust
-walk to the goldens, the invariants, and the doctor and audit of the Ruby walk.
+Rust engine through its extension (`Playthrough::RustEngine`), which plays a
+typed step with `EngineSweep::RustMechanics` and a browser step through
+`Playthrough::Session`, answering its providers from the step's `replies`. A
+step the engine could not play fails. The dump is built by Ruby from the rows
+the engine wrote.
+
+It is how the sweep walks: `rake game:sweep` (`EngineSweep.run`) checks every
+step's expectation as it is played and the invariants over the file after the
+walk. `bin/rails engine:rust_gates` (`EngineSweep::RustGates`) plays every
+script the same way and holds it to its golden, the invariants, and its checks
+file.
 
 ## Commands
 
 ```bash
-bin/rails engine:parity                         # rewrite the goldens from the Ruby engine
+bin/rails engine:parity                         # write the goldens from the Rust walk here
+GOLDENS=<engine>/parity/goldens bin/rails engine:parity   # ... into a checkout of the engine
 ENGINE="<command>" bin/rails engine:parity_diff # play every script through it and diff
 ENGINE_DATABASE=1 ENGINE="<command>" bin/rails engine:parity_diff # one call per step, shared database
+bin/rails engine:checks                         # rewrite the checks files from the Rust walk
+bin/rails engine:vendored                       # the goldens, scripts and engine-owned vectors are the pin's
+GOLDENS=<dir> bin/rails engine:rust_gates       # the gates, against another directory of goldens
 ```
 
 `engine:parity_diff` prints the first divergence per script: the step, the
 line typed, and the first key (in dump order) on which the two disagree, with
-both values. `SCRIPT=<name>` narrows it to one script.
+both values. `SCRIPT=<name>` narrows any of them to one script, and `GOLDENS=`
+points `engine:parity`, `engine:parity_diff` and `engine:rust_gates` at another
+directory of goldens. `engine:parity` also takes `ENGINE=` (and
+`ENGINE_DATABASE=1`) to write what a command engine plays; the engine's
+`parity/runner.sh --write` uses that for the scripts only this runner can play.
+None of them calls a model; run them in a shell with neither provider key set.
 
-`test/lib/engine_parity_test.rb` regenerates every golden and fails on any
-drift. Neither command calls a model; run them in a shell with neither
-provider key set.
+## Changing behaviour
+
+A rule change is made in the engine and carried here by the pin.
+
+1. **In renderedstep/engine**: the rule and its tests; the sweep script, new
+   or changed, stored as the engine stores scripts (less comments and `why:`
+   notes); the goldens rewritten by `parity --write` (and `parity/runner.sh
+   --write` for the scripts it plays through this runner), and any vector
+   portion the engine owns blessed. Every changed key is a reviewed diff. Its
+   CI plays the scripts against its own goldens, and runs this repository's
+   `engine:rust_gates` against them with the extension built from the change,
+   so a golden, an invariant or a doctor or audit finding that moved fails
+   there first.
+2. **Here**, once that merges: the pin (`ext/renderedstep/Cargo.toml` and its
+   `Cargo.lock`), the script with its `why:` notes, the goldens and the
+   engine-owned vector portions copied from the pinned commit, and the checks
+   files rewritten by `bin/rails engine:checks` where a judge now says
+   something else, with the reason in the PR. A migration, seed-loader keys,
+   new doctor or audit findings and an `Update::REGISTRY` step come with it
+   where the change needs them.
+3. **A migration to a table the engine touches goes in lockstep.** The engine
+   refuses a database whose tables changed shape, and there is no fallback, so
+   the pin that knows the new shape lands with the migration, never after it.

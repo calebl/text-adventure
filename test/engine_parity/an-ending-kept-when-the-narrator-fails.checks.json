@@ -1,0 +1,39 @@
+{
+  "script": "an-ending-kept-when-the-narrator-fails",
+  "doctor": {
+    "headline": "healthy",
+    "findings": []
+  },
+  "audit": {
+    "headline": "3 scenes: 2 contradictions, 0 defects, 0 drifts, 0 still turns",
+    "flags": [
+      [
+        "unreachable_transition",
+        1000000002,
+        "the player got from \"Iron Gate Chamber\" to \"the dry cell\" with no edge between them",
+        {
+          "from": "Iron Gate Chamber",
+          "to": "the dry cell",
+          "edge out": "missing",
+          "edge back": "missing",
+          "exits from Iron Gate Chamber": "obsidian maw, tunnel upward",
+          "at": "2026-09-05T20:18:00.000Z"
+        }
+      ],
+      [
+        "unreachable_transition",
+        1000000004,
+        "the player got from \"Iron Gate Chamber\" to \"the dry cell\" with no edge between them",
+        {
+          "from": "Iron Gate Chamber",
+          "to": "the dry cell",
+          "edge out": "missing",
+          "edge back": "missing",
+          "exits from Iron Gate Chamber": "obsidian maw, tunnel upward",
+          "at": "2026-09-05T20:18:00.000Z"
+        }
+      ]
+    ],
+    "unjudged": []
+  }
+}

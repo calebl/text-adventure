@@ -1,0 +1,19 @@
+{
+  "script": "the-salt-assizes-to-an-ending",
+  "doctor": {
+    "headline": "playable, 1 warning",
+    "findings": [
+      [
+        "vitals_for_an_unmet_character",
+        "warning",
+        "playthrough #1000000001 holds a condition for Neb Halloran, who is in The Tide Post -- a room that game has never stood in, so nothing in the app can have written it",
+        "safe"
+      ]
+    ]
+  },
+  "audit": {
+    "headline": "1 scenes, nothing to report",
+    "flags": [],
+    "unjudged": []
+  }
+}

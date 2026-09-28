@@ -1,0 +1,12 @@
+{
+  "script": "the-lunar-cartographer",
+  "doctor": {
+    "headline": "healthy",
+    "findings": []
+  },
+  "audit": {
+    "headline": "1 scenes, nothing to report",
+    "flags": [],
+    "unjudged": []
+  }
+}

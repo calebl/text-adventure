@@ -75,8 +75,26 @@ agrees with every case, it rolls the same dice, lays out the same buildings and
 picks the same anchor as the Ruby engine for the same seed.
 
 They also pin the Ruby side. `test/lib/engine_vectors_test.rb` regenerates
-every file in memory and compares it byte for byte with the committed one, so
-any change to a rule they cover fails the suite until the vectors are updated.
+every file Ruby writes in memory and compares it byte for byte with the
+committed one, so any change to a rule they cover fails the suite until the
+vectors are updated.
+
+## The engine's own portions
+
+A portion whose Ruby code nothing runs any more but the Ruby turn loop, which
+no player plays, belongs to the engine: `EngineVectors::ENGINE_OWNED`, which
+must equal the engine's `vectors/ENGINE_OWNED`. The engine blesses its file
+(recomputes every case's output and the constants from its own code) as a
+reviewed diff in its repository, and this repository vendors it at the pinned
+commit: `bin/rails engine:vendored` fails when the copy here is not that
+commit's, byte for byte. `bin/rails engine:vectors` leaves it alone, and the
+Ruby builder stays, so the Ruby loop can still be asked what it would have
+answered.
+
+`shuffle_connections` is the one so far. A portion joins the list only once
+its Ruby code runs nowhere else: `world_mechanic` stays Ruby's while the debug
+view reads a mechanic's boundaries, and the dice and geometry stay Ruby's for as
+long as world creation, seeding, repair and the doctor run them.
 
 ## Regenerating them
 
@@ -94,7 +112,9 @@ it twice gives byte-identical files.
 **An intended behaviour change updates the vectors in the same PR.** Run the
 task, read the diff (one case per line, so a changed rule shows as the cases it
 changed) and commit it with the change. A diff you did not expect is a
-behaviour change you did not intend.
+behaviour change you did not intend. A rule in a portion the engine owns is
+changed in the engine, blessed there, and copied here with the pin that
+carries it.
 
 ## The format
 

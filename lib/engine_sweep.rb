@@ -14,9 +14,9 @@
 # them is now guarded by a unit test written afterwards. Nothing walks the
 # engine end to end unless somebody sits down and does it.
 #
-# So: stored scripts of typed lines, played through `Playthrough::Mechanics` in
-# its no-model mode, with expectations asserted against THE RECORDS after each
-# line. Where the player stands, what leads out of there and whether it is
+# So: stored scripts of typed lines, played through the Rust engine's no-model
+# turn (the engine every player plays), with expectations asserted against THE
+# RECORDS after each line. Where the player stands, what leads out of there and whether it is
 # written yet, what is lying here, what is being carried, and what was refused.
 # Not a word of prose is read, because no prose is written.
 #
@@ -41,8 +41,9 @@
 #   2. ITS OWN COPY OF THE WORLD. The seed file is loaded under a title of this
 #      module's own (`EngineSweep::Walk::TITLE_SUFFIX`), so a sweep never reads,
 #      writes or deletes the world somebody has been playing -- and the whole
-#      walk runs inside a transaction that is rolled back, so it leaves nothing
-#      at all. Run it against a database mid-game and both are unharmed.
+#      walk plays on a scratch copy of the database, deleted when the walk is
+#      done, so it leaves nothing at all. Run it against a database mid-game
+#      and both are unharmed.
 #   3. THE WORLD DOES NOT MOVE UNDERNEATH IT. `WorldMechanic` runs on the
 #      story's clock, and the clock is `MAX(scenes.story_timestamp)` -- which
 #      only advances when a Scene is written, and no-model mode writes none. So
@@ -115,8 +116,25 @@ module EngineSweep
   # Plays them all and returns one Result each. Ordinary Ruby objects rather
   # than assertions, so the rake task and the test can each say what they need
   # to about the same run.
-  def self.run(scripts = self.scripts)
-    without_a_model { scripts.map { |script| Walk.new(script).play } }
+  #
+  # ON THE RUST ENGINE, which is the engine every turn is played on: each
+  # script on a scratch copy of this database, one committed step at a time
+  # (`EngineSweep::Parity::InProcess#sweep`), with its expectations checked
+  # after every step and the invariants over what the engine wrote. So a
+  # sweep needs the extension built (`bin/rails engine:build`), and says so
+  # rather than walking something else. `engine: :ruby` walks the Ruby
+  # reference loop instead, in one rolled-back transaction (`Walk#play`), for
+  # a test about that walk itself.
+  def self.run(scripts = self.scripts, engine: :rust)
+    return without_a_model { scripts.map { |script| Walk.new(script).play } } if engine == :ruby
+
+    if Playthrough::RustEngine.extension.nil?
+      raise InvalidScript, "the sweep walks the Rust engine, and its extension is not built " \
+                           "(#{Playthrough::RustEngine.load_error}); run bin/rails engine:build"
+    end
+
+    rust = Parity::InProcess.new(:rust)
+    scripts.map { |script| rust.sweep(script) }
   end
 
   # THE GUARD. `BaseAgent.new` is where every model call in this app begins, so

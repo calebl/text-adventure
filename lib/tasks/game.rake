@@ -810,7 +810,7 @@ namespace :game do
     end
 
     puts "THE ENGINE SWEEP: #{scripts.size} script(s), no model, no network, no key."
-    puts "Each one loads its own copy of a seeded world and rolls it back. Nothing here is kept."
+    puts "Each one walks the Rust engine on a scratch copy of this database, deleted afterwards. Nothing here is kept."
     puts
 
     results = EngineSweep.run(scripts)
