@@ -49,9 +49,22 @@
 
   <%# `autofocus` here and nowhere else: this is the one render that is a page
       load, so the attribute means what it says. See the note in the partial for
-      why a broadcast must not carry it. %>
+      why a broadcast must not carry it.
+
+      `@ending` is what the last turn's broadcast said -- refusal, crisis
+      notice, failure copy -- read back off its submission row, so a reload
+      does not quietly drop it (`Playthrough::Session#last_ending`). %>
   <%= render "playthroughs/turn_log", playthrough: @playthrough, command: nil,
-                                      autofocus: true %>
+                                      error: @ending.error, safety_notice: @ending.safety_notice,
+                                      refusal: @ending.refusal, autofocus: true %>
+
+  <%# A SUBMISSION THE SERVER DID NOT TAKE (`TurnsController#create`'s 409 and
+      402), which otherwise changed nothing on the page at all. Outside
+      `#turn_log` so an end-of-turn replace cannot take it away mid-read; the
+      next accepted line hides it. %>
+  <p class="alert" data-play-target="rejected" hidden
+     data-conflict="That line was not taken, and nothing happened. Type it again."
+     data-limit="That line was not taken: this game has used its turns for the month."></p>
 
   <p data-play-target="recovery" hidden>
     <%= link_to "Check saved turn", playthrough_path(@playthrough, anchor: "bottom"),
