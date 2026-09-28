@@ -115,9 +115,10 @@
 #   `last_run_at` and `last_protagonist_visit`, and the file deliberately
 #   carries none of those.
 #
-#   WHAT IT CANNOT PROVE IS A RENAME NO NORMALIZED NAME RECOGNIZES -- "The
-#   Supply Closet" edited to "The Broom Cupboard" is, to any loader, a room
-#   that does not exist yet. Nothing in the file says which room it replaced,
+#   WHAT IT CANNOT PROVE IS A RENAME NO NORMALIZED NAME RECOGNIZES OF A ROOM
+#   WITH NO BOX -- "The Supply Closet" edited to "The Broom Cupboard" is, to
+#   any loader, a room that does not exist yet. (A room of a place is the box
+#   rule above, whoever wrote the two names.) Nothing in the file says which room it replaced,
 #   and merging two rooms on a guess would destroy play rather than duplicate
 #   it. So the loader creates the new row, and WARNS: `#warnings` names every
 #   location and item a re-seed created in a story that has been played, and
