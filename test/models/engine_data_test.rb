@@ -7,8 +7,26 @@ class EngineDataTest < ActiveSupport::TestCase
     end.sort
   end
 
-  test "every declared file exists, and every file on disk is declared" do
-    assert_equal EngineData::SCHEMAS.keys.sort, files_on_disk
+  test "every declared file exists in exactly one home, and every file on disk is declared" do
+    assert_equal EngineData::SCHEMAS.keys.sort, (files_on_disk + EngineData::ENGINE_OWNED).sort
+    assert_empty files_on_disk & EngineData::ENGINE_OWNED, "a file the engine owns has no second copy here"
+  end
+
+  # The engine's data is every engine-owned file this game declares, and
+  # physics, whose tables only the engine reads.
+  test "the files the engine owns are the engine's own data files" do
+    assert_equal (EngineData::ENGINE_OWNED + [ "physics" ]).sort, Playthrough::Requests.data.keys.sort
+  end
+
+  test "an engine-owned file is read from the engine's data, never from the directory here" do
+    Dir.mktmpdir do |root|
+      FileUtils.mkdir_p(File.join(root, "scene"))
+      File.write(File.join(root, "scene/ending.yml"), "instructions: from a stray copy\n")
+      text = "instructions: from the engine\n"
+
+      assert_equal "from the engine", EngineData.send(:load, "scene/ending", root: root, engine: { "scene/ending" => text }).fetch("instructions")
+      assert_match "has no such file", assert_raises(EngineData::Error) { EngineData.send(:load, "scene/ending", engine: {}) }.message
+    end
   end
 
   test "every file parses and matches its schema" do
@@ -37,19 +55,19 @@ class EngineDataTest < ActiveSupport::TestCase
 
   test "a missing file, bad YAML and a wrong shape each raise" do
     Dir.mktmpdir do |root|
-      FileUtils.mkdir_p(File.join(root, "scene"))
-      path = File.join(root, "scene/ending.yml")
+      FileUtils.mkdir_p(File.join(root, "story"))
+      path = File.join(root, "story/generator.yml")
 
-      assert_match "is missing", assert_raises(EngineData::Error) { load_from(root, "scene/ending") }.message
+      assert_match "is missing", assert_raises(EngineData::Error) { load_from(root, "story/generator") }.message
 
-      File.write(path, "instructions: [unclosed\n")
-      assert_match "not valid YAML", assert_raises(EngineData::Error) { load_from(root, "scene/ending") }.message
+      File.write(path, "system_prompt: [unclosed\n")
+      assert_match "not valid YAML", assert_raises(EngineData::Error) { load_from(root, "story/generator") }.message
 
-      File.write(path, "instructions: 3\n")
-      assert_match "expected String", assert_raises(EngineData::Error) { load_from(root, "scene/ending") }.message
+      File.write(path, "system_prompt: 3\n")
+      assert_match "expected String", assert_raises(EngineData::Error) { load_from(root, "story/generator") }.message
 
-      File.write(path, "instructions: x\nextra: y\n")
-      assert_match "keys", assert_raises(EngineData::Error) { load_from(root, "scene/ending") }.message
+      File.write(path, "system_prompt: x\nextra: y\n")
+      assert_match "keys", assert_raises(EngineData::Error) { load_from(root, "story/generator") }.message
     end
   end
 

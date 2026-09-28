@@ -294,7 +294,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   # The floor first, because that is the order the prompt lists the two sets in
-  # and the order `Playthrough::Moment` states them to the narrator. With two
+  # and the order the engine's `moment` states them to the narrator. With two
   # things of one name it resolves the nearer one, stably.
   test "two things of one name resolve to the one lying here" do
     here = lying_here(@playthrough, @here, name: "folded note")

@@ -136,9 +136,10 @@ class Scene::EndingTest < ActiveSupport::TestCase
     assert_equal @outcome.summary, scene.description
   end
 
-  # `Scene::Narrator` keeps a truncated turn -- the player can type again.
-  # Nobody types again after this one, so a paragraph that stops mid-sentence is
-  # worse than the complete sentence the engine is already holding.
+  # The narrator (`Playthrough::Turn#narrate`) keeps a truncated turn -- the
+  # player can type again. Nobody types again after this one, so a paragraph
+  # that stops mid-sentence is worse than the complete sentence the engine is
+  # already holding.
   test "a paragraph cut in half is not kept" do
     scene = narrate(conclude!, "The gate grinds up and the light on the other side is the")
 
@@ -178,8 +179,8 @@ class Scene::EndingTest < ActiveSupport::TestCase
   test "the ending is stated to the pass that asks for it and to nothing else" do
     conclude!
 
-    assert_not_includes Playthrough::Moment.new(@game.reload).narration_context, "The story has ended"
-    assert_includes Playthrough::Moment.new(@game.reload, ending: @outcome).narration_context,
+    assert_not_includes EngineMoment.new(@game.reload).narration_context, "The story has ended"
+    assert_includes EngineMoment.new(@game.reload, ending: @outcome).narration_context,
                     "The story has ended: #{@outcome.summary}"
   end
 

@@ -19,8 +19,9 @@
 # for byte at the pinned commit (`EngineSweep::Vendored`), so this module
 # neither writes nor regenerates them; a builder stays where the Ruby
 # reference loop still runs its rule, so that loop can still be asked what it
-# would have answered. A portion joins the list only once nothing but that
-# loop runs its Ruby code:
+# would have answered, and the request builders have none at all: everything
+# here that needs a request asks the engine (`Playthrough::Requests`). A
+# portion joins the list only once nothing but that loop runs its Ruby code:
 # `world_mechanic` is not on it, because the debug view reads a mechanic's
 # boundaries (`Playthrough::Debug`).
 #
@@ -73,13 +74,7 @@ module EngineVectors
     "cast" => "EngineVectors::Cast",
     "grammar_corpus" => "EngineVectors::GrammarCorpus",
     "classifier_intent" => "EngineVectors::ClassifierIntent",
-    "cascade" => "EngineVectors::Cascade",
     "refusal" => "EngineVectors::Refusal",
-    "classifier_request" => "EngineVectors::ClassifierRequest",
-    "moment" => "EngineVectors::Moment",
-    "volition_request" => "EngineVectors::VolitionRequest",
-    "ledger" => "EngineVectors::Ledger",
-    "memory" => "EngineVectors::Memory",
     "plan" => "EngineVectors::Plan",
     "request_identity" => "EngineVectors::RequestIdentity",
     "kept_requests" => "EngineVectors::KeptRequests"
@@ -89,8 +84,12 @@ module EngineVectors
   # `physics` never had a Ruby builder: falls were written in the engine.
   # `grammar` and `slash_menu` have none any more: the play box's menu and the
   # grammar's slash words and use lines are read off the engine now
-  # (`Playthrough::RustEngine.glance`).
-  ENGINE_OWNED = %w[shuffle_connections physics grammar grammar_corpus slash_menu classifier_intent refusal].freeze
+  # (`Playthrough::RustEngine.glance`). Nor have the request builders
+  # (`cascade`, `classifier_request`, `volition_request`, `moment`, `ledger`,
+  # `memory`, `dialogue_requests`): the benches and the Ruby reference loop ask
+  # the engine for every request (`Playthrough::Requests`).
+  ENGINE_OWNED = %w[shuffle_connections physics grammar grammar_corpus slash_menu classifier_intent refusal
+                    cascade classifier_request dialogue_requests ledger memory moment volition_request].freeze
 
   # EVERY PORTION'S FILE CONTENTS that this module writes, keyed by file
   # name: all but the engine's own. Needs a database with the current schema

@@ -670,9 +670,10 @@ class Story::Doctor
 
   # The protagonist is who the player IS. Nothing crashes without one --
   # `Scene::Generator#characters_present` and `Playthrough::Turn#talk_to` both
-  # compact the list -- but the arrival cast never includes the player and
-  # `Scene::Narrator` cannot say who they are. Which of several characters
-  # ought to be the player is not derivable, so this reports and stops.
+  # compact the list -- but the arrival cast never includes the player and the
+  # narrator (`Playthrough::Turn#narrate`) cannot say who they are. Which of
+  # several characters ought to be the player is not derivable, so this reports
+  # and stops.
   def cast
     findings = []
     protagonists = story.characters.protagonists.order(:id).to_a

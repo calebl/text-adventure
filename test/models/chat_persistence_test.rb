@@ -122,24 +122,22 @@ class ChatPersistenceTest < ActiveSupport::TestCase
   test "a character conversation is picked up again from the database" do
     character = create(:character, story: @playthrough.story, fullname: "Maren Aske")
 
-    first = InteractionAgent.new(character, playthrough: @playthrough)
-    OfflineExchange.with(OfflineExchange.reply(reaction("She looks up.")), OfflineExchange.reply("Maren looks up.")) do
-      first.ask("hello")
+    first = OfflineExchange.with(OfflineExchange.reply(reaction("She looks up.")), OfflineExchange.reply("Maren looks up.")) do
+      Playthrough::Turn.new(@playthrough).converse(character, "hello")
     end
 
     # A RESTART: nothing from above is reachable any more.
     reloaded_playthrough = Playthrough.find(@playthrough.id)
     reloaded_character = Character.find(character.id)
 
-    resumed = InteractionAgent.new(reloaded_character, playthrough: reloaded_playthrough)
-    OfflineExchange.with(OfflineExchange.reply(reaction("She answers.")), OfflineExchange.reply("Maren answers.")) do
-      resumed.ask("what did I just say?")
+    resumed = OfflineExchange.with(OfflineExchange.reply(reaction("She answers.")), OfflineExchange.reply("Maren answers.")) do
+      Playthrough::Turn.new(reloaded_playthrough).converse(reloaded_character, "what did I just say?")
     end
 
-    assert_equal first.character_agent.recorded_chat.id, resumed.character_agent.recorded_chat.id,
+    assert_equal first.agents.first.recorded_chat.id, resumed.agents.first.recorded_chat.id,
                  "the same conversation, not a new one"
 
-    said = resumed.character_agent.recorded_chat.exchange_messages.pluck(:role, :content)
+    said = resumed.agents.first.recorded_chat.exchange_messages.pluck(:role, :content)
 
     assert_equal %w[user assistant user assistant], said.map(&:first)
     assert_includes said.first.last, "hello", "the first turn is still in the conversation after the restart"

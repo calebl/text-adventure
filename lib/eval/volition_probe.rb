@@ -12,8 +12,8 @@
 # the pressure question's criteria, are the app's constants in every one.
 #
 # The request is `test/fixtures/files/volition_system_one_request.json` -- the
-# staged Counting Room with Odile Vance in it. `Playthrough::Volition::SystemOneTest`
-# pins that file byte for byte against what `Playthrough::Volition::SystemOne#request`
+# staged Counting Room with Odile Vance in it. `Playthrough::Volition::RequestTest`
+# pins that file byte for byte against what the engine's `volition` request
 # builds, so sending the file is sending the app's request without a database.
 #
 # THE CEILING STOPS RATHER THAN EXCEEDS. Before each call the spend so far plus

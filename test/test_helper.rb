@@ -29,7 +29,7 @@ ENV["RAILS_ENV"] ||= "test"
 #                              a live network call. The keyless path is the one
 #                              the suite asserts; a test that wants the cascade
 #                              sets a key itself and puts it back (see
-#                              `Playthrough::Classifier::CascadeTest#with_key`).
+#                              `Playthrough::ClassifierPathsTest#with_key`).
 #                              `OPENROUTER_API_KEY` is already cleared above for
 #                              BaseAgent; both must stay cleared for System One.
 #   RELAY_OPENROUTER_API_KEY   `Relay.configured?` is the whole of the model
@@ -83,6 +83,7 @@ require_relative "support/offline_exchange"
 require_relative "support/refusal_corpus_skeleton"
 require_relative "support/forkable_world"
 require_relative "support/protocol_v1"
+require_relative "support/engine_moment"
 
 module ActiveSupport
   class TestCase

@@ -7,7 +7,7 @@ require "test_helper"
 # over, and it is here for that method's reason: `Character.present_in` is the
 # WORLD's answer, and since a playthrough can take somebody's last hit point the
 # world's answer is no longer this game's. Before it, `talk to Rowe` on a corpse
-# resolved, reached `InteractionAgent`, and the corpse answered.
+# resolved, reached the exchange (`Playthrough::Turn#converse`), and the corpse answered.
 #
 # THE FOUR READERS EACH HAVE A TEST HERE, because a reader left on the world's
 # answer is exactly the shape of the defect this closes.
@@ -64,7 +64,7 @@ class Playthrough::CastTest < ActiveSupport::TestCase
   test "the narrator is not told about somebody the player can no longer speak to" do
     kill!(@rowe)
 
-    assert_not_includes Playthrough::Moment.new(@game).others, @rowe
+    assert_no_match(/Also here:[^\n]*#{@rowe.fullname}/, EngineMoment.new(@game).narration_context)
   end
 
   # READER THREE: the cast a turn snapshots onto its `Scene`.

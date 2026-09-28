@@ -66,12 +66,13 @@ class Playthrough::Feedback < ApplicationRecord
 
   # WHICH CONVERSATIONS PRODUCE THE PROSE THE PLAYER READS.
   #
-  # `narration` is `Scene::Narrator` answering what was typed,
-  # `interaction-narration` is `InteractionAgent`'s second pass turning a
-  # character's reaction into prose, and `arrival` is `Scene::Generator`
-  # narrating walking into a place. Those are the three calls on the prose side
-  # of the line this app draws -- prose the player watches arrive, as against
-  # anything that fills a record.
+  # `narration` is the narrator (`Playthrough::Turn#narrate`) answering what was
+  # typed, `interaction-narration` is the exchange's
+  # (`Playthrough::Turn#converse`) second pass turning a character's reaction
+  # into prose, and `arrival` is `Scene::Generator` narrating walking into a
+  # place. Those are the three calls on the prose side of the line this app
+  # draws -- prose the player watches arrive, as against anything that fills a
+  # record.
   #
   # The other purposes are deliberately absent: `classifier` picks from a closed
   # set, `character` fills in `Interaction`'s five fields, and `location`

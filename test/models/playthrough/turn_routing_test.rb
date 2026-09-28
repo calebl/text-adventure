@@ -140,7 +140,7 @@ class Playthrough::TurnRoutingTest < ActiveSupport::TestCase
 
     plan = Location::Plan.for(snug).to_prompt
     assert_includes agent.prompts.first, plan, "the room was written against its own floor plan"
-    assert_includes Playthrough::Moment.new(@playthrough).narration_context, plan,
+    assert_includes EngineMoment.new(@playthrough).narration_context, plan,
                     "and every turn taken in it afterwards is narrated against the same one"
   end
 
@@ -149,7 +149,7 @@ class Playthrough::TurnRoutingTest < ActiveSupport::TestCase
   # walking in -- the room's description, its lore and its ways out -- and the
   # description it is handed was itself written against the plan a moment
   # earlier, so the geometry reaches the arrival through the room rather than
-  # twice. `Playthrough::Moment` is where the facts are stated, because that is
+  # twice. The engine's `moment` is where the facts are stated, because that is
   # the prompt that answers a player standing in a room they may have been in
   # for twenty turns.
   test "the arrival prompt is the one Scene::Generator always built" do

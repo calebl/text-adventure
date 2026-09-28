@@ -176,19 +176,24 @@ module EngineSweep::Parity
   # A copy of the database this process is connected to, written to `file` with
   # SQLite's backup: every table, row and counter as last committed. Refuses to
   # write over the database itself.
+  #
+  # A DATABASE IN MEMORY IS COPIED THROUGH ITS OWN CONNECTION, which is the one
+  # place it exists: `rake engine:vectors` exports against one loaded from
+  # `db/schema.rb`, and a portion that plays a staged case copies it here.
   def self.copy_database!(file)
     source = ActiveRecord::Base.connection_db_config.database
-    raise EngineSweep::InvalidScript, "no database file to copy (#{source.inspect})" unless source && File.file?(source)
-    raise EngineSweep::InvalidScript, "#{file} is the database itself" if File.expand_path(file) == File.expand_path(source)
+    in_memory = source.to_s == ":memory:"
+    raise EngineSweep::InvalidScript, "no database file to copy (#{source.inspect})" unless in_memory || (source && File.file?(source))
+    raise EngineSweep::InvalidScript, "#{file} is the database itself" if !in_memory && File.expand_path(file) == File.expand_path(source)
 
-    from = SQLite3::Database.new(source, readonly: true)
+    from = in_memory ? ActiveRecord::Base.connection.raw_connection : SQLite3::Database.new(source, readonly: true)
     to = SQLite3::Database.new(file)
     backup = SQLite3::Backup.new(to, "main", from, "main")
     backup.step(-1)
     backup.finish
   ensure
     to&.close
-    from&.close
+    from&.close unless in_memory
   end
 
   # The name a scratch copy's connection goes by. The suite exempts it from

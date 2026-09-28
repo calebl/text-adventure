@@ -656,7 +656,7 @@ class Location::Generator
   # is, which storey of which place it stands on, which wall each door is in and
   # where each one leads. `Location::Plan` is the one author of them, so the
   # room writer and the narrator are told the same walls
-  # (`Playthrough::Moment#narration_context`).
+  # (the engine's `moment::narration_context`).
   #
   # IT IS THE INFORM HALF AND NOT THE VERIFY HALF, which is the standing
   # constraint's own division of labour and is worth stating on the one prompt

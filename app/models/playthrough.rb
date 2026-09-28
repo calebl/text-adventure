@@ -79,7 +79,7 @@ class Playthrough < ApplicationRecord
   # WHAT THE WORLD ITSELF TOOK OFF THIS GAME'S BODY: one row per hazard paid,
   # and the `Playthrough::Blow` of a place. A separate table from the blows and
   # deliberately -- a hazard has no attacker and must never open a fight; see
-  # `Playthrough::Toll`'s header. Read through `Playthrough::Moment` (which
+  # `Playthrough::Toll`'s header. Read through the engine's `moment` (which
   # states the untold ones to the prose) and by `rake game:mechanics`.
   has_many :tolls, class_name: "Playthrough::Toll", dependent: :destroy,
                    inverse_of: :playthrough
@@ -125,7 +125,7 @@ class Playthrough < ApplicationRecord
 
   # WHAT THE PARTY IS CARRYING: the closed set `drop` resolves against, and the
   # ONE reader of it in the app. `Playthrough::Classifier#items_carried`,
-  # `Playthrough::Moment#carried_names`, `Playthrough::Mechanics`'s `carrying`
+  # the engine's `moment`, `Playthrough::Mechanics`'s `carrying`
   # line and the debug page all come through here, for the same reason
   # `Scene::Generator.characters_present` is the one reader of who is in a room:
   # a second copy of the query is a second answer waiting to disagree.
@@ -158,7 +158,7 @@ class Playthrough < ApplicationRecord
   #
   # `#items_lying_in`'s shape and the ONE reader of it: a closed set read off
   # this game's own rows, so nothing that states these facts has to know how
-  # they are stored. `Playthrough::Moment` is the caller, and it states them to
+  # they are stored. The engine's `moment` is the caller, and it states them to
   # the narrator once -- `Playthrough::Turn#claim_volitions!` is what makes it
   # once.
   #
@@ -188,12 +188,13 @@ class Playthrough < ApplicationRecord
   # reason: `Character.present_in` is the WORLD's answer, and since a
   # playthrough can take somebody's last hit point the world's answer is no
   # longer this game's. Before this, `talk to Rowe` on a corpse resolved,
-  # reached `InteractionAgent`, and the corpse answered -- which is the gap
-  # `Item.lying_in` had before the item layers split, one table over.
+  # reached the exchange (`Playthrough::Turn#converse`), and the corpse answered
+  # -- which is the gap `Item.lying_in` had before the item layers split, one
+  # table over.
   #
   # THE FOUR READERS COME THROUGH HERE: `Playthrough::Classifier#characters_here`
   # (so the closed set the model is offered holds nobody this game has killed),
-  # `Playthrough::Moment#others` (so the prose is never told about somebody the
+  # the engine's `moment` (so the prose is never told about somebody the
   # player then cannot speak to), `Playthrough::Turn#cast_of` (so a turn records
   # who was standing there in THIS game) and `Playthrough::Mechanics`'s `present`
   # line, through the classifier. `Character.present_in` stays exactly as it is
@@ -322,7 +323,7 @@ class Playthrough < ApplicationRecord
 
   # HOW MUCH IS LEFT OF SOMEBODY, IN THIS GAME, AND THE ONE READER OF IT.
   #
-  # `Playthrough::Moment`'s line to the narrator, the `rake game:mechanics`
+  # the engine's `moment`'s line to the narrator, the `rake game:mechanics`
   # read-out and `EngineSweep::Expectation`'s `hp:` all come through here, for
   # the same reason `#carried` is the one reader of the party's hands: a second
   # copy of the query is a second answer waiting to disagree.

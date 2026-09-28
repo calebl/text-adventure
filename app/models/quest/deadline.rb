@@ -380,9 +380,9 @@ class Quest::Deadline
   # PLACEHOLDER-QUALITY ON PURPOSE, and said out loud so nobody reads it as an
   # attempt at characterisation: it is `Location::Interior`'s room numbers one
   # table over -- enough for the row to exist and be talked to, honest about
-  # being unwritten, and replaceable. What the player actually reads is
-  # `InteractionAgent`'s answer, which is handed these lines as facts about
-  # somebody the world has not filled in yet.
+  # being unwritten, and replaceable. What the player actually reads is the
+  # exchange's (`Playthrough::Turn#converse`) answer, which is handed these
+  # lines as facts about somebody the world has not filled in yet.
   def sheet_for(step)
     unwritten = "Nobody has written this down yet; the world placed #{step.target_name} because the story needed them."
 

@@ -1,27 +1,25 @@
 # A `BaseAgent` WHOSE `#with_schema` BECOMES A FORCED TOOL CALL, FOR THE BENCH
-# ONLY. `Playthrough::Classifier` never constructs one of these and never will
-# -- `Eval::Classifier::Bench` substitutes it for `Playthrough::Classifier
-# #agent` the same way `Eval::Classifier::Version::CaptureAgent` already
-# stands in for an offline capture, and puts the ordinary agent back when the
-# read is done. Everything else -- rotation, rewind-on-failure, message
-# attribution, `Chat` persistence -- is inherited unchanged, because those are
-# facts about a `BaseAgent` call and not about which envelope carries the
-# closed set.
+# ONLY. No turn constructs one of these and none ever will --
+# `Eval::Classifier::Bench` asks the engine's classifier call through it on a
+# tool arm, where a schema arm asks through a plain `BaseAgent`. Everything
+# else -- rotation, rewind-on-failure, message attribution, `Chat`
+# persistence -- is inherited unchanged, because those are facts about a
+# `BaseAgent` call and not about which envelope carries the closed set.
 #
 # `#with_schema` IS OVERRIDDEN RATHER THAN LEFT ALONE, and that is the whole
-# seam: the union schema `Playthrough::Classifier#ask_the_model` builds is
-# exactly right for shape B (the identical closed set, wrapped in one tool) and
-# the wrong shape entirely for shape C, which needs the four SEPARATE closed
-# sets `Eval::Classifier::ToolShapes#target_names` reads off `classifier`
-# instead. Either way `BaseAgent`'s own `@schema` ivar is never set, so
-# `#build_chat`'s inherited `with_schema` call never fires and no
+# seam: the engine's union schema is exactly right for shape B (the identical
+# closed set, wrapped in one tool) and the wrong shape entirely for shape C,
+# which needs the SEPARATE closed sets
+# `Eval::Classifier::ToolShapes#target_names` reads off the room (`room`, the
+# engine's closed sets) instead. Either way `BaseAgent`'s own `@schema` ivar is
+# never set, so `#build_chat`'s inherited `with_schema` call never fires and no
 # `response_format` is ever attached next to the tools -- and the inherited
 # schema verification never runs either, which is why this class carries its
 # own.
 class Eval::Classifier::ToolAgent < BaseAgent
-  def initialize(shape:, classifier: nil, **kwargs)
+  def initialize(shape:, room: nil, **kwargs)
     @shape = shape.to_sym
-    @classifier = classifier
+    @room = room
     super(**kwargs)
   end
 
@@ -34,8 +32,8 @@ class Eval::Classifier::ToolAgent < BaseAgent
 
   def build_chat
     conversation = super
-    built = @shape == :tool ? Eval::Classifier::ToolShapes.single(@intent_schema) :
-                               Eval::Classifier::ToolShapes.per_intent(@classifier)
+    built = @shape == :tool ? Eval::Classifier::ToolShapes.single(intent_schema_json) :
+                               Eval::Classifier::ToolShapes.per_intent(@room)
     # SHAPE B REQUIRES ALL THREE FIELDS, exactly as the schema call does; SHAPE
     # C'S TOOLS NEVER CARRY `intent` OF THEIR OWN -- it is injected by
     # `ToolShapes#build_tool` from the tool's own name, which cannot be missing
@@ -43,6 +41,13 @@ class Eval::Classifier::ToolAgent < BaseAgent
     @required_keys = @shape == :tool ? %w[intent target also_named] : %w[target also_named]
     conversation.with_tools(*built[:tools]).with_tool_options(choice: built[:choice], calls: :one)
     conversation
+  end
+
+  # The intent schema as JSON, string keys: the engine's, or a schema class's
+  # own `to_json_schema`.
+  def intent_schema_json
+    built = @intent_schema.is_a?(Class) ? @intent_schema.new.to_json_schema : @intent_schema.to_json_schema
+    JSON.parse(JSON.generate(built))
   end
 
   def expose_parsed_schema_content(response)
@@ -74,7 +79,7 @@ class Eval::Classifier::ToolAgent < BaseAgent
     raise SchemaIgnoredError, "#{current_model[:model]} omitted tool fields: #{missing.join(', ')}"
   end
 
-  # BOTH GUARD UNSCHEMA'D, PROSE CALLS -- `Scene::Narrator`'s shape, not this
+  # BOTH GUARD UNSCHEMA'D, PROSE CALLS -- `Playthrough::Turn#narrate`'s shape, not this
   # one. A tool-shaped classifier call is closed exactly as the schema call is,
   # so it skips these the same way the schema path already does (`@schema`
   # present there); running a prose-refusal detector against a tool-call `Hash`

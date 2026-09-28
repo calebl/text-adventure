@@ -52,10 +52,11 @@
 #      "Ammon Brace watches, his jaw set, but says nothing"
 #
 #    Three flags, three false positives, no true positives. And the records are
-#    not up to the check anyway: a `Scene::Narrator` turn records no cast at
-#    all, so on those turns EVERY character reads as absent -- nothing recorded
-#    where a character stood when this was measured; finding 5 below re-measures
-#    it with `characters.location_id` in place. There is still no person check.
+#    not up to the check anyway: a narrated turn (`Playthrough::Turn#narrate`)
+#    records no cast at all, so on those turns EVERY character reads as absent
+#    -- nothing recorded where a character stood when this was measured; finding
+#    5 below re-measures it with `characters.location_id` in place. There is
+#    still no person check.
 #
 # 3a. AND A NAME THE RECORDS HOLD IS NOT THE NAME THE PROSE WRITES, which
 #    `ta-eval-pipeline` found by pointing the finished check at 132 whole-run
@@ -100,13 +101,13 @@
 # 5. AND A WHEREABOUTS RECORD DOES NOT REVIVE THE PERSON CHECK, which is the
 #    thing `ta-character-whereabouts` was expected to change and measurement
 #    says it does not. `characters.location_id` landed, so the records are
-#    finally authoritative about presence -- the objection in 2a ("a
-#    `Scene::Narrator` turn records no cast at all, so on those turns EVERY
-#    character reads as absent") is gone, and the candidate set is now the
-#    strongest possible one: only somebody the records positively place in
-#    ANOTHER ROOM. Somebody nowhere is unjudgeable and is never a candidate.
-#    Measured over all three corpora -- 248 passages, whereabouts taken from
-#    the checked-in world files:
+#    finally authoritative about presence -- the objection in 2a ("a narrated
+#    turn (`Playthrough::Turn#narrate`) records no cast at all, so on those
+#    turns EVERY character reads as absent") is gone, and the candidate set is
+#    now the strongest possible one: only somebody the records positively place
+#    in ANOTHER ROOM. Somebody nowhere is unjudgeable and is never a candidate.
+#    Measured over all three corpora -- 248 passages, whereabouts taken from the
+#    checked-in world files:
 #
 #      36 passages are judgeable at all (12 in `eval_corpus.json`, 0 in
 #      `narration_corpus.json`, 24 in `whole_run_corpus.json`), and ONE of
@@ -361,10 +362,11 @@ class Story::Audit
   # engine copy would count the app's own words against the app.
   #
   # A THROW IS NOT ONE OF THEM and is audited like any other turn: its Scene is
-  # streamed by `Scene::Narrator` off `Playthrough::Turn#thrown_fact`, so it is
-  # real prose about a real fact and exactly the kind of row these checks exist
-  # to read. See `Scene::ENGINE_AUTHORED` for why the list is named rather than
-  # derived from the gap between `ACTIONS` and `INTENTS`.
+  # streamed by the narrator (`Playthrough::Turn#narrate`) off
+  # `Playthrough::Turn#thrown_fact`, so it is real prose about a real fact and
+  # exactly the kind of row these checks exist to read. See
+  # `Scene::ENGINE_AUTHORED` for why the list is named rather than derived from
+  # the gap between `ACTIONS` and `INTENTS`.
   #
   # IT IS A SMALLER DENOMINATOR AND NEVER A LOWER RATE: `#judgeable_for` counts
   # off this list, and `#excluded` is what `rake game:score` prints so the

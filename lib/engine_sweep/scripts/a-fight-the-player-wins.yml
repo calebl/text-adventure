@@ -1,8 +1,8 @@
 # A FIGHT RESOLVES, THE PLAYER WINS IT, AND WHAT THE BODY WAS CARRYING IS ON THE
 # FLOOR AFTERWARDS.
 #
-# This is the whole of the slice as one walk, offline, with no key: the captain
-# types these lines into `NO_MODEL=1 rake game:mechanics` and watches the same
+# This is the whole of the slice as one walk, offline, with no key: the owner
+# types these lines into `rake game:mechanics` and watches the same
 # fight happen.
 #
 # THE RULE, in one paragraph. A blow always connects and deals one die of the

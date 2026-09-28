@@ -22,11 +22,11 @@ class BaseAgent::RefusalTest < ActiveSupport::TestCase
     )
   end
 
-  # A model that declines by offering alternatives is refusing, and
-  # `Scene::Narrator::INSTRUCTIONS` forbids the menu in as many words. The
-  # corpus has one that opens "The narrator declines this particular scene" --
-  # third person, no first person anywhere in it -- so the list is the only
-  # thing that catches it.
+  # A model that declines by offering alternatives is refusing, and the
+  # narrator's instructions (`scene/narrator.yml`) forbid the menu in as many
+  # words. The corpus has one that opens "The narrator declines this particular
+  # scene" -- third person, no first person anywhere in it -- so the list is the
+  # only thing that catches it.
   test "a menu is a refusal even with no first person in it" do
     assert BaseAgent::Refusal.refused?(<<~PROSE)
       The narrator declines this particular scene. Where the story could go instead:

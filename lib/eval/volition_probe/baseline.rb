@@ -5,11 +5,11 @@
 # repetition (as the sentence that act was offered under), how often the
 # repetitions agreed, which of the four objects of desire the answer said the
 # act served, and the pressure scores; across the set, how often pressure
-# crossed `Playthrough::Volition::SystemOne::PRESSURE_THRESHOLD` -- the
+# crossed the engine's `volition` request -- the
 # answers where the typed act replaces the die -- and the cost.
 #
 # A SHAPE IS READ OFF THE OFFERED SENTENCE, because the request carries labels
-# and sentences and never a token (`Playthrough::Volition::State`). The
+# and sentences and never a token (the engine's `volition` request). The
 # sentences are `Playthrough::Volition#choices`' own, so each opening names
 # one shape.
 module Eval
@@ -20,6 +20,12 @@ module Eval
         [ /\AWalk out of/, "move" ], [ /\APick up/, "take" ], [ /\AGive/, "give" ], [ /\AAccompany/, "follow" ]
       ].freeze
 
+      # THE PRESSURE AN ANSWER MUST REACH TO BE ACTED ON, which is the engine's
+      # (`volition::PRESSURE_THRESHOLD`), read off the vector portion it
+      # blesses rather than typed again here.
+      PRESSURE_THRESHOLD = JSON.parse(Rails.root.join("test/engine_vectors/volition_request.json").read)
+                               .dig("constants", "pressure_threshold")
+
       module_function
 
       def shape_of(sentence) = SHAPES.find { |pattern, _| pattern.match?(sentence.to_s) }&.last || "unknown"
@@ -29,7 +35,7 @@ module Eval
         kept = JSON.parse(dir.join("receipts.json").read)
         requests = JSON.parse(dir.join("requests.json").read).index_by { |room| room["room"] }
         answered = kept["receipts"].select { |r| r["status"] == 200 }
-        threshold = Playthrough::Volition::SystemOne::PRESSURE_THRESHOLD
+        threshold = PRESSURE_THRESHOLD
 
         people = answered.group_by { |r| r["room"] }.flat_map do |room, receipts|
           request = requests.fetch(room)

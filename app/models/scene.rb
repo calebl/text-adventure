@@ -99,11 +99,12 @@ class Scene < ApplicationRecord
   # the engine's own sentence: `Playthrough::Fight#close!` writes a fight's
   # description itself and a hazard will write its own. A THROW DOES NOT. It is
   # an act no typed word in the enum names, so it lives in `ACTIONS` -- and its
-  # `Scene` is ordinary NARRATION, streamed by `Scene::Narrator` off
-  # `Playthrough::Turn#thrown_fact` exactly as a `take`'s is. Left in the
-  # difference it would have been skipped by `Story::Audit` and
-  # `Eval::Richness` and counted in `Story::Scoreboard#excluded`, which is real
-  # prose going unchecked and a denominator quietly shrinking.
+  # `Scene` is ordinary NARRATION, streamed by the narrator
+  # (`Playthrough::Turn#narrate`) off `Playthrough::Turn#thrown_fact` exactly as
+  # a `take`'s is. Left in the difference it would have been skipped by
+  # `Story::Audit` and `Eval::Richness` and counted in
+  # `Story::Scoreboard#excluded`, which is real prose going unchecked and a
+  # denominator quietly shrinking.
   #
   # So the list is POSITIVE now: what the engine authored is named here rather
   # than inferred from what a prompt may ask for. `attack` and `hazard` keep
@@ -351,7 +352,7 @@ class Scene < ApplicationRecord
   #
   # `summary` first, because it is what the model was asked for and paid for on
   # every arrival -- the same moment in a fifth of the words. A narrated turn has
-  # none (Scene::Narrator streams unschema'd prose and cannot produce a second
+  # none (the narrator streams unschema'd prose and cannot produce a second
   # field), so it contributes its own opening sentence instead. Truncating what
   # was written is honest; asking a model to summarise it would put a second
   # call on every turn, which is exactly the cost this is here to avoid.

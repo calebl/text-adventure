@@ -17,6 +17,9 @@
 #
 # A browser step never comes here: `EngineSweep::BrowserTurn` plays it through
 # `Playthrough::Session`, which is the switch itself.
+#
+# `rake game:mechanics` plays its console through this too, on the database it
+# is run against: the prose-free console and the offline walk play one turn.
 class EngineSweep::RustMechanics
   # The engine answered with an error on a typed step.
   class Failed < StandardError; end

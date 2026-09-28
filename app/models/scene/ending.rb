@@ -14,7 +14,7 @@
 #   MODEL'S DECISION.
 #
 #   THE NARRATOR RENDERS IT -- this class, told the reached outcome's own
-#   sentence as a fact the engine is holding (`Playthrough::Moment`, in the same
+#   sentence as a fact the engine is holding (the engine's moment, in the same
 #   place and the same shape as the next-open-step line), and asked for the
 #   prose.
 #
@@ -78,12 +78,12 @@ class Scene::Ending
   # would group a case by and the one `BaseAgent` writes on the conversation.
   PURPOSE = "ending".freeze
 
-  # KEPT SHORT, for `Scene::Narrator::INSTRUCTIONS`' reason: every token here is
+  # KEPT SHORT, for the narrator's instructions' reason: every token here is
   # time-to-first-token, and this is the one paragraph in the game the player is
   # waiting on with nothing left to type.
   #
   # IT IS TOLD THE ENDING AND ASKED TO WRITE IT, which is the whole of what
-  # makes this a different call from a narrated turn. `Playthrough::Moment`
+  # makes this a different call from a narrated turn. The moment
   # deliberately withholds the conclusion from every other prose pass -- telling
   # a model how the story ends invites it to write toward an ending the engine
   # has not recorded -- and that objection is spent here: the engine HAS
@@ -101,7 +101,7 @@ class Scene::Ending
 
   # Renders `conclusion` -- `Playthrough::Arc::Concluded`, the outcome this game
   # reached and the Scene its sentence is already on -- and returns that Scene.
-  # Chunks of prose are yielded as they arrive, exactly as `Scene::Narrator`
+  # Chunks of prose are yielded as they arrive, exactly as the narrator
   # yields them, so the browser streams the ending the way it streams a turn.
   #
   # IT RETURNS THE SCENE ON EVERY PATH, and that is the API rather than an
@@ -138,7 +138,7 @@ class Scene::Ending
   # owes the player, and the two must not be traded for one another.
   #
   # AND A PARAGRAPH THAT STOPS MID-SENTENCE IS NOT KEPT, which is the one
-  # judgement in this file. `Scene::Narrator` keeps a truncated turn -- half a
+  # judgement in this file. The narrator keeps a truncated turn -- half a
   # paragraph about a door is better than no answer, and the player can type
   # again. Nobody types again after this one. `Story::Audit::Prose.truncated?`
   # is the project's one reader of that question and it is read, not
@@ -148,7 +148,7 @@ class Scene::Ending
   # leaves no narration on the row, so the ending pass's own failure rate cannot
   # be read back out of `scenes`. It is in the log, and in the bench when there
   # is one.
-  # THE BLOCK IS HANDED TEXT AND NOT A CHUNK, which is `Scene::Narrator#narrate`'s
+  # THE BLOCK IS HANDED TEXT AND NOT A CHUNK, which is `Playthrough::Turn#narrate`'s
   # own contract and not a detail: `NarrationJob` appends what it is yielded
   # straight into a buffer it broadcasts, so a consumer handed a provider's chunk
   # object would broadcast the object's inspection. The two prose passes a player
@@ -171,15 +171,11 @@ class Scene::Ending
     @agent ||= BaseAgent.new(INSTRUCTIONS, purpose: PURPOSE, playthrough: playthrough)
   end
 
-  # THE MOMENT, AND THEN THE ASK. One `Playthrough::Moment` and not a second
-  # builder, for the reason that class exists: the two prose passes a player
-  # reads one after the other on this turn must not disagree about where they
-  # are standing.
+  # THE MOMENT, AND THEN THE ASK, and both are the engine's
+  # (`narration::ending_call`, through `Playthrough::Requests`): the same
+  # moment the narrator is handed, so the two prose passes a player reads one
+  # after the other on this turn cannot disagree about where they are standing.
   def prompt_for(conclusion)
-    <<~PROMPT
-      #{Playthrough::Moment.new(playthrough, ending: conclusion.outcome).narration_context}
-
-      Write the ending.
-    PROMPT
+    Playthrough::Requests.build(:ending, playthrough: playthrough.id, outcome: conclusion.outcome.id).fetch("user")
   end
 end

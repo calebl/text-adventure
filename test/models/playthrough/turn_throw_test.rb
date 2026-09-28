@@ -332,7 +332,7 @@ class Playthrough::TurnThrowTest < ActiveSupport::TestCase
     assert_match(/at Halkett Rowe's feet/, fact)
   end
 
-  # THE NUMBERS ARE DELIBERATELY NOT IN THIS FACT: `Playthrough::Moment#struck_fact`
+  # THE NUMBERS ARE DELIBERATELY NOT IN THIS FACT: the moment's struck fact
   # reads the blow out of `playthrough_blows` and already states the damage,
   # whether the body lived, and that the figures do not change. Two facts about
   # one die in one prompt is what this leaves out.
@@ -340,7 +340,7 @@ class Playthrough::TurnThrowTest < ActiveSupport::TestCase
     outcome = @turn.throw_item!(carried, at: @rowe, round: 1, rng: rolling(1, 6))
 
     assert_no_match(/\b6\b/, @turn.thrown_fact(outcome, @vance))
-    assert_match(/struck Halkett Rowe for 6/, Playthrough::Moment.new(@game).struck_fact)
+    assert_match(/struck Halkett Rowe for 6/, EngineMoment.new(@game).narration_context)
   end
 
   test "the doorway fact says the thing is no longer in this room" do

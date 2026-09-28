@@ -46,7 +46,7 @@ class Eval::Classifier::Stage
   # run and offline.
   #
   # THE LABEL IS A PARAMETER AND THE TITLE IS PUT BACK WHEN A CALLER ASKS, both
-  # for one reason: A NARRATOR IS TOLD THE STORY'S TITLE. `Playthrough::Moment`
+  # for one reason: A NARRATOR IS TOLD THE STORY'S TITLE. The engine's `moment`
   # opens with `Story: <title>`, so a prose bench staged on
   # `The Unrecorded Hour (classifier bench: office)` would be measuring prompts
   # no player ever gets -- and might read the label back out in the prose. So
@@ -139,6 +139,30 @@ class Eval::Classifier::Stage
     end
   end
 
+  # THE SAME POSITIONS ON A DATABASE OF THEIR OWN, for a bench whose case the
+  # engine plays. The engine plays on a connection of its own and sees only
+  # what is committed, so a position it plays cannot be staged inside the
+  # rolled-back transaction above: it is staged instead on a scratch copy of
+  # this database, committed, and yielded with the copy's path, and the copy
+  # is deleted when the block returns. The copy starts as this database is,
+  # counters included, so every row is born with the id it would have had in
+  # the transaction, and nothing is ever written here.
+  #
+  # Every read and write inside the block goes to the copy
+  # (`EngineSweep::Parity.on_database`), so what the block reads back is what
+  # the engine left.
+  def self.on_file(positions, label: LABEL, retitle: false, roots: ROOTS)
+    Dir.mktmpdir("eval-stage") do |directory|
+      file = File.join(directory, "stage.sqlite3")
+      EngineSweep::Parity.copy_database!(file)
+      EngineSweep::Parity.on_database(file) do
+        yield(positions.to_h { |position|
+          [ position.id, new(position, label: label, retitle: retitle, roots: roots).stand! ]
+        }, file)
+      end
+    end
+  end
+
   attr_reader :position
 
   def initialize(position, label: LABEL, retitle: false, roots: ROOTS)
@@ -171,12 +195,7 @@ class Eval::Classifier::Stage
     playthrough.reload
     move_to_room!(playthrough, story)
 
-    # `system_one: false` PINS THE READER THE WAY THE ARM PINS THE MODEL. A
-    # maintainer with a System One key in their shell would otherwise have the
-    # cascade answer these lines, and the board would carry an arm's name over
-    # another reader's answers. See `Playthrough::Classifier#initialize`.
-    Standing.new(position: position, playthrough: playthrough,
-                 classifier: Playthrough::Classifier.new(playthrough, system_one: false))
+    Standing.new(position: position, playthrough: playthrough, classifier: Playthrough::Classifier.new(playthrough))
   end
 
   private

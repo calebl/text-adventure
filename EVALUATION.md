@@ -20,8 +20,9 @@ without a verdict that can say *noise*.
 **Always have a baseline for evaluating a prompt before deciding to change it.**
 
 It is not advice about rigour, it is the order of operations. Before editing
-`Scene::Narrator::INSTRUCTIONS`, `Character#interaction_instructions`,
-`Playthrough::Classifier::INSTRUCTIONS`, `Location::Generator`'s people, items,
+the narrator's instructions (the engine's `data/scene/narrator.yml`), a
+character's instructions, the classifier's instructions
+(`data/playthrough/classifier.yml`), `Location::Generator`'s people, items,
 naming and exits instructions, a schema's field descriptions or anything else a
 model is handed:
 
@@ -64,7 +65,7 @@ passes. The matched NPC experience corpus in
 [`db/eval/experience-20260910`](db/eval/experience-20260910/README.md) stores both
 passes, the actual engine receipt, and attributed memory fixtures. Its README
 owns the measured results, limitations, and offline replay command. Use this
-corpus when changing `InteractionAgent`'s memory or injury context; inspect and
+corpus when changing a character's memory or injury context; inspect and
 store a new baseline first when a change needs a feature these fixtures lack.
 
 ## Physical actions and generated item profiles
@@ -386,9 +387,9 @@ lines*, and four aggregate numbers a side can never answer one.
 **Two things a cascade set cannot tell you, stated so they are not assumed:**
 
 * `request_identity` describes the **model call** — the instructions, prompt and
-  schema `Playthrough::Classifier` sends. The System One request is not in that
+  schema the classifier sends. The System One request is not in that
   digest, so two cascade sets taken either side of a change to
-  `Playthrough::Classifier::Request` carry the *same* identity. The set's own
+  the System One request carry the *same* identity. The set's own
   README is what records the change; the digest cannot.
 * the **spend** printed for a cascade run is the escalation provider's only. A
   line the cascade composed never reached the arm, so the run prices the calls
@@ -397,11 +398,11 @@ lines*, and four aggregate numbers a side can never answer one.
 
 **And the STATE is as much of the request as the wording is.** The measured
 shape is a key order, an empty block sent as an empty map, and an intent list
-that leads with its block's own intent —
-`Playthrough::Classifier::State`'s header states all three and
-`Playthrough::Classifier::StateTest` compares a staged position against the
-arm's own stored request byte for byte. That comparison is free, and it is the
-first thing to run when a cascade reading disagrees with a stored one.
+that leads with its block's own intent — the engine's `cascade::State` builds
+all three, and the `classifier_request` vector portion holds a staged position
+against the arm's own stored request byte for byte. That comparison is free,
+and it is the first thing to run when a cascade reading disagrees with a stored
+one.
 
 The worked example is three sets, in order:
 
@@ -995,7 +996,8 @@ is 339 lines × `REPS=4` = 1,356 calls an arm, at 372 tokens in and 20 out
 default is about $0.44** — the 300-line `classifier-remote` set cost $0.389 and
 the 339-line slice 8 pair cost $0.389 and $0.440.
 
-1. **The prompt.** `Playthrough::Classifier::INSTRUCTIONS` or
+1. **The prompt.** The classifier's instructions (the engine's
+   `data/playthrough/classifier.yml`) or
    `Playthrough::IntentSchema` — any wording, the `also_named` paragraph, a new
    intent. This is the reason the bench exists, and a prompt-shaped change
    lands with a BEFORE/AFTER `rake eval:classifier_compare` verdict in its PR
@@ -1073,10 +1075,9 @@ A case is **a position and one turn**. The position is a seeded world, a room,
 and the typed lines that walk to the state the case is written against; the turn
 is what was typed and the action the classifier would have resolved it to.
 
-**Everything else is the app's.** `Playthrough::Turn#play` runs whole with ONE
-thing replaced — the classifier — so the branch, the row that moves, the fact
-sentence (`#taken_fact` and its siblings) and the moment
-(`Playthrough::Moment#narration_context`) are the ones a player gets. The
+**Everything else is the game's.** The engine plays the turn whole with ONE
+thing replaced — the classifier's reading — so the branch, the row that moves,
+the fact sentence and the moment are the ones a player gets. The
 classifier is the thing replaced because it is the only call in a turn that is
 not being measured: leaving it in would put a second model between the case and
 the passage.
@@ -1154,7 +1155,7 @@ the result on `The Salt Assizes`.
 A prose prompt is instructions and facts interleaved, so there are **two
 digests** and they cover different amounts:
 
-- **`instructions_digest`** — the system message: `Scene::Narrator::INSTRUCTIONS`
+- **`instructions_digest`** — the system message: the narrator's instructions
   for a narrated turn, `Scene::Generator#system_prompt` for an arrival. It is
   `Playthrough::PromptVersion.narration_instructions`, and it covers the
   instruction block and nothing else. What `Playthrough::Feedback` freezes on a
@@ -1164,16 +1165,16 @@ digests** and they cover different amounts:
   `prompt_digest` is what answers the rest.
 - **`prompt_digest`** — **the whole prompt, byte for byte, for one designated
   case per shape** (the lowest case id of that shape). It covers everything the
-  first one misses: `Scene::Narrator#prompt_for`'s framing of a fact,
-  `Playthrough::Turn#taken_fact`, the `DOING` line, and every fact
-  `Playthrough::Moment` builds. It is only meaningful because the corpus is
+  first one misses: the narrator's framing of a fact, the fact sentences,
+  the `doing` line, and every fact the moment builds -- all of it the
+  engine's, since every case is played by the engine. It is only meaningful because the corpus is
   fixed, which is what `corpus_digest` says.
 - **`prompt_stable`** is the check on that claim: every repetition sends the
   designated case's prompt again and they are compared. A run in which one case
   sent two different prompts is a run whose facts moved, and the board says so.
 
 **A talk turn has no instruction digest**, and that is why `talk` is not a shape
-here: `InteractionAgent`'s narrator pass sends no system message — its prose
+here: an exchange's narrator pass sends no system message — its prose
 rules are interpolated into the per-turn user prompt with the character's name
 and pronouns inside them, so a digest of it would be a digest of the cast.
 `interaction-narration` prose stays measured by `rake eval:run` and
@@ -2323,8 +2324,8 @@ fixture readings, when present, contribute to spend and not to baseline scores.
 
 `CORPUS=branches` stages the pending moments in
 `test/fixtures/files/prompt_branches_corpus.yml`. `Eval::Prompt::Branches::Stage`
-uses the engine's record writers and seeded picks, then asks `Scene::Narrator`
-once. This producer instrument deliberately does not run an additional game
+uses the Ruby loop's record writers and seeded picks, then asks the narrator
+once, with the engine's request for that moment. This producer instrument deliberately does not run an additional game
 turn: an attack is already a blow, and these cases ask about records awaiting
 prose. The main and ending corpora retain their identities and kept files.
 The main request baseline was refreshed separately by `ta-bench-rebaseline-stale`;

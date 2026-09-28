@@ -39,6 +39,9 @@ class FakeSystemOne
   # escalated line made ONE System One call and not two.
   def calls = @states.size
 
+  # Which transport answered, as `SystemOneAgent#transport_name` says it.
+  def transport_name = :fake
+
   private
 
   # EVERY QUESTION IS ANSWERED, because a provider answers every question it was

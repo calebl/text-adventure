@@ -10,10 +10,11 @@ require "test_helper"
 #
 # The story he was playing had no character marked `is_protagonist`, so
 # `Playthrough#character` was nil. `Playthrough::Turn#take_item` answered that
-# by handing `Scene::Narrator` the bare command with no fact under it -- the
-# model was asked to narrate "take iron key" and did it beautifully -- and the
-# item's row never moved. The narration lied and the records were honest, which
-# is the one direction this app is built not to fail in.
+# by handing the narrator (`Playthrough::Turn#narrate`) the bare command with no
+# fact under it -- the model was asked to narrate "take iron key" and did it
+# beautifully -- and the item's row never moved. The narration lied and the
+# records were honest, which is the one direction this app is built not to fail
+# in.
 #
 # Every test here is the same statement in a different act: the line is REFUSED
 # (`Playthrough::Refusal`'s `:unplayable`), no row moves, no `Scene` is written,

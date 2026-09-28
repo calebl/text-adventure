@@ -13,7 +13,7 @@
 #   in the east wall, to The Rusted Anchor room 3; a stair down to The Rusted
 #   Anchor room 7, on storey -1, in the south-west of this room.
 #
-# EVERY ONE OF THOSE IS A RECORD READ OUT. `Playthrough::Moment`'s doctrine
+# EVERY ONE OF THOSE IS A RECORD READ OUT. The engine's `moment`'s doctrine
 # applied to geometry, and it is the whole reason this class exists rather than
 # a paragraph in a prompt: the dimensions are the room's own `Location::Box`,
 # the wall a door is in is `Location::Box#wall_towards` on the two boxes a
@@ -23,33 +23,34 @@
 # sentences a defect an offline check can catch (`Story::Audit::Prose`'s
 # geometry predicates, scored by `Eval::Realization::Scorer`).
 #
-# ONE BUILDER FOR THE ROOM WRITER AND THE NARRATOR, for `Playthrough::Moment`'s
+# ONE BUILDER FOR THE ROOM WRITER AND THE NARRATOR, for the engine's `moment`'s
 # own reason: the prompt that WRITES a room and the prompt that narrates a turn
 # in it must not come to describe the same walls two ways. `Location::Generator`
-# states these facts before the room is written and `Playthrough::Moment` states
+# states these facts before the room is written and the engine's `moment` states
 # them on every turn afterwards, out of this one file.
 #
 # AND TWO PROMPTS THAT COULD READ IT DO NOT, which is a decision in each case
 # rather than an omission, and the reason is different for each. Named here
 # because these four prompts are the whole set: the room writer
-# (`Location::Generator`) and the narrator (`Scene::Narrator`, through
-# `Playthrough::Moment#narration_context`) carry the plan; the ARRIVAL
-# (`Scene::Generator`) and the TALK TURN (`InteractionAgent#narrator_prompt`,
+# (`Location::Generator`) and the narrator (`Playthrough::Turn#narrate`, through
+# the engine's `moment::narration_context`) carry the plan; the ARRIVAL
+# (`Scene::Generator`) and the TALK TURN (`Playthrough::Turn#converse`,
 # through `#narrator_moment_section`) do not.
 #
 #   * THE ARRIVAL builds its own context for the moment of walking in -- the
 #     room's name, its description, its lore and its ways out -- and the
 #     description it is handed was written against this plan a moment earlier,
 #     so the geometry reaches that paragraph through the room rather than twice.
-#     What `Playthrough::Moment` covers is every turn AFTER it, where the room's
+#     What the engine's `moment` covers is every turn AFTER it, where the room's
 #     description is one line among many and the player may have been standing
 #     here for twenty turns.
-#   * THE TALK TURN asks `Playthrough::Moment` for the same block with
-#     `plan: false`. It shares a reader with the narrator and would otherwise
-#     have gained these sentences by accident, and no prompt in `InteractionAgent`
-#     has a stored baseline to judge the change against -- the captain's rule of
-#     2026-09-06, and AGENTS.md names `Character#interaction_instructions` among
-#     the prompts it binds. Geometry was never asked for in dialogue either.
+#   * THE TALK TURN asks the engine's `moment` for the same block with `plan:
+#     false`. It shares a reader with the narrator and would otherwise have
+#     gained these sentences by accident, and no prompt in the exchange
+#     (`Playthrough::Turn#converse`) has a stored baseline to judge the change
+#     against -- the owner's rule of 2026-09-06, and AGENTS.md names
+#     `Character#interaction_instructions` among the prompts it binds. Geometry
+#     was never asked for in dialogue either.
 #
 # THE ROOM'S NAME IS THIS PLAN'S CUSTOMER AND NOT ITS OUTPUT. The worked example
 # above still reads "The Rusted Anchor room 2" because a room is UNWRITTEN until
@@ -82,7 +83,7 @@
 # check of its own.
 #
 # IT SAYS NOTHING ABOUT WHAT IS IN THE ROOM. Items and people are placed within
-# a room by a later slice and are `Playthrough::Moment`'s and the registries' to
+# a room by a later slice and are the engine's `moment`'s and the registries' to
 # state; this is walls, doors and floors, which is the part the engine owns
 # outright.
 class Location::Plan
@@ -114,7 +115,7 @@ class Location::Plan
   # THE FACTS, ONE PER SENTENCE, in the order a person reads a room: how big it
   # is, where in the building it stands, and what leads out of it. Plain
   # sentences and no headings, so a caller can put them in its own register --
-  # `Location::Generator` under a heading of its own and `Playthrough::Moment`
+  # `Location::Generator` under a heading of its own and the engine's `moment`
   # beside the lines it already writes.
   def sentences
     [ size_sentence, storey_sentence, ways_out_sentence ].compact
@@ -207,7 +208,7 @@ class Location::Plan
 
   # WHAT LEADS OUT, AND WHERE EACH ONE IS. The closing sentence is the closed
   # set stated as a fact, which is the cheap half of the standing constraint --
-  # the same thing `Playthrough::Moment` does with "There are no others."
+  # the same thing the engine's `moment` does with "There are no others."
   #
   # A ROOM WITH NO WAY OUT SAYS SO. `Location::Interior` leaves the single room
   # of a one-room interior with none until slice 4 wires the way in, and a room

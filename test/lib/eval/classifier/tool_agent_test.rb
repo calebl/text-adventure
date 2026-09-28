@@ -73,10 +73,10 @@ class Eval::Classifier::ToolAgentTest < ActiveSupport::TestCase
     assert_raises(BaseAgent::SchemaIgnoredError) { agent.send(:verify_schema_honored!, exposed) }
   end
 
-  # THE TWO PROSE-REFUSAL CHECKS ARE UNSCHEMA'D-CALL CHECKS -- `Scene::Narrator`'s
-  # shape, not this one -- and a tool-shaped classifier call is closed exactly
-  # as the schema call is, so it skips them the same way `@schema` present
-  # already skips them on that path.
+  # THE TWO PROSE-REFUSAL CHECKS ARE UNSCHEMA'D-CALL CHECKS --
+  # `Playthrough::Turn#narrate`'s shape, not this one -- and a tool-shaped
+  # classifier call is closed exactly as the schema call is, so it skips them
+  # the same way `@schema` present already skips them on that path.
   test "the two prose-refusal checks are always skipped" do
     agent = Eval::Classifier::ToolAgent.new(shape: :tool, model_options: MODEL_OPTIONS)
 

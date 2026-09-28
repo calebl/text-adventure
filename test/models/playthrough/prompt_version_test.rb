@@ -35,7 +35,7 @@ class Playthrough::PromptVersionTest < ActiveSupport::TestCase
   # disagree about which message that is.
   test "a chat's version is the digest of its system message" do
     chat = create(:chat, purpose: "narration")
-    chat.messages.create!(role: "system", content: Scene::Narrator::INSTRUCTIONS, model: chat.model)
+    chat.messages.create!(role: "system", content: Playthrough::PromptVersion.narrator_instructions, model: chat.model)
     chat.messages.create!(role: "assistant", content: "You do the thing.", model: chat.model)
 
     assert_equal Playthrough::PromptVersion.narration, Playthrough::PromptVersion.for_chat(chat)
@@ -48,17 +48,18 @@ class Playthrough::PromptVersionTest < ActiveSupport::TestCase
   # an arrival with text no arrival was ever sent.
   test "an arrival's version is its instructions alone, because its scaffold is not this one" do
     chat = create(:chat, purpose: "arrival")
-    chat.messages.create!(role: "system", content: Scene::Narrator::INSTRUCTIONS, model: chat.model)
+    chat.messages.create!(role: "system", content: Playthrough::PromptVersion.narrator_instructions, model: chat.model)
 
     assert_equal Playthrough::PromptVersion.narration_instructions, Playthrough::PromptVersion.for_chat(chat)
     refute_equal Playthrough::PromptVersion.narration, Playthrough::PromptVersion.for_chat(chat),
                  "the two readers answer different questions and must not collapse into one"
   end
 
-  # A TALK TURN HAS NO INSTRUCTION DIGEST AND NIL IS THE HONEST ANSWER.
-  # `InteractionAgent`'s narrator pass sends no system message: its prose rules
-  # are interpolated into the per-turn user prompt with the character's name and
-  # pronouns inside them, so a digest of it would be a digest of the cast.
+  # A TALK TURN HAS NO INSTRUCTION DIGEST AND NIL IS THE HONEST ANSWER. The
+  # exchange's (`Playthrough::Turn#converse`) narrator pass sends no system
+  # message: its prose rules are interpolated into the per-turn user prompt with
+  # the character's name and pronouns inside them, so a digest of it would be a
+  # digest of the cast.
   test "a conversation with no instructions has no version" do
     chat = create(:chat, purpose: "interaction-narration")
     chat.messages.create!(role: "user", content: "Write what happens.", model: chat.model)
@@ -76,7 +77,7 @@ class Playthrough::PromptVersionTest < ActiveSupport::TestCase
     playthrough.update!(current_scene: scene)
 
     chat = create(:chat, purpose: "narration", playthrough: playthrough)
-    chat.messages.create!(role: "system", content: Scene::Narrator::INSTRUCTIONS, model: chat.model)
+    chat.messages.create!(role: "system", content: Playthrough::PromptVersion.narrator_instructions, model: chat.model)
     chat.messages.create!(role: "assistant", content: "You do the thing.", model: chat.model, scene: scene)
 
     feedback = Playthrough::Feedback.record(playthrough: playthrough, scene: scene, verdict: "good")
@@ -133,22 +134,22 @@ class Playthrough::PromptVersionTest < ActiveSupport::TestCase
   end
 
   # THE SCAFFOLD IS TEXT THE MODEL RECEIVES, and this is what says so: every
-  # wording the fact builders and `Scene::Narrator#prompt_for` can produce is in
+  # wording the fact builders and the engine's narrator framing can produce is in
   # there, so a change to any of them is a change to the digest. A branch this
   # misses is a wording change the version would sleep through.
   test "the rendered scaffold holds every framing and every fact sentence" do
     text = Playthrough::PromptVersion::Scaffold.text
 
     assert_includes text, "Narrate it as done. Do not contradict it and do not undo it."
-    assert_includes text, Scene::Narrator::DOING[:examine]
+    assert_includes text, EngineData.fetch("scene/narrator").fetch("doing").fetch("examine")
     assert_includes text, "ON THIS TURN, and not before it"
     assert_includes text, "picked the <item> up"
     assert_includes text, "it was lying in this room"
     assert_includes text, "put the <item> down"
     assert_includes text, "it is no longer carried"
     assert_includes text, "word for word"
-    assert_includes text, Playthrough::Moment::Handled.new(item: nil, direction: :taken).note
-    assert_includes text, Playthrough::Moment::Handled.new(item: nil, direction: :dropped).note
+    assert_includes text, Playthrough::Requests.build(:handled_note, rows: "{}", direction: :taken)
+    assert_includes text, Playthrough::Requests.build(:handled_note, rows: "{}", direction: :dropped)
     assert_includes text, "NOTHING WAS THROWN"
     assert_includes text, "is still in the party's hands"
     assert_includes text, "is still lying exactly where it was"
@@ -162,15 +163,15 @@ class Playthrough::PromptVersionTest < ActiveSupport::TestCase
   test "every DOING line is rendered into the scaffold" do
     text = Playthrough::PromptVersion::Scaffold.text
 
-    refute_empty Scene::Narrator::DOING
-    Scene::Narrator::DOING.each_value { |line| assert_includes text, line }
+    refute_empty EngineData.fetch("scene/narrator").fetch("doing")
+    EngineData.fetch("scene/narrator").fetch("doing").each_value { |line| assert_includes text, line }
   end
 
   # AND IT IS NOT A DIGEST OF SOURCE, which is the constraint that keeps it
   # readable: the instruction block is in the narration digest verbatim, so the
   # wider digest is over text and never over the methods that built it.
   test "the scaffold is rendered text, and the instruction block is not part of it" do
-    refute_includes Playthrough::PromptVersion::Scaffold.text, Scene::Narrator::INSTRUCTIONS.strip,
+    refute_includes Playthrough::PromptVersion::Scaffold.text, Playthrough::PromptVersion.narrator_instructions.strip,
                     "the two halves are joined once, in PromptVersion, and neither contains the other"
     refute_includes Playthrough::PromptVersion::Scaffold.text, "def taken_fact",
                     "a digest of method source would churn on a refactor that changed no prompt"

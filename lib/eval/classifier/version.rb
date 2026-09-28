@@ -1,58 +1,43 @@
 # One designated position (lowest labelled line id), rebuilt from the corpus.
-# Capture Classifier#classify at its actual ask boundary, including the physical
-# tokens in its emitted schema. Those tokens contain temporary database IDs.
-# Normalize only known token entries, to their complete named bindings, in the
-# action list and schema; keep the typed line, other numbers and framing exact.
-# Raw requests are retained by paid runs. This identity describes the staged
-# scaffold, never byte equality between requests with different record IDs.
+# The request is the one the engine builds for that line in that room
+# (`Playthrough::Requests`, `classifier`), including the physical tokens in its
+# emitted schema. Those tokens contain temporary database IDs. Normalize only
+# known token entries, to their complete named bindings, in the action list and
+# schema; keep the typed line, other numbers and framing exact. Raw requests
+# are retained by paid runs. This identity describes the staged scaffold, never
+# byte equality between requests with different record IDs.
 #
 # `shape:` SELECTS WHICH REQUEST GETS CAPTURED, `:schema` BY DEFAULT -- every
 # call site that predates the tool-call bench arm keeps asking for exactly what
 # it always asked for. `:tool` and `:tools` capture the identical construction
 # `Eval::Classifier::ToolAgent` sends on a live pass (`Eval::Classifier::ToolShapes`
-# builds both), so `rake eval:classifier_digest` can prove a tool arm's request
-# moves when a tool's parameters do -- the gap the report's §5 named: a
-# request identity keyed on `schema` alone goes BLANK for a shape whose closed
-# set lives in `tools` instead.
+# builds both, out of the engine's schema and the room's closed sets), so
+# `rake eval:classifier_digest` can prove a tool arm's request moves when a
+# tool's parameters do -- the gap the report's §5 named: a request identity
+# keyed on `schema` alone goes BLANK for a shape whose closed set lives in
+# `tools` instead.
 module Eval::Classifier::Version
   extend self
 
-  class CaptureAgent
-    def initialize(instructions, shape: :schema, classifier: nil)
-      @instructions = instructions
-      @shape = shape
-      @classifier = classifier
+  # The request a shape sends, from the engine's schema'd request and the
+  # room's closed sets (`Playthrough::Requests`, `classifier` and `room`).
+  def request_for(built, room, shape: :schema)
+    case shape
+    when :tool
+      tools = Eval::Classifier::ToolShapes.single(built.fetch("schema"))
+      Eval::RequestIdentity.request(built.fetch("system"), built.fetch("user"), nil,
+                                    tools: tool_payloads(tools[:tools]), tool_choice: tools[:choice])
+    when :tools
+      tools = Eval::Classifier::ToolShapes.per_intent(room)
+      Eval::RequestIdentity.request(built.fetch("system"), built.fetch("user"), nil,
+                                    tools: tool_payloads(tools[:tools]), tool_choice: tools[:choice])
+    else
+      { system: built.fetch("system"), user: built.fetch("user"), schema: built.fetch("schema") }
     end
+  end
 
-    def with_schema(schema)
-      @schema = schema
-      self
-    end
-
-    def ask(prompt, **)
-      throw :classifier_request, request_for(prompt)
-    end
-
-    private
-
-    def request_for(prompt)
-      case @shape
-      when :tool
-        built = Eval::Classifier::ToolShapes.single(@schema)
-        Eval::RequestIdentity.request(@instructions, prompt, nil,
-                                       tools: tool_payloads(built[:tools]), tool_choice: built[:choice])
-      when :tools
-        built = Eval::Classifier::ToolShapes.per_intent(@classifier)
-        Eval::RequestIdentity.request(@instructions, prompt, nil,
-                                       tools: tool_payloads(built[:tools]), tool_choice: built[:choice])
-      else
-        Eval::RequestIdentity.request(@instructions, prompt, @schema)
-      end
-    end
-
-    def tool_payloads(tools)
-      tools.map { |tool| { name: tool.name, description: tool.description, parameters: tool.params_schema } }
-    end
+  def tool_payloads(tools)
+    tools.map { |tool| { name: tool.name, description: tool.description, parameters: tool.params_schema } }
   end
 
   def offline(corpus = Eval::Classifier.corpus, shape: :schema)
@@ -74,31 +59,20 @@ module Eval::Classifier::Version
     line = corpus.lines.min_by(&:id)
     request = nil
     Eval::Classifier::Stage.open([ corpus.position(line.position) ]) do |stages|
-      classifier = stages.fetch(line.position).classifier
-      request = normalize(capture(classifier, line.typed, shape: shape), classifier.physical_actions)
+      playthrough = stages.fetch(line.position).playthrough
+      rows = Playthrough::Requests.rows
+      built = Playthrough::Requests.build(:classifier, rows: rows, playthrough: playthrough.id, line: line.typed)
+      room = Playthrough::Requests.build(:room, rows: rows, playthrough: playthrough.id)
+      request = normalize(request_for(built, room, shape: shape), room.fetch("physical"))
     end
     { line.id => request }
   end
 
-  def capture(classifier, typed, shape: :schema)
-    agent = classifier.agent
-    # Keep a test's provider double unconsumed too; capture only replaces the
-    # terminal agent, while classify still assembles its actual enum and text.
-    classifier.instance_variable_set(:@agent,
-      CaptureAgent.new(agent.instructions || Playthrough::Classifier::INSTRUCTIONS, shape: shape, classifier: classifier))
-    EngineSweep.without_a_model do
-      catch(:classifier_request) { classifier.classify(typed) }
-    end
-  ensure
-    classifier.instance_variable_set(:@agent, agent)
-  end
-
+  # `choices` are the room's physical attempts as the engine lists them, each
+  # with its token, its kind and the names it binds.
   def normalize(request, choices)
     tokens = choices.to_h do |choice|
-      binding = [ choice.item&.name, choice.recipient&.fullname,
-                  choice.connection && [ choice.connection.location.name, choice.connection.connected_location.name ],
-                  choice.tool&.name ]
-      [ choice.token, "use:#{choice.kind}:#{JSON.generate(binding)}" ]
+      [ choice.fetch("token"), "use:#{choice.fetch("kind")}:#{JSON.generate(choice.fetch("binding"))}" ]
     end
     raise ArgumentError, "Ambiguous named physical bindings" unless tokens.values.uniq.size == tokens.size
 

@@ -11,7 +11,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
     @playthrough = create(:playthrough, story: @story, character: @protagonist, current_location: @here)
   end
 
-  def moment = Playthrough::Moment.new(@playthrough)
+  def moment = EngineMoment.new(@playthrough)
 
   # --- what the prose is told about the player's body ------------------------
   #
@@ -263,10 +263,10 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
     assert_includes moment.narration_context, Location::Plan.for(room).to_prompt
   end
 
-  # AND A CALLER MAY ASK FOR THE SAME MOMENT WITHOUT IT, which is what
-  # `InteractionAgent`'s talk-turn prose pass does: it has no stored bench
-  # baseline, so it sends the block it sent before interiors existed. Everything
-  # else in the moment is unchanged by the keyword.
+  # AND A CALLER MAY ASK FOR THE SAME MOMENT WITHOUT IT, which is what the
+  # exchange's (`Playthrough::Turn#converse`) talk-turn prose pass does: it has
+  # no stored bench baseline, so it sends the block it sent before interiors
+  # existed. Everything else in the moment is unchanged by the keyword.
   test "the moment can be built without the plan, and loses only the plan" do
     stand_in_a_laid_out_room
 
@@ -360,7 +360,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   test "a playthrough standing nowhere has no room and no ways out to speak of" do
     nowhere = create(:playthrough, story: @story, character: @protagonist)
 
-    context = Playthrough::Moment.new(nowhere).narration_context
+    context = EngineMoment.new(nowhere).narration_context
 
     assert_no_match(/Ways out of here/, context)
     assert_match(/Nobody else is here\./, context)

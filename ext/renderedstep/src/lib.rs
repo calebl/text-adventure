@@ -1,9 +1,12 @@
 //! THE RUST ENGINE AS A RUBY EXTENSION, and nothing more than the crossing.
 //!
-//! `Playthrough::RustEngine` (app/models/playthrough/rust_engine.rb) is the
-//! only caller. It hands over a whole turn -- the database file, the game, the
-//! line, its request token, where model calls go, and a block for prose -- and
-//! gets back one JSON document: what the turn left, or the error it ended in.
+//! `Playthrough::RustEngine` (app/models/playthrough/rust_engine.rb) hands
+//! over a whole turn -- the database file, the game, the line, its request
+//! token, where model calls go, and a block for prose -- and gets back one
+//! JSON document: what the turn left, or the error it ended in.
+//! `Playthrough::Requests` (app/models/playthrough/requests.rb) asks for the
+//! engine's data and the requests it builds, for the benches and the Ruby
+//! reference loop (see "the benches", below).
 //! Every rule, every write and every model call is the engine's
 //! (`renderedstep_engine::engine::Engine`); every decision about what the
 //! player is told, and whether the Ruby engine plays the line instead, is
@@ -33,13 +36,24 @@
 
 use magnus::value::BoxValue;
 use magnus::{block::Proc, function, prelude::*, Error as RubyError, Ruby};
+use renderedstep_engine::arrival::Arrival;
 use renderedstep_engine::engine::{self, Engine};
 use renderedstep_engine::glance::{self as glanced, Glance};
+use renderedstep_engine::intent::Intent;
 use renderedstep_engine::model::system_one::SystemOne;
-use renderedstep_engine::model::{Failure, Live, Replay, Reply, Route, Secret};
+use renderedstep_engine::model::{
+    Agent, Answer, Book, Call, Failure, Filed, Live, Models, Replay, Reply, Route, Secret,
+    Unavailable, Verify,
+};
+use renderedstep_engine::moment::{Direction, Handled, Moment};
 use renderedstep_engine::outcome::{Outcome, State};
+use renderedstep_engine::playthrough::Game;
+use renderedstep_engine::records::Records;
+use renderedstep_engine::room::{Record, Room};
 use renderedstep_engine::store::SCHEMA_VERSION;
-use renderedstep_engine::turn::{Report, Turned};
+use renderedstep_engine::turn::room_of;
+use renderedstep_engine::turn::{Fixed, Report, Turned};
+use renderedstep_engine::{cascade, classifier, dialogue, memory, narration, volition};
 use serde_json::{json, Map, Value};
 use std::ffi::c_void;
 use std::panic::{self, AssertUnwindSafe};
@@ -54,6 +68,10 @@ fn init(ruby: &Ruby) -> Result<(), RubyError> {
     module.define_module_function("play", function!(play, 4))?;
     module.define_module_function("glance", function!(glance, 2))?;
     module.define_module_function("scaffold", function!(scaffold, 0))?;
+    module.define_module_function("data", function!(data, 0))?;
+    module.define_module_function("request", function!(request, 3))?;
+    module.define_module_function("read_line", function!(read_line, 4))?;
+    module.define_module_function("submit_fixed", function!(submit_fixed, 6))?;
     Ok(())
 }
 
@@ -228,6 +246,508 @@ fn answered(played: Result<engine::Submitted, engine::Error>, replayed: Option<V
         map.insert("replay".into(), replayed);
     }
     answer
+}
+
+// --- the benches -------------------------------------------------------
+//
+// A bench measures what the game sends, so it builds its requests with the
+// engine's own builders rather than a copy of them. These entries hold the
+// GVL throughout: none of them waits on anything but the block, and the
+// block releases the lock itself while it waits on a provider.
+
+/// `RenderedStep.data`: every engine data file as `{name => text}`, the
+/// bytes the engine plays with. The game reads its prompt data here and
+/// keeps no copy of its own (`EngineData`).
+fn data() -> String {
+    let files: Map<String, Value> = renderedstep_engine::data::files()
+        .iter()
+        .map(|(name, text)| (name.to_string(), Value::from(*text)))
+        .collect();
+    Value::Object(files).to_string()
+}
+
+/// `RenderedStep.request(kind, records_json, args_json)`: one request the
+/// engine would send, built from a staged position's rows
+/// (`EngineVectors::Records`), with nothing played and nothing written.
+/// Answers the request as JSON, or an error document.
+fn request(kind: String, records: String, args: String) -> String {
+    let answer = panic::catch_unwind(AssertUnwindSafe(|| {
+        let records = match serde_json::from_str::<Value>(&records) {
+            Ok(dump) => Records::from_json(&dump),
+            Err(_) => return glue_error("the records are not JSON"),
+        };
+        let args: Value = match serde_json::from_str(&args) {
+            Ok(args) => args,
+            Err(_) => return glue_error("the arguments are not JSON"),
+        };
+        built(&kind, &records, &args).unwrap_or_else(|message| glue_error(&message))
+    }))
+    .unwrap_or_else(|_| glue_error("the extension panicked"));
+    answer.to_string()
+}
+
+fn built(kind: &str, records: &Records, args: &Value) -> Result<Value, String> {
+    let int = |key: &str| {
+        args[key]
+            .as_i64()
+            .ok_or_else(|| format!("{kind} needs an integer {key}"))
+    };
+    let text = |key: &str| args[key].as_str();
+    let game = || int("playthrough").map(|id| Game::new(records, id));
+    let row = |table: &str, key: &str| -> Result<&renderedstep_engine::records::Row, String> {
+        let id = int(key)?;
+        records
+            .find(table, id)
+            .ok_or_else(|| format!("there is no {table} {id}"))
+    };
+    Ok(match kind {
+        "narration" => {
+            let handled = handled_of(&args["handled"])?;
+            narration::call(
+                game()?,
+                text("command").unwrap_or_default(),
+                text("fact"),
+                text("doing"),
+                handled,
+            )
+            .to_request()
+        }
+        "ending" => {
+            let outcome = row("quest_outcomes", "outcome")?;
+            narration::ending_call(game()?, outcome).to_request()
+        }
+        "narration_context" => {
+            let handled = handled_of(&args["handled"])?;
+            let ending = match args["ending"].as_i64() {
+                Some(outcome) => Some(
+                    records
+                        .find("quest_outcomes", outcome)
+                        .ok_or_else(|| format!("there is no quest_outcomes {outcome}"))?,
+                ),
+                None => None,
+            };
+            let moment = Moment {
+                game: game()?,
+                handled,
+                ending,
+            };
+            Value::from(moment.narration_context(
+                args["plan"].as_bool().unwrap_or(true),
+                args["arc"].as_bool().unwrap_or(true),
+            ))
+        }
+        "character_context" => {
+            let character = row("characters", "character")?;
+            let moment = Moment::new(game()?);
+            let replayed = args["replayed"]
+                .as_i64()
+                .unwrap_or(dialogue::HISTORY_EXCHANGES);
+            json!({
+                "context": moment.character_context(character, replayed, text("query")),
+                "personal_facts": moment.personal_facts(character),
+            })
+        }
+        "memory" => {
+            let game = game()?;
+            let character = row("characters", "character")?;
+            let replayed = args["replayed"]
+                .as_i64()
+                .unwrap_or(dialogue::HISTORY_EXCHANGES);
+            let query = text("query");
+            let recall: Vec<Value> = memory::recall(&game, character, query, replayed, memory::CONCLUSIONS)
+                .into_iter()
+                .map(|found| json!({ "id": renderedstep_engine::records::id(found), "resolution": memory::resolution(found) }))
+                .collect();
+            let recollection = match args["interaction"].as_i64() {
+                Some(interaction) => {
+                    let found = records
+                        .find("interactions", interaction)
+                        .ok_or_else(|| format!("there is no interactions {interaction}"))?;
+                    Value::from(memory::recollection(&game, found))
+                }
+                None => Value::Null,
+            };
+            json!({
+                "recall": recall,
+                "recollection": recollection,
+                "conclusions": renderedstep_engine::moment::conclusions(&game, character, replayed, query),
+                "recollections": renderedstep_engine::moment::recollections(&game, character, replayed, query),
+            })
+        }
+        "framing" => Value::from(renderedstep_engine::facts::framing(
+            text("context").unwrap_or_default(),
+            text("command").unwrap_or_default(),
+            text("fact"),
+            text("doing"),
+        )),
+        "handled_note" => Value::from(match text("direction") {
+            Some("taken") => Direction::Taken.note(),
+            Some("dropped") => Direction::Dropped.note(),
+            _ => return Err("a direction is taken or dropped".into()),
+        }),
+        "character" => {
+            let game = game()?;
+            let character = row("characters", "character")?;
+            dialogue::character_request_offering(
+                &game,
+                character,
+                text("line").unwrap_or_default(),
+                args["offered_item"].as_i64(),
+            )
+        }
+        "interaction_narration" => {
+            let game = game()?;
+            let character = row("characters", "character")?;
+            let reaction = args["reaction"].as_object().cloned().unwrap_or_default();
+            dialogue::narrator_request(
+                &game,
+                character,
+                text("line").unwrap_or_default(),
+                &reaction,
+                text("fact").unwrap_or_default(),
+            )
+        }
+        "classifier" => {
+            let room = room_of(records, int("playthrough")?);
+            let call = classifier::call(records, &room, text("line").unwrap_or_default());
+            let mut request = call.to_request();
+            request["temperature"] = call.temperature.clone().unwrap_or(Value::Null);
+            request
+        }
+        "cascade" => {
+            let room = room_of(records, int("playthrough")?);
+            let state = cascade::State::new(&room, text("line").unwrap_or_default());
+            json!({ "state": state.to_json(), "questions": cascade::request(&state) })
+        }
+        "volition" => {
+            let game = game()?;
+            let characters = args["characters"]
+                .as_array()
+                .ok_or("volition needs its characters")?
+                .iter()
+                .map(|who| {
+                    who.as_i64()
+                        .map(|id| game.character(id))
+                        .ok_or("a character is an id")
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let location = row("locations", "location")?;
+            volition::request(&game, &characters, location, text("line"))
+        }
+        "arrival" => {
+            let location = row("locations", "location")?;
+            let game = args["playthrough"]
+                .as_i64()
+                .map(|id| Game::new(records, id));
+            let previous_scene = match args["previous_scene"].as_i64() {
+                Some(scene) => Some(
+                    records
+                        .find("scenes", scene)
+                        .ok_or_else(|| format!("there is no scene {scene}"))?,
+                ),
+                None => None,
+            };
+            Arrival {
+                records,
+                location,
+                previous_scene,
+                game,
+                opening: args["opening"].as_bool().unwrap_or(false),
+            }
+            .request()
+        }
+        "room" => room_json(&room_of(records, int("playthrough")?)),
+        other => return Err(format!("no request builder called {other}")),
+    })
+}
+
+/// The item a turn moved and which way, as `{item, direction}`, or none.
+fn handled_of(handled: &Value) -> Result<Option<Handled>, String> {
+    match (handled["item"].as_i64(), handled["direction"].as_str()) {
+        (Some(item), Some("taken")) => Ok(Some(Handled {
+            item,
+            direction: Direction::Taken,
+        })),
+        (Some(item), Some("dropped")) => Ok(Some(Handled {
+            item,
+            direction: Direction::Dropped,
+        })),
+        (None, None) => Ok(None),
+        _ => Err("handled is an item and taken or dropped".into()),
+    }
+}
+
+/// A room's closed sets, by name, the way a caller offers them to a model.
+fn room_json(room: &Room) -> Value {
+    json!({
+        "exits": room.exits.iter().map(|exit| exit.place.name.clone()).collect::<Vec<_>>(),
+        "cast": room.cast.iter().map(|person| json!({ "fullname": person.fullname, "nickname": person.nickname })).collect::<Vec<_>>(),
+        "lying": room.lying.iter().map(|thing| thing.name.clone()).collect::<Vec<_>>(),
+        "carried": room.carried.iter().map(|thing| thing.name.clone()).collect::<Vec<_>>(),
+        "physical": room.physical_actions().iter().map(|choice| json!({
+            "token": choice.token(),
+            "name": choice.name(),
+            "kind": choice.kind,
+            "binding": [
+                choice.item.as_ref().map(|thing| thing.name.clone()),
+                choice.recipient.as_ref().map(|person| person.fullname.clone()),
+                choice.connection.as_ref().map(|exit| json!([room.here.as_ref().map(|here| here.name.clone()), exit.place.name])),
+                choice.tool.as_ref().map(|thing| thing.name.clone()),
+            ],
+        })).collect::<Vec<_>>(),
+    })
+}
+
+/// `RenderedStep.read_line(records_json, playthrough_id, line, system_one)
+/// { |call| ... }`: the line read the way a turn reads it
+/// (`classifier::read`), over a staged position's rows, with each call the
+/// reading makes handed to the block (see [`Hosted`]). Writes nothing.
+fn read_line(
+    ruby: &Ruby,
+    records: String,
+    playthrough: i64,
+    line: String,
+    system_one: bool,
+) -> Result<String, RubyError> {
+    let block = ruby.block_proc()?;
+    let mut host = Hosted::new(block, system_one);
+    let answer = panic::catch_unwind(AssertUnwindSafe(|| {
+        let records = match serde_json::from_str::<Value>(&records) {
+            Ok(dump) => Records::from_json(&dump),
+            Err(_) => return glue_error("the records are not JSON"),
+        };
+        let room = room_of(&records, playthrough);
+        let call = classifier::call(&records, &room, &line);
+        match classifier::read(&room, &call, &line, &mut host) {
+            Ok(reading) => json!({
+                "intent": intent_json(&reading.intent),
+                "resolved_by": reading.path,
+                "target_present": reading.target_present,
+                "named_more_than_one": reading.named_more_than_one,
+            }),
+            Err(failure) => json!({ "error": { "kind": "model", "failure": failure_kind(&failure), "message": failure.to_string() } }),
+        }
+    }))
+    .unwrap_or_else(|_| glue_error("the extension panicked"));
+    host.finish(answer)
+}
+
+/// What a line was read as, with the name each record answers to.
+fn intent_json(intent: &Intent) -> Value {
+    let label = |record: Option<Record>| record.map(|record| record.label());
+    let target = match &intent.physical {
+        Some(choice) => Some(choice.name()),
+        None => label(intent.subject()),
+    };
+    json!({
+        "action": intent.action,
+        "target": target,
+        "token": intent.physical.as_ref().map(|choice| choice.token()),
+        "also_named": label(intent.also_named.clone()),
+        "thrown_at": label(intent.at.clone()),
+        "unknown_action": intent.unknown_action,
+        "refused": intent.refused(),
+        "reached_for_nothing": intent.reached_for_nothing(),
+        "named_more_than_one": intent.named_more_than_one(),
+    })
+}
+
+/// `RenderedStep.submit_fixed(database, playthrough_id, line, token,
+/// fixed_json, system_one) { |call| ... }`: one submitted line played on a
+/// committed database the way every front end plays it, read as
+/// `fixed_json` (`{action, target}`) says wherever the classifier would
+/// have been asked (`Engine::submit_fixed`), with every other call handed to
+/// the block. Answers what `submit` answers, plus `calls`: every request
+/// the turn made, in order.
+fn submit_fixed(
+    ruby: &Ruby,
+    database: String,
+    playthrough: i64,
+    line: String,
+    token: String,
+    fixed: String,
+    system_one: bool,
+) -> Result<String, RubyError> {
+    let block = ruby.block_proc()?;
+    let mut host = Hosted::new(block, system_one);
+    let answer = panic::catch_unwind(AssertUnwindSafe(|| {
+        let fixed: Value = match serde_json::from_str(&fixed) {
+            Ok(fixed) => fixed,
+            Err(_) => return glue_error("the fixed reading is not JSON"),
+        };
+        let Some(action) = fixed["action"].as_str() else {
+            return glue_error("a fixed reading names its action");
+        };
+        let fixed = Fixed {
+            action: action.to_string(),
+            target: fixed["target"].as_str().map(str::to_string),
+        };
+        let mut engine = match Engine::open(Path::new(&database)) {
+            Ok(engine) => engine,
+            Err(error) => return failed(&error),
+        };
+        let played =
+            engine.submit_fixed(playthrough, &line, &token, &fixed, &mut host, &mut |_| {});
+        answered(played, None)
+    }))
+    .unwrap_or_else(|_| glue_error("the extension panicked"));
+    host.finish(answer)
+}
+
+/// The models a bench turn asks: each call handed to a Ruby block as one
+/// JSON document, and its answer read back from the JSON the block returns.
+///
+/// A chat call is `{kind: "chat", purpose, system, user, schema, history,
+/// temperature, stream}`, answered with `{content, model}` or with
+/// `{failure: {kind, message}}`; a System One call is `{kind: "system_one",
+/// purpose, state, questions}`, answered with the provider's body or with
+/// `{unavailable: message}`. Nothing is written here: the block keeps
+/// whatever receipts it keeps. An exception the block raises is kept, the
+/// call it answered fails, and it is raised again once the engine returns.
+struct Hosted {
+    block: Proc,
+    system_one: bool,
+    calls: Vec<Value>,
+    raised: Option<RubyError>,
+}
+
+impl Hosted {
+    fn new(block: Proc, system_one: bool) -> Hosted {
+        Hosted {
+            block,
+            system_one,
+            calls: Vec::new(),
+            raised: None,
+        }
+    }
+
+    /// Hands `request` to the block and parses what it returns.
+    fn hand(&mut self, request: Value) -> Result<Value, String> {
+        self.calls.push(request.clone());
+        if self.raised.is_some() {
+            return Err("an earlier call raised".into());
+        }
+        let ruby = unsafe { Ruby::get_unchecked() };
+        let returned = self
+            .block
+            .call::<_, magnus::Value>((ruby.str_new(&request.to_string()),))
+            .and_then(String::try_convert);
+        match returned {
+            Ok(text) => {
+                serde_json::from_str(&text).map_err(|_| "the block did not answer JSON".to_string())
+            }
+            Err(error) => {
+                self.raised = Some(error);
+                Err("the block raised".into())
+            }
+        }
+    }
+
+    /// The answer document with the calls made, or the block's exception.
+    fn finish(self, mut answer: Value) -> Result<String, RubyError> {
+        if let Some(error) = self.raised {
+            return Err(error);
+        }
+        if let Some(fields) = answer.as_object_mut() {
+            fields.insert("calls".into(), Value::Array(self.calls));
+        }
+        Ok(answer.to_string())
+    }
+}
+
+fn failure_of(document: &Value) -> Failure {
+    let message = document["message"].as_str().unwrap_or_default().to_string();
+    match document["kind"].as_str() {
+        Some("no_model") => Failure::NoModel,
+        Some("unauthorized") => Failure::Unauthorized(message),
+        Some("crisis") => Failure::Crisis(message),
+        Some("refused") => Failure::Refused(message),
+        Some("schema_ignored") => Failure::SchemaIgnored(message),
+        Some("rejected") => Failure::Rejected(message),
+        Some("unavailable") => Failure::Unavailable(message),
+        Some("provider") => Failure::Provider(message),
+        _ => Failure::Unexpected(message),
+    }
+}
+
+impl Hosted {
+    fn chat(&mut self, purpose: &str, call: &Call, stream: bool) -> Result<Answer, Failure> {
+        let mut request = call.to_request();
+        request["kind"] = Value::from("chat");
+        request["purpose"] = Value::from(purpose);
+        request["temperature"] = call.temperature.clone().unwrap_or(Value::Null);
+        request["stream"] = Value::from(stream);
+        let answered = self.hand(request).map_err(Failure::Unexpected)?;
+        if let Some(failure) = answered.get("failure") {
+            return Err(failure_of(failure));
+        }
+        Ok(Answer {
+            content: answered["content"].clone(),
+            model: answered["model"].as_str().map(str::to_string),
+        })
+    }
+}
+
+impl Models for Hosted {
+    fn ask(
+        &mut self,
+        _book: &mut Book,
+        agent: &mut Agent,
+        call: &Call,
+        verify: Option<Verify>,
+        on_chunk: Option<&mut (dyn FnMut(&str) + '_)>,
+    ) -> Result<Answer, Failure> {
+        let answer = self.chat(agent.purpose(), call, on_chunk.is_some())?;
+        if let Some(verify) = verify {
+            verify(&answer.content).map_err(Failure::Rejected)?;
+        }
+        if let Some(on_chunk) = on_chunk {
+            on_chunk(answer.text());
+        }
+        Ok(answer)
+    }
+
+    fn system_one(&self) -> bool {
+        self.system_one
+    }
+
+    fn ask_questions(
+        &mut self,
+        _book: &mut Book,
+        filed: &Filed,
+        state: &Value,
+        questions: &Value,
+    ) -> Result<Value, Unavailable> {
+        let request = json!({ "kind": "system_one", "purpose": filed.purpose, "state": state, "questions": questions });
+        let answered = self.hand(request).map_err(Unavailable)?;
+        match answered.get("unavailable") {
+            Some(reason) => Err(Unavailable(
+                reason.as_str().unwrap_or("unavailable").to_string(),
+            )),
+            None => Ok(answered),
+        }
+    }
+}
+
+impl classifier::Reader for Hosted {
+    fn system_one(&self) -> bool {
+        self.system_one
+    }
+
+    fn questions(&mut self, state: &Value, questions: &Value) -> Result<Value, Unavailable> {
+        let request = json!({ "kind": "system_one", "purpose": "classifier", "state": state, "questions": questions });
+        let answered = self.hand(request).map_err(Unavailable)?;
+        match answered.get("unavailable") {
+            Some(reason) => Err(Unavailable(
+                reason.as_str().unwrap_or("unavailable").to_string(),
+            )),
+            None => Ok(answered),
+        }
+    }
+
+    fn classifier(&mut self, call: &Call) -> Result<Answer, Failure> {
+        self.chat("classifier", call, false)
+    }
 }
 
 // --- Ruby, carefully -----------------------------------------------------

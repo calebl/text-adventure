@@ -88,7 +88,7 @@ class EngineSweep::Script
 
   # npc_action supplies one fixed character choice on a talk turn. It replaces
   # the model's decision, never the engine writer: Conversation applies it
-  # through the same NpcAction gate as InteractionAgent before the riposte.
+  # through the same NpcAction gate as the exchange before the riposte.
   Step = Data.define(:index, :id, :typed, :why, :player, :reseed, :npc_action, :browser, :expectation) do
     # How a step is named when it fails. The number is always there because a
     # script may type the same line twice on purpose.

@@ -68,14 +68,14 @@ class Playthrough::VolitionTurnTest < ActiveSupport::TestCase
 
   test "an act that moved something is stated to the narrator once, then claimed" do
     row = create(:playthrough_volition, playthrough: @game, character: @clerk, location: @room)
-    moment = Playthrough::Moment.new(@game)
+    moment = EngineMoment.new(@game)
 
     assert_includes moment.narration_context, row.fact
 
     scene = create(:scene, story: @story, location: @room)
     Playthrough::Turn.new(@game).send(:claim_volitions!, scene)
 
-    assert_not_includes Playthrough::Moment.new(@game).narration_context, row.fact
+    assert_not_includes EngineMoment.new(@game).narration_context, row.fact
   end
 
   # AN ARRIVAL'S PROMPT IS `Scene::Generator`'s, which states no act, so the
@@ -88,7 +88,7 @@ class Playthrough::VolitionTurnTest < ActiveSupport::TestCase
     Playthrough::Turn.new(@game).send(:claim_volitions!, arrival)
 
     assert_nil row.reload.scene_id
-    assert_includes Playthrough::Moment.new(@game).narration_context, row.fact
+    assert_includes EngineMoment.new(@game).narration_context, row.fact
 
     told = create(:scene, story: @story, location: @next_door)
     Playthrough::Turn.new(@game).send(:claim_volitions!, told)
@@ -108,7 +108,7 @@ class Playthrough::VolitionTurnTest < ActiveSupport::TestCase
   test "standing still and a rejected pick are never stated -- the prose can already see nothing happened" do
     waited = create(:playthrough_volition, :waited, playthrough: @game, character: @clerk, location: @room)
     refused = create(:playthrough_volition, :rejected, playthrough: @game, character: @clerk, location: @room)
-    context = Playthrough::Moment.new(@game).narration_context
+    context = EngineMoment.new(@game).narration_context
 
     assert_not_includes context, waited.fact
     assert_not_includes context, refused.fact
@@ -119,16 +119,8 @@ class Playthrough::VolitionTurnTest < ActiveSupport::TestCase
 
   test "a character's own acts are part of what they remember having experienced" do
     row = create(:playthrough_volition, playthrough: @game, character: @clerk, location: @room)
-    facts = Playthrough::Moment.new(@game).personal_facts(@clerk)
+    facts = EngineMoment.new(@game).personal_facts(@clerk)
 
     assert(facts.any? { |line| line.include?(row.fact) })
-  end
-
-  test "the ledger stays within its budget however long the game runs" do
-    30.times { create(:playthrough_volition, playthrough: @game, character: @clerk, location: @room) }
-    recalled = Playthrough::Ledger.new(@game, @clerk).recall(location: @room)
-
-    assert_operator recalled.size, :<=, Playthrough::Ledger::ROWS
-    assert_operator recalled.sum(&:length), :<=, Playthrough::Ledger::BUDGET
   end
 end

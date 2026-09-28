@@ -1,8 +1,8 @@
 require "test_helper"
 
-# InteractionAgent indexes the response with string keys and interpolates the
+# the exchange indexes the response with string keys and interpolates the
 # result into the narrator prompt, so the field names here are a hard contract
-# with InteractionAgent#narrator_instructions.
+# with the exchange#narrator_instructions.
 class Interaction::SchemaTest < ActiveSupport::TestCase
   include SchemaAssertions
 
@@ -118,7 +118,7 @@ class Interaction::SchemaTest < ActiveSupport::TestCase
     assert_equal [], schema_properties(SCHEMA).keys - Interaction.column_names
   end
 
-  # InteractionAgent reads these five out of the response by name. If a field is
+  # the exchange reads these five out of the response by name. If a field is
   # renamed here the prompt silently interpolates nil. `inner_resolution` is
   # deliberately absent from the list -- see Interaction::Schema.
   test "carries every field the narrator prompt interpolates" do

@@ -506,7 +506,7 @@ class Location::GeneratorTest < ActiveSupport::TestCase
 
   # THE FACTS ARE THE PLAN'S AND ARE NOT ASSEMBLED HERE, so the room writer and
   # the narrator cannot come to describe one building two ways
-  # (`Playthrough::Moment#narration_context`).
+  # (the engine's `moment::narration_context`).
   test "what the room is told is what Location::Plan says, word for word" do
     room, = laid_out_pair
     agent = FakeAgent.new(DETAIL)

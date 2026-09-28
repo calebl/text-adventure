@@ -582,7 +582,7 @@ namespace :eval do
       found.any? ? "Bench runs: #{found.join(", ")}." : "There are no classifier bench runs yet -- run `rake eval:classifier` first."
     end
 
-    # CASCADE=1 measures `Playthrough::Classifier::Cascade` in front of the
+    # CASCADE=1 measures the engine's `cascade` in front of the
     # arm instead of pinning it off -- the same reader a live turn gets where
     # either System One credential is in the environment. An arm may also pin
     # the Jev transport with `+typesafe-direct` or `+openrouter-decisions`,

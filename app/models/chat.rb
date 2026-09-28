@@ -36,10 +36,10 @@ class Chat < ApplicationRecord
   PURPOSES = [
     "classifier",           # Playthrough::Classifier -- what did the player mean
     "arrival",              # Scene::Generator -- walking into a place
-    "narration",            # Scene::Narrator -- answering the typed command
+    "narration",            # the narrator -- answering the typed command
     "ending",               # Scene::Ending -- the last paragraph of a finished game
-    CHARACTER,              # InteractionAgent, first pass -- the character
-    "interaction-narration", # InteractionAgent, second pass -- the prose
+    CHARACTER,              # an exchange, first pass -- the character
+    "interaction-narration", # an exchange, second pass -- the prose
     "location",             # Location::Generator -- realizing a room
     "inscription",          # Item::Inscriber -- what a readable thing says, once
     "world"                 # the world-building generators, off the turn path

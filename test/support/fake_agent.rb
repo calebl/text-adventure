@@ -65,6 +65,9 @@ class FakeAgent
 
   def recorded_chat = nil
 
+  # The conversation a `BaseAgent` opens before it is asked; a fake opens none.
+  def chat = nil
+
   # Resuming a world checkpoint can restore an accepted exchange without a
   # provider call. This double records no chat rows, just its queued answers.
   def add_message(**) = nil

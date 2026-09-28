@@ -131,7 +131,9 @@ class Playthrough::TurnConversationsTest < ActiveSupport::TestCase
     # Picking the conversation up is what trims it, and that needs a model on
     # the row without needing an answer. See OfflineExchange.with_model.
     OfflineExchange.with_model do
-      InteractionAgent.new(Character.find(@grenn.id), playthrough: @playthrough).character_agent.chat
+      grenn = Character.find(@grenn.id)
+      BaseAgent.new(purpose: Chat::CHARACTER, playthrough: @playthrough, character: grenn,
+                    chat: Chat.conversation_with(grenn, @playthrough)).chat
     end
 
     assert_equal Chat::HISTORY_EXCHANGES * 2, conversation.reload.exchange_messages.count

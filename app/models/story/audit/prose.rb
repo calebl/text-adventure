@@ -84,12 +84,12 @@ module Story::Audit::Prose
   # ------------------------------------------------------------------------
   # THE PROTAGONIST IS WRITTEN AS SOMEBODY ELSE.
   #
-  # `Scene::Narrator::INSTRUCTIONS` requires the second person, and this is the
-  # failure that breaks the game rather than merely the prose: the narration
-  # stops addressing the player and starts describing a character with their
-  # name standing opposite them. Twelve flags across nine real narrations, and
-  # in every one of the nine the protagonist has become an NPC the player is
-  # talking to.
+  # the narrator's instructions (`scene/narrator.yml`) require the second
+  # person, and this is the failure that breaks the game rather than merely the
+  # prose: the narration stops addressing the player and starts describing a
+  # character with their name standing opposite them. Twelve flags across nine
+  # real narrations, and in every one of the nine the protagonist has become an
+  # NPC the player is talking to.
   #
   # A MENTION IS NOT A VIOLATION, and that is the whole difficulty. This
   # project has already measured what happens when prose is scanned for a name

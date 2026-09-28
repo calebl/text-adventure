@@ -18,7 +18,7 @@ Six portions pin how a typed line is read and refused, all of it offline:
 | `grammar_corpus` | the grammar over every line of the labelled classifier corpus (the input of `rake eval:classifier_offline`), in the room the line was labelled against: both readings and the refusal sentence the player gets |
 | `slash_menu` | `Playthrough::SlashMenu#to_h`: the words offered after a slash and what each completes to |
 | `classifier_intent` | `Playthrough::Classifier#build_intent`: a model's intent, target, `also_named` and a throw's `thrown_at` resolved against the room's closed sets, and the refusal that follows |
-| `cascade` | `Playthrough::Classifier::Cascade`: the request a line would send System One, and recorded answers composed into an intent or escalated to the model call -- every case in its model test, and a sweep |
+| `cascade` | the System One cascade (`Playthrough::Classifier::Cascade` when it was written, the engine's `cascade` now): the request a line would send System One, and recorded answers composed into an intent or escalated to the model call. The engine's own |
 | `refusal` | `Playthrough::Refusal` from each entry point, every case in its model test and a sweep |
 
 They stand in rooms rather than on bare values: a line is read against the
@@ -31,24 +31,25 @@ stages them, written down as room descriptions, and read in both forms; the
 export stops if the two readings disagree.
 
 No prompt text is copied into these files. The words a System One request
-carries are `config/engine/playthrough/classifier/request.yml`, and the
+carries are the engine's `data/playthrough/classifier/request.yml`, and the
 `cascade` portion records only each question's id, type and options.
 
 ## The request-building portions
 
-Eight portions pin what the engine hands a model, byte for byte, still without
+Nine portions pin what the engine hands a model, byte for byte, still without
 calling one:
 
 | Portion | What it records |
 | --- | --- |
-| `classifier_request` | `Playthrough::Classifier::State` and `Request`: the whole System One request for a typed line, every instruction and criterion as sent, in the rooms the line-reading portions stand in -- including the position `test/fixtures/files/scored_classifier_request.json` was sent for |
-| `volition_request` | `Playthrough::Volition::SystemOne#request`, built on `Volition::State`: the room written in `test/fixtures/files/volition_system_one_request.json`, reproduced exactly, and rooms of sweep scripts |
-| `moment` | `Playthrough::Moment`: the narration context (with and without the floor plan and the arc, with a thing just taken or dropped, with each of the story's endings) and every other person's character context |
-| `ledger` | `Playthrough::Ledger#recall` for everybody in games inside and past both of its bounds |
-| `memory` | `Playthrough::Memory#recall`, `#resolution` and `#recollection`, and the moment's conclusions and recollections built on them |
+| `classifier_request` | the whole System One request for a typed line, every instruction and criterion as sent, in the rooms the line-reading portions stand in -- including the position `test/fixtures/files/scored_classifier_request.json` was sent for. The engine's own |
+| `volition_request` | the typed volition request: the room written in `test/fixtures/files/volition_system_one_request.json`, reproduced exactly, and rooms of sweep scripts. The engine's own |
+| `moment` | the narration context (with and without the floor plan and the arc, with a thing just taken or dropped, with each of the story's endings) and every other person's character context. The engine's own |
+| `ledger` | what one person saw happen in one game, for everybody in games inside and past both of its bounds. The engine's own |
+| `memory` | which earlier exchanges come back into a prompt, each one's resolution and recollection, and the moment's conclusions and recollections built on them. The engine's own |
 | `plan` | `Location::Plan` for every room of built worlds and laid-out places |
 | `request_identity` | RubyLLM's `to_json_schema` output for every schema a request carries, and `Eval::RequestIdentity`'s canonical form and 16-hex digest -- including the classifier and prompt sets `rake eval:classifier_digest` and `rake eval:prompt_digest` identify |
-| `kept_requests` | literal requests stored in kept evaluation sets under `db/eval/` (arrival, realization, dialogue), rebuilt by today's builders |
+| `kept_requests` | literal requests stored in kept evaluation sets under `db/eval/` (arrival, realization), rebuilt by today's builders |
+| `dialogue_requests` | the dialogue bench's literal kept requests, both passes. The engine's own |
 
 These builders read many tables at once, so their cases do not describe a
 room field by field. A case builds its records, runs the builder, and writes
@@ -60,11 +61,10 @@ through the engine and stopped after a chosen step
 (`lib/engine_vectors/walked.rb`), so the blows, tolls and acts in it were
 written by the engine's own statements.
 
-The prompt text in these outputs is `config/engine/`, read by the Ruby
-builders; the vectors record what those builders make of it. The export stops
-if a fixture or a kept request is no longer reproduced -- the scored classifier
-request is compared with the one deliberate `examine` edit applied that its own
-test names.
+The prompt text in these outputs is the engine's `data/`, which this game
+reads through its extension (`EngineData`); the vectors record what the
+builders make of it. The export stops if a kept request is no longer
+reproduced.
 
 ## What they are for
 
@@ -97,11 +97,16 @@ portions `grammar`, `grammar_corpus`, `slash_menu`, `classifier_intent` and
 read off the engine (`Playthrough::RustEngine.glance`). Two of those have no
 Ruby builder left: the menu and the grammar's slash words and use lines were
 only ever read for the panels. `physics` (falls) was written in the engine and
-never had a Ruby builder, so it is the engine's from the start. Any other
-portion joins the list only once its Ruby code runs nowhere else:
-`world_mechanic` stays Ruby's while the debug
-view reads a mechanic's boundaries, and the dice and geometry stay Ruby's for as
-long as world creation, seeding, repair and the doctor run them.
+never had a Ruby builder, so it is the engine's from the start. Nor do the
+request builders (`cascade`, `classifier_request`, `volition_request`,
+`moment`, `ledger`, `memory`, `dialogue_requests`) have one: every request the
+benches and the Ruby loop send is the engine's own, asked for through the
+extension (`Playthrough::Requests`). Any other portion joins the list only once
+its Ruby code runs nowhere else: `world_mechanic` stays Ruby's while the debug
+view reads a mechanic's boundaries, the arrival and room writer's
+`kept_requests` while world creation writes rooms and opening arrivals, and the
+dice and geometry for as long as world creation, seeding, repair and the doctor
+run them.
 
 ## Regenerating them
 

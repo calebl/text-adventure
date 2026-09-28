@@ -170,7 +170,7 @@ class Playthrough::Arc
   end
 
   # THE ONE LINE THE NARRATOR IS EVER TOLD ABOUT THE ARC, and the whole of what
-  # `Playthrough::Moment` asks for: the next open step's own summary. The
+  # the engine's `moment` asks for: the next open step's own summary. The
   # captain's Call 4 of 2026-09-06.
   #
   # NEVER THE CONCLUSION AND NEVER THE WHOLE ARC. Telling a model the ending

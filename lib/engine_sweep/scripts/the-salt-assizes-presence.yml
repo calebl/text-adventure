@@ -13,7 +13,7 @@
 #
 # EVERY STEP IS A FACT OFF THE PLAYTHROUGH'S CAST, which is the closed set
 # `Playthrough::Classifier` resolves a `talk` against and the same one
-# `Playthrough::Moment` tells the narrator about. `present` excludes the player
+# the engine's `moment` tells the narrator about. `present` excludes the player
 # themselves, exactly as the classifier's cast does -- a player cannot talk to
 # themselves.
 #

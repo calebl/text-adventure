@@ -945,11 +945,12 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # --- a reach that found nothing is refused, not narrated --------------------
 
   # THE NARRATOR USED TO BE TOLD ABOUT IT. A move that resolved to no exit
-  # reached `Scene::Narrator` with a fact saying the player had not moved
-  # (`#reach_fact`), because before that it reached it with the bare command and
-  # the narrator walked the player through the door anyway. On the captain's
-  # ruling of 2026-09-04 the narrator is not asked at all: the line is refused,
-  # nothing is written, and the drift row is taken exactly as before.
+  # reached the narrator (`Playthrough::Turn#narrate`) with a fact saying the
+  # player had not moved (`#reach_fact`), because before that it reached it with
+  # the bare command and the narrator walked the player through the door anyway.
+  # On the owner's ruling of 2026-09-04 the narrator is not asked at all: the
+  # line is refused, nothing is written, and the drift row is taken exactly as
+  # before.
   #
   # ONE QUEUED RESPONSE PER TEST, which is the assertion that matters as much as
   # the text -- the FakeAgent raises when it runs out, so a narrator call on any

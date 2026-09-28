@@ -341,7 +341,7 @@ class BaseAgentTest < ActiveSupport::TestCase
   # declared in BaseAgent -- the rule and the caps belong to the concern and the
   # schema -- but whether it rotates is decided here, and it rotates, on the
   # same side of the line as a schema a model ignored. Before `verify:` existed
-  # the raise happened in `InteractionAgent#ask` AFTER this method returned, so
+  # the raise happened in `Playthrough::Turn#converse` AFTER this method returned, so
   # the rotation never saw it and a model that truncates cost the player a turn.
   test "ask rotates past an answer the caller's own check rejected" do
     good = { "pre_thought" => "Say something." }
@@ -602,7 +602,7 @@ class BaseAgentTest < ActiveSupport::TestCase
   end
 
   # Both are `UnusableResponseError` so a caller that persists prose can discard
-  # either without knowing which happened (`Scene::Narrator#narrate`), while
+  # either without knowing which happened (`Playthrough::Turn#narrate`), while
   # `#ask` keeps them apart because what it does about them is opposite.
   test "both unusable responses share a parent and stay distinct classes" do
     assert_operator BaseAgent::RefusalError, :<, BaseAgent::UnusableResponseError

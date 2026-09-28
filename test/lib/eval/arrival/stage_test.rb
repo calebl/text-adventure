@@ -32,7 +32,7 @@ class Eval::Arrival::StageTest < ActiveSupport::TestCase
                 source = toll.location_connection || toll.location
                 assert_equal source.hazard, toll.hazard
                 assert source.hazardous?
-                assert_includes prompt, Playthrough::Moment.new(stage.game).one_toll(toll)
+                assert_includes prompt, toll.fact
               end
             end
             stage.request

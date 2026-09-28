@@ -3,7 +3,7 @@
 # A Location's description is durable world prose, so it may still describe a
 # person this game killed or a thing it carried away. These readers are the
 # authoritative live state beside that description. They deliberately take a
-# destination: Playthrough::Moment reads current_location, which is still the
+# destination: the engine's moment reads current_location, which is still the
 # room the player is leaving while an arrival is being written.
 #
 # Reading this object changes nothing. The move snapshots the room and pays
@@ -53,7 +53,7 @@ class Scene::ArrivalContext
     parts << "Dead here: #{names(dead)}. They cannot speak or act." if dead.any?
     parts << "Lying here: #{item_names(floor)}."
     parts << "You are carrying: #{item_names(carried)}."
-    parts.concat(tolls.map { |toll| Playthrough::Moment.new(playthrough).one_toll(toll) })
+    parts.concat(tolls.map(&:fact))
     parts
   end
 

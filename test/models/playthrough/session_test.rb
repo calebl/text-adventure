@@ -12,14 +12,14 @@ class Playthrough::SessionTest < ActiveSupport::TestCase
   # read for the call, and a new one there fails here with its file named.
   #
   # `lib/eval/` stages are measuring instruments, not front ends: each plants
-  # a fixture inside a turn (a fixed classifier, a scripted blow) to hold the
+  # a fixture inside a turn (a replayed exchange, a scripted blow) to hold the
   # rest of the loop still while one prompt is measured, which is exactly what
   # a front end must not do. They are named one by one, so a new file there
   # is still read.
   FRONT_ENDS = %w[app/controllers app/jobs bin lib].freeze
   INSTRUMENTS = %w[
+    lib/eval/dialogue/bench.rb
     lib/eval/dialogue/stage.rb
-    lib/eval/prompt/bench.rb
     lib/eval/prompt/branches/stage.rb
   ].freeze
 

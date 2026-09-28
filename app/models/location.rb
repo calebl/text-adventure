@@ -166,7 +166,7 @@ class Location < ApplicationRecord
   #          so arriving somewhere is free and standing there is not, which is
   #          the shape a fight already has.
   #   words  what the engine says about it, once, in one place. The narrator is
-  #          TOLD this (`Playthrough::Moment`); it does not decide it.
+  #          TOLD this (the engine's `moment`); it does not decide it.
   #
   # NOTHING HERE IS A RULE ENGINE, deliberately: `data/ta-direction/report.md`
   # §12 rules out a predicate DSL or a general consequence table, and this is

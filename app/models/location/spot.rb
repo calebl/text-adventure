@@ -55,7 +55,7 @@
 # slice calls (see below).
 #
 # WHO READS IT, AND WHO DOES NOT YET. Nothing in the play path reads a
-# coordinate: `Playthrough::Moment` is slice 3's file and is not touched here.
+# coordinate: the engine's `moment` is slice 3's file and is not touched here.
 # `Item#position`, `Character#position` and `Location::Box#contains?` are the
 # three readers a later slice calls -- what to tell a narrator about where
 # something is standing, and how far a thing was thrown -- and they are public

@@ -198,9 +198,10 @@ class SceneTest < ActiveSupport::TestCase
 
   # A THROW IS THE ONE ACTION IN THE GAP THAT IS NOT ENGINE COPY, and it is the
   # reason `ENGINE_AUTHORED` is a named list rather than the difference between
-  # `ACTIONS` and `INTENTS`. Its `Scene` is streamed by `Scene::Narrator` off
-  # `Playthrough::Turn#thrown_fact`, so skipping it would take real prose out of
-  # `Story::Audit`'s reach and shrink `Eval::Richness`'s denominator for nothing.
+  # `ACTIONS` and `INTENTS`. Its `Scene` is streamed by the narrator
+  # (`Playthrough::Turn#narrate`) off `Playthrough::Turn#thrown_fact`, so
+  # skipping it would take real prose out of `Story::Audit`'s reach and shrink
+  # `Eval::Richness`'s denominator for nothing.
   test "engine_authored? is false for a throw, which the narrator wrote" do
     scene = build(:scene, story: @story, location: @location, resolved_action: "throw")
 

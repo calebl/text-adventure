@@ -8,7 +8,7 @@
 # schema in the app, nothing in any prompt mentions one, and this class is a
 # `Roll` and some arithmetic with no model call anywhere in it. So a position
 # cannot be wrong in the way a narrated one could: the engine gates the state
-# and a later slice informs the prose (`Playthrough::Moment`, slice 3).
+# and a later slice informs the prose (the engine's `moment`, slice 3).
 # `EngineSweep::Invariants#geometry_unmoved` already asserts the same sentence
 # about a room's own five columns, and `#positions_in_bounds` asserts this one.
 #

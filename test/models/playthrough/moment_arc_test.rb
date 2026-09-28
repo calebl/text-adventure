@@ -24,7 +24,7 @@ class Playthrough::MomentArcTest < ActiveSupport::TestCase
     @game = create(:playthrough, story: @story, character: @player, current_location: @gate)
   end
 
-  def context = Playthrough::Moment.new(@game.reload).narration_context
+  def context = EngineMoment.new(@game.reload).narration_context
 
   def arc_lines(text = context) = text.lines.grep(/The story is asking for/)
 
@@ -48,7 +48,7 @@ class Playthrough::MomentArcTest < ActiveSupport::TestCase
       beat = story.main_quest.steps.first
 
       assert_equal [ "The story is asking for: #{beat.summary}" ],
-                   arc_lines(Playthrough::Moment.new(game).narration_context).map(&:strip),
+                   arc_lines(EngineMoment.new(game).narration_context).map(&:strip),
                    "#{title}: the bench plays this world, and its narrator is told the arc's next beat"
     end
   end
@@ -98,7 +98,7 @@ class Playthrough::MomentArcTest < ActiveSupport::TestCase
     Playthrough::Beat.reach!(@game, quest.steps.first, at: @story.start_time)
 
     assert_includes context, "Get below."
-    assert_includes Playthrough::Moment.new(second).narration_context, "Take the ring."
+    assert_includes EngineMoment.new(second).narration_context, "Take the ring."
   end
 
   # --- and how it ended, on the one pass that asks --------------------------
@@ -148,7 +148,7 @@ class Playthrough::MomentArcTest < ActiveSupport::TestCase
   test "the pass that is not told the errand is not told the ending" do
     quest = arc_with("Take the ring.")
 
-    text = Playthrough::Moment.new(@game.reload, ending: quest.default_outcome)
+    text = EngineMoment.new(@game.reload, ending: quest.default_outcome)
                               .narration_context(plan: false, arc: false)
 
     assert_empty ending_lines(text)
@@ -159,15 +159,16 @@ class Playthrough::MomentArcTest < ActiveSupport::TestCase
   test "the character pass is not told the player's errand" do
     arc_with("Find the cell they are keeping him in.")
 
-    assert_empty arc_lines(Playthrough::Moment.new(@game.reload).narration_context(plan: false, arc: false))
+    assert_empty arc_lines(EngineMoment.new(@game.reload).narration_context(plan: false, arc: false))
   end
 
-  test "InteractionAgent asks for the moment without it" do
+  test "the exchange's narrator asks for the moment without it" do
     arc_with("Find the cell they are keeping him in.")
     someone = create(:character, story: @story, location: @gate)
 
-    section = InteractionAgent.new(someone, playthrough: @game.reload)
-                              .send(:narrator_moment_section)
+    section = Playthrough::Requests.build(:interaction_narration, playthrough: @game.reload.id, character: someone.id,
+                                                                  line: "Hello.", reaction: {}, fact: "Nothing changed.")
+                                   .fetch("user")
 
     assert_empty arc_lines(section)
     assert_includes section, "Iron Gate Chamber", "the rest of the moment is unchanged"
@@ -176,7 +177,7 @@ class Playthrough::MomentArcTest < ActiveSupport::TestCase
   private
 
   def with_ending(outcome)
-    Playthrough::Moment.new(@game.reload, ending: outcome).narration_context
+    EngineMoment.new(@game.reload, ending: outcome).narration_context
   end
 
   def ending_lines(text = context) = text.lines.grep(/The story has ended/)

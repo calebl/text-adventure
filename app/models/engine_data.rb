@@ -1,30 +1,48 @@
-# THE ONE HOME OF EVERY FIXED PROMPT TEXT AND CLOSED TABLE THE ENGINE READS.
+# EVERY FIXED PROMPT TEXT AND CLOSED TABLE, EACH WITH ONE HOME.
 #
-# The words a model is handed and the tables a die is weighted with live in
-# `config/engine/*.yml`, one file per owning class, so that any engine reading
-# this game's rules reads the same bytes this one does. A prompt with two homes
-# is a prompt that drifts, and the drift would be invisible: the digests that
-# prove a request unchanged (`rake eval:prompt_digest`, `eval:classifier_digest`,
+# The words a model is handed and the tables a die is weighted with are data,
+# one file per owning class, so that anything reading this game's rules reads
+# the same bytes. A prompt with two homes is a prompt that drifts, and the
+# drift would be invisible: the digests that prove a request unchanged
+# (`rake eval:prompt_digest`, `eval:classifier_digest`,
 # `eval:realization_digest`) can only watch one of them.
+#
+# TWO HOMES OF FILES, AND NEVER TWO OF ONE FILE. The words a turn sends and the
+# tables it reads -- `ENGINE_OWNED` -- are the Rust engine's, in its `data/`,
+# and are read here out of the extension, which compiled in exactly the bytes
+# of the commit it is pinned to (`Playthrough::Requests.data`); a change to
+# them is an engine change and reaches this game with the pin. The rest, which
+# only this game's own code reads (world creation's generators, the parameter
+# tables), live in `config/engine/*.yml`. Several engine-owned files are also
+# read by Ruby that stays -- world creation writes rooms and opening arrivals
+# with them -- and read the engine's bytes too.
 #
 # WHAT IS HERE AND WHAT IS NOT. A text that is the same on every call moves
 # here; a template that interleaves records with prose stays in the builder
 # that fills it in, because its shape is code. A static text that needs one
 # value takes it as a `%{name}` placeholder, filled with `format` by its owner.
 #
-# THE OWNING CLASS STILL NAMES THE VALUE. `Scene::Narrator::INSTRUCTIONS` is
+# THE OWNING CLASS STILL NAMES THE VALUE. `Playthrough::Classifier::INSTRUCTIONS` is
 # still the constant everything reads; only its literal moved. The comment
 # explaining why a sentence says what it says stays beside that constant, which
 # is where the person changing it is standing.
 #
-# LOADING FAILS LOUDLY. A missing file, a file that is not YAML, and a file whose
-# shape is not the one declared in `SCHEMAS` all raise `EngineData::Error` when
-# the owning class is loaded -- never a nil prompt sent to a model. Every value is
-# read once per process and frozen.
+# LOADING FAILS LOUDLY. A missing file, a file that is not YAML, a file whose
+# shape is not the one declared in `SCHEMAS`, and an engine-owned file with no
+# extension to read it from all raise `EngineData::Error` when the owning class
+# is loaded -- never a nil prompt sent to a model. Every value is read once per
+# process and frozen.
 module EngineData
   class Error < StandardError; end
 
   ROOT = Rails.root.join("config/engine")
+
+  # The files the engine owns: read out of its extension, never from `ROOT`.
+  ENGINE_OWNED = %w[
+    character/desires item/inscriber location/generator playthrough/classifier
+    playthrough/classifier/request playthrough/grammar playthrough/volition/weights
+    scene/ending scene/generator scene/narrator
+  ].freeze
 
   # A HASH WITH ANY STRING KEYS, every value of one shape -- as against a Hash
   # literal in a schema, which is a record with exactly those keys.
@@ -83,18 +101,37 @@ module EngineData
     @lock.synchronize { @loaded[name] ||= load(name) }
   end
 
-  def self.load(name, root: ROOT)
+  # `root` is where a file this game owns is read from; an engine-owned file
+  # is read from `engine` (`{name => text}`), the extension's own data unless
+  # a caller hands another.
+  def self.load(name, root: ROOT, engine: nil)
     schema = SCHEMAS.fetch(name) { raise Error, "#{name}: no schema declared in EngineData::SCHEMAS" }
-    path = Pathname(root).join("#{name}.yml")
-    raise Error, "#{name}: #{path} is missing" unless path.file?
+    where, text = ENGINE_OWNED.include?(name) ? engine_text(name, engine) : file_text(name, root)
 
     data = begin
-      YAML.safe_load_file(path, aliases: false)
+      YAML.safe_load(text, aliases: false)
     rescue Psych::Exception => e
-      raise Error, "#{name}: #{path} is not valid YAML: #{e.message}"
+      raise Error, "#{name}: #{where} is not valid YAML: #{e.message}"
     end
     check!(data, schema, name)
     deep_freeze(data)
+  end
+
+  def self.file_text(name, root)
+    path = Pathname(root).join("#{name}.yml")
+    raise Error, "#{name}: #{path} is missing" unless path.file?
+
+    [ path, path.read ]
+  end
+
+  def self.engine_text(name, engine)
+    engine ||= begin
+      Playthrough::Requests.data
+    rescue Playthrough::Requests::Unbuilt => e
+      raise Error, "#{name}: the engine owns this file, and #{e.message}"
+    end
+    text = engine.fetch(name) { raise Error, "#{name}: the engine's data has no such file" }
+    [ "the engine's data/#{name}.yml", text ]
   end
 
   def self.check!(value, spec, where)
@@ -133,5 +170,5 @@ module EngineData
     value.freeze
   end
 
-  private_class_method :load, :check!, :deep_freeze
+  private_class_method :load, :file_text, :engine_text, :check!, :deep_freeze
 end

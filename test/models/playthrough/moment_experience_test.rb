@@ -15,7 +15,7 @@ class Playthrough::MomentExperienceTest < ActiveSupport::TestCase
     Playthrough::Turn.new(@game).strike!(@player, @npc, damage: @npc.max_hp - 1, round: 1)
     assert_equal @scene.id, @game.reload.current_scene_id
 
-    prompt = InteractionAgent.new(@npc, playthrough: @game).character_prompt("What happened to you?")
+    prompt = EngineMoment.new(@game).character_prompt(@npc, "What happened to you?")
 
     assert_includes prompt, "Your own condition: badly hurt (1 of #{@npc.max_hp})."
     assert_includes prompt, "You are currently fighting Cal."
@@ -27,7 +27,7 @@ class Playthrough::MomentExperienceTest < ActiveSupport::TestCase
     state = @game.npc_states.create!(character: @npc, location: @room)
     state.make_peace!
 
-    prompt = InteractionAgent.new(@npc, playthrough: @game).character_prompt("Are we at peace?")
+    prompt = EngineMoment.new(@game).character_prompt(@npc, "Are we at peace?")
 
     assert_includes prompt, "You have a ceasefire with Cal; it still holds."
     assert_includes prompt, "Cal struck Maren for 2 hit points"
@@ -41,7 +41,7 @@ class Playthrough::MomentExperienceTest < ActiveSupport::TestCase
     turn.strike!(@player, victim, damage: 2, round: 1)
     turn.stand_in!(@room)
 
-    prompt = InteractionAgent.new(@npc, playthrough: @game).character_prompt("What happened while I was away?")
+    prompt = EngineMoment.new(@game).character_prompt(@npc, "What happened while I was away?")
 
     assert_includes prompt, "Your own condition: unhurt."
     assert_not_includes prompt, "Orren"
@@ -55,7 +55,7 @@ class Playthrough::MomentExperienceTest < ActiveSupport::TestCase
                            typed: "read the hidden password", resolved_action: "examine", acted_on: note)
     @game.update!(current_scene: scene)
 
-    prompt = InteractionAgent.new(@npc, playthrough: @game).character_prompt("Hello.")
+    prompt = EngineMoment.new(@game).character_prompt(@npc, "Hello.")
 
     assert_not_includes prompt, "hidden password"
     assert_not_includes prompt, note.inscription
@@ -64,7 +64,7 @@ class Playthrough::MomentExperienceTest < ActiveSupport::TestCase
   test "a game with no assigned player still builds the NPC context" do
     @game.update!(character: nil)
     @npc.update!(hostile: true)
-    prompt = InteractionAgent.new(@npc, playthrough: @game).character_prompt("Hello.")
+    prompt = EngineMoment.new(@game).character_prompt(@npc, "Hello.")
 
     assert_includes prompt, "Your own condition: unhurt."
     assert_not_includes prompt, "You are currently fighting"
@@ -73,7 +73,7 @@ class Playthrough::MomentExperienceTest < ActiveSupport::TestCase
   test "another game neither inherits the wound nor recalls its blow" do
     Playthrough::Turn.new(@game).strike!(@player, @npc, damage: 2, round: 1)
     fresh = create(:playthrough, story: @story, character: @player, current_location: @room, current_scene: @scene)
-    prompt = InteractionAgent.new(@npc, playthrough: fresh).character_prompt("Hello.")
+    prompt = EngineMoment.new(fresh).character_prompt(@npc, "Hello.")
 
     assert_includes prompt, "Your own condition: unhurt."
     assert_not_includes prompt, "recorded blow"

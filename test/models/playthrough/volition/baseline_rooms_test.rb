@@ -5,11 +5,11 @@ require "test_helper"
 #
 # `rake eval:volition_baseline` sends
 # `test/fixtures/files/volition_baseline_requests.json` and nothing else, so
-# this test is what makes that file the app's own request for each room: it
-# stages every room from factories, asks `Playthrough::Volition::SystemOne#request`
-# for it, and compares. Rewrite the file (`REWRITE=1`) only when the request or
-# a room is meant to change; a kept set records the file's sha256, so a set
-# measured on other bytes says so.
+# this test is what makes that file the game's own request for each room: it
+# stages every room from factories, asks the engine for the request
+# (`Playthrough::Requests`, `volition`), and compares. Rewrite the file
+# (`REWRITE=1`) only when the request or a room is meant to change; a kept set
+# records the file's sha256, so a set measured on other bytes says so.
 #
 # THE PEOPLE ARE THE SEEDED WORLDS' OWN. Every sheet below is read out of
 # `db/seeds/worlds/*.yml` by name -- the four desire sentences and both
@@ -114,11 +114,12 @@ class Playthrough::Volition::BaselineRoomsTest < ActiveSupport::TestCase
       token = shape == :move ? "move:#{rooms.fetch(where).id}" : shape.to_s
       Playthrough::Volition.new(game, who, location: from).apply!(token)
     end
-    Playthrough::Volition::SystemOne.new(game, people.values, location: room, line: entry[:line]).request
+    Playthrough::Requests.build(:volition, playthrough: game.id, characters: people.values.map(&:id),
+                                           location: room.id, line: entry[:line])
   end
 
   def requests
-    ROOMS.map { |entry| { "room" => entry[:key] }.merge(stage(entry).deep_stringify_keys) }
+    ROOMS.map { |entry| { "room" => entry[:key] }.merge(stage(entry)) }
   end
 
   test "the twelve staged requests are byte for byte the pinned ones" do
@@ -136,11 +137,12 @@ class Playthrough::Volition::BaselineRoomsTest < ActiveSupport::TestCase
     end
   end
 
-  test "the pressure question and its criteria are the app's own in every room" do
+  test "the pressure question and its criteria are the same in every room" do
+    pinned = JSON.parse(Rails.root.join("test/fixtures/files/volition_system_one_request.json").read)["questions"]
+                 .find { |key, _| key.end_with?(":pressure") }.last
     JSON.parse(FIXTURE.read).each do |request|
       request["questions"].select { |key, _| key.end_with?(":pressure") }.each_value do |question|
-        assert_equal Playthrough::Volition::SystemOne::PRESSURE, question["instructions"]
-        assert_equal Playthrough::Volition::SystemOne::PRESSURE_CRITERIA, question["criteria"]
+        assert_equal pinned, question, request["room"]
       end
     end
   end

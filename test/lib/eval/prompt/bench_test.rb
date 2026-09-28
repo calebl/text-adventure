@@ -6,7 +6,7 @@ require "test_helper"
 # what came back beside the facts it was written against, and every part of that
 # is testable without paying for a call:
 #
-#   * the prompt is `Playthrough::Moment`'s and `Playthrough::Turn`'s, not this
+#   * the prompt is the engine's `moment`'s and `Playthrough::Turn`'s, not this
 #     class's -- so a case's facts really do reach the narrator;
 #   * the branch is chosen by `Playthrough::Turn#play` off the case's declared
 #     action, so a `take` takes and a `move` reaches the arrival pass;
@@ -74,7 +74,7 @@ class Eval::Prompt::BenchTest < ActiveSupport::TestCase
   end
 
   # THE PROMPT IS THE APP'S. Not a fixture, not a copy: the case's facts reach
-  # the narrator through `Playthrough::Moment`, and the sentence about what
+  # the narrator through the engine's `moment`, and the sentence about what
   # already happened is `Playthrough::Turn#taken_fact`.
   test "the narrator is handed the moment the app would have built" do
     agents = nil

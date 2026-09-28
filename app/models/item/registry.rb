@@ -16,7 +16,7 @@
 # mechanic that quietly stops working the day a model stops complying. The
 # plan's real intent survives -- nothing is generated ahead of time, the
 # ontology stays bounded, a stub room costs nothing until somebody walks in --
-# and only the compliance dependency is dropped. `Playthrough::Moment` then
+# and only the compliance dependency is dropped. The engine's `moment` then
 # tells the narrator what is lying here, out of these records.
 #
 # WHOLE, NOT STUBBED. `Location` is realized in two steps because a room's

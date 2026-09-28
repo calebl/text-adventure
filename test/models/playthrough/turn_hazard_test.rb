@@ -107,7 +107,7 @@ class Playthrough::TurnHazardTest < ActiveSupport::TestCase
 
   # --- what stops it being told twice ---------------------------------------
 
-  # `Playthrough::Moment` states the UNTOLD tolls as facts, so one of them has
+  # the engine's `moment` states the UNTOLD tolls as facts, so one of them has
   # to stop being untold once a paragraph has carried it. The stamp is here
   # rather than in `Playthrough::Hazards` for the reason `typed` is: this is the
   # one place with the turn's Scene on every branch.

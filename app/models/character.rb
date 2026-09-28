@@ -26,7 +26,7 @@
 #
 # `Character.present_in(location)` IS THE CLOSED SET, the same way
 # `Playthrough#items_lying_in(location)` is the one `take` resolves against.
-# `Playthrough::Classifier#characters_here` reads it, `Playthrough::Moment#others`
+# `Playthrough::Classifier#characters_here` reads it, the engine's `moment`
 # reads it, `Playthrough::Mechanics`'s `present` line reads it, and the arrival
 # cast a `Scene` records is written FROM it rather than the other way round.
 # One answer, one query, and nothing infers presence from prose.
@@ -417,7 +417,7 @@ class Character < ApplicationRecord
   # interpolated into `#interaction_instructions` -- the character speaking as
   # themselves, which is the one prompt they belong in -- and stored, and that
   # is the whole of what happens to them. No code matches on them, and the
-  # narrator is never told any of them (see `Playthrough::Moment`: it is told
+  # narrator is never told any of them (see the engine's `moment`: it is told
   # what somebody DID, never why, and never what anybody wants).
   #
   # THE TWO LABELS ARE THE ONLY THING A BRANCH SEES, and what a label DOES is
@@ -507,7 +507,7 @@ class Character < ApplicationRecord
   end
 
   # "he/him/his", "she/her/hers", "they/them/theirs". Raises rather than
-  # defaulting -- see InteractionAgent#pronoun_rule for why.
+  # defaulting -- see the engine's `dialogue::pronouns` for why.
   def pronouns
     PRONOUNS.fetch(sex)
   end
@@ -523,11 +523,12 @@ class Character < ApplicationRecord
     BaseAgent.new.with_instructions(interaction_instructions)
   end
 
-  # THE PROMPT EVERY CONVERSATIONAL TURN IS BUILT ON. `InteractionAgent` sends
-  # it as the character pass's instructions, and that pass answers under
-  # `Interaction::Schema` -- so the registers named in *Voice* below are the
-  # registers of those six fields, not of free prose. `action` is the field
-  # that holds speech; the thought and feeling fields are the interior ones.
+  # THE PROMPT EVERY CONVERSATIONAL TURN IS BUILT ON. The exchange
+  # (`Playthrough::Turn#converse`) sends it as the character pass's
+  # instructions, and that pass answers under `Interaction::Schema` -- so the
+  # registers named in *Voice* below are the registers of those six fields, not
+  # of free prose. `action` is the field that holds speech; the thought and
+  # feeling fields are the interior ones.
   def interaction_instructions
     <<~INTERACTION_INSTRUCTIONS
 
@@ -643,7 +644,7 @@ class Character < ApplicationRecord
   # be projected onto a different room. This reader remains the WORLD's spot.
   #
   # THIS IS THE READER A LATER SLICE CALLS, like `Item#position`: nothing in the
-  # play path reads a coordinate yet, and `Playthrough::Moment` is slice 3's
+  # play path reads a coordinate yet, and the engine's `moment` is slice 3's
   # file and is untouched here.
   def position = Location::Spot.of(self)
 
@@ -891,13 +892,13 @@ class Character < ApplicationRecord
   # protagonist into the arrival cast list by full name and nickname.
   #
   # Pronouns are STATED and the gender label is not, which is
-  # `InteractionAgent#pronoun_rule`'s rule and its reasoning: the prompt needs
+  # `Playthrough::Turn#converse`'s rule and its reasoning: the prompt needs
   # the pronouns, and naming a gender beside them only gives a model something
   # to make an issue of.
   #
   # What this character actually knows about them beyond what they can see
   # arrives the way it should -- `Chat.conversation_with` replays the
-  # conversation the two have already had. See `InteractionAgent#character_agent`.
+  # conversation the two have already had. See `Playthrough::Turn#converse`.
   #
   # Blank when the story has no protagonist (a world can be seeded without one,
   # see `Playthrough::Turn`) and when this character IS the protagonist.
@@ -906,7 +907,7 @@ class Character < ApplicationRecord
   # THIS PASS AND NO OTHER. The character pass is the character speaking as
   # themselves, and a sheet is exactly what it is for -- so what this person
   # wants belongs here in the same way their backstory and their fears do.
-  # `Playthrough::Moment#narration_context` is told what somebody DID and is
+  # the engine's `moment::narration_context` is told what somebody DID and is
   # never told any of this: the narrator writes to the player, and a narrator
   # that knew what everybody in the room was after would write toward it.
   #
@@ -923,7 +924,7 @@ class Character < ApplicationRecord
   # the columns existed and every character a world file leaves without them.
   # The block simply is not there, and the prompt those conversations send is
   # unchanged byte for byte -- the same rule the plan facts and the arc line in
-  # `Playthrough::Moment` are under.
+  # the engine's `moment` are under.
   def desire_section
     return "" unless desires?
 
