@@ -87,6 +87,9 @@ class Update::Runner
     Outcome.new(step: step, dry: dry, real: real)
   rescue StandardError => e
     say "     FAILED -- #{e.class}: #{e.message}"
+    # A new step asking an old engine is the usual reason a step fails straight
+    # after a pull, and the bare error does not say so.
+    say "     #{Update::EngineStamp::ADVICE}." if !e.message.include?(Update::EngineStamp::ADVICE) && Update::EngineStamp.outdated?
     Outcome.new(step: step, error: e)
   end
 

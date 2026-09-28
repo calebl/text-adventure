@@ -503,8 +503,10 @@ It is not a gem and not in the Gemfile: it is a crate in `ext/renderedstep`
 that depends on the engine at one pinned commit (`ext/renderedstep/Cargo.toml`,
 with `Cargo.lock` committed), built into `ext/renderedstep/build/`, which is
 gitignored. `bin/setup` builds it, `bin/update` rebuilds it whenever the crate
-moved in what it pulled, and the Dockerfile builds it in its build stage, so
-the image itself carries no toolchain.
+moved in what it pulled or the build stamp `engine:build` leaves beside the
+library does not name the pinned engine and crate (`Update::EngineStamp`), and
+the Dockerfile builds it in its build stage, so the image itself carries no
+toolchain.
 
 ```bash
 bin/rails engine:build          # cargo build --release --locked, then into ext/renderedstep/build/

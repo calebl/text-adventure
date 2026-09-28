@@ -47,6 +47,8 @@ Dir.chdir APP_ROOT
 # The one decision in here that is worth asserting without a checkout, a network
 # or a database. Plain Ruby, no Rails -- see its header.
 require_relative "../lib/update/seed_files"
+# The same for whether the built engine extension is the pinned one.
+require_relative "../lib/update/engine_stamp"
 
 # So an `abort` (stderr) cannot print above the stdout it is about.
 $stdout.sync = true
@@ -227,8 +229,9 @@ end
 
 # ----------------------------------------------------------------------------
 # The Rust engine's extension, which plays every turn. Rebuilt when its crate
-# moved in the range (a new engine pin is a change there) or when there is no
-# built one to play with; silent otherwise.
+# moved in the range, or when its build stamp does not say it was built from
+# the pinned engine and crate -- whatever the range, so a hand pull is caught
+# too (`Update::EngineStamp`); silent otherwise.
 # ----------------------------------------------------------------------------
 
 section "THE RUST ENGINE"
@@ -240,10 +243,10 @@ engine_moved =
     changed, = git("diff", "--name-only", OLD, TARGET, "--", "ext/renderedstep")
     !changed.empty?
   end
-engine_built = Dir[File.join(APP_ROOT, "ext/renderedstep/build/renderedstep_native.*")].any?
+engine_stamp = Update::EngineStamp.check
 
-if engine_moved || !engine_built
-  say engine_moved ? "the extension's crate moved in that range." : "the extension is not built yet."
+if engine_moved || engine_stamp.stale?
+  say engine_moved ? "the extension's crate moved in that range." : engine_stamp.reason
   if DRY_RUN
     say "would run: bin/rails engine:build"
   else
