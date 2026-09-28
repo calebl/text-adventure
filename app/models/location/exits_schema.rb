@@ -105,6 +105,16 @@ class Location::ExitsSchema < RubyLLM::Schema
       # (`Location::Population`). So the field asks, and nothing rests on the
       # asking: see the header on why required here is optional in effect.
       string :population, description: "How many people are in that place. Pick the closest of these words. It is a word and never a number: the engine decides how many people that is.", enum: Location::Population::LABELS
+      # AND WHAT SORT OF PLACE IT IS, AND HOW MUCH SMALL STUFF LIES ABOUT IN IT.
+      # `Location::Kind` is both closed lists and the reason each is a word; the
+      # header above has why a place's words are asked on this call.
+      #
+      # REQUIRED, AND OPTIONAL IN EFFECT, `population`'s reason exactly: neither
+      # list has a quietest option to fall back on, and a model that leaves one
+      # out leaves a stub with no word, which is the state the opening room is
+      # already in. Nothing rests on getting an answer.
+      string :kind, description: "What sort of place that is, as the game will furnish it. Pick the closest of these words; the game decides what stands in a place of that kind and tells you room by room. It is a word and never a list of furniture.", enum: Location::Kind::KINDS
+      string :density, description: "How much small stuff is lying about in it: 'sparse' for somewhere kept or empty, 'lived-in' for most places, 'cluttered' for somewhere nobody tidies. A word; the game rolls the count.", enum: Location::Kind::DENSITIES
     end
   end
 end

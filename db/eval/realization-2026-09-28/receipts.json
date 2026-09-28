@@ -1,0 +1,17 @@
+{
+  "source": "doc/evidence/dense-rooms-kinds/credit-readings.log",
+  "calls": 187,
+  "warmup_realizations": 1,
+  "failures": 1,
+  "registry_priced_usd": 0.378,
+  "credits_before_usd": 62.247785671,
+  "credits_after_usd": 62.646761631,
+  "credits_delta_usd": 0.398976,
+  "before_side": {
+    "set": "realization-before-2026-09-28",
+    "registry_priced_usd": 0.3792,
+    "credits_delta_usd": 0.384031
+  },
+  "both_sides_credits_delta_usd": 0.783007,
+  "cap_usd": 1.0
+}

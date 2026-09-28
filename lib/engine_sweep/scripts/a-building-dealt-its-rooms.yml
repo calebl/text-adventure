@@ -1,0 +1,90 @@
+# WHAT SORT OF PLACE A ROOM IS, KEPT AS THE ROOM IS BORN.
+#
+# The workshop is written through fixed replies, and its exits answer names two
+# new places with the words `Location::ExitsSchema` asks for: what sort of place
+# each is and how cluttered. The first is a building; walking into it sends the
+# place call, whose answer says what sort of building it is, and the engine
+# lays it out and deals every room its sort (`Location::Kind.deal`).
+#
+# NOTHING A PLAYER SEES CHANGES, which is the point: nothing reads the words
+# yet, so every expectation below is one a walk without them would meet. What
+# this walk pins is the rows. The engine's records for it hold every location
+# row each step wrote, column for column, so the stub keeping `workshop` and
+# `cluttered`, the second stub keeping only the density its answer spelled
+# right, and each room of the building carrying the word it was dealt and the
+# building's density are all facts a regression would move.
+story: The Unfinished Workshop
+why: the words a model picks for a place are kept on the stub, and a building's rooms are dealt theirs
+steps:
+- id: the-workshop-names-its-ways-out
+  type: /move Workshop
+  why: an exits answer carrying a sort and a density for each new place, one of them a word the list lacks
+  browser:
+    token: first-entry
+    realizes: Workshop
+    replies:
+    - purpose: location
+      content:
+        description: Shavings drift across a workbench under a hanging lamp.
+        lore: Sella's family has cut keys here for three generations.
+        items: []
+        people: []
+    - purpose: location
+      content:
+        exits:
+        - name: Market
+          teaser: The square outside.
+          distance: adjacent
+          travel_method: walking
+          population: a crowd
+          kind: street
+          density: lived-in
+        - name: The Lamp Yard
+          teaser: A yard of lamp-makers behind a gate.
+          distance: adjacent
+          travel_method: walking
+          inside: a few rooms
+          population: nobody
+          kind: workshop
+          density: cluttered
+        - name: Tanners Row
+          teaser: The smell arrives first.
+          distance: a short walk
+          travel_method: walking
+          population: a person or two
+          kind: tannery
+          density: lived-in
+    - purpose: arrival
+      unavailable: true
+  expect:
+    location: Workshop (realized)
+    exits: [Market (realized), Tanners Row (stub), The Lamp Yard (stub)]
+    changed: true
+    refused: false
+
+- id: into-the-lamp-yard
+  type: /move The Lamp Yard
+  why: the place call says what sort of building it is, and the rooms are dealt their sorts as it is laid out
+  browser:
+    token: into-the-yard
+    realizes: The Lamp Yard
+    replies:
+    - purpose: location
+      content:
+        description: A cobbled yard hung with unlit lamps, a forge glowing in one corner.
+        lore: The lamp-makers' guild shares one yard and one forge.
+        place_kind: workshop
+    - purpose: location
+      content:
+        description: A long bench under a skylight, strewn with wicks and brass.
+        lore: The first room of the yard, where every lamp is begun.
+        items: []
+        people: []
+    - purpose: arrival
+      unavailable: true
+  expect:
+    location: The Lamp Yard room 1 (realized)
+    # The way in moved onto the entry room, so the workshop is a way out of it.
+    exits_include: [Workshop (realized)]
+    changed: true
+    refused: false

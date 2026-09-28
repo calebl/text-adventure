@@ -1,0 +1,125 @@
+{
+  "script": "a-building-dealt-its-rooms",
+  "story": "The Unfinished Workshop",
+  "steps": [
+    {
+      "step": "step 1 the-workshop-names-its-ways-out",
+      "player": "first",
+      "typed": "/move Workshop",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Workshop",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "Tanners Row",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000003,
+            "name": "The Lamp Yard",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Workshop",
+        "resolved_by": "grammar",
+        "note": "first-entry: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 into-the-lamp-yard",
+      "player": "first",
+      "typed": "/move The Lamp Yard",
+      "dump": {
+        "location": {
+          "id": 1000000005,
+          "name": "The Lamp Yard room 1",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000006,
+            "name": "The Lamp Yard room 2",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000002,
+            "name": "Workshop",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Lamp Yard",
+        "resolved_by": "grammar",
+        "note": "into-the-yard: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    }
+  ]
+}

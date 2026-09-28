@@ -334,6 +334,32 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_match(/there is: #{Regexp.escape(Location::Population::LABELS.join(", "))}/, error.message)
   end
 
+  # WHAT SORT OF PLACE A ROOM IS AND HOW CLUTTERED, on `population`'s terms: an
+  # absent key is nobody picked, re-asserted in both directions, and a word the
+  # list lacks is refused with the file and the room (`Location::Kind`).
+  test "loads what sort of place a room is and how cluttered, and takes both off when the file drops them" do
+    world = document
+    world["locations"].find { |room| room["name"] == "The Closet" }.merge!("kind" => "storeroom", "density" => "cluttered")
+
+    story = WorldSeed::Loader.new(world).load!
+    closet = story.locations.find_by(name: "The Closet")
+    assert_equal [ "storeroom", "cluttered" ], [ closet.kind, closet.density ]
+    assert_nil story.locations.find_by(name: "The Office").kind
+
+    WorldSeed::Loader.new(document).load!
+    assert_equal [ nil, nil ], [ closet.reload.kind, closet.density ]
+  end
+
+  test "rejects a sort of place or a density the engine has no word for" do
+    { "kind" => Location::Kind::KINDS, "density" => Location::Kind::DENSITIES }.each do |key, words|
+      world = document
+      world["locations"].first[key] = "ballroom"
+
+      error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+      assert_match(/`#{key}: "ballroom"`; there is: #{Regexp.escape(words.join(", "))}/, error.message)
+    end
+  end
+
   test "rejects a danger the engine has no table for" do
     world = document
     world["locations"].first["danger"] = "a bit worrying"

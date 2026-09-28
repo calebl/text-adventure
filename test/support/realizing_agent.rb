@@ -31,7 +31,8 @@ class RealizingAgent < FakeAgent
     "exits" => [
       { "name" => "The Chandler's Lane", "teaser" => "Rope and tar, and a light still on.",
         "distance" => "a short walk", "travel_method" => "walking",
-        "inside" => Location::Parameters::NO_INSIDE, "population" => "a person or two" }
+        "inside" => Location::Parameters::NO_INSIDE, "population" => "a person or two",
+        "kind" => "street", "density" => "lived-in" }
     ]
   }.freeze
 

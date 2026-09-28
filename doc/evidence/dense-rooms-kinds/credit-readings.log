@@ -1,0 +1,7 @@
+# OpenRouter /api/v1/credits total_usage, read around the two realization sides.
+# The account is shared, so a delta is this run's spend only if nothing else spent.
+2026-09-28T10:52:09Z 61.863754871 before the before side
+2026-09-28T11:11:22Z 62.247785671 after the before side (unchanged on a second reading)
+2026-09-28T11:31:14Z 62.641437471 after the after side
+2026-09-28T11:32:54Z 62.646761631
+2026-09-28T11:34:08Z 62.646761631 settled

@@ -46,7 +46,7 @@ One file is one universe and one story. Keys are written in this order:
 | `story`         | title, genre, `start_time`, preface, summary                            |
 | `opening_scene` | the narrated moment the story starts in — see below                     |
 | `characters`    | one entry each, `race` by name, optional `location` (or `absent`) + a position in it (`x`, `y`), optional `hostile`, optional `stats`, optional `conscious_desire` / `unconscious_desire` / `recognized_need` / `unrecognized_need` / `desire_pursuit` / `need_pursuit`, and `items` |
-| `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; optional `population`; optional `hazard` + `hazard_die`; optional `parent` + a box (`x`, `y`, `z`, `width`, `depth`); `items`, each with an optional position (`x`, `y`) |
+| `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; optional `population`; optional `kind` + `density`; optional `hazard` + `hazard_die`; optional `parent` + a box (`x`, `y`, `z`, `width`, `depth`); `items`, each with an optional position (`x`, `y`) |
 | `connections`   | one entry per edge, as an unordered `between: [a, b]` pair; optional `barrier` (`key_template` for `keyed`); optional `hazard` + `hazard_die` + `hazard_from` |
 | `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
 
@@ -669,6 +669,28 @@ locations:
   from a file and re-seeding hands the room back to the engine.
 - The loader refuses **a word the engine has no band for**, naming the file and
   the room, exactly as it does for a fifth `danger`.
+
+### What sort of place it is: `locations[].kind` and `locations[].density`
+
+```yaml
+locations:
+- name: The Ward Office
+  kind: office
+  density: cluttered
+```
+
+- **`kind` is what sort of place a room is and `density` how much small stuff
+  lies about in it**, each a word from a closed list (`Location::Kind::KINDS` and
+  `Location::Kind::DENSITIES`, in the engine's `data/location/kind.yml`). A model
+  picks both for a place it names as a way out, and a room of a building is
+  dealt its `kind` from what sort of building it is.
+- **Nothing reads either yet.** They are kept on the room so the engine can
+  furnish rooms from them later; a file that writes them today plays exactly as
+  one that does not.
+- **An absent key means nobody picked a word**, and nothing is rolled in its
+  place. Like `population`, both are omitted on export when blank and
+  re-asserted in both directions on load, and the loader refuses a word the list
+  does not have, naming the file and the room.
 
 ### Hazards: `locations[].hazard` and a doorway's one-way `hazard_from`
 

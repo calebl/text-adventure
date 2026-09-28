@@ -226,6 +226,13 @@ class Location < ApplicationRecord
   # engine honours. See `Location::Population`'s header and the migration's.
   validates :population, inclusion: { in: Location::Population::LABELS }, allow_nil: true
 
+  # WHAT SORT OF PLACE THIS IS AND HOW MUCH SMALL STUFF LIES ABOUT IN IT, each
+  # one of `Location::Kind`'s words or nothing at all -- `population`'s shape
+  # above and its reason: nil means NOBODY PICKED, and it is a state rather
+  # than a missing value. See `Location::Kind`'s header and the migration's.
+  validates :kind, inclusion: { in: Location::Kind::KINDS }, allow_nil: true
+  validates :density, inclusion: { in: Location::Kind::DENSITIES }, allow_nil: true
+
   validates :name, presence: true
   # A stub has neither yet -- that is the point of a stub. A realized location
   # without them is still broken, so the requirement holds where it matters.

@@ -297,6 +297,51 @@ class Location::InteriorTest < ActiveSupport::TestCase
     end
   end
 
+  # --- what sort of room each room is -----------------------------------------
+  #
+  # `kind:` is what sort of building the place call said this is, and each room
+  # is DEALT its word from it (`Location::Kind.deal`) -- no die thrown, so no
+  # draw of the layout moves.
+
+  # THE SAME PLACE LAID OUT TWICE, once dealing words and once not, inside a
+  # transaction that is rolled back so the second sees the id the first had.
+  def layout_of(place, **options)
+    shape = nil
+    Location.transaction do
+      Location::Interior.lay_out!(place, **options)
+      rooms = rooms_of(place.reload)
+      shape = { rooms: rooms.map { |room| [ room.name, room.x, room.y, room.z, room.width, room.depth, room.danger,
+                                            room.hazard, room.hazard_die ] },
+                kinds: rooms.map(&:kind), densities: rooms.map(&:density),
+                doors: LocationConnection.where(location: rooms).order(:id)
+                                         .map { |edge| [ edge.location.name, edge.connected_location.name, edge.distance ] } }
+      raise ActiveRecord::Rollback
+    end
+    shape
+  end
+
+  test "dealing each room a word moves nothing about the layout" do
+    FOOTPRINTS.each_with_index do |(width, depth), number|
+      place = create(:location, :stub, story: @story, name: "Place #{number}", width: width, depth: depth)
+      picks = picked(storeys_above: "two storeys up", storeys_below: "a cellar")
+
+      plain = layout_of(place, parameters: picks)
+      dealt = layout_of(place, parameters: picks, kind: "inn")
+
+      assert_equal plain[:rooms], dealt[:rooms]
+      assert_equal plain[:doors], dealt[:doors]
+      assert_equal Array.new(plain[:kinds].size), plain[:kinds], "no sort of building deals no words"
+      assert_equal Location::Kind.deal("inn", dealt[:rooms].map { |room| room[3] }), dealt[:kinds]
+    end
+  end
+
+  test "every room of a building is as cluttered as the building" do
+    place = create(:location, :stub, story: @story, name: "The Rag Loft", width: 12, depth: 8, density: "cluttered")
+
+    assert_equal [ "cluttered" ], layout_of(place, kind: "warehouse")[:densities].uniq
+    assert_equal [ nil ], layout_of(place_with(name: "The Swept Hall"))[:densities].uniq
+  end
+
   # --- the picks a model made about the building ------------------------------
   #
   # `parameters:` NIL AND `Location::Parameters.none` ARE DIFFERENT STATES --

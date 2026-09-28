@@ -353,9 +353,11 @@ class Eval::Realization::BenchTest < ActiveSupport::TestCase
     EXITS = {
       "exits" => [
         { "name" => "The Stair Head", "teaser" => "The stair down, and the shoes you can hear on it.",
-          "distance" => "adjacent", "travel_method" => "walking", "population" => "a person or two" },
+          "distance" => "adjacent", "travel_method" => "walking", "population" => "a person or two",
+          "kind" => "common room", "density" => "lived-in" },
         { "name" => "The Supply Closet", "teaser" => "No inventory number and no lock.",
-          "distance" => "adjacent", "travel_method" => "walking", "population" => "nobody" }
+          "distance" => "adjacent", "travel_method" => "walking", "population" => "nobody",
+          "kind" => "storeroom", "density" => "cluttered" }
       ]
     }.freeze
 

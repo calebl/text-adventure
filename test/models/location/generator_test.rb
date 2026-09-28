@@ -1186,6 +1186,69 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_equal "nobody", known.reload.population
   end
 
+  # --- what sort of place that is, and how cluttered -----------------------------
+  #
+  # The same pick on the same call, for the same reason (`Location::Kind`): the
+  # words are the room next door's to answer, and `.create_stub!` keeps them.
+
+  test "the sort of place and the density the answer picked are written on the stub" do
+    location = stub_location(name: "The Drowned Ledger")
+    answer = { "exits" => [ EXITS["exits"].first.merge("kind" => "storeroom", "density" => "cluttered"),
+                            EXITS["exits"].last ] }
+
+    realize(location, FakeAgent.new(DETAIL, answer))
+
+    gallery = @story.locations.find_by(name: "The Pump Gallery")
+    assert_equal [ "storeroom", "cluttered" ], [ gallery.kind, gallery.density ]
+    stair = @story.locations.find_by(name: "Tidewater Stair")
+    assert_equal [ nil, nil ], [ stair.kind, stair.density ], "an exit with no words is a stub nobody picked for"
+  end
+
+  test "a word the lists do not have is not written, and costs the stub nothing else" do
+    location = stub_location(name: "The Drowned Ledger")
+    answer = { "exits" => [ EXITS["exits"].first.merge("kind" => "ballroom", "density" => "heaving") ] }
+
+    realize(location, FakeAgent.new(DETAIL, answer))
+
+    gallery = @story.locations.find_by(name: "The Pump Gallery")
+    assert_equal [ nil, nil ], [ gallery.kind, gallery.density ]
+    assert_equal "a crowd", gallery.population, "the rest of the answer is still taken"
+  end
+
+  test "naming a place that already exists does not repaint its sort" do
+    location = stub_location(name: "The Drowned Ledger")
+    known = create(:location, :stub, story: @story, name: "The Pump Gallery", kind: "shop", density: "sparse")
+    answer = { "exits" => [ EXITS["exits"].first.merge("kind" => "storeroom", "density" => "cluttered") ] }
+
+    realize(location, FakeAgent.new(DETAIL, answer))
+
+    assert_equal [ "shop", "sparse" ], [ known.reload.kind, known.reload.density ]
+  end
+
+  # A BUILDING'S ROOMS ARE DEALT THEIRS by what sort of building the place call
+  # said it is, and take the density the building was born with.
+  test "the rooms of a building are dealt their sort from the building's own pick" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8, density: "lived-in")
+    answer = DETAIL.merge("place_kind" => "inn", "parameters" => { "storeys_above" => "one storey up" })
+
+    realize(place, FakeAgent.new(answer))
+
+    rooms = place.reload.child_locations.order(:id).to_a
+    assert_equal Location::Kind.deal("inn", rooms.map(&:z)), rooms.map(&:kind)
+    assert_equal "common room", rooms.first.kind, "the room you walk in at is the inn's common room"
+    assert(rooms.all? { |room| room.density == "lived-in" })
+  end
+
+  test "a building with no sort, or one the table lacks, deals its rooms no word" do
+    [ DETAIL, DETAIL.merge("place_kind" => "cathedral") ].each_with_index do |answer, index|
+      place = stub_location(name: "The Rusted Anchor #{index}", width: 12, depth: 8)
+
+      realize(place, FakeAgent.new(answer))
+
+      assert(place.reload.child_locations.all? { |room| room.kind.nil? })
+    end
+  end
+
   # AND THE MODEL IS TOLD WHAT MAKES A PLACE BUSY, which is the inform half. It
   # is a prompt sentence and nothing rests on it: the engine takes a word it
   # recognises and rolls its own for anything else.

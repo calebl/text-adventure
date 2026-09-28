@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_035434) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_102823) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -237,6 +237,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_035434) do
     t.integer "y"
     t.integer "z"
     t.string "surface"
+    t.string "kind"
+    t.string "density"
     t.index "story_id, lower(name)", name: "index_locations_on_story_id_and_lower_name", unique: true
     t.index ["parent_location_id"], name: "index_locations_on_parent_location_id"
     t.index ["story_id", "detail_level"], name: "index_locations_on_story_id_and_detail_level"

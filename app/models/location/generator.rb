@@ -87,10 +87,15 @@ class Location::Generator
   # the named place itself rather than a building around one room
   # (`Location::Parameters::ONE_ROOM`), so it is realized with the room schema,
   # keeps the doorway that named it, and is stood in under that name.
-  def self.create_stub!(story, name:, teaser:, inside: nil, population: nil)
+  # AND WHAT SORT OF PLACE IT IS AND HOW MUCH SMALL STUFF LIES ABOUT IN IT, on
+  # `population`'s terms exactly: `Location::Kind`'s words when somebody picked
+  # them, nil for every caller that has none. The exits call passes both, and
+  # `Location::Interior` passes the word it dealt a room of a building and the
+  # building's own density.
+  def self.create_stub!(story, name:, teaser:, inside: nil, population: nil, kind: nil, density: nil)
     room = story.locations.create!(name: name, teaser: teaser, detail_level: :stub,
                                    danger: Location::Danger.for_a_new_room(story),
-                                   population: population)
+                                   population: population, kind: kind, density: density)
     sides = Location::Parameters.from("inside" => inside).footprint(footprint_rng(room))
     room.update!(width: sides.first, depth: sides.last) if sides
     # AND IF THE STORY'S ARC WAS WAITING FOR A PLACE BY THIS NAME, IT NOW HAS
@@ -189,10 +194,13 @@ class Location::Generator
   # over -- and handed straight back, because the rooms are on the records.
   # `test/fixtures/files/a-world-with-an-interior.yml` is exactly that shape,
   # and its author owns its whole floor plan.
-  def lay_out_interior!(picks = nil)
+  #
+  # `place_kind` IS WHAT SORT OF BUILDING THE PLACE CALL SAID THIS IS, or nil;
+  # `Location::Interior` deals each room its word from it.
+  def lay_out_interior!(picks = nil, place_kind: nil)
     return location unless location.place?
 
-    Location::Interior.lay_out!(location, parameters: Location::Parameters.from(picks))
+    Location::Interior.lay_out!(location, parameters: Location::Parameters.from(picks), kind: place_kind)
     open_the_way_in!
 
     location
@@ -357,7 +365,7 @@ class Location::Generator
     Location.transaction do
       location.save!
       Quest::Binder.bind!(location) if named_room
-      lay_out_interior!(detail["parameters"])
+      lay_out_interior!(detail["parameters"], place_kind: word(detail, "place_kind", Location::Kind::BUILDINGS))
       # A building keeps neither items nor people; its rooms admit them when
       # entered. Registry refusals stay refusals, while actual write failures
       # roll back this entire stage for a later retry.
@@ -1246,7 +1254,9 @@ class Location::Generator
 
     neighbour = existing || create_stub!(name, sanitize_string(attributes["teaser"]),
                                          inside: sanitize_string(attributes["inside"]),
-                                         population: population(attributes))
+                                         population: population(attributes),
+                                         kind: word(attributes, "kind", Location::Kind::KINDS),
+                                         density: word(attributes, "density", Location::Kind::DENSITIES))
 
     connect!(location, neighbour, attributes)
     connect!(neighbour, location, attributes)
@@ -1382,8 +1392,9 @@ class Location::Generator
   # looks the name up before it gets here, and two realizations that both
   # missed would each create one; the unique index on `(story_id, lower(name))`
   # refuses the second, which then takes the row the first wrote.
-  def create_stub!(name, teaser, inside: nil, population: nil)
-    self.class.create_stub!(story, name: name, teaser: teaser, inside: inside, population: population)
+  def create_stub!(name, teaser, inside: nil, population: nil, kind: nil, density: nil)
+    self.class.create_stub!(story, name: name, teaser: teaser, inside: inside, population: population,
+                                   kind: kind, density: density)
   rescue ActiveRecord::RecordNotUnique
     story.locations.find_by!("LOWER(name) = ?", name.downcase)
   end
@@ -1403,6 +1414,17 @@ class Location::Generator
     word = sanitize_string(attributes["population"])
 
     word if Location::Population::BANDS.key?(word)
+  end
+
+  # ONE OF `Location::Kind`'s WORDS THIS ANSWER PICKED, or nil for anything the
+  # list does not have -- `#population`'s rule above, and its reason: a word
+  # outside the enum is a model ignoring a closed list, and it costs the room its
+  # word and nothing else. Taken only for a room being born, for the same reason
+  # too.
+  def word(attributes, key, words)
+    picked = sanitize_string(attributes[key])
+
+    picked if words.include?(picked)
   end
 
   # Whether the player can already get between here and there, either way

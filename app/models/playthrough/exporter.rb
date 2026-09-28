@@ -133,6 +133,8 @@ class Playthrough::Exporter
       document["laid_out"] = true if location.laid_out?
       document["danger"] = location.danger unless location.danger == Location::SAFE
       document["population"] = location.population if location.population.present?
+      document["kind"] = location.kind if location.kind.present?
+      document["density"] = location.density if location.density.present?
       if location.hazard.present?
         document["hazard"] = location.hazard
         document["hazard_die"] = location.hazard_die

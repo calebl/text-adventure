@@ -372,15 +372,21 @@ class Location::Interior
   # basements to a column yet, and a parameter with no world to supply it is a
   # column the doctor would have to report on. Nil means ROLL IT, which is what
   # every caller in the app passes by passing nothing.
-  def self.lay_out!(place, below: nil, parameters: nil)
-    new(place, below: below, parameters: parameters).lay_out!
+  #
+  # `kind:` IS WHAT SORT OF BUILDING THIS IS, one of `Location::Kind::BUILDINGS`
+  # or nil, and it decides only the word each room is born with
+  # (`#create_rooms!`). Nil deals no words, which is every caller but the place
+  # call.
+  def self.lay_out!(place, below: nil, parameters: nil, kind: nil)
+    new(place, below: below, parameters: parameters, kind: kind).lay_out!
   end
 
-  def initialize(place, below: nil, parameters: nil)
+  def initialize(place, below: nil, parameters: nil, kind: nil)
     @place = place
     @story = place.story
     @below = validated_below(below)
     @parameters = parameters
+    @kind = kind
   end
 
   # THE WHOLE INTERIOR, IN ONE TRANSACTION. A place half laid out is worse than
@@ -398,7 +404,9 @@ class Location::Interior
 
     Location.transaction do
       write_footprint!
-      storeys = storey_plans.map { |boxes| create_rooms!(boxes) }
+      plans = storey_plans
+      kinds = Location::Kind.deal(@kind, plans.flatten.map(&:z))
+      storeys = plans.map { |boxes| create_rooms!(boxes, kinds) }
 
       storeys.each { |storey| open_backbone!(storey) }
       by_height(storeys).each_cons(2) { |below, above| raise_stairs!(below, above) }
@@ -586,10 +594,14 @@ class Location::Interior
   # THE ROOMS OF ONE STOREY, created in the order they are laid out. Numbered
   # across the WHOLE interior rather than per storey, so no two rooms of one
   # place ever share a placeholder.
-  def create_rooms!(boxes)
+  #
+  # `kinds` IS THE WORD EVERY ROOM OF THE BUILDING WAS DEALT, in the same order
+  # (`Location::Kind.deal`), so a room's number is also its place in that list.
+  # Dealt and not rolled, so it throws no die and moves no draw of the layout.
+  def create_rooms!(boxes, kinds)
     boxes.map do |box|
       @numbered = (@numbered || 0) + 1
-      create_room!(box, @numbered)
+      create_room!(box, @numbered, kinds[@numbered - 1])
     end
   end
 
@@ -601,9 +613,13 @@ class Location::Interior
   # THE BOX IS A SECOND WRITE and has to be: all five columns go on at once or
   # `Location#a_box_is_whole` refuses the row, and a stub is created before it
   # has anywhere to be.
-  def create_room!(box, number)
+  #
+  # AND A ROOM IS AS CLUTTERED AS THE BUILDING IT IS IN: the density the exits
+  # call picked for the place is the only one anybody picked, and a room of it
+  # gets no exits call of its own to be asked on.
+  def create_room!(box, number, kind)
     room = Location::Generator.create_stub!(story, name: self.class.placeholder_name(place, number),
-                                                   teaser: teaser_for(box))
+                                                   teaser: teaser_for(box), kind: kind, density: place.density)
     room.update!(parent_location: place, **box.to_h, **conditions(box.z))
     # THE FIRST ROOM WRITTEN IS THE WAY IN, which is what `.entry_room` reads
     # back off the records afterwards. Held here so the cap check below does not
