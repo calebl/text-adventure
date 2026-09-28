@@ -117,6 +117,11 @@ class Quest::Deadline
   # is stated in exactly one place.
   PICKS = { "storeys_below" => "two levels down" }.freeze
 
+  # The population word the room a person is kept in is given when its own roll
+  # left it empty (`#build_somewhere_to_keep_them!`): the band whose every count
+  # is at least one.
+  HELD = "a person or two"
+
   # WHERE IN THE PROMPT LIFE THIS RUNS: after a room has been described and its
   # ways out written, which is the moment `Location::Generator#realize!` calls
   # it. The room that was just realized is the anchor's first candidate, because
@@ -294,11 +299,12 @@ class Quest::Deadline
 
   # THE BOTTOM OF THE DEEPEST BUILDING THE PARTY CAN ALREADY WALK INTO, or nil
   # for a world with no buildings in it yet. `z` decides, as it does everywhere
-  # else here; a room already holding `Character::Registry::MAX_PER_ROOM` people
-  # is not one, because admitting into it would be refused.
+  # else here; a room the registry would admit nobody into is not one -- at its
+  # cap, or rolled `nobody` by `Location::Population` -- because choosing it
+  # would place nobody now and choose the same room at every later realization.
   def deepest_room_of_a_place_we_can_reach
     rooms = story.locations.where(id: hops.keys).where.not(parent_location_id: nil).order(:id)
-                 .reject { |room| Character.present_in(room).count >= Character::Registry::MAX_PER_ROOM }
+                 .select { |room| Character::Registry.new(room).allowance.positive? }
 
     rooms.min_by { |room| [ room.z.to_i, -room.id ] }
   end
@@ -312,12 +318,22 @@ class Quest::Deadline
   #
   # THE STEP'S TEASER IS THE TEASER, because the arc did write one and it is
   # about this exact place: *"The Blackfang hold him below the old workings."*
+  #
+  # AND THE ROOM THEY ARE KEPT IN IS PEOPLED. Its population is otherwise rolled
+  # off its name like any room nobody picked for, and half of `ROLLED` is
+  # `nobody` -- which room is deepest depends on the layout's roll, so the
+  # person would be admitted or refused by chance. The engine built this place
+  # to keep somebody in, so it says so with the label that guarantees a slot.
   def build_somewhere_to_keep_them!(step, room)
     place = Location::Generator.create_stub!(story, name: holding_name(step), teaser: teaser_for(step))
     open_the_door!(room, place)
     lay_out!(place)
 
-    deepest_room(place) || place
+    cell = deepest_room(place)
+    return place if cell.nil?
+
+    cell.update!(population: HELD) if Character::Registry.new(cell).allowance.zero?
+    cell
   end
 
   # A THING, LYING IN THE DEEPEST ROOM THE PARTY CAN REACH. No building: a thing
