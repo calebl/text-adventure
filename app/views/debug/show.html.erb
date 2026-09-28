@@ -677,12 +677,12 @@
 <details id="cast">
   <summary>the cast &mdash; <%= @debug.cast.size %> characters, <%= @debug.unseen_count %> never yet in a scene</summary>
   <div class="body">
-    <%# NOTHING RECORDS WHERE A CHARACTER STANDS -- `characters` has no location
-        column -- so "last seen" is the whole of what the game knows, and it is
-        the gap `ta-narrator-memory` plugs. %>
+    <%# "last seen" is the latest scene that recorded a character, not where
+        they stand: that is `characters.location_id`, resolved per game through
+        Playthrough::NpcState. %>
     <p class="note">
-      Where somebody is, is not stored: `characters` has no location column, so
-      the last column below is the latest scene that recorded them anywhere.
+      The last column below is the latest scene that recorded somebody
+      anywhere, not where they stand now.
       A character nobody has met is honestly nowhere.
     </p>
     <div class="scroll">
