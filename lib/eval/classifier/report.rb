@@ -59,7 +59,7 @@ class Eval::Classifier::Report
   def print(sample: DEFAULT_SAMPLE)
     heading
     result.arms.each { |arm| arm_board(arm, sample: sample) }
-    confusion
+    result.arms.each { |arm| confusion(arm) }
     offline_floor
     closing
   end
@@ -305,12 +305,14 @@ class Eval::Classifier::Report
     end
   end
 
-  def confusion
-    rows = result.rows
+  # ONE MATRIX PER ARM. Pooling arms here would hide which model made which
+  # confusion -- the one thing a reader comparing two arms came to see.
+  def confusion(arm)
+    rows = result.for_arm(arm).flat_map { |pass| pass.rows.map { |row| row.transform_keys(&:to_s) } }
     say
     say RULE
-    say "CONFUSION -- rows are the labelled intent, columns what came back. Every arm and"
-    say "repetition pooled, because this is a shape and not a rate."
+    say "CONFUSION  #{arm} -- rows are the labelled intent, columns what came back. This"
+    say "arm's repetitions pooled, because this is a shape and not a rate."
     say
     header = Eval::Classifier::INTENTS.map { |intent| intent.to_s[0, 7].rjust(8) }.join
     say format("    %-9s%s", "", header)
