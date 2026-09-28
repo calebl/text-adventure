@@ -63,4 +63,22 @@ class Eval::Arrival::LexicalLimitsTest < ActiveSupport::TestCase
     row["facts"]["required"] = [ "body" ]
     assert Eval::Arrival::Scorer.read(row).dig("description", "fact_missing_strict")
   end
+
+  test "first thing opener reads the first sentence of a first visit only" do
+    row = ->(description, returning: false) do
+      { "id" => "sample", "description" => description, "summary" => "Iri enters.",
+        "facts" => { "required" => [], "protagonist" => [ "Iri" ], "moved" => true, "returning" => returning } }
+    end
+    assert Eval::Arrival::Scorer.read(row.call("The first thing that strikes you is the cold. Maren waits.")).dig("description", "first_thing_opener")
+    assert Eval::Arrival::Scorer.read(row.call("The door groans shut, and the first thing you notice is water. Maren waits.")).dig("description", "first_thing_opener")
+    refute Eval::Arrival::Scorer.read(row.call("Water laps at the stair. The first thing Maren does is look up.")).dig("description", "first_thing_opener")
+    assert_nil Eval::Arrival::Scorer.read(row.call("The first thing you see is the desk, again.", returning: true)).dig("description", "first_thing_opener")
+    assert_nil Eval::Arrival::Scorer.read(row.call("The first thing that strikes you is the cold.")).dig("summary", "first_thing_opener")
+  end
+
+  test "the kept baseline before the discovery line lost its first opens most first visits on the stock opener" do
+    rows = JSON.parse(Eval.kept_root.join("arrival-branches", Eval::Arrival::RESULTS).read).fetch("rows")
+    readings = rows.map { |r| Eval::Arrival::Scorer.read(r).dig("description", "first_thing_opener") }
+    assert_equal({ true => 22, false => 14, nil => 4 }, readings.tally)
+  end
 end

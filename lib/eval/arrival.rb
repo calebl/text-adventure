@@ -10,7 +10,9 @@ module Eval::Arrival
   CORPUS = Rails.root.join("test/fixtures/files/arrival_corpus.json")
   STUDY = Rails.root.join("db/eval/adversarial-20260909")
   RESULTS = "arrival.json".freeze
-  BASELINE = Rails.root.join("db/eval/arrival-branches")
+  # The set bought after the discovery line lost its "first" (2026-09-28);
+  # `arrival-branches` is the set before it, kept as history.
+  BASELINE = Rails.root.join("db/eval/arrival-first-visit-2026-09-28")
 
   def self.cases = JSON.parse(CORPUS.read).fetch("cases")
   def self.model = JSON.parse(STUDY.join("arrival-after.json").read).fetch("model")

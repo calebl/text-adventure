@@ -14,7 +14,12 @@
 # is a named-player/player/he/she/they cue with no you/your/I/we, not a syntactic
 # proof. Sentence count uses the existing splitter and can mistake abbreviations
 # or dialogue for boundaries. Revisit is merely back/again/return/familiar, not
-# recognition quality. All are printed as lexical proxies, never prose quality.
+# recognition quality. First-thing opener is "first thing" anywhere in the
+# first sentence of a first visit's description ("The first thing that strikes
+# you", "The door shuts, and the first thing..."): the stock opener the
+# discovery instruction once invited. It is one phrase, not a measure of how
+# varied openings are, and a return is unavailable, never clean.
+# All are printed as lexical proxies, never prose quality.
 # Existing Prompt predicates retain their documented precision limits. Arrival
 # departure is unavailable after a move; third-person-protagonist is deliberately
 # not applied to summary, where that person is REQUIRED by Scene::Schema.
@@ -33,6 +38,10 @@ class Eval::Arrival::Scorer
     !Story::Audit::Prose.sentences(text).any? do |sentence|
       sentence.match?(subject) && (sentence.match?(strict) || (inclusive && sentence.match?(implied)))
     end
+  end
+
+  def self.first_thing_opener?(text)
+    Story::Audit::Prose.sentences(text).first.to_s.match?(/\bfirst thing\b/i)
   end
 
   def self.read(row)
@@ -54,6 +63,7 @@ class Eval::Arrival::Scorer
           checks["past_tense_cue"] = text.match?(/\byou (were|was|felt|saw|had|entered)\b/i)
           checks["multiple_paragraphs"] = text.match?(/\n\s*\n/)
           checks["revisit_cue_missing"] = row.dig("facts", "returning") ? !text.match?(/\b(back|again|return\w*|familiar)\b/i) : nil
+          checks["first_thing_opener"] = row.dig("facts", "returning") ? nil : first_thing_opener?(text)
         else
           checks["third_person_cue_missing"] = text.match?(/\b(you|your|I|we|our)\b/i) ||
             !text.match?(/\b(Iri|Calder|player|he|she|they)\b/i)

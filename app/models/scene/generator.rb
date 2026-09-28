@@ -331,6 +331,13 @@ class Scene::Generator
   end
 
   # The two shapes this generator exists to tell apart.
+  #
+  # The discovery line says "what catches them on the way in" and not "what
+  # catches them FIRST": the model took the word as the opener, and "The first
+  # thing that strikes you" began most first visits. Dropping it moved the
+  # arrival bench's `first_thing_opener` reading from 22 to 14 of 36, a real
+  # difference with every other reading noise (`db/eval/arrival-first-visit-2026-09-28`
+  # against `arrival-branches`). The opener still occurs; it is no longer invited.
   def arrival_instructions(returning, elapsed)
     texts = EngineData.fetch("scene/generator")
     return texts.fetch("arrival_first") unless returning

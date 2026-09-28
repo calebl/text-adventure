@@ -20,7 +20,7 @@ module EngineVectors::KeptRequests
           "if today's builders do not reproduce the stored bytes. `arrival` is every case of the arrival " \
           "set, and `realization` every branch case of the realization bench's current baseline.".freeze
 
-  ARRIVAL = "arrival-branches".freeze
+  ARRIVAL = Eval::Arrival::BASELINE.basename.to_s.freeze
   # The realization set whose requests today's builders send: the bench's
   # current baseline, which superseded the physical-realization set of
   # 2026-09-10 when the generator's prompt moved on.

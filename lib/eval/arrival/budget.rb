@@ -122,10 +122,13 @@ module Eval::Arrival::Budget
     end
 
     def usage(response)
-      fields = { input_tokens: :input_tokens, output_tokens: :output_tokens,
-                 cached_tokens: :cached_tokens, cache_creation_tokens: :cache_creation_tokens,
-                 thinking_tokens: :thinking_tokens }
-      tokens = fields.transform_values { |method| response.public_send(method) if response.respond_to?(method) }
+      # RubyLLM 2 reports counts as one `tokens` value and the answering model
+      # as `model`; a persisted record goes back to that public value first.
+      message = response.is_a?(ActiveRecord::Base) ? response.to_llm : response
+      counts = message.tokens if message.respond_to?(:tokens)
+      fields = { input_tokens: :input, output_tokens: :output, cached_tokens: :cache_read,
+                 cache_creation_tokens: :cache_write, thinking_tokens: :thinking }
+      tokens = fields.transform_values { |method| counts&.public_send(method) }
       if tokens.values.compact.any? { |count| !count.is_a?(Integer) || count.negative? }
         raise Halt, "Invalid provider token accounting"
       end
@@ -148,12 +151,26 @@ module Eval::Arrival::Budget
       cost = body.is_a?(Hash) ? body.dig("usage", "cost") : nil
       cost = Float(cost) unless cost.nil?
       raise Halt, "Invalid provider charge" if cost && (!cost.finite? || cost.negative?)
-      { **tokens, actual_model: response.respond_to?(:model_id) ? response.model_id : nil,
+      { **tokens, actual_model: message.respond_to?(:model) ? message.model : nil,
         provider: PROVIDER, provider_cost_usd: cost,
         provider_cost_metadata_error: metadata_error,
         registry_cost_usd: response.respond_to?(:cost) ? response.cost.total : nil,
         usage_upper_micros: known ? input * INPUT_RATE + output * OUTPUT_RATE : nil }
     end
+  end
+
+  # THE OUTPUT CAP AND THE NO-FALLBACK ROUTE, as provider options: RubyLLM 2
+  # renamed `with_params` to `with_provider_options`, and a guard still calling
+  # the old name failed every case before a request was sent.
+  def self.cap!(conversation)
+    conversation.with_provider_options(max_tokens: MAX_OUTPUT_TOKENS, provider: { allow_fallbacks: false })
+  end
+
+  # THE SCHEMA AS SENT. The bench sends the engine's own request, whose schema
+  # is the engine's JSON wrapped in an instance (`Eval::EngineCalls::Schema`);
+  # a `RubyLLM::Schema` subclass is still a class to instantiate.
+  def self.schema_json(schema)
+    schema.is_a?(Class) ? schema.new.to_json_schema : schema&.to_json_schema
   end
 
   module AgentCalls
@@ -168,9 +185,8 @@ module Eval::Arrival::Budget
       unless input_rate&.positive? && output_rate&.positive? && input_rate <= INPUT_RATE && output_rate <= OUTPUT_RATE
         raise Halt, "Pinned model has missing pricing or exceeds the reservation rate bounds"
       end
-      conversation.with_params(max_tokens: MAX_OUTPUT_TOKENS,
-                               provider: { allow_fallbacks: false })
-      schema_json = schema&.new&.to_json_schema
+      Eval::Arrival::Budget.cap!(conversation)
+      schema_json = Eval::Arrival::Budget.schema_json(schema)
       request = { prompt: prompt, instructions: instructions, schema: schema_json,
                   history: conversation.messages.order(:id).map { |message| { role: message.role, content: message.text } } }
       bytes = JSON.generate(request).bytesize
