@@ -3,6 +3,13 @@
 # excerpt and reason are required for positives, under the retained protocol.
 # Facts immediately after speech are distinct from facts after the follow-up
 # move or attack: narrating a truce before a later attack is not contradiction.
+#
+# A case's `expected` is the end state if the character does what was asked.
+# Choosing `none` is a refusal and changes nothing, so an agreement to follow
+# that the case staged still stands and the follower goes where the player
+# goes: staying behind is only ever the explicit `stop_following`. That is
+# scored here, from the staged case, rather than written into the corpus,
+# whose bytes are the kept sets' `corpus_digest`.
 class Eval::Dialogue::Result
   METRICS = %w[state_failure exchange_failure contradiction reaction_words narration_words].freeze
   attr_reader :data, :annotations
@@ -18,7 +25,7 @@ class Eval::Dialogue::Result
   end
 
   def rows = data.fetch("rows")
-  def checks(row) = row.fetch("expected").map { |key, value| [ key, row.fetch("facts")[key] == value ] }.to_h
+  def checks(row) = expected(row).map { |key, value| [ key, row.fetch("facts")[key] == value ] }.to_h
   def judgment(row) = annotations["#{row.fetch('id')}:#{row.fetch('rep')}"]
 
   def passes
@@ -60,7 +67,16 @@ class Eval::Dialogue::Result
     end
   end
 
+  def expected(row)
+    expected = row.fetch("expected")
+    return expected unless row.dig("effect", "status") == "none" && staged(row)&.fetch("following")
+
+    expected.merge("following" => true).tap { |e| e["npc_room"] = e["player_room"] if e.key?("npc_room") }
+  end
+
   private
+
+  def staged(row) = Eval::Dialogue.cases.find { |kase| kase.fetch("id") == row.fetch("id") }
 
   def words(text) = text.to_s.scan(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/u).size
 

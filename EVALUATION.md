@@ -2166,7 +2166,11 @@ produce different narrator requests; replaying the same saved reaction makes
 that comparison meaningful. `KeptSetTest` performs it offline in CI.
 
 State checks and failures are reported per repetition; comparison uses
-`Eval::Noise`. The default repetitions are `Eval::Noise::MIN_RUNS`. Word counts
+`Eval::Noise`. A case's expected state is what follows if the character does
+as asked; a follower who answers a request to stay with `none` has refused,
+changes nothing and keeps following, and is scored that way
+(`Eval::Dialogue::Result#expected`) — staying is only the explicit
+`stop_following`. The default repetitions are `Eval::Noise::MIN_RUNS`. Word counts
 measure length only. Contradiction judgments use the original
 [`npc-protocol.md`](db/eval/adversarial-20260909/npc-protocol.md) and remain a
 human input, beside state checks. Each annotation is keyed `case-id:rep` and
