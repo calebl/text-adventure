@@ -2,11 +2,21 @@
 # the request a turn walking into the room sends), intercepting only provider
 # answers for offline replay, and keeps the description and summary the way a
 # written arrival keeps them.
+#
+# `suite` is the corpus a set is bought over: the arrival corpus
+# (`Eval::Arrival`), or the room reacting to the arrival
+# (`Eval::Arrival::Reactions`), each with the stage that builds its cases.
 class Eval::Arrival::Bench
   include SanitizesGeneratedText
 
+  attr_reader :suite
+
+  def initialize(suite = Eval::Arrival)
+    @suite = suite
+  end
+
   def read(kase, rep:, replay: nil)
-    Eval::Arrival::Stage.open(kase) do |stage|
+    suite.stage.open(kase) do |stage|
       request = stage.request
       facts = stage.facts
       requests = [ request ]
@@ -27,16 +37,16 @@ class Eval::Arrival::Bench
   def run(directory, reps: Eval::Noise::MIN_RUNS)
     raise ArgumentError, "reps must reach Eval::Noise::MIN_RUNS" if reps < Eval::Noise::MIN_RUNS
     Eval::Arrival::Budget.assert_isolated_database!
-    estimate = Eval::Arrival.estimate(reps: reps)
+    estimate = suite.estimate(reps: reps)
     raise ArgumentError, "estimate exceeds budget" if estimate.fetch(:estimated_usd) > 2
     FileUtils.mkdir_p(directory)
     file = Pathname.new(directory).join(Eval::Arrival::RESULTS)
     raise ArgumentError, "set already exists: #{file}" if file.exist?
-    data = { "model" => Eval::Arrival.model, "reps" => reps, "corpus_digest" => Eval::Arrival.digest,
+    data = { "model" => suite.model, "reps" => reps, "corpus_digest" => suite.digest,
       "recorded_at" => Time.now.utc.iso8601, "estimate" => estimate, "rows" => [] }
     Eval::Arrival::Budget.install!
     (1..reps).each do |rep|
-      Eval::Arrival.cases.each do |kase|
+      suite.cases.each do |kase|
         Eval::Arrival::Budget.label = "#{kase.fetch('id')}:#{rep}"
         Eval::Arrival::Budget.calls = []
         row = read(kase, rep: rep)

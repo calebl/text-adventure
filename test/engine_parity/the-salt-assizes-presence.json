@@ -302,7 +302,7 @@
         "offers": null,
         "understood": "move -> The Tide Post",
         "resolved_by": "grammar",
-        "note": "the world: flooded on The Tide Post cost Coraith Vell 1 hit point (the water takes your legs); Coraith Vell is hurt (17 of 18)\nthe story: Go out to the tide post and read the stain band against the water yourself.",
+        "note": "someone here: Neb Halloran spoke up unasked and greeted Coraith Vell.\nthe world: flooded on The Tide Post cost Coraith Vell 1 hit point (the water takes your legs); Coraith Vell is hurt (17 of 18)\nthe story: Go out to the tide post and read the stain band against the water yourself.",
         "drifts": 0,
         "blows": 0,
         "hazards": 1,
@@ -311,8 +311,8 @@
           "2": "bound",
           "3": "bound"
         },
-        "volitions": 0,
-        "acts": 0,
+        "volitions": 1,
+        "acts": 1,
         "ending": "none",
         "ending_words": null,
         "scheduled": 0,
@@ -490,12 +490,7 @@
             "name": "Assize tide-slate"
           }
         ],
-        "present": [
-          {
-            "id": 1000000003,
-            "name": "Neb Halloran"
-          }
-        ],
+        "present": [],
         "foes": [],
         "inscription": [
           {
@@ -505,9 +500,7 @@
           }
         ],
         "hp": 17,
-        "hp_of": {
-          "Neb Halloran": 10
-        },
+        "hp_of": {},
         "abilities": {
           "strength": 13,
           "dexterity": 10,
@@ -520,7 +513,7 @@
         "offers": null,
         "understood": "move -> The Causeway Court",
         "resolved_by": "grammar",
-        "note": null,
+        "note": "someone here: Neb Halloran walked out of The Causeway Court to The Vestry Hulk and is no longer in The Causeway Court.",
         "drifts": 0,
         "blows": 0,
         "hazards": 0,
@@ -529,8 +522,8 @@
           "2": "bound",
           "3": "bound"
         },
-        "volitions": 0,
-        "acts": 0,
+        "volitions": 1,
+        "acts": 1,
         "ending": "none",
         "ending_words": null,
         "scheduled": 0,
@@ -562,12 +555,20 @@
           {
             "id": 1000000004,
             "name": "Assize tide-slate"
+          },
+          {
+            "id": 1000000006,
+            "name": "Neb's knotted cord"
           }
         ],
         "present": [
           {
             "id": 1000000002,
             "name": "Ammon Brace"
+          },
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
           }
         ],
         "foes": [],
@@ -580,7 +581,8 @@
         ],
         "hp": 15,
         "hp_of": {
-          "Ammon Brace": 6
+          "Ammon Brace": 6,
+          "Neb Halloran": 10
         },
         "abilities": {
           "strength": 13,
@@ -594,17 +596,17 @@
         "offers": null,
         "understood": "move -> The Vestry Hulk",
         "resolved_by": "grammar",
-        "note": "someone here: Neb Halloran walked out of The Causeway Court to The Tide Post and is no longer in The Causeway Court.\nthe world: drop on the way from The Causeway Court into The Vestry Hulk cost Coraith Vell 2 hit points (the way down is further than it looks from the top); Coraith Vell is hurt (15 of 18)",
+        "note": "someone here: Ammon Brace spoke up unasked and asked Coraith Vell for Assize tide-slate. Nothing changed hands.\nsomeone here: Neb Halloran handed Neb's knotted cord to Coraith Vell; the player now carries it.\nthe world: drop on the way from The Causeway Court into The Vestry Hulk cost Coraith Vell 2 hit points (the way down is further than it looks from the top); Coraith Vell is hurt (15 of 18)\nthe story: Get the knotted cord Neb has been keeping since the ebb, the water's own count.",
         "drifts": 0,
         "blows": 0,
         "hazards": 1,
         "quest": {
           "1": "reached",
-          "2": "bound",
+          "2": "reached",
           "3": "bound"
         },
-        "volitions": 1,
-        "acts": 1,
+        "volitions": 2,
+        "acts": 2,
         "ending": "none",
         "ending_words": null,
         "scheduled": 0,
@@ -636,12 +638,20 @@
           {
             "id": 1000000004,
             "name": "Assize tide-slate"
+          },
+          {
+            "id": 1000000006,
+            "name": "Neb's knotted cord"
           }
         ],
         "present": [
           {
             "id": 1000000002,
             "name": "Ammon Brace"
+          },
+          {
+            "id": 1000000003,
+            "name": "Neb Halloran"
           }
         ],
         "foes": [],
@@ -654,7 +664,8 @@
         ],
         "hp": 15,
         "hp_of": {
-          "Ammon Brace": 6
+          "Ammon Brace": 6,
+          "Neb Halloran": 10
         },
         "abilities": {
           "strength": 13,
@@ -665,7 +676,7 @@
         "changed": false,
         "change": null,
         "refused": true,
-        "offers": "talk to whom? Here: Ammon Brace",
+        "offers": "talk to whom? Here: Ammon Brace, Neb Halloran",
         "understood": null,
         "resolved_by": "grammar",
         "note": null,
@@ -674,7 +685,7 @@
         "hazards": 0,
         "quest": {
           "1": "reached",
-          "2": "bound",
+          "2": "reached",
           "3": "bound"
         },
         "volitions": 0,
@@ -688,7 +699,7 @@
       }
     },
     {
-      "step": "step 10 neb-is-not-reachable-from-here",
+      "step": "step 10 neb-is-reachable-where-he-walked-to",
       "player": "first",
       "typed": "talk to Neb",
       "dump": {
@@ -710,6 +721,10 @@
           {
             "id": 1000000004,
             "name": "Assize tide-slate"
+          },
+          {
+            "id": 1000000006,
+            "name": "Neb's knotted cord"
           }
         ],
         "present": [
@@ -739,20 +754,20 @@
         "changed": false,
         "change": null,
         "refused": true,
-        "offers": "there is no person here called \"to Neb\". There is: Ammon Brace",
-        "understood": null,
+        "offers": "Neb Halloran is here and the classifier resolved them, but talking is prose and this mode writes none. Nothing changed. Play the browser game to speak to somebody.",
+        "understood": "talk -> Neb Halloran",
         "resolved_by": "grammar",
-        "note": null,
+        "note": "someone here: Ammon Brace decided to go with Coraith Vell and will travel with them.\nsomeone here: Neb Halloran walked out of The Vestry Hulk to The Causeway Court and is no longer in The Vestry Hulk.",
         "drifts": 0,
         "blows": 0,
         "hazards": 0,
         "quest": {
           "1": "reached",
-          "2": "bound",
+          "2": "reached",
           "3": "bound"
         },
-        "volitions": 0,
-        "acts": 0,
+        "volitions": 2,
+        "acts": 2,
         "ending": "none",
         "ending_words": null,
         "scheduled": 0,

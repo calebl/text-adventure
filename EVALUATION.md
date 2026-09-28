@@ -2336,6 +2336,16 @@ phrase and says nothing about how varied the openings are. That set's one
 superseded row is a call the receipt halted because it could not read RubyLLM
 2's usage fields; its charge is on the ledger.
 
+**The room reacting to the arrival** is its own corpus on the same bench,
+`CORPUS=reactions` on `eval:arrival` and `eval:arrival_digest`
+(`Eval::Arrival::Reactions`, `test/fixtures/files/arrival_reactions_corpus.json`):
+the staged arrival with the rows the engine's reactions step writes held on
+it, so the request carries its "## As You Come In" block. Its kept set is
+`arrival-reactions-2026-09-28`, whose README reads each reaction by hand; the
+arrival corpus and its kept set are untouched by it. The main prompt corpus's
+move cases do walk into rooms where somebody reacts, so `prompt-2026-09-28-reactions`
+replaced `prompt-2026-09-28` as the main prompt baseline.
+
 ## Conditional narrator moments
 
 `CORPUS=branches` stages the pending moments in

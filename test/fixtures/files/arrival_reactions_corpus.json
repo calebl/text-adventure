@@ -1,0 +1,10 @@
+{
+  "cases": [
+    {"id": "greet", "why": "The resident greets the player as they come in.", "pursuit": "attend", "reactions": [["Maren Vosk", "greet"]], "facts": []},
+    {"id": "warn", "why": "The resident warns the player that the room they are walking into is flooded.", "pursuit": "attend", "hazard": true, "reactions": [["Maren Vosk", "warn:here"]], "facts": []},
+    {"id": "walk_out", "why": "The resident walks out as the player comes in, and is no longer among who is here.", "pursuit": "avoid", "reactions": [["Maren Vosk", "move"]], "facts": []},
+    {"id": "give", "why": "The resident hands the player the brass key as they come in.", "pursuit": "offer", "holding": true, "reactions": [["Maren Vosk", "give"]], "facts": ["key"]},
+    {"id": "foe_demand", "why": "A hostile resident demands the brass key the player carries, and nothing changes hands.", "pursuit": "keep", "hostile": true, "state": "carried", "reactions": [["Maren Vosk", "demand"]], "facts": ["key"]},
+    {"id": "two_speakers", "why": "Two people speak as the player comes in, in id order: a greeting and a dismissal.", "pursuit": "attend", "second": "keep", "reactions": [["Maren Vosk", "greet"], ["Tobin Reyes", "dismiss"]], "facts": []}
+  ]
+}

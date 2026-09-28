@@ -458,12 +458,19 @@ fn built(kind: &str, records: &Records, args: &Value) -> Result<Value, String> {
                 ),
                 None => None,
             };
+            // The rows the people there wrote as the party came in, which the
+            // arrival tells: none unless a caller names them.
+            let reactions: Vec<i64> = args["reactions"]
+                .as_array()
+                .map(|rows| rows.iter().filter_map(Value::as_i64).collect())
+                .unwrap_or_default();
             Arrival {
                 records,
                 location,
                 previous_scene,
                 game,
                 opening: args["opening"].as_bool().unwrap_or(false),
+                reactions: &reactions,
             }
             .request()
         }

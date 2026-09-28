@@ -1,0 +1,144 @@
+{
+  "script": "a-foe-demands-and-still-strikes",
+  "story": "A Lodge Inside the Gate",
+  "steps": [
+    {
+      "step": "step 1 the-keeper-demands-the-token",
+      "player": "first",
+      "typed": "/move The Toll Booth",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Toll Booth",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Gate Passage",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000003,
+            "name": "toll token"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000004,
+            "name": "Grist Harrow"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000004,
+            "name": "Grist Harrow"
+          }
+        ],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Grist Harrow": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Toll Booth",
+        "resolved_by": "grammar",
+        "note": "in: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 the-blow-comes-on-the-next-line",
+      "player": "first",
+      "typed": "/examine toll token",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "The Toll Booth",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Gate Passage",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000003,
+            "name": "toll token"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000004,
+            "name": "Grist Harrow"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000004,
+            "name": "Grist Harrow"
+          }
+        ],
+        "inscription": [],
+        "hp": 45,
+        "hp_of": {
+          "Grist Harrow": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "examine -> toll token",
+        "resolved_by": "grammar",
+        "note": "look: completed",
+        "drifts": 0,
+        "blows": 1,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 5.0,
+        "shown": null
+      }
+    }
+  ]
+}

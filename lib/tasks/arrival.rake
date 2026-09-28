@@ -1,11 +1,23 @@
 # A sibling bench with the existing run/score/board/compare/digest vocabulary.
 # Paid runs require an explicit scratch database and a persistent budget ledger.
+# CORPUS=reactions buys and digests the room reacting to the arrival
+# (`Eval::Arrival::Reactions`) instead of the arrival corpus.
+module ArrivalTasks
+  SUITES = { "main" => "Eval::Arrival", "reactions" => "Eval::Arrival::Reactions" }.freeze
+
+  def self.suite
+    SUITES.fetch(ENV.fetch("CORPUS", "main")) { |name| abort "No arrival corpus #{name.inspect}. There is: #{SUITES.keys.join(", ")}" }
+          .constantize
+  end
+end
+
 namespace :eval do
-  desc "Buy fixed arrival calls: SET=name EVAL_LIVE=1 EVAL_BUDGET_FILE=path DATABASE_URL=sqlite3:tmp/..."
+  desc "Buy fixed arrival calls: SET=name CORPUS=main|reactions EVAL_LIVE=1 EVAL_BUDGET_FILE=path DATABASE_URL=sqlite3:tmp/..."
   task arrival: :environment do
-    estimate = Eval::Arrival.estimate(reps: Integer(ENV.fetch("REPS", Eval::Noise::MIN_RUNS)))
+    suite = ArrivalTasks.suite
+    estimate = suite.estimate(reps: Integer(ENV.fetch("REPS", Eval::Noise::MIN_RUNS)))
     puts JSON.pretty_generate(estimate)
-    Eval::Arrival::Bench.new.run(Eval.root.join(ENV.fetch("SET")), reps: estimate.fetch(:reps))
+    Eval::Arrival::Bench.new(suite).run(Eval.root.join(ENV.fetch("SET")), reps: estimate.fetch(:reps))
   end
 
   desc "Re-score stored arrival fields offline: SET=name ANNOTATIONS=optional.json"
@@ -26,10 +38,11 @@ namespace :eval do
     puts JSON.pretty_generate(before.compare(after))
   end
 
-  desc "Rebuild every arrival request identity offline, without a model call"
+  desc "Rebuild every arrival request identity offline, without a model call. CORPUS=main|reactions"
   task arrival_digest: :environment do
-    Eval::Arrival.cases.each do |kase|
-      Eval::Arrival::Stage.open(kase) do |stage|
+    suite = ArrivalTasks.suite
+    suite.cases.each do |kase|
+      suite.stage.open(kase) do |stage|
         puts "#{kase.fetch('id')} #{Eval::RequestIdentity.label(Eval::RequestIdentity.of([ stage.request ]))}"
       end
     end

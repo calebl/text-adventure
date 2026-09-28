@@ -93,15 +93,21 @@ module Eval
     lib/eval/arrival/result.rb
     lib/eval/arrival/scorer.rb
     lib/eval/arrival/stage.rb
+    lib/eval/arrival/reactions.rb
+    lib/eval/arrival/reactions/stage.rb
     lib/tasks/arrival.rake
     test/fixtures/files/arrival_corpus.json
+    test/fixtures/files/arrival_reactions_corpus.json
     test/lib/eval/arrival/budget_test.rb
     test/lib/eval/arrival/kept_set_test.rb
+    test/lib/eval/arrival/reactions_kept_set_test.rb
     test/lib/eval/arrival/result_test.rb
     test/lib/eval/arrival/scorer_test.rb
     test/lib/eval/arrival/stage_test.rb
     db/eval/arrival-branches/arrival.json
     db/eval/arrival-first-visit-2026-09-28/arrival.json
+    db/eval/arrival-reactions-2026-09-28/arrival.json
+    db/eval/arrival-reactions-2026-09-28/README.md
     db/eval/adversarial-20260909/arrival-before.json
     db/eval/adversarial-20260909/arrival-after.json
     db/eval/adversarial-20260909/arrival-reading-key.json
@@ -129,6 +135,9 @@ module Eval
     db/eval/prompt-2026-09-28/prompt.json
     db/eval/prompt-2026-09-28/receipts.json
     db/eval/prompt-2026-09-28/README.md
+    db/eval/prompt-2026-09-28-reactions/prompt.json
+    db/eval/prompt-2026-09-28-reactions/receipts.json
+    db/eval/prompt-2026-09-28-reactions/README.md
     lib/eval/prompt/speech.rb
     lib/eval/prompt/speech/stage.rb
     lib/eval/prompt/speech/bench.rb

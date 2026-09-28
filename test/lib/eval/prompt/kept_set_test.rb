@@ -12,7 +12,7 @@ require "test_helper"
 # never paid for a call. The one exception is the cost row, which reads the
 # `models` registry and degrades to `unpriced` rather than failing.
 class Eval::Prompt::KeptSetTest < ActiveSupport::TestCase
-  BASELINE = "prompt-2026-09-28".freeze
+  BASELINE = "prompt-2026-09-28-reactions".freeze
 
   ARM = "mistralai/mistral-medium-3.1".freeze
 
