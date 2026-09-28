@@ -1212,6 +1212,13 @@ bin/rails runner 'Eval::Prompt::Result.load(Eval.root.join("my-set")) \
 
 ### Current kept sets and historical comparisons
 
+**`realization-2026-09-28` is the current realization baseline.** The exits
+call gained `kind` and `density` and the place call `place_kind`
+(`Location::Kind`); no prompt message changed, and against a before side
+bought the same day every figure read NOISE
+(`db/eval/realization-2026-09-28/README.md`). `realization-2026-09-26` is
+history from then on.
+
 **Re-bought when every checked-in world gained an arc.** The arcs, and the
 things they need on the floor, moved what the benches stage, so
 `prompt-2026-09-26`, `classifier-2026-09-27`, `realization-2026-09-26`,
