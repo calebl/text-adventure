@@ -213,9 +213,14 @@ class Story::Audit
   # `dead_shown_alive`, `carried_shown_lying` and `handover_invented` read the
   # third kind of record: `Scene#engine_fact`, the receipt of what the engine
   # handed the writer. See `#check_receipt`.
+  #
+  # `break_untold` reads no prose at all: the records say the turn broke a
+  # thing and the receipt the writer was handed does not say so. See
+  # `#check_break`.
   CONTRADICTIONS = %i[unreachable_transition item_not_held unrecorded_departure unrecorded_arrival
                       take_denied pickup_invented inscription_misquoted
-                      dead_shown_alive carried_shown_lying handover_invented].freeze
+                      dead_shown_alive carried_shown_lying handover_invented
+                      break_untold].freeze
 
 
   # THE PROSE BROKE A RULE THE APP STATES, provable from the row itself and one
@@ -503,6 +508,10 @@ class Story::Audit
       # of what this can be run on: no record, nothing to compare a quotation
       # with. See `#check_inscription`.
       scenes.count { |scene| inscribed_subject(scene) && scene.description.present? }
+    when :break_untold
+      # THE TURNS THAT BROKE SOMETHING, and nothing else: a turn that broke
+      # nothing has no break to leave untold.
+      scenes.count { |scene| broke_on?(scene) }
     when :dead_shown_alive, :carried_shown_lying, :handover_invented
       # THE SCENES WHOSE RECEIPT STATES WHAT THIS CHECK READS, and nothing else:
       # a receipt with nobody dead on it cannot be contradicted by prose about
@@ -582,6 +591,7 @@ class Story::Audit
       check_drop(scene)
       check_inscription(scene)
       check_receipt(scene)
+      check_break(scene)
     end
 
     check_stillness
@@ -1364,6 +1374,70 @@ class Story::Audit
 
       unjudge(code, scene, "this scene has no engine receipt -- it predates the record, or its writer supplied none -- " \
                             "so there is nothing to read its prose against")
+    end
+  end
+
+  # ------------------------------------------------------------------------
+  # THE ENGINE BROKE A THING AND DID NOT TELL THE WRITER.
+  #
+  # A fragile thing that comes down on a floor may break (the Rust engine's
+  # `physics` module, rolled against `Item::FRAGILITIES` and
+  # `Location::SURFACES`), and the thing's copy then takes the `broken`
+  # disposition. On that turn the engine replaces the fact it hands the writer
+  # with one that says the thing BROKE, and `Scene#engine_fact` is the receipt of
+  # it. So this is two records against each other and no prose at all: the item
+  # this scene acted on is broken, this is the last scene that dropped or threw
+  # it, and its receipt does not say it broke. It needs no corpus to be
+  # measured on, because it reads nothing a model wrote.
+  #
+  # WHAT IT DOES NOT DO is read the narration for a jar that survives. That is a
+  # prose check, it would be read against the receipt the way `check_receipt`
+  # reads one, and it is not here because no stored narration of a break exists
+  # to measure a reading on: every check that reads prose here was kept or cut
+  # on a measurement.
+  #
+  # A SCENE WITH NO RECEIPT IS UNJUDGED, never flagged, on `check_receipt`'s
+  # rule: a scene written by a writer that supplied none has nothing to be read.
+  # ------------------------------------------------------------------------
+  BREAKING_ACTIONS = %w[drop throw].freeze
+
+  def check_break(scene)
+    return unless broke_on?(scene)
+
+    item = scene.acted_on_record
+    receipt = scene.recorded_engine_fact
+    if receipt.blank?
+      return unjudge(:break_untold, scene,
+                     "the #{item.name} broke on this turn and the scene has no engine receipt to read")
+    end
+    return if Receipt.new(receipt).broke?
+
+    flag(:break_untold, scene,
+         "the #{item.name} broke on this turn, and the fact the writer was handed does not say so",
+         item: item.name,
+         "the records say" => "the #{item.name} is broken",
+         "the receipt says" => receipt.truncate(220),
+         typed: scene.typed.presence,
+         where: scene.location&.name,
+         at: scene.story_timestamp)
+  end
+
+  # Whether this scene is the turn that broke the thing it acted on: the last
+  # drop or throw of a thing that is broken now. A thing that broke is in no
+  # closed set afterwards, so nothing acts on it again.
+  def broke_on?(scene)
+    item = scene.acted_on_record
+    return false unless item.is_a?(Item) && item.broken? && BREAKING_ACTIONS.include?(scene.recorded_action)
+
+    last_breaking_act(item) == scene
+  end
+
+  def last_breaking_act(item)
+    @last_breaking_act ||= {}
+    @last_breaking_act.fetch(item.id) do
+      @last_breaking_act[item.id] = all_scenes.reverse.find do |scene|
+        scene.acted_on_record == item && BREAKING_ACTIONS.include?(scene.recorded_action)
+      end
     end
   end
 

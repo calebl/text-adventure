@@ -43,6 +43,26 @@ class ItemDispositionTest < ActiveSupport::TestCase
     assert_not @copy.valid?
   end
 
+  # A BROKEN COPY IS A TOMBSTONE ON A CONSUMED ONE'S TERMS: in no place, still
+  # linked to its template, and the next game's copy is whole.
+  test "a broken copy is in no place, is not copied again, and another game's copy is whole" do
+    @copy.update!(disposition: "broken", location: nil, character: nil, x: nil, y: nil)
+
+    assert_empty @game.items_lying_in(@room)
+    assert_not @copy.carried?
+    assert_no_difference "Item.count" do
+      Item::Snapshot.new(@game.reload).of_the_room!(@room)
+    end
+    other = create(:playthrough, story: @story, character: @player, current_location: @room)
+    assert_equal "intact", other.items.find_by!(template: @template).disposition
+    assert_equal "intact", @template.reload.disposition
+
+    @template.disposition = "broken"
+    assert_not @template.valid?
+    @copy.assign_attributes(location: @room)
+    assert_not @copy.valid?
+  end
+
   test "the use profile is a closed world parameter and ordinary food does not heal wounds" do
     assert_equal Item::HEALING_POINTS, @copy.healing_points
     @copy.use_kind = "food"

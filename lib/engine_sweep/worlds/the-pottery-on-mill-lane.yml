@@ -1,0 +1,204 @@
+# THE POTTERY ON MILL LANE: the one world a thing can break in.
+#
+# Mill Lane, and a pottery off it with four rooms laid out in one box. On
+# storey 0, west to east: the kiln yard, the workshop and the showroom. On
+# storey 1 the drying loft stands above the workshop. The lane opens onto the
+# workshop, which is the middle of the house: a door to the yard, a door to the
+# showroom and the stair up to the loft. The loft's window over the yard is a
+# pair like every other doorway: the row from the loft into the yard carries
+# `hazard: fall`, and the row back up is a `climbing` with no hazard.
+#
+# EVERY FLOOR SAYS SOMETHING, because the floor is half of whether a thing
+# breaks. The workshop is flagstones and the yard is cobbles, both `surface:
+# hard`. The showroom is rush matting, `surface: soft`. The loft's boards and
+# the lane name no surface, a floor that adds nothing.
+#
+# AND EVERY FRAGILITY IS CARRIED. Ada Hollin comes in with four things in her
+# hands, one of each kind a script needs:
+#
+#   pewter mug       sturdy, and it never throws a die
+#   clay jar         brittle
+#   glass float      fragile
+#   stoneware crock  brittle, and handy rather than light
+#
+# The showroom's glazed bowl is the world's own fragile thing on a floor. A
+# game breaks its copy of the bowl and never the bowl.
+#
+# `universe.gravity: ordinary` makes the window a fall. A thing thrown through
+# it lands as a thing that fell, which is the largest share a landing adds.
+#
+# Every room is written, so moving between them asks nobody to write one. The
+# lane is the opening, and the first room in the file, because a walk starts in
+# the lowest-id written room.
+#
+# Loaded offline by the sweep. No model call, no API key, no network.
+---
+format: 2
+universe:
+  physics: Ordinary physics. What is dropped falls, and what is fired breaks.
+  technology: A wheel, a kiln, and a lamp in the loft.
+  weapons: Nothing much, unless a crock counts.
+  geographies: A mill town on a slow river, with a clay pit upstream.
+  civilizations: A market town that buys its pots from one family.
+  history: The Hollins have fired the town's crockery for three generations.
+  economics: Sold by the piece on market day, and by the crate to the inns.
+  politics: The market reeve, who sets the stall rents.
+  religion: A saint's day in spring, when nobody works the wheel.
+  races:
+  - name: Townsfolk
+    description: |-
+      Born in the mill town, and sure it is the centre of the county.
+  gravity: ordinary
+story:
+  title: The Pottery on Mill Lane
+  genre: domestic mystery
+  start_time: '2026-09-21T08:00:00Z'
+  preface: |-
+    The kiln was fired in the night, and nobody in the family will say who lit it.
+  summary: |-
+    Ada Hollin comes up Mill Lane with her arms full, to find the kiln still warm.
+opening_scene:
+  location: Mill Lane
+  characters: [Ada Hollin]
+  description: |-
+    Mill Lane runs down to the river, and the pottery door stands open onto it.
+  summary: |-
+    The story opens in Mill Lane, outside the Hollin pottery.
+characters:
+- fullname: Ada Hollin
+  race: Townsfolk
+  stats:
+    level: 3
+    hit_die: 8
+    strength: 16
+    dexterity: 12
+    will: 11
+  nickname: Ada
+  age: 34
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: |-
+    Throws every pot the pottery sells, and keeps the kiln book in her own hand.
+  personality: Quick, and quicker to lose her temper with a cracked pot.
+  appearance: Clay to the elbows, and an apron gone grey with it.
+  likes: A clean firing
+  dislikes: Somebody touching the kiln without asking
+  fears: The pottery going to her brother
+  items:
+  - name: pewter mug
+    description: |-
+      A dented pewter mug from the inn, which has been dropped more times than anybody has counted.
+    bulk: light
+    properties: '{}'
+  - name: clay jar
+    description: |-
+      A jar fresh from the kiln, thin-walled and still faintly warm.
+    bulk: light
+    fragility: brittle
+    properties: '{}'
+  - name: glass float
+    description: |-
+      A green glass fishing float, bought off a pedlar for the showroom window.
+    bulk: light
+    fragility: fragile
+    properties: '{}'
+  - name: stoneware crock
+    description: |-
+      A salt-glazed crock the size of a loaf, heavier than it looks.
+    fragility: brittle
+    properties: '{}'
+locations:
+- name: Mill Lane
+  detail_level: realized
+  opening: true
+  teaser: The lane down to the river, past the pottery.
+  description: |-
+    A cobbled lane between the mill and the pottery, running down to the river.
+  lore: |-
+    The lane is named for a mill that has not turned since the river was moved.
+- name: The Workshop
+  detail_level: realized
+  parent: Hollin Pottery
+  x: 6
+  y: 0
+  z: 0
+  width: 6
+  depth: 8
+  surface: hard
+  teaser: The pottery's workshop, with the wheel and the stair to the loft.
+  description: |-
+    Flagstones, a kick wheel, shelves of greenware, and the stair up to the drying loft.
+  lore: |-
+    The flagstones came out of the old mill race when the river was moved.
+- name: Hollin Pottery
+  detail_level: stub
+  width: 18
+  depth: 8
+  teaser: A pottery at the end of Mill Lane.
+- name: The Kiln Yard
+  detail_level: realized
+  parent: Hollin Pottery
+  x: 0
+  y: 0
+  z: 0
+  width: 6
+  depth: 8
+  surface: hard
+  teaser: The cobbled yard around the kiln.
+  description: |-
+    Cobbles, the squat brick kiln, and the loft window high in the wall above.
+  lore: |-
+    The kiln was built the year the first Hollin came to Mill Lane.
+- name: The Showroom
+  detail_level: realized
+  parent: Hollin Pottery
+  x: 12
+  y: 0
+  z: 0
+  width: 6
+  depth: 8
+  surface: soft
+  teaser: The front room where the pots are sold.
+  description: |-
+    Rush matting on the floor, trestles of finished pots, and the shop window onto the lane.
+  lore: |-
+    The matting is laid thick so that a dropped pot is a dropped pot and not a broken one.
+  items:
+  - name: glazed bowl
+    description: |-
+      A blue-glazed bowl on the nearest trestle, the best piece in the room.
+    bulk: light
+    fragility: fragile
+    properties: '{}'
+- name: The Drying Loft
+  detail_level: realized
+  parent: Hollin Pottery
+  x: 6
+  y: 0
+  z: 1
+  width: 6
+  depth: 8
+  teaser: The loft above the workshop, where the greenware dries.
+  description: |-
+    Bare boards, racks of unfired pots, and a window over the kiln yard.
+  lore: |-
+    The loft is the warmest room in the house, because the kiln flue runs up its wall.
+connections:
+- between: [Mill Lane, The Workshop]
+  distance: adjacent
+  travel_method: walking
+- between: [The Workshop, The Kiln Yard]
+  distance: adjacent
+  travel_method: walking
+- between: [The Workshop, The Showroom]
+  distance: adjacent
+  travel_method: walking
+- between: [The Workshop, The Drying Loft]
+  distance: adjacent
+  travel_method: taking stairs
+- between: [The Drying Loft, The Kiln Yard]
+  distance: adjacent
+  travel_method: climbing
+  hazard: fall
+  hazard_from: The Drying Loft

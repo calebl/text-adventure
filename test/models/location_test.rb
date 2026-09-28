@@ -264,6 +264,14 @@ class LocationTest < ActiveSupport::TestCase
     assert_not build(:location, hazard: "flooded", hazard_die: 7).valid?
   end
 
+  # A FLOOR THAT ADDS NOTHING IS NIL, which is every room already written.
+  test "a surface is one the engine has a number for, or none" do
+    assert_nil create(:location).surface
+    assert_predicate build(:location, surface: "hard"), :valid?
+    assert_predicate build(:location, surface: "soft"), :valid?
+    assert_not_predicate build(:location, surface: "mud"), :valid?
+  end
+
   # HALF A HAZARD IS A COLUMN THAT LOOKS AS THOUGH IT SAID SOMETHING AND DID
   # NOT: the key says what happens and the die says how much.
   test "half a hazard is refused, either half" do

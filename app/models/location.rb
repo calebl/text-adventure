@@ -192,6 +192,12 @@ class Location < ApplicationRecord
   # the commonest hazard worth writing.
   HAZARD_DICE = [ 4, 6, 8, 10 ].freeze
 
+  # WHAT A ROOM'S FLOOR DOES TO A THING THAT LANDS ON IT, as the Rust engine
+  # rolls it: the rows of `surface` in its `data/physics.yml`, each a number
+  # added to the share of the die a fragile thing breaks on (`Item::FRAGILITIES`).
+  # Nil is a floor that adds nothing, which is every room already written.
+  SURFACES = %w[hard soft].freeze
+
   scope :hazardous, -> { where.not(hazard: nil) }
 
   # A key outside `HAZARDS`, or half a hazard, cannot be written by anything in
@@ -200,6 +206,7 @@ class Location < ApplicationRecord
   # meant, exactly as it does for `danger`.
   validates :hazard, inclusion: { in: HAZARDS.keys }, allow_nil: true
   validates :hazard_die, inclusion: { in: HAZARD_DICE }, allow_nil: true
+  validates :surface, inclusion: { in: SURFACES }, allow_nil: true
   validate :a_hazard_is_whole
 
   # A key outside `DANGERS` cannot be written by anything in the app: the four

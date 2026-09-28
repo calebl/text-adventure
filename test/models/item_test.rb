@@ -419,6 +419,23 @@ class ItemTest < ActiveSupport::TestCase
     assert_not_includes Item::NOT_COPIED, "bulk"
   end
 
+  # ------------------------------------------------------------------------
+  # WHETHER IT BREAKS, which is `fragility` -- a closed key the Rust engine
+  # rolls a share of one die against when the thing comes down on a floor.
+
+  test "every row is sturdy unless the world says otherwise, and a copy keeps its fragility" do
+    assert_equal Item::STURDY, create(:item).fragility
+    assert_predicate build(:item, fragility: "brittle"), :valid?
+    assert_not_includes Item::NOT_COPIED, "fragility"
+  end
+
+  test "a fragility outside the closed list, or none, is refused" do
+    item = build(:item, fragility: "porcelain")
+    assert_not_predicate item, :valid?
+    assert_includes item.errors[:fragility], "is not included in the list"
+    assert_not_predicate build(:item, fragility: nil), :valid?
+  end
+
   # --- where in the room it is lying, since slice 4 -------------------------
 
   test "a thing lying somewhere in a room reads its position back" do

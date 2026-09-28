@@ -40,7 +40,8 @@
 #                                        the same reason a location is. `bulk`
 #                                        is written on every load, in both
 #                                        directions, and an absent key is
-#                                        Item::HANDY
+#                                        Item::HANDY; `fragility` likewise, and
+#                                        an absent key is Item::STURDY
 #   Scene      (story, is_opening)       the story's one opening arrival, which
 #                                        is the only Scene that is world rather
 #                                        than progress -- see WorldSeed::Exporter
@@ -340,7 +341,8 @@ class WorldSeed::Loader
                   .merge("name" => written, "danger" => attributes["danger"].presence || Location::SAFE,
                          "generation_checkpoint" => nil,
                          "population" => attributes["population"].presence,
-                         "hazard" => attributes["hazard"].presence, "hazard_die" => attributes["hazard_die"])
+                         "hazard" => attributes["hazard"].presence, "hazard_die" => attributes["hazard_die"],
+                         "surface" => attributes["surface"].presence)
                   .merge(Location::Box::COLUMNS.to_h { |column| [ column, attributes[column] ] })
       )
       location.save!
@@ -665,7 +667,8 @@ class WorldSeed::Loader
       # and for its argument: a stale `immovable` left on a row the file no
       # longer marks would keep the thing unthrowable for ever with no way to
       # undo it from the file. An absent key is `Item::HANDY`, which is the
-      # column's default and what almost everything is.
+      # column's default and what almost everything is. `fragility` is written
+      # the same way, and an absent key is `Item::STURDY`, which never breaks.
       # AND WHERE IN THE ROOM THE FILE LAYS IT, written in both directions on
       # every load -- the box keys' own rule on `locations` and its reason: a
       # stale position left on a row the file no longer places would keep the
@@ -674,6 +677,7 @@ class WorldSeed::Loader
       # every checked-in world is (`Location::Spot`).
       item.assign_attributes(
         attributes.merge("name" => name, "bulk" => attributes["bulk"].presence || Item::HANDY,
+                         "fragility" => attributes["fragility"].presence || Item::STURDY,
                          "use_kind" => attributes["use_kind"].presence || "ordinary",
                          "combustible" => attributes["combustible"] == true,
                          "disposition" => "intact",
@@ -977,6 +981,8 @@ class WorldSeed::Loader
 
     validate_inscriptions!
     validate_bulks!
+    validate_fragilities!
+    validate_surfaces!
     validate_gravity!
     validate_physical_parameters!
     validate_dangers!
@@ -1697,6 +1703,28 @@ class WorldSeed::Loader
         raise InvalidWorld, "#{where}: item #{item.fetch("name").inspect} has `bulk: #{bulk.inspect}`; " \
                             "there is: #{Item::BULK.keys.join(", ")}"
       end
+    end
+  end
+
+  def validate_fragilities!
+    (character_documents + location_documents).each do |owner|
+      Array(owner["items"]).each do |item|
+        fragility = item["fragility"]
+        next if fragility.blank? || Item::FRAGILITIES.include?(fragility)
+
+        raise InvalidWorld, "#{where}: item #{item.fetch("name").inspect} has `fragility: #{fragility.inspect}`; " \
+                            "there is: #{Item::FRAGILITIES.join(", ")}"
+      end
+    end
+  end
+
+  def validate_surfaces!
+    location_documents.each do |room|
+      surface = room["surface"]
+      next if surface.blank? || Location::SURFACES.include?(surface)
+
+      raise InvalidWorld, "#{where}: location #{room.fetch("name").inspect} has `surface: #{surface.inspect}`; " \
+                          "there is: #{Location::SURFACES.join(", ")}"
     end
   end
 

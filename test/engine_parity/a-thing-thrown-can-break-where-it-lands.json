@@ -1,0 +1,581 @@
+{
+  "script": "a-thing-thrown-can-break-where-it-lands",
+  "story": "The Pottery on Mill Lane",
+  "steps": [
+    {
+      "step": "step 1 in-from-the-lane",
+      "player": "first",
+      "typed": "go to the workshop",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Workshop",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Mill Lane",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000006,
+            "name": "The Drying Loft",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Kiln Yard",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000005,
+            "name": "The Showroom",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "clay jar"
+          },
+          {
+            "id": 1000000008,
+            "name": "glass float"
+          },
+          {
+            "id": 1000000006,
+            "name": "pewter mug"
+          },
+          {
+            "id": 1000000009,
+            "name": "stoneware crock"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 16,
+          "dexterity": 12,
+          "will": 11
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Mill Lane -> The Workshop",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Workshop",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 up-the-stair",
+      "player": "first",
+      "typed": "go to the drying loft",
+      "dump": {
+        "location": {
+          "id": 1000000006,
+          "name": "The Drying Loft",
+          "detail": "realized"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Kiln Yard",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Workshop",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "clay jar"
+          },
+          {
+            "id": 1000000008,
+            "name": "glass float"
+          },
+          {
+            "id": 1000000006,
+            "name": "pewter mug"
+          },
+          {
+            "id": 1000000009,
+            "name": "stoneware crock"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 16,
+          "dexterity": 12,
+          "will": 11
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Workshop -> The Drying Loft",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Drying Loft",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 the-mug-out-of-the-window",
+      "player": "first",
+      "typed": "throw the pewter mug at the kiln yard",
+      "dump": {
+        "location": {
+          "id": 1000000006,
+          "name": "The Drying Loft",
+          "detail": "realized"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Kiln Yard",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Workshop",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "clay jar"
+          },
+          {
+            "id": 1000000008,
+            "name": "glass float"
+          },
+          {
+            "id": 1000000009,
+            "name": "stoneware crock"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 16,
+          "dexterity": 12,
+          "will": 11
+        },
+        "dead": false,
+        "changed": true,
+        "change": "it went through and is lying in The Kiln Yard",
+        "refused": false,
+        "offers": null,
+        "understood": "throw -> pewter mug at The Kiln Yard",
+        "resolved_by": "grammar",
+        "note": "threw: pewter mug at The Kiln Yard -- strength -> d20(1) <= 16 PASS",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 the-jar-out-of-the-window",
+      "player": "first",
+      "typed": "throw the clay jar at the kiln yard",
+      "dump": {
+        "location": {
+          "id": 1000000006,
+          "name": "The Drying Loft",
+          "detail": "realized"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Kiln Yard",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Workshop",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000008,
+            "name": "glass float"
+          },
+          {
+            "id": 1000000009,
+            "name": "stoneware crock"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 16,
+          "dexterity": 12,
+          "will": 11
+        },
+        "dead": false,
+        "changed": true,
+        "change": "it went through into The Kiln Yard and broke",
+        "refused": false,
+        "offers": null,
+        "understood": "throw -> clay jar at The Kiln Yard",
+        "resolved_by": "grammar",
+        "note": "threw: clay jar at The Kiln Yard -- strength -> d20(11) <= 16 PASS\nbreak: clay jar -- brittle, fell on a hard floor: d6(4) <= 6 BROKE",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 the-float-down-the-stair",
+      "player": "first",
+      "typed": "throw the glass float at the workshop",
+      "dump": {
+        "location": {
+          "id": 1000000006,
+          "name": "The Drying Loft",
+          "detail": "realized"
+        },
+        "storey": 1,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Kiln Yard",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Workshop",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000008,
+            "name": "glass float"
+          },
+          {
+            "id": 1000000009,
+            "name": "stoneware crock"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 16,
+          "dexterity": 12,
+          "will": 11
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": "throw -> glass float at The Workshop",
+        "resolved_by": "grammar",
+        "note": "threw: glass float at The Workshop -- strength -> d20(17) <= 16 FAIL\nthe lift failed: nothing was thrown and no row moved",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 down-the-stair",
+      "player": "first",
+      "typed": "go to the workshop",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Workshop",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Mill Lane",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000006,
+            "name": "The Drying Loft",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Kiln Yard",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000005,
+            "name": "The Showroom",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000008,
+            "name": "glass float"
+          },
+          {
+            "id": 1000000009,
+            "name": "stoneware crock"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 16,
+          "dexterity": 12,
+          "will": 11
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Drying Loft -> The Workshop",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Workshop",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 the-crock-into-the-showroom",
+      "player": "first",
+      "typed": "throw the stoneware crock at the showroom",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Workshop",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Mill Lane",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000006,
+            "name": "The Drying Loft",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Kiln Yard",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000005,
+            "name": "The Showroom",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000008,
+            "name": "glass float"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 16,
+          "dexterity": 12,
+          "will": 11
+        },
+        "dead": false,
+        "changed": true,
+        "change": "it went through into The Showroom and broke",
+        "refused": false,
+        "offers": null,
+        "understood": "throw -> stoneware crock at The Showroom",
+        "resolved_by": "grammar",
+        "note": "threw: stoneware crock at The Showroom -- strength -> d20(7) <= 14 PASS\nbreak: stoneware crock -- brittle, thrown on a soft floor: d6(1) <= 3 BROKE",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 out-into-the-yard",
+      "player": "first",
+      "typed": "go to the kiln yard",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "The Kiln Yard",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000006,
+            "name": "The Drying Loft",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Workshop",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000006,
+            "name": "pewter mug"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000008,
+            "name": "glass float"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 16,
+          "dexterity": 12,
+          "will": 11
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Workshop -> The Kiln Yard",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Kiln Yard",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}
