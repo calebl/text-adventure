@@ -451,6 +451,32 @@ class Character::RegistryTest < ActiveSupport::TestCase
     end
   end
 
+  # ONE FOLDING RULE, `String#downcase` on both sides, as `Item::Registry` and
+  # the engine's own admission read it. SQLite's `LOWER()` folds ASCII only, so
+  # a name opening on a capital outside ASCII did not match itself.
+  test "a name outside ASCII collides with itself and with its own lower case" do
+    create(:character, story: @story, fullname: "Ödön Halloran", nickname: "Åke")
+    create(:location, :stub, story: @story, name: "Église Row")
+    create(:item, :lying, location: @there, name: "Écu of the ward")
+
+    assert_no_difference -> { Character.count } do
+      registry.admit!([ sheet(fullname: "åke") ])
+      registry.admit!([ sheet(fullname: "église row") ])
+      registry.admit!([ sheet(fullname: "écu of the ward") ])
+    end
+  end
+
+  test "a proposal names somebody outside ASCII by fullname or nickname" do
+    odon = create(:character, story: @story, fullname: "Ödön Halloran", nickname: "Åke")
+
+    registry.admit!([ "Ödön Halloran" ])
+    assert_equal @here, odon.reload.location
+
+    odon.update!(location: nil)
+    registry.admit!([ "åke" ])
+    assert_equal @here, odon.reload.location
+  end
+
   # A CUT SENTENCE IS NOT STORED, but it no longer costs the room a person when
   # the provider finished something before it. The retained realization sets
   # contain complete prefixes for every capped appearance, personality and

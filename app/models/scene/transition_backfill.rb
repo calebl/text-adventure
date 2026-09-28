@@ -118,8 +118,8 @@ class Scene::TransitionBackfill
   def record_for(action, name, playthrough)
     found =
       case action
-      when "move" then story.locations.select { |place| place.name.to_s.casecmp?(name) }
-      when "talk" then story.characters.select { |who| who.fullname.to_s.casecmp?(name) || who.nickname.to_s.casecmp?(name) }
+      when "move" then story.locations.select { |place| SameName.same?(place.name, name) }
+      when "talk" then story.characters.select { |who| SameName.same?(who.fullname, name) || SameName.same?(who.nickname, name) }
       when "take", "drop" then item_named(name, playthrough)
       else []
       end
@@ -131,10 +131,10 @@ class Scene::TransitionBackfill
   # attributed to a game. Two rows of one name in one layer is still refused --
   # `found.one?` above -- which is the rule this class follows everywhere.
   def item_named(name, playthrough)
-    mine = playthrough ? items.select { |thing| thing.playthrough_id == playthrough.id && thing.name.to_s.casecmp?(name) } : []
+    mine = playthrough ? items.select { |thing| thing.playthrough_id == playthrough.id && SameName.same?(thing.name, name) } : []
     return mine if mine.any?
 
-    items.select { |thing| thing.template? && thing.name.to_s.casecmp?(name) }
+    items.select { |thing| thing.template? && SameName.same?(thing.name, name) }
   end
 
   # EVERY ROW THIS STORY HAS, both layers and all three places -- `Item.in_story`,

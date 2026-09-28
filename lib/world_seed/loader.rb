@@ -548,7 +548,7 @@ class WorldSeed::Loader
   def load_characters!(story, universe)
     character_documents.each do |attributes|
       race = universe.races.detect { |candidate| candidate.name == attributes.fetch("race") }
-      character = story.characters.find_by("LOWER(fullname) = ?", attributes.fetch("fullname").downcase) ||
+      character = SameName.first(story.characters, attributes.fetch("fullname"), :fullname) ||
                   story.characters.new(fullname: attributes.fetch("fullname"))
       where = attributes["location"].presence && find_location(story, attributes["location"])
 
@@ -901,7 +901,7 @@ class WorldSeed::Loader
 
     record = case step.trigger_kind
     when "reach_location" then WorldSeed.find_location(story, step.target_name)
-    when "speak_to" then story.characters.find_by("LOWER(fullname) = ?", step.target_name.downcase)
+    when "speak_to" then SameName.first(story.characters, step.target_name, :fullname)
     when "hold_item" then find_item(story, step.target_name)
     end
 
@@ -933,7 +933,7 @@ class WorldSeed::Loader
       story_timestamp: story.start_time
     )
     scene.characters = Array(attributes["characters"]).map do |fullname|
-      story.characters.find_by("LOWER(fullname) = ?", fullname.downcase)
+      SameName.first(story.characters, fullname, :fullname)
     end
     scene.save!
 
@@ -1018,7 +1018,7 @@ class WorldSeed::Loader
       validate_hostility!(attributes)
       validate_desires!(attributes)
 
-      next if standing.blank? || names.any? { |name| name.casecmp?(standing) }
+      next if standing.blank? || names.any? { |name| SameName.same?(name, standing) }
 
       raise InvalidWorld, "#{where}: character #{attributes.fetch("fullname").inspect} is placed in #{standing.inspect}, " \
                           "which this file does not declare as a location"
