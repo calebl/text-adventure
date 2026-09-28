@@ -182,6 +182,10 @@ module Playthrough::RustEngine
     }
   end
 
+  # Whether `.models` names a model for a turn to ask. Without one, a line
+  # that needs a model cannot be played however often it is resubmitted.
+  def self.model_configured? = ENV[SystemOneAgent::OPENROUTER_API_KEY_VARIABLE].present?
+
   # Called before a live models document is built; the engine sweep sets it to
   # fail the walk, as it fails one that reaches `BaseAgent.new`.
   mattr_accessor :live_models_guard

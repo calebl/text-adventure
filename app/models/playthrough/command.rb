@@ -62,14 +62,26 @@ class Playthrough::Command < ApplicationRecord
   # Latest accepted unfinished line resumes its predecessors too. Reading this
   # never claims a worker is dead: clicking Resume while it is alive simply
   # queues a duplicate, which waits on GameLock and reuses the completed result.
+  #
+  # A FAILURE THAT SAVED NOTHING IS OFFERED ONLY WHEN IT COULD FINISH. With no
+  # model configured, every line that needs one fails at its first call, after
+  # the turn's bookkeeping receipts and before any effect, so Resume would fail
+  # the same way -- beside the setup notice saying a key is what is missing.
+  # Such a row holds nothing a later line owes a finish to (`#blocks_later?`),
+  # so the player loses nothing by typing the line again once a key is set. A
+  # failed row that does hold an effect is still offered: later lines wait on it.
   def self.resume_target(playthrough)
     rows = playthrough.commands.where(status: %w[pending running failed]).order(id: :desc).to_a
     legacy = rows.reverse.find { |row| row.status == "running" && !row.recoverable? }
     return legacy if legacy
 
     rows.detect do |row|
-      (row.status.in?(%w[pending running]) || row.recoverable?) && !row.overtaken?
+      (row.status.in?(%w[pending running]) || row.resumable_failure?) && !row.overtaken?
     end
+  end
+
+  def resumable_failure?
+    recoverable? && (blocks_later? || Playthrough::RustEngine.model_configured?)
   end
 
   # WHETHER THE GAME HAS ALREADY MOVED PAST THIS SUBMISSION, and the reason a
