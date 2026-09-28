@@ -144,7 +144,14 @@ module Eval::Richness
   # instance a party dropped somewhere the template never was is in no template
   # query at all -- so reading both and de-duplicating by name is the only way
   # this stays a superset of what the passage could have committed to.
+  #
+  # NONE AT ALL on a run database from before the item layers, which has neither
+  # column the two scopes read: an empty vocabulary understates coverage, the
+  # direction this figure is allowed to err in, where raising would leave the
+  # whole run unscoreable.
   def items_around(scene)
+    return [] unless Story::Audit.schema_has?(:items, :playthrough_id, :disposition)
+
     story = scene.story
     here = scene.location ? Item.lying_in(scene.location).to_a : []
     carried = story ? Item.carried_by(story.playthroughs).to_a + story.starting_inventory.to_a : []
