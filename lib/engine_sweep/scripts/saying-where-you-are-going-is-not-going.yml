@@ -1,0 +1,109 @@
+# SAYING WHERE YOU ARE GOING IS NOT GOING.
+#
+# A line that opens with a verb of speaking reports an intention to somebody;
+# it does not carry it out. System One reads "tell Maren I am going to the
+# courtyard" as a move to the courtyard, and the engine's cascade composes a
+# move reading of a speech-led line as talk, so the player stays where they
+# are and speaks. With nobody present the talk reaches for nobody and is
+# refused, and no classifier call is made. Only the first word counts: a line
+# that goes and then tells is still the move.
+---
+story: A Turn at the Gate
+steps:
+- id: telling-somebody-here-is-the-talk
+  type: tell Maren I am going to the courtyard
+  why: System One reads the reported intention as a move; the cascade makes it talk to the one person here, and the player stays in the Market
+  browser:
+    token: told-maren
+    replies:
+    - purpose: system_one
+      prompt_includes:
+      - Courtyard
+      - Maren
+      content:
+        intent: move
+        target_move: way_1
+        target_talk: person_1
+        named_more_than_one: 0.19
+        target_present: 0.84
+    - purpose: character
+      content:
+        pre_thought: Cal is leaving.
+        pre_feeling: wary
+        action: Maren watches Cal and says nothing.
+        post_thought: Cal says he is going to the courtyard.
+        post_feeling: wary
+        inner_resolution: I will see where Cal goes.
+        engine_action: none
+    - purpose: interaction-narration
+      content: Maren hears you out and keeps her staff where it is.
+  expect:
+    location: Market (realized)
+    understood: talk -> Maren
+    resolved_by: typed_model
+    refused: false
+    changed: true
+- id: going-there-is-the-move
+  type: go to the courtyard
+  why: the same destination, asked for plainly, is the move
+  browser:
+    token: to-the-courtyard
+    replies:
+    - purpose: system_one
+      content:
+        intent: move
+        target_move: way_1
+        named_more_than_one: 0.02
+        target_present: 0.95
+    - purpose: arrival
+      content:
+        description: You step through into the courtyard.
+        summary: Cal crosses into the courtyard.
+  expect:
+    location: Courtyard (realized)
+    present: []
+    understood: move -> Courtyard
+    resolved_by: typed_model
+    changed: true
+- id: telling-nobody-is-a-talk-that-reaches-for-nobody
+  type: tell her you are going to the tower
+  why: with nobody here the speech-led move is a talk to nobody, refused without a classifier call
+  browser:
+    token: told-nobody
+    replies:
+    - purpose: system_one
+      prompt_includes:
+      - Tower
+      content:
+        intent: move
+        target_move: way_2
+        named_more_than_one: 0.11
+        target_present: 0.62
+  expect:
+    location: Courtyard (realized)
+    refused: true
+    changed: false
+    offers:
+    - There is nobody here to talk to.
+    drifts: 1
+- id: going-and-then-telling-is-the-move
+  type: go to the tower and tell Maren where I went
+  why: the first word is a verb of motion, so the telling afterwards does not turn the move into talk
+  browser:
+    token: to-the-tower
+    replies:
+    - purpose: system_one
+      content:
+        intent: move
+        target_move: way_2
+        named_more_than_one: 0.2
+        target_present: 0.3
+    - purpose: arrival
+      content:
+        description: You walk the long road out to the tower.
+        summary: Cal walks out to the tower.
+  expect:
+    location: Tower (realized)
+    understood: move -> Tower
+    resolved_by: typed_model
+    changed: true

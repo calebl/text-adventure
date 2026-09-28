@@ -1,0 +1,53 @@
+{
+  "script": "saying-where-you-are-going-is-not-going",
+  "doctor": {
+    "headline": "playable, 1 warning",
+    "findings": [
+      [
+        "no_arc",
+        "warning",
+        "this story has no arc, so no playthrough of it can ever reach an ending: there is no quest for a beat to belong to and no outcome to select. A world file's `quests:` block is where one is written",
+        "manual"
+      ]
+    ]
+  },
+  "audit": {
+    "headline": "4 scenes: 0 contradictions, 0 defects, 1 drift, 0 still turns",
+    "flags": [
+      [
+        "reached_for_nothing",
+        1000000004,
+        "after this narration the player tried to talk \"tell her you are going to the tower\", and the records had nothing of that name",
+        {
+          "action": "talk",
+          "typed": "tell her you are going to the tower",
+          "was offered": "nothing at all",
+          "where": "Courtyard",
+          "at": "2026-09-08T12:21:00.000Z"
+        }
+      ]
+    ],
+    "unjudged": [
+      [
+        "third_person_protagonist",
+        1000000001,
+        "this story has no protagonist on record, so there is no name to check the narration against"
+      ],
+      [
+        "third_person_protagonist",
+        1000000002,
+        "this story has no protagonist on record, so there is no name to check the narration against"
+      ],
+      [
+        "third_person_protagonist",
+        1000000003,
+        "this story has no protagonist on record, so there is no name to check the narration against"
+      ],
+      [
+        "third_person_protagonist",
+        1000000005,
+        "this story has no protagonist on record, so there is no name to check the narration against"
+      ]
+    ]
+  }
+}
