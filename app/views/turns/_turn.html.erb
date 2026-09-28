@@ -10,6 +10,14 @@
     Four tests assert that selector directly. %>
 <div class="entry">
   <div class="said">
+    <%# THE LINE THAT CAUSED THIS TURN, echoed the way it was while the turn was
+        in flight, so a finished turn does not lose its `>` line when the log
+        is re-rendered. `scenes.typed` is written on every branch; an opening
+        arrival nobody typed for, and a turn written before the column existed,
+        have none and print nothing. %>
+    <% if turn.typed.present? %>
+      <p class="command">&gt; <%= turn.typed %></p>
+    <% end %>
     <%# A talk turn keeps an Interaction alongside the Scene, so the log can say
         who the player was speaking to. Narrated and arrival turns have none. %>
     <% speakers = turn.interactions.map(&:character_name).uniq %>

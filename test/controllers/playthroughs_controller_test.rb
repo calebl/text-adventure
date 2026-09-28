@@ -236,6 +236,22 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
                     response.body.index("Rain starts falling.")
   end
 
+  test "show echoes the line the player typed above each finished turn" do
+    playthrough = create(:playthrough, :in_scene)
+    first = create(:scene, story: playthrough.story, location: playthrough.current_location,
+                           description: "The door swings open.")
+    second = create(:scene, story: playthrough.story, location: playthrough.current_location,
+                            description: "Rain starts falling.", previous_scene: first, typed: "wait")
+    playthrough.update!(current_scene: second)
+
+    get playthrough_path(playthrough)
+
+    assert_response :success
+    assert_select ".log .entry p.command", count: 1, text: "> wait"
+    assert_operator response.body.index("The door swings open."), :<, response.body.index("&gt; wait")
+    assert_operator response.body.index("&gt; wait"), :<, response.body.index("Rain starts falling.")
+  end
+
   test "create takes the session over from an earlier playthrough" do
     first = create(:playthrough, :started)
     story = create(:story)
