@@ -13,10 +13,14 @@ class Scene < ApplicationRecord
   # Turn claims only this set after the completed scene is available.
   # The log entry displays claimed tolls as engine notices; supplying facts
   # does not guarantee the renderer included them in its player-readable prose.
+  # narrated_volition_ids is the same receipt for `playthrough_volitions`: nil
+  # is the Moment path, which states every untold act, and an empty list is a
+  # prompt that stated none -- an arrival, whose prompt is not a Moment, or a
+  # fallback -- so those acts stay untold for the next paragraph that does.
   # rendering_error is an in-process receipt for a completed fallback, so the
   # prompt bench can retain its original failed-call accounting. It is never
   # player-facing prose, and no exception is stored in the world's records.
-  attr_accessor :narrated_toll_ids, :safety_notice, :rendering_error
+  attr_accessor :narrated_toll_ids, :narrated_volition_ids, :safety_notice, :rendering_error
 
   # THE READERS THAT WRITE A TURN, which is `Playthrough::Grammar::PATHS` minus
   # `engine_view`: `harm`, `check` and the read-outs write no `Scene` at all, so

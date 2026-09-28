@@ -123,6 +123,7 @@ class Scene::Narrator
     Playthrough::Command::Journal.commit("narrated") do
       row = persist(text, fallback: fallback, engine_fact: fact)
       row.narrated_toll_ids = [] if row && fallback
+      row.narrated_volition_ids = [] if row && fallback
       row.safety_notice = safety_notice if row
       row.rendering_error = rendering_error if row
       row

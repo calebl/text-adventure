@@ -78,6 +78,7 @@ class Playthrough::Command::Journal
       result = { "record" => value.class.name, "id" => value.id }
       if value.is_a?(Scene)
         result["tolls"] = value.narrated_toll_ids
+        result["volitions"] = value.narrated_volition_ids
         result["safety"] = value.safety_notice
         result["setup"] = Playthrough::SetupNotice.for(value.rendering_error).present?
       end
@@ -105,6 +106,7 @@ class Playthrough::Command::Journal
     row = value.fetch("record").constantize.find(value.fetch("id"))
     if row.is_a?(Scene)
       row.narrated_toll_ids = value["tolls"]
+      row.narrated_volition_ids = value["volitions"]
       row.safety_notice = value["safety"]
       row.rendering_error = BaseAgent::NoModelConfiguredError.new if value["setup"]
     end

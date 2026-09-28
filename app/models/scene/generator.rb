@@ -95,6 +95,7 @@ class Scene::Generator
     scene = Playthrough::Command::Journal.commit("arrival") do
       row = persist_arrival!(answer, cast: cast, at: at, engine_fact: arrival_engine_fact)
       row.narrated_toll_ids = arrival_context.toll_ids if arrival_context
+      row.narrated_volition_ids = []
       row
     end
 
@@ -122,6 +123,7 @@ class Scene::Generator
         engine_fact: arrival_engine_fact
       )
       scene.narrated_toll_ids = context.toll_ids
+      scene.narrated_volition_ids = []
       scene.rendering_error = error
       scene.safety_notice = true if error.is_a?(BaseAgent::CrisisResponseError)
       scene

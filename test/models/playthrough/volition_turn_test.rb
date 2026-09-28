@@ -78,6 +78,33 @@ class Playthrough::VolitionTurnTest < ActiveSupport::TestCase
     assert_not_includes Playthrough::Moment.new(@game).narration_context, row.fact
   end
 
+  # AN ARRIVAL'S PROMPT IS `Scene::Generator`'s, which states no act, so the
+  # arrival scene must not claim one: a departure rolled on the line before a
+  # move stays untold until a paragraph whose prompt carried it.
+  test "a scene whose prompt stated no act leaves the acts for the next paragraph" do
+    row = create(:playthrough_volition, playthrough: @game, character: @clerk, location: @room)
+    arrival = create(:scene, story: @story, location: @next_door)
+    arrival.narrated_volition_ids = []
+    Playthrough::Turn.new(@game).send(:claim_volitions!, arrival)
+
+    assert_nil row.reload.scene_id
+    assert_includes Playthrough::Moment.new(@game).narration_context, row.fact
+
+    told = create(:scene, story: @story, location: @next_door)
+    Playthrough::Turn.new(@game).send(:claim_volitions!, told)
+
+    assert_equal told.id, row.reload.scene_id
+  end
+
+  test "an arrival marks its prompt as having stated no act, across a journal replay" do
+    scene = create(:scene, story: @story, location: @next_door)
+    scene.narrated_volition_ids = []
+    journal = Playthrough::Command::Journal.allocate
+    decoded = journal.send(:decode, journal.send(:encode, scene))
+
+    assert_equal [], decoded.narrated_volition_ids
+  end
+
   test "standing still and a rejected pick are never stated -- the prose can already see nothing happened" do
     waited = create(:playthrough_volition, :waited, playthrough: @game, character: @clerk, location: @room)
     refused = create(:playthrough_volition, :rejected, playthrough: @game, character: @clerk, location: @room)
