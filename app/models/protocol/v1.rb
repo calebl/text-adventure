@@ -70,35 +70,35 @@ module Protocol::V1
   end
 
   def glance(glance)
-    location = glance.location
+    room = glance.room
     {
-      room: location && { name: location.name, within: glance.containing_place&.name },
+      room: room && { name: room.name, within: room.within },
       exits: glance.exits.map { |exit| { name: exit.name, written: exit.written, open: exit.open } },
       people: glance.people.map do |person|
-        { name: person.name, condition: person.condition&.in_words, foe: person.foe, provoked: person.provoked }
+        { name: person.name, condition: person.condition, foe: person.foe, provoked: person.provoked }
       end,
-      lying_here: glance.items_here.map { |item| { name: item.name } },
-      carrying: glance.carried.map { |item| { name: item.name } },
-      condition: glance.condition&.in_words,
+      lying_here: glance.lying_here.map { |item| { name: item.name } },
+      carrying: glance.carrying.map { |item| { name: item.name } },
+      condition: glance.condition,
       sheet: glance.sheet,
       next_beat: glance.next_beat,
-      story_time: glance.story_now&.iso8601,
+      story_time: glance.story_time&.iso8601,
       over: glance.over? ? true : false,
       ended: glance.ended,
-      verbs: glance.verbs.map { |verb| verb(verb, glance) }
+      verbs: glance.verbs.map { |verb| verb(verb) }
     }
   end
 
   # `word` is what follows the slash for this verb, and `lines` -- for `use`
   # alone, whose targets are attempts rather than names -- the line that plays
-  # each target, in the targets' order. Both are the grammar's, never a copy.
-  def verb(verb, glance)
+  # each target, in the targets' order. Both are the engine's, never a copy.
+  def verb(verb)
     {
       name: verb.name.to_s, available: verb.available?, reason: verb.reason,
-      targets: verb.targets.map { |target| Playthrough::Classifier.label_for(target) },
-      aims: verb.aims&.map { |aim| Playthrough::Classifier.label_for(aim) },
-      word: Playthrough::Grammar.word_for(verb.name),
-      lines: (verb.targets.map { |choice| glance.line_for(choice) } if verb.name == :use)
+      targets: verb.targets.map(&:name),
+      aims: verb.aims&.map(&:name),
+      word: verb.word,
+      lines: (verb.targets.map(&:line) if verb.name == :use)
     }
   end
 

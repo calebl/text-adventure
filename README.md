@@ -524,7 +524,12 @@ Apache-2.0): the same rules and the same dice over this app's SQLite schema.
 `Playthrough::Session` hands it each whole turn through a native extension, so
 the browser, the `/api/v1` API and anything else that plays through the session
 play on Rust, while Turbo, the labs, the benches, the doctor, repair, seeding
-and every backfill stay Ruby on the same database.
+and every backfill stay Ruby on the same database. What a front end shows
+between turns is read off the engine as well: the panels and which verbs are
+open at what (`Playthrough::Glance`, `Playthrough::Availability`), the slash
+menu, and the narration scaffold the prompt version digests all come from one
+extension call (`Playthrough::RustEngine.glance`, `.scaffold`), so the panel
+offers exactly what the engine plays.
 
 **The extension is required to play, and so is a Rust toolchain to build it.**
 It is not a gem and not in the Gemfile: it is a crate in `ext/renderedstep`

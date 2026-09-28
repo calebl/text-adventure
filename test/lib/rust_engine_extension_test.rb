@@ -66,4 +66,50 @@ class RustEngineExtensionTest < ActiveSupport::TestCase
     assert_match "a_newer_rule", finished.sole.error
     assert_equal before + 1, Playthrough::RustEngine.failures["schema_changed"]
   end
+
+  # TWO COPIES OF SQLITE IN ONE PROCESS, the `sqlite3` gem's and the
+  # extension's, on one file in write-ahead-log mode. The engine's connection
+  # closing must leave the log to this process's own connection: a checkpoint
+  # on close deleted it, and the write Ruby made next went into a file no other
+  # connection could see.
+  test "what Ruby writes after the engine has closed on the file is what everybody reads" do
+    script = EngineSweep.scripts.find { |candidate| candidate.name == "a-thing-can-be-thrown" }
+
+    Dir.mktmpdir do |directory|
+      file = File.join(directory, "shared.sqlite3")
+      EngineSweep::Parity.copy_database!(file)
+      EngineSweep::Parity::InProcess.new(:rust).on_file(file) do
+        walk = EngineSweep::Walk.new(script)
+        walk.prepare!
+        game = walk.game_of(script.steps.first.player)
+        assert_equal "wal", ActiveRecord::Base.connection.select_value("PRAGMA journal_mode")
+
+        Playthrough::RustEngine.play(game, "/look")
+        game.update!(updated_at: Time.utc(2031, 1, 2, 3, 4, 5))
+
+        other = SQLite3::Database.new(file, readonly: true)
+        assert_equal "2031-01-02 03:04:05", other.get_first_value("SELECT updated_at FROM playthroughs WHERE id = ?", game.id).to_s[0, 19]
+        other.close
+      end
+    end
+  end
+
+  test "a glance is read off a copy, and leaves the file as it found it" do
+    script = EngineSweep.scripts.find { |candidate| candidate.name == "a-thing-can-be-thrown" }
+
+    Dir.mktmpdir do |directory|
+      file = File.join(directory, "glanced.sqlite3")
+      EngineSweep::Parity.copy_database!(file)
+      EngineSweep::Parity::InProcess.new(:rust).on_file(file) do
+        walk = EngineSweep::Walk.new(script)
+        walk.prepare!
+        game = walk.game_of(script.steps.first.player)
+        before = Dir.children(directory).sort
+
+        glance = Playthrough::Session.new(game).glance
+        assert_equal game.current_location.name, glance.room.name
+        assert_equal before, Dir.children(directory).sort
+      end
+    end
+  end
 end

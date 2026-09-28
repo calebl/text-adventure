@@ -3,10 +3,11 @@
 # The Rust engine (https://github.com/renderedstep/engine) plays the game:
 # `Playthrough::Session#play` hands it every whole turn through a native
 # extension (`ext/renderedstep`), so every front end -- the browser, the API,
-# anything else that plays through the session -- plays on Rust. Turbo, the
-# labs, the benches, the doctor, repair, seeding and every backfill stay Ruby,
-# on the same database. README.md ("The Rust engine") says how to build it; a
-# checkout cannot play without it.
+# anything else that plays through the session -- plays on Rust, and what a
+# front end shows between turns is read off it too (`.glance`, `.scaffold`).
+# Turbo, the labs, the benches, the doctor, repair, seeding and every backfill
+# stay Ruby, on the same database. README.md ("The Rust engine") says how to
+# build it; a checkout cannot play without it.
 #
 # THERE IS NO FALLBACK. A turn the engine cannot play fails, in the engine's
 # own words, and is never played again on Ruby behind the player's back:
@@ -121,10 +122,7 @@ module Playthrough::RustEngine
   # WHY THIS PROCESS CANNOT HAND THE ENGINE A TURN RIGHT NOW, as the error the
   # turn fails with, or nil when it can.
   def self.unplayable
-    if extension.nil?
-      return EngineError.new(:not_built, "the Rust engine's extension is not built or did not load " \
-                                         "(#{load_error}); run bin/rails engine:build")
-    end
+    return unbuilt if extension.nil?
     if ActiveRecord::Base.connection.transaction_open?
       return EngineError.new(:transaction_open, "a database transaction is open around the turn, and the engine " \
                                                 "writes on a connection of its own")
@@ -181,6 +179,58 @@ module Playthrough::RustEngine
     game = Playthrough.find_by(id: playthrough.id)
     Playthrough::Visit.record!(game, game&.current_location)
   end
+
+  # WHAT A FRONT END'S PANELS SHOW BETWEEN TURNS, as the engine reads it off
+  # the records (`Playthrough::Glance`): the room, who and what is here, which
+  # verbs are open and at what, the slash menu and the next beat, as one parsed
+  # document. Reads only. A read the engine could not answer raises its error.
+  def self.glance(playthrough)
+    raise unbuilt if extension.nil?
+
+    answer = JSON.parse(reading { |file| extension.glance(file, playthrough.id) })
+    raise exception_for(answer["error"]) if answer["error"]
+
+    answer
+  end
+
+  # THE NARRATION PROMPT'S PER-TURN SCAFFOLD, rendered by the engine against
+  # fixed placeholders (`Playthrough::PromptVersion::Scaffold`). The same text
+  # for as long as the extension is, so it is asked once per process.
+  def self.scaffold
+    raise unbuilt if extension.nil?
+
+    @scaffold ||= extension.scaffold.freeze
+  end
+
+  # THE FILE A READ IS ANSWERED FROM, which is a copy of the database as this
+  # connection sees it -- uncommitted rows included, so a test's transaction
+  # or a writer asking about what it has just written reads its own rows --
+  # taken page by page through SQLite's `sqlite_dbpage` and deleted once the
+  # engine has read it.
+  #
+  # NEVER THE DATABASE ITSELF, IN THIS PROCESS. The extension carries its own
+  # copy of SQLite beside the `sqlite3` gem's, and two copies in one process
+  # do not see each other's locks: the engine's connection closing on the live
+  # file would drop the locks this process's own connections hold on it, in
+  # the middle of whatever another thread is writing. A turn is played on the
+  # file because it has to write there, and the engine takes care not to
+  # checkpoint when it closes; a read has no such reason, so it reads a file
+  # nobody else has open.
+  def self.reading
+    connection = ActiveRecord::Base.connection
+    Dir.mktmpdir("engine-read", Rails.root.join("tmp")) do |directory|
+      file = File.join(directory, "read.sqlite3")
+      pages = connection.uncached { connection.select_values("SELECT data FROM sqlite_dbpage('main') ORDER BY pgno") }
+      File.binwrite(file, pages.join)
+      yield file
+    end
+  end
+
+  def self.unbuilt
+    EngineError.new(:not_built, "the Rust engine's extension is not built or did not load " \
+                                "(#{load_error}); run bin/rails engine:build")
+  end
+  private_class_method :reading, :unbuilt
 
   # WHERE THE ENGINE'S MODEL CALLS GO, read off the environment exactly as the
   # Ruby app reads it: the player's OpenRouter key as the Direct route

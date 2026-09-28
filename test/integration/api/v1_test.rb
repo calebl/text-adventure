@@ -315,7 +315,7 @@ class Api::V1Test < ActionDispatch::IntegrationTest
     assert_equal [ "Consume flask of water" ], use["targets"]
     assert_equal [ "/consume flask of water" ], use["lines"]
     choice = Playthrough::Availability.new(playthrough.reload).verb(:use).targets.first
-    assert_equal choice, Playthrough::Grammar.new(playthrough).reading_first(use["lines"].first).intent.physical
+    assert_equal choice.token, Playthrough::Grammar.new(playthrough).reading_first(use["lines"].first).intent.physical.token
   end
 
   # --- interruptions -------------------------------------------------------

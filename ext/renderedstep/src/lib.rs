@@ -34,6 +34,7 @@
 use magnus::value::BoxValue;
 use magnus::{block::Proc, function, prelude::*, Error as RubyError, Ruby};
 use renderedstep_engine::engine::{self, Engine};
+use renderedstep_engine::glance::{self as glanced, Glance};
 use renderedstep_engine::model::system_one::SystemOne;
 use renderedstep_engine::model::{Failure, Live, Replay, Reply, Route, Secret};
 use renderedstep_engine::outcome::{Outcome, State};
@@ -51,6 +52,8 @@ fn init(ruby: &Ruby) -> Result<(), RubyError> {
     module.const_set("SCHEMA_VERSION", SCHEMA_VERSION)?;
     module.define_module_function("submit", function!(submit, 5))?;
     module.define_module_function("play", function!(play, 4))?;
+    module.define_module_function("glance", function!(glance, 2))?;
+    module.define_module_function("scaffold", function!(scaffold, 0))?;
     Ok(())
 }
 
@@ -116,6 +119,29 @@ fn play(
         }
     });
     Ok(answer.to_string())
+}
+
+/// `RenderedStep.glance(database, playthrough_id)`: what a front end's
+/// panels show between turns and which verbs are open (`Engine::glance`), as
+/// one JSON document. Reads only.
+fn glance(database: String, playthrough: i64) -> Result<String, RubyError> {
+    let answer = without_gvl(|| {
+        let engine = match Engine::open(Path::new(&database)) {
+            Ok(engine) => engine,
+            Err(error) => return failed(&error),
+        };
+        match engine.glance(playthrough) {
+            Ok(glance) => glance_json(&glance),
+            Err(error) => failed(&error),
+        }
+    });
+    Ok(answer.to_string())
+}
+
+/// `RenderedStep.scaffold`: the narration prompt's per-turn scaffold,
+/// rendered against fixed placeholders, which the prompt version digests.
+fn scaffold() -> String {
+    renderedstep_engine::prompt_version::scaffold()
 }
 
 fn submitted(
@@ -349,6 +375,55 @@ fn report_json(report: &Report) -> Value {
         "refusal": report.refusal,
         "note": report.note,
         "resolved_by": report.resolved_by,
+    })
+}
+
+fn glance_json(glance: &Glance) -> Value {
+    let named = |id: i64, name: &str| json!({ "id": id, "name": name });
+    let target = |target: &glanced::Target| match &target.token {
+        Some(token) => json!({
+            "name": target.name, "token": token, "kind": target.kind, "line": target.line,
+        }),
+        None => json!({ "id": target.id, "name": target.name }),
+    };
+    json!({
+        "room": glance.here.as_ref().map(|here| json!({ "id": here.id, "name": here.name, "within": here.within })),
+        "exits": glance.exits.iter()
+            .map(|exit| json!({ "id": exit.id, "name": exit.name, "written": exit.written, "open": exit.open }))
+            .collect::<Vec<_>>(),
+        "people": glance.people.iter()
+            .map(|person| json!({
+                "id": person.id, "name": person.name, "condition": person.condition,
+                "foe": person.foe, "provoked": person.provoked,
+            }))
+            .collect::<Vec<_>>(),
+        "lying_here": glance.lying_here.iter().map(|thing| named(thing.id, &thing.name)).collect::<Vec<_>>(),
+        "carrying": glance.carrying.iter().map(|thing| named(thing.id, &thing.name)).collect::<Vec<_>>(),
+        "condition": glance.condition,
+        "sheet": glance.sheet,
+        "next_beat": glance.next_beat,
+        "story_time": glance.story_time,
+        "over": glance.over,
+        "ended": glance.ended,
+        "verbs": glance.verbs.iter()
+            .map(|verb| json!({
+                "name": verb.name,
+                "available": verb.available(),
+                "reason": verb.reason,
+                "targets": verb.targets.iter().map(target).collect::<Vec<_>>(),
+                "aims": verb.aims.as_ref().map(|aims| aims.iter().map(target).collect::<Vec<_>>()),
+                "word": verb.word,
+            }))
+            .collect::<Vec<_>>(),
+        "slash_menu": {
+            "verbs": glance.slash_menu.verbs.iter()
+                .map(|verb| json!({ "word": verb.word, "hint": verb.hint }))
+                .collect::<Vec<_>>(),
+            "targets": Value::Object(glance.slash_menu.targets.iter()
+                .map(|(word, names)| (word.clone(), json!(names)))
+                .collect::<Map<_, _>>()),
+        },
+        "state": state_json(&glance.state),
     })
 }
 

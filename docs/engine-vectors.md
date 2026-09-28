@@ -87,14 +87,19 @@ must equal the engine's `vectors/ENGINE_OWNED`. The engine blesses its file
 (recomputes every case's output and the constants from its own code) as a
 reviewed diff in its repository, and this repository vendors it at the pinned
 commit: `bin/rails engine:vendored` fails when the copy here is not that
-commit's, byte for byte. `bin/rails engine:vectors` leaves it alone, and the
-Ruby builder stays, so the Ruby loop can still be asked what it would have
-answered.
+commit's, byte for byte. `bin/rails engine:vectors` leaves it alone, and a
+Ruby builder stays where the Ruby loop still runs its rule, so that loop can
+still be asked what it would have answered.
 
-`shuffle_connections` joined it that way. `physics` (falls) was written in
-the engine and never had a Ruby builder, so it is the engine's from the start.
-Any other portion joins the list only once
-its Ruby code runs nowhere else: `world_mechanic` stays Ruby's while the debug
+`shuffle_connections` joined it that way, and so did the five line-reading
+portions `grammar`, `grammar_corpus`, `slash_menu`, `classifier_intent` and
+`refusal` once the panels, the verbs a player may use and the slash menu were
+read off the engine (`Playthrough::RustEngine.glance`). Two of those have no
+Ruby builder left: the menu and the grammar's slash words and use lines were
+only ever read for the panels. `physics` (falls) was written in the engine and
+never had a Ruby builder, so it is the engine's from the start. Any other
+portion joins the list only once its Ruby code runs nowhere else:
+`world_mechanic` stays Ruby's while the debug
 view reads a mechanic's boundaries, and the dice and geometry stay Ruby's for as
 long as world creation, seeding, repair and the doctor run them.
 

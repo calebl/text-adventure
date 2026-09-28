@@ -95,33 +95,31 @@ class Playthrough::PromptVersionTest < ActiveSupport::TestCase
     assert_nil feedback.prose_prompt_digest
   end
 
-  # THE DEFECT THIS WAS WIDENED FOR, AS A TEST. `ta-take-drop-narration` changed
-  # `Playthrough::Turn#taken_fact` and `#dropped_fact` and nothing else, and the
-  # narration digest did not move -- so two genuinely different prompts wore one
-  # fingerprint and the captain's verdicts on either side of the change grouped
-  # as evidence about one narrator.
+  # THE DEFECT THIS WAS WIDENED FOR, AS A TEST. A change that edited the take
+  # and drop fact sentences and nothing else once left the narration digest
+  # where it was -- so two genuinely different prompts wore one fingerprint and
+  # the verdicts on either side of the change grouped as evidence about one
+  # narrator.
   #
-  # IT REDEFINES THE REAL METHOD, on the real class, and that is deliberate: a
-  # stub on the rendering seam would prove only that the seam was wired up. What
-  # has to hold is that editing the sentence in `Playthrough::Turn` -- which is
-  # exactly what that PR did -- moves the version.
-  test "a changed take sentence is a changed narration version" do
+  # THE SENTENCES ARE THE ENGINE'S NOW, and the engine renders them for this
+  # digest out of the very builders its turn calls (its `prompt_version`
+  # module, whose own tests hold every branch to the render). What has to hold
+  # on this side is that a scaffold saying something else is a different
+  # version, and the same scaffold the same one.
+  test "a changed fact sentence is a changed narration version" do
     before = Playthrough::PromptVersion.narration
+    text = Playthrough::PromptVersion::Scaffold.text
 
-    with_fact_sentence(:taken_fact, "<who> now has the <item>, somehow.") do
-      refute_equal before, Playthrough::PromptVersion.narration,
-                   "a change to what every take turn tells the narrator has to move the version it groups by"
-    end
+    { "picked the <item> up" => "now has the <item>, somehow", "put the <item> down" => "left the <item> on the floor" }
+      .each do |said, instead|
+        assert_includes text, said
+        Playthrough::RustEngine.stub(:scaffold, text.sub(said, instead)) do
+          refute_equal before, Playthrough::PromptVersion.narration,
+                       "a change to what a turn tells the narrator has to move the version it groups by"
+        end
+      end
 
     assert_equal before, Playthrough::PromptVersion.narration, "and it comes back when the sentence does"
-  end
-
-  test "a changed drop sentence is a changed narration version" do
-    before = Playthrough::PromptVersion.narration
-
-    with_fact_sentence(:dropped_fact, "The <item> is on the floor now.") do
-      refute_equal before, Playthrough::PromptVersion.narration
-    end
   end
 
   # AND THE OTHER HALF, which is the half that makes the first one worth having:
@@ -159,34 +157,8 @@ class Playthrough::PromptVersionTest < ActiveSupport::TestCase
     assert_includes text, "does not move. Nothing happened."
   end
 
-  # THE ONE THING THIS CLASS DUPLICATES, AND THE TEST THAT KEEPS IT HONEST.
-  # `Playthrough::PromptVersion::Scaffold` holds no prompt WORDING -- it
-  # subclasses the two classes that own it and calls their real builders -- but
-  # it does hold the LIST of which builders exist. A signature change breaks the
-  # render loudly; a SIXTH fact sentence added and not rendered would not, and
-  # the digest would quietly stop covering a sentence every turn of that shape
-  # sends. So the list is asserted against the class itself.
-  test "every fact sentence Playthrough::Turn can write is rendered into the scaffold" do
-    assert_equal Playthrough::Turn.instance_methods(false).grep(/_fact\z/).sort,
-                 Playthrough::PromptVersion::Scaffold.rendered_facts.sort,
-                 "a fact builder that is not rendered is a sentence the prompt version cannot see"
-  end
-
-  # AND THE SHARPER CASE, because `#thrown_fact` is one method with a sentence
-  # per outcome: a fifth `Throw` kind is a whole new paragraph of wording inside
-  # a builder that is already rendered, so the method-name check above would
-  # pass and the digest would still miss it. `Data.define`'s own boilerplate is
-  # subtracted by asking a bare `Data` class what it has, rather than by naming
-  # `[]`, `new`, `inspect` and `members` in a list that would go stale.
-  test "every outcome a throw can have is rendered into the scaffold" do
-    kinds = Playthrough::Turn::Throw.singleton_methods(false) - Data.define.singleton_methods(false)
-
-    assert_equal kinds.sort, Playthrough::PromptVersion::Scaffold.rendered_throw_kinds.sort,
-                 "a Throw outcome with no rendered sentence is a branch of #thrown_fact the version sleeps through"
-  end
-
-  # THE THIRD CLOSED SET, and this one needs no guard because the render
-  # ITERATES it -- the assertion is that it still does.
+  # THE DOING LINES, and they need no guard because the render ITERATES them
+  # -- the assertion is that it still does.
   test "every DOING line is rendered into the scaffold" do
     text = Playthrough::PromptVersion::Scaffold.text
 
@@ -202,20 +174,5 @@ class Playthrough::PromptVersionTest < ActiveSupport::TestCase
                     "the two halves are joined once, in PromptVersion, and neither contains the other"
     refute_includes Playthrough::PromptVersion::Scaffold.text, "def taken_fact",
                     "a digest of method source would churn on a refactor that changed no prompt"
-  end
-
-  private
-
-  # ONE OF `Playthrough::Turn`'S FACT SENTENCES, SAYING SOMETHING ELSE FOR THE
-  # LENGTH OF A BLOCK, and put back exactly as it was. `#define_method` restores
-  # the body AND the visibility the original `UnboundMethod` carried, so nothing
-  # here has to assert what that visibility is -- a test that decided for itself
-  # would be a test that changed the app for every test after it.
-  def with_fact_sentence(name, text)
-    original = Playthrough::Turn.instance_method(name)
-    Playthrough::Turn.define_method(name) { |*| text }
-    yield
-  ensure
-    Playthrough::Turn.define_method(name, original)
   end
 end
