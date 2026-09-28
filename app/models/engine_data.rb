@@ -31,7 +31,9 @@
 # shape is not the one declared in `SCHEMAS`, and an engine-owned file with no
 # extension to read it from all raise `EngineData::Error` when the owning class
 # is loaded -- never a nil prompt sent to a model. Every value is read once per
-# process and frozen.
+# process and frozen. An engine-owned file that is missing or misshapen when the
+# built extension is not the pinned engine (`Update::EngineStamp`) says so, since
+# a new Ruby asking an old engine for a file is what that error almost always is.
 module EngineData
   class Error < StandardError; end
 
@@ -120,6 +122,10 @@ module EngineData
     end
     check!(data, schema, name)
     deep_freeze(data)
+  rescue Error => e
+    raise unless ENGINE_OWNED.include?(name) && engine.nil? && Update::EngineStamp.outdated?
+
+    raise Error, "#{e.message} -- #{Update::EngineStamp::ADVICE}"
   end
 
   def self.file_text(name, root)

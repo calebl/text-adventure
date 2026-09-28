@@ -30,6 +30,20 @@ class EngineDataTest < ActiveSupport::TestCase
     end
   end
 
+  test "a file the built engine lacks says the engine is older than the pin, when it is" do
+    Playthrough::Requests.stub(:data, {}) do
+      Update::EngineStamp.stub(:outdated?, true) do
+        message = assert_raises(EngineData::Error) { EngineData.send(:load, "location/kind") }.message
+
+        assert_match "location/kind: the engine's data has no such file", message
+        assert_match Update::EngineStamp::ADVICE, message
+      end
+      Update::EngineStamp.stub(:outdated?, false) do
+        assert_no_match "older than the pinned engine", assert_raises(EngineData::Error) { EngineData.send(:load, "location/kind") }.message
+      end
+    end
+  end
+
   test "every file parses and matches its schema" do
     EngineData::SCHEMAS.each_key do |name|
       data = EngineData.fetch(name)
