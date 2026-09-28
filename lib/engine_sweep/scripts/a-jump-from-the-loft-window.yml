@@ -1,0 +1,102 @@
+# A FALL, WALKED: the player climbs in at the loft window and jumps back out
+# into the yard.
+#
+# The window is a pair of doorway rows. The row from the loft into the yard is
+# a `fall`, so crossing it throws the dice a one-storey fall throws at the
+# world's gravity (`universe.gravity: ordinary`, two d6 against a dexterity
+# save that halves them) and writes one toll. The row back up is a climb with
+# no hazard, so climbing in again costs nothing, and the next jump costs again:
+# it is the direction and not the novelty.
+#
+# `jump` and `leap` are read as `go`, so either one crosses the window.
+#
+# WHY IT ASSERTS `hazards:` AND NEVER WHAT A FALL COST: the golden holds what
+# each fall cost on the pinned ids; the script asserts only what is true
+# whatever the dice came up. A toll is written whether the save was made or
+# missed, a fall of one storey at ordinary gravity cannot kill an 18-hit-point
+# body (the player is mended between the two jumps, so the second starts
+# whole), and a place that hurts is never a fight.
+story: A Window Over the Yard
+why: a fall through a window costs one way at the world's gravity, and the climb back is free
+steps:
+- id: in-the-lane
+  type: look
+  why: the starting state, outside the farm
+  expect:
+    location: The Lane (realized)
+    exits: [The Yard (realized)]
+    hp: 18
+    hazards: 0
+    blows: 0
+    changed: false
+    refused: false
+
+- id: into-the-yard
+  type: go to the yard
+  why: in off the lane, on storey 0
+  expect:
+    changed: true
+    location: The Yard (realized)
+    storey: 0
+    hazards: 0
+
+- id: climb-in-at-the-window
+  type: go to the loft
+  why: the window's row up is a climb with no hazard, so going up costs nothing
+  expect:
+    changed: true
+    location: The Loft (realized)
+    storey: 1
+    exits: [The Kitchen (realized), The Yard (realized)]
+    hp: 18
+    hazards: 0
+    blows: 0
+
+- id: jump-into-the-yard
+  type: jump into the yard
+  why: the row down is a fall, and crossing it takes a toll
+  expect:
+    changed: true
+    location: The Yard (realized)
+    storey: 0
+    hazards: 1
+    blows: 0
+    dead: false
+    exits: [The Lane (realized), The Kitchen (realized), The Loft (realized)]
+
+- id: climb-back-up
+  type: go to the loft
+  why: and the same window costs nothing going up again
+  expect:
+    changed: true
+    location: The Loft (realized)
+    storey: 1
+    hazards: 0
+    blows: 0
+    dead: false
+
+- id: patched-up-before-the-next-jump
+  type: mend 20
+  why: an engine instrument, so the first fall's cost cannot reach the second
+  expect:
+    hp: 18
+    hazards: 0
+    dead: false
+
+- id: leap-again
+  type: leap into the yard
+  why: a second crossing the same way is paid the same way, and `leap` is `go` too
+  expect:
+    changed: true
+    location: The Yard (realized)
+    hazards: 1
+    blows: 0
+    dead: false
+
+- id: standing-in-the-yard-costs-nothing
+  type: look
+  why: the fall is the doorway's, and the yard has no hazard of its own
+  expect:
+    location: The Yard (realized)
+    hazards: 0
+    blows: 0

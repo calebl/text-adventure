@@ -1,0 +1,142 @@
+# A WINDOW OVER THE YARD: the one world a fall can be walked in.
+#
+# A lane, and a farm off it with three rooms laid out in one box: the yard and
+# the kitchen side by side on storey 0, and the loft on storey 1 above the
+# kitchen. The lane opens onto the yard. The loft
+# has two ways down. The stair into the kitchen is an ordinary `taking stairs`
+# doorway. The window over the yard is a pair like every other doorway: the
+# row from the loft into the yard carries `hazard: fall`, and the row back up
+# is a `climbing` with no hazard, so the drop costs and the climb does not.
+#
+# `universe.gravity: ordinary` is what makes the fall cost anything. A fall of
+# one storey at ordinary gravity is two d6 against a dexterity save that halves
+# them, so Wenna Halloway (level 3 on a d8, 18 hit points) can never die of
+# it, and every walk of this world stays a walk.
+#
+# Every room is written, so moving between them asks nobody to write one. The
+# lane is the opening, and the first room in the file, because a walk starts in
+# the lowest-id written room.
+#
+# Loaded offline by the sweep. No model call, no API key, no network.
+---
+format: 2
+universe:
+  physics: Ordinary physics. What falls, falls as hard as it would anywhere.
+  technology: Hand tools, a well and a lamp.
+  weapons: A pitchfork, and whatever is nearest the door.
+  geographies: One farm at the end of a lane, and the fields around it.
+  civilizations: A farming parish that keeps to itself.
+  history: Four generations of Halloways have worked the same ground.
+  economics: Paid at market in coin, and in kind the rest of the year.
+  politics: The parish council, which is mostly Halloways.
+  religion: A harvest service, and nothing much in between.
+  races:
+  - name: Parishfolk
+    description: |-
+      Born within sight of the church tower, and likely to die there.
+  gravity: ordinary
+story:
+  title: A Window Over the Yard
+  genre: rural mystery
+  start_time: '2026-09-20T07:00:00Z'
+  preface: |-
+    The farmhouse door is bolted from the inside, and the loft window is standing open.
+  summary: |-
+    Wenna Halloway comes home up the lane to a house she cannot get into by the door.
+opening_scene:
+  location: The Lane
+  characters: [Wenna Halloway]
+  description: |-
+    The lane runs up to the farm gate, and the loft window above the yard is open.
+  summary: |-
+    The story opens in the lane outside Halloway Farm.
+characters:
+- fullname: Wenna Halloway
+  race: Parishfolk
+  location: The Lane
+  stats:
+    level: 3
+    hit_die: 8
+    strength: 11
+    dexterity: 11
+    will: 12
+  nickname: Wenna
+  age: 29
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: |-
+    Runs the farm since her father's knees gave out, and keeps the accounts in her head.
+  personality: Practical, and slow to be frightened.
+  appearance: A work coat two sizes too big.
+  likes: A job finished before dark
+  dislikes: A door bolted from the wrong side
+  fears: The farm going to her cousin
+locations:
+- name: The Lane
+  detail_level: realized
+  opening: true
+  teaser: The lane up to Halloway Farm.
+  description: |-
+    A rutted lane between hedges, ending at the farm gate and the yard beyond it.
+  lore: |-
+    The lane has flooded every spring since anybody wrote it down.
+- name: Halloway Farm
+  detail_level: stub
+  width: 12
+  depth: 8
+  teaser: A farmhouse and its yard at the end of the lane.
+- name: The Loft
+  detail_level: realized
+  parent: Halloway Farm
+  x: 6
+  y: 0
+  z: 1
+  width: 6
+  depth: 8
+  teaser: The loft above the kitchen.
+  description: |-
+    Straw bales under the rafters, and a shuttered window over the yard.
+  lore: |-
+    The loft has kept the winter hay dry for a hundred years.
+- name: The Kitchen
+  detail_level: realized
+  parent: Halloway Farm
+  x: 6
+  y: 0
+  z: 0
+  width: 6
+  depth: 8
+  teaser: The farm kitchen, with the stair to the loft.
+  description: |-
+    A range gone cold, a scrubbed table, and the stair up to the loft.
+  lore: |-
+    Every Halloway was born within earshot of this range.
+- name: The Yard
+  detail_level: realized
+  parent: Halloway Farm
+  x: 0
+  y: 0
+  z: 0
+  width: 6
+  depth: 8
+  teaser: The farmyard, cobbled and wet.
+  description: |-
+    Cobbles, a well, and the loft window high in the house wall above.
+  lore: |-
+    The cobbles were laid by the first Halloway, and nobody has relaid one since.
+connections:
+- between: [The Lane, The Yard]
+  distance: adjacent
+  travel_method: walking
+- between: [The Yard, The Kitchen]
+  distance: adjacent
+  travel_method: walking
+- between: [The Kitchen, The Loft]
+  distance: adjacent
+  travel_method: taking stairs
+- between: [The Loft, The Yard]
+  distance: adjacent
+  travel_method: climbing
+  hazard: fall
+  hazard_from: The Loft
