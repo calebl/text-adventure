@@ -125,14 +125,14 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
   # re-buy and it is asserted rather than described, because a paragraph
   # claiming it would be exactly the thing this file exists to replace.
   #
-  # THE RESIDUAL READINGS ARE NOT THE PROMPT EITHER, and this is reported and
-  # NOT fixed here: the audit is somebody else's slice, and a measurement
-  # predicate is never bent to improve the run that found it. Both flagged
-  # passages put the iron key *in the mud*, and the check still fires because a
-  # real claim about the ring (`in your grip`) precedes the key in the same
-  # clause list -- so the possession window carries the first item's claim onto
-  # the second. `#a possession phrase still reaches across a comma` below is
-  # that class, isolated offline and for free.
+  # THE RESIDUAL READINGS WERE NOT THE PROMPT EITHER. Both flagged passages put
+  # the iron key *in the mud*, and the check fired because a real claim about
+  # the ring (`in your grip`) preceded the key in the same clause list -- so the
+  # possession window carried the first item's claim onto the second. The check
+  # has since been fixed (`#a possession phrase no longer reaches across a
+  # comma` below), but a kept set holds no prose, so the after side's figure is
+  # still the reading of the check before that fix. The verdict was NOISE
+  # either way.
   test "item_not_held is NOISE across the re-bought pair, which is what the fixed check reads" do
     verdict = Eval::Prompt::Comparison.new(kept(BEFORE), kept(AFTER), io: nil)
                                       .verdicts(ARM).find { |row| row.metric == :item_not_held }.verdict
@@ -167,25 +167,40 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
                  "but no name the iron key answers to is in that sentence, so the check cannot fire on it"
   end
 
-  # THE FALSE-POSITIVE CLASS THE RE-BOUGHT AFTER SIDE STILL CARRIES, pinned as a
-  # test so the next reader of that 0.100 is not left guessing, and pinned as
-  # what it is rather than argued about in a PR. Both sentences are the real
-  # prose, trimmed; both say the key is on the ground.
-  #
-  # NOT FIXED HERE. `Story::Audit` is a measurement file and this run is what
-  # found the class, so closing it belongs in a slice with its own before and
-  # after over the pinned corpora -- the same rule that kept the alias fix out
-  # of PR 162.
-  test "a possession phrase still reaches across a comma onto the next item named" do
+  # THE FALSE-POSITIVE CLASS THE RE-BOUGHT AFTER SIDE CARRIED, now the
+  # regression for its fix. Both sentences are the real prose, trimmed; both
+  # say the key is on the ground. The place phrase `in your grip` already
+  # belongs to the ring, named before it in its own clause, so the comma after
+  # it opens a new item.
+  test "a possession phrase no longer reaches across a comma onto the next item named" do
     audit = Story::Audit.allocate
 
     assert_not audit.send(:possession_claimed?, "the iron key discarded in the mud beside his corpse", "iron key"),
                "on its own the sentence is read correctly: nobody is holding it"
+    assert_not audit.send(:possession_claimed?,
+                          "the prince's signet ring heavy in your grip, the iron key discarded in the mud",
+                          "iron key"),
+               "a true claim about the RING no longer carries onto the key"
     assert audit.send(:possession_claimed?,
                       "the prince's signet ring heavy in your grip, the iron key discarded in the mud",
+                      "ring"),
+           "the ring's own claim still stands -- the guard reads only the forward order"
+  end
+
+  # AND THE COMMA ALONE IS NOT THE GUARD. With nothing standing before the
+  # place phrase in its clause, the name after the comma is the thing in the
+  # hand, and that is still a claim -- the shape grammar 3's person-first order
+  # exists to catch.
+  test "a fronted place phrase still reaches across its comma" do
+    audit = Story::Audit.allocate
+
+    assert audit.send(:possession_claimed?, "In your grip, the iron key is cold.", "iron key")
+    assert audit.send(:possession_claimed?, "You turn. Heavy in your grip, the iron key drips mud.", "iron key")
+    assert audit.send(:possession_claimed?, "the iron key heavy in your grip, the ring discarded in the mud",
                       "iron key"),
-           "but a true claim about the RING carries onto the key, which is the class and the whole of the " \
-           "after side's residual rate"
+           "the name-first order is untouched: the key is the phrase's own subject"
+    assert audit.send(:possession_claimed?, "Your fingers grip the iron key.", "iron key"),
+           "grip after a word of the player's is still the verb"
   end
 
   # THE INVERSE, because a check that has stopped firing looks exactly like a

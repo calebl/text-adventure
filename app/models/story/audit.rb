@@ -298,6 +298,10 @@ class Story::Audit
                             alongside|from|inside|onto|over|past|through|around|
                             toward|towards)\b/xi
 
+  # A NOUN PHRASE, which is all the grammar-3 comma guard needs to see: a
+  # determiner or a possessive and the word after it. See `#possession_claimed?`.
+  NOUN_PHRASE = /\b(?:the|a|an|his|her|its|their|this|that|these|those|your|my)\s+[\w'’-]/i
+
   # WHAT THE RECORDS SAY ABOUT ONE NARRATION, and the evidence for saying it.
   #
   # `evidence` is a hash printed as-is by the rake task. It is verbose on
@@ -748,6 +752,28 @@ class Story::Audit
   # name first it is the subject and the prepositions are its journey; with the
   # person first a preposition introduces a new noun phrase, and the name in it
   # is somebody else's business.
+  #
+  # AND THE PERSON-FIRST ORDER STOPS AT A COMMA WHEN THE PLACE PHRASE IS
+  # ALREADY TAKEN. Prose lists things, and on
+  #
+  #   "the prince's signet ring heavy in your grip, the iron key discarded in
+  #    the mud"
+  #
+  # the forward window read "in your grip, the iron key" and put the key in the
+  # player's hand -- a true claim about the ring carried across the comma onto
+  # the next thing named. What tells it from "in your hand, the pistol", which
+  # is a claim, is what stands before the place phrase in its own clause: there
+  # a noun phrase ("the prince's signet ring") has already taken the phrase, so
+  # the comma after it opens a new item; here nothing has, and the name after
+  # the comma is the thing in the hand. The guard needs both, the comma and the
+  # noun phrase, so a sentence that never crosses a comma reads as before.
+  #
+  # The same sentence also convicted the key through grammar 1, because `grip`
+  # is a possession verb and "your grip, the iron key" read as the player
+  # gripping it. After `your` the word is a noun, so grammar 1 no longer takes
+  # it for a verb. Measured on every corpus that carries prose, that costs one
+  # arguable claim and no scored one: "it fits neatly into your pocket beside
+  # the daybook", which only ever matched by reading `pocket` as a verb.
   def possession_claimed?(text, name, custody_only: false)
     verbs = Regexp.union(POSSESSION_VERBS)
     places = Regexp.union(ON_THE_PERSON)
@@ -755,8 +781,9 @@ class Story::Audit
 
     patterns = [
       # 1. The player is the subject of a possession verb aimed at the name,
-      #    in one sentence, in either order.
-      /\b(?:you|your)\b[^.!?;:]{0,60}?\b#{verbs}\b[^.!?;:]{0,60}?\b#{word}\b/i,
+      #    in one sentence, in either order. A verb straight after `your` is
+      #    its noun -- "your grip", "your pocket" -- and is no verb at all.
+      /\b(?:you|your(?!\s+#{verbs}\b))\b[^.!?;:]{0,60}?\b#{verbs}\b[^.!?;:]{0,60}?\b#{word}\b/i,
       /\b#{word}\b[^.!?;:]{0,40}?\byou(?:r|'re| are)?\b[^.!?;:]{0,20}?\b#{verbs}\b/i,
       # 2. "your revolver" -- the possessive is the claim, and up to two words
       #    of adjective are allowed between ("your Nocturna-infused pistol").
@@ -790,11 +817,23 @@ class Story::Audit
       # GRAMMAR 3, FORWARD ORDER ONLY: a preposition standing between the
       # player's person and the name has attached the name to something else.
       next if match.names.include?("before_name") && match[:before_name].to_s.match?(ATTACHED_ELSEWHERE)
+      # GRAMMAR 3, FORWARD ORDER, ACROSS A COMMA: the place phrase already
+      # belongs to a thing named before it in its own clause.
+      next if match.names.include?("before_name") && match[:before_name].to_s.include?(",") &&
+              clause_before(text, match).match?(NOUN_PHRASE)
 
       return true
     end
 
     false
+  end
+
+  # The clause a match opens in, up to where the match starts: back to the
+  # nearest comma, semicolon, colon, dash or sentence end.
+  def clause_before(text, match)
+    before = text[0...match.begin(0)].to_s
+    start = before.rindex(/[,;:.!?—–]/)
+    before[(start ? start + 1 : 0)..].to_s
   end
 
   # The sentence the match sits in. Ends are the nearest sentence terminator on
