@@ -202,12 +202,21 @@ class Location::InteriorTest < ActiveSupport::TestCase
     assert_equal first, layout_of(place.reload)
   end
 
-  test "two places of one story are two different buildings" do
-    one = layout_of(laid_out(name: "The Rusted Anchor"))
-    other = layout_of(laid_out(name: "The Bell House"))
+  # NOT "ANY TWO PLACES DIFFER". One footprint has a finite number of layouts,
+  # so two ids can roll the same building -- about one pair in two hundred,
+  # which ids a run happens to hand out decides -- and a test of one pair
+  # failed whenever it drew such a pair. What the seed owes is that the place's
+  # id reaches the roll at all, and a handful of places all coming out as one
+  # building is what that would look like if it did not.
+  test "the places of one story are not all one building" do
+    layouts = DISTINCT_PLACES.times.map { |number| layout_of(laid_out(name: "Place #{number}")) }
 
-    assert_not_equal one, other
+    assert_operator layouts.uniq.size, :>, 1
   end
+
+  # How many places the test above lays out. At one collision in two hundred
+  # pairs, every one of five agreeing is not a thing a run will ever draw.
+  DISTINCT_PLACES = 5
 
   # Every number and every door of one interior, as something two runs can be
   # compared on. Names carry the place's own name, so they are dropped: what is
