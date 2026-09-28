@@ -45,6 +45,26 @@ class EngineSweep::Walk
 
   attr_reader :script
 
+  # Sets every AUTOINCREMENT table's counter to `ID_BASE`. SQLite keeps those
+  # counters in `sqlite_sequence`, an ordinary table, so the rollback at the end
+  # of `#play` puts them back exactly as they were. A bench that stages a world
+  # pins the same way, for the same reason (`Eval::Classifier::Stage`'s
+  # `pinned:`), and names the error it refuses with.
+  def self.pin_ids!(error: EngineSweep::InvalidScript)
+    connection = ActiveRecord::Base.connection
+    tables = connection.select_values(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND sql LIKE '%AUTOINCREMENT%'"
+    )
+    tables.each do |table|
+      quoted = connection.quote_table_name(table)
+      highest = connection.select_value("SELECT MAX(id) FROM #{quoted}").to_i
+      raise error, "#{table} already holds id #{highest}, past the sweep's #{ID_BASE}" if highest >= ID_BASE
+
+      connection.exec_delete("DELETE FROM sqlite_sequence WHERE name = #{connection.quote(table)}")
+      connection.exec_insert("INSERT INTO sqlite_sequence (name, seq) VALUES (#{connection.quote(table)}, #{ID_BASE})")
+    end
+  end
+
   # `on_step`, when given, is called after every step with the step and its
   # `EngineSweep::Dump` -- the records the step's expectation was checked
   # against, written down whole. It observes and never steers: the walk plays
@@ -349,23 +369,7 @@ class EngineSweep::Walk
     end
   end
 
-  # Sets every AUTOINCREMENT table's counter to `ID_BASE`. SQLite keeps those
-  # counters in `sqlite_sequence`, an ordinary table, so the rollback at the end
-  # of `#play` puts them back exactly as they were.
-  def pin_ids!
-    connection = ActiveRecord::Base.connection
-    tables = connection.select_values(
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND sql LIKE '%AUTOINCREMENT%'"
-    )
-    tables.each do |table|
-      quoted = connection.quote_table_name(table)
-      highest = connection.select_value("SELECT MAX(id) FROM #{quoted}").to_i
-      raise EngineSweep::InvalidScript, "#{table} already holds id #{highest}, past the sweep's #{ID_BASE}" if highest >= ID_BASE
-
-      connection.exec_delete("DELETE FROM sqlite_sequence WHERE name = #{connection.quote(table)}")
-      connection.exec_insert("INSERT INTO sqlite_sequence (name, seq) VALUES (#{connection.quote(table)}, #{ID_BASE})")
-    end
-  end
+  def pin_ids! = self.class.pin_ids!
 
   def load_world!
     WorldSeed::Loader.new(sweep_document, source: script.seed_file).load!

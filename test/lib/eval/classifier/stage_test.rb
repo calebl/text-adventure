@@ -17,6 +17,27 @@ class Eval::Classifier::StageTest < ActiveSupport::TestCase
     assert_equal before, { Story.count => :stories, Playthrough.count => :playthroughs, Item.count => :items }
   end
 
+  # A PINNED STAGING IS BORN WITH THE SAME IDS ON ANY DATABASE, which is what
+  # keeps a prompt the engine's dice can reach the same prompt wherever the
+  # bench runs: the rows already there, and a staging before it, change
+  # nothing about the ids it gets.
+  test "a pinned staging gets the same ids whatever the database already holds" do
+    position = Eval::Classifier.corpus.position("office")
+    ids = lambda do
+      Eval::Classifier::Stage.open([ position ], pinned: true) do |stages|
+        game = stages.fetch("office").playthrough
+        [ game.story_id, game.id, game.story.characters.order(:id).pluck(:id) ]
+      end
+    end
+
+    first = ids.call
+    Eval::Classifier::Stage.open([ position ]) { nil }
+    create(:story)
+
+    assert_equal first, ids.call
+    assert_equal EngineSweep::Walk::ID_BASE + 1, first.first
+  end
+
   # THE COPY IS PER POSITION AND NOT PER WORLD, and this is the test that says
   # why: the closed-set readers are live queries, so two positions cut from one
   # seed file under one title would be two playthroughs of ONE world -- and a
