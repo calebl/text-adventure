@@ -572,6 +572,7 @@ class NarrationJobTest < ActiveJob::TestCase
     assert_match(/Hero Protagonist hit Marek Sollen for \d+ \(round 1\)/, replace)
     assert_match(/Marek Sollen hit Hero Protagonist for \d+ \(round 1\)/, replace)
     assert_match "/attack Marek Sollen", replace, "and the button is back for the next round"
+    assert_no_match Playthrough::TurnFailureNotice::MESSAGE, replace, "a round fought is not a failed turn"
     # TWO BLOWS: the player's own and the one live foe's answer. A round is the
     # turn -- the captain's call C5.
     assert_equal 2, playthrough.blows.count

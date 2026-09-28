@@ -86,12 +86,15 @@ class Playthrough::Battle
   # player opened, and the exchange reads in that order rather than in whatever
   # order `id` happened to give it. Chronological within each side, so two foes
   # still answer in the order they swung.
-  def last_exchange
-    blows = fight.open_blows
-    return [] if blows.empty?
+  def last_exchange = exchange(fight.open_blows.map(&:round).max)
 
-    latest = blows.map(&:round).max
-    round = blows.select { |blow| blow.round == latest }
+  # THE BLOWS OF ONE ROUND OF THE OPEN FIGHT, in `#last_exchange`'s order: the
+  # party's first, then the answer. Empty for a round nobody swung in, and for
+  # nil. `Playthrough::Session#round_fought` asks for the round a turn played.
+  def exchange(number)
+    return [] if number.nil?
+
+    round = fight.open_blows.select { |blow| blow.round == number }
 
     round.select { |blow| ours?(blow) } + round.reject { |blow| ours?(blow) }
   end
@@ -131,8 +134,7 @@ class Playthrough::Battle
   # Nothing here is invented per render: the names are `Character#fullname`, the
   # round is `Playthrough::Blow#round`, and which side a blow is on is
   # `#ours?` -- the same party `#bodies` is built from.
-  def lead
-    exchange = last_exchange
+  def lead(exchange = last_exchange)
     return "No blow has landed yet." if exchange.empty?
 
     opening = exchange.first.round == 1 && opened_by_the_party?

@@ -1061,7 +1061,10 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   test "a line the next turn answered leaves nothing standing on reload" do
     game = create(:playthrough, :started)
     create(:playthrough_command, playthrough: game, status: "failed", error_kind: "error")
-    create(:playthrough_command, playthrough: game, status: "completed", result_scene: game.current_scene)
+    # The answer is a Scene: a completed turn with nothing to show is itself
+    # told as a failure (`Playthrough::Session#unexplained`).
+    answer = create(:scene, story: game.story, location: game.current_location)
+    create(:playthrough_command, playthrough: game, status: "completed", result_scene: answer)
 
     get playthrough_path(game)
 
