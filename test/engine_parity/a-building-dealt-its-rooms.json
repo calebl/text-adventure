@@ -87,7 +87,84 @@
             "detail": "realized"
           }
         ],
-        "here": [],
+        "here": [
+          {
+            "id": 1000000035,
+            "name": "bolt"
+          },
+          {
+            "id": 1000000027,
+            "name": "chisel"
+          },
+          {
+            "id": 1000000022,
+            "name": "crate"
+          },
+          {
+            "id": 1000000029,
+            "name": "file"
+          },
+          {
+            "id": 1000000025,
+            "name": "lathe"
+          },
+          {
+            "id": 1000000038,
+            "name": "offcut"
+          },
+          {
+            "id": 1000000031,
+            "name": "pliers"
+          },
+          {
+            "id": 1000000036,
+            "name": "rivet"
+          },
+          {
+            "id": 1000000024,
+            "name": "shelves"
+          },
+          {
+            "id": 1000000032,
+            "name": "spool of thread"
+          },
+          {
+            "id": 1000000026,
+            "name": "stool"
+          },
+          {
+            "id": 1000000037,
+            "name": "stub of chalk"
+          },
+          {
+            "id": 1000000033,
+            "name": "tin"
+          },
+          {
+            "id": 1000000028,
+            "name": "tin of grease"
+          },
+          {
+            "id": 1000000021,
+            "name": "tool rack"
+          },
+          {
+            "id": 1000000023,
+            "name": "vice"
+          },
+          {
+            "id": 1000000034,
+            "name": "wood shaving"
+          },
+          {
+            "id": 1000000020,
+            "name": "workbench"
+          },
+          {
+            "id": 1000000030,
+            "name": "wrench"
+          }
+        ],
         "carrying": [],
         "present": [],
         "foes": [],

@@ -1,0 +1,125 @@
+# WHAT STANDS IN A ROOM, AND WHAT LIES ON IT, WRITTEN BY HAND.
+#
+# The clerk's study is a seeded room with three fixtures -- a desk with a shut
+# inside and a top, a windowsill and a coal scuttle things lie in -- and the
+# things the file lays on and in them with `within:`. A fixture is a record
+# like the ward stamp is: looking at the desk is a look at a thing on record,
+# and taking it is refused in the engine's words, because a fixture is
+# immovable. Taking the stamp lifts it off the desk: the records file pins the
+# row losing its `within` as it goes into the player's hands, and a drop puts it
+# on the floor rather than back on the desk.
+#
+# The stall and the clearing are the same keys in two other settings: an apple
+# on a market stall's counter and a pine cone on a fallen log, each takeable
+# off the fixture it lies on.
+story: The Furnished Rooms
+why: a fixture is a record nobody can take, and a thing on one is taken off it
+steps:
+- id: in-the-study
+  type: look
+  why: the fixtures and what lies on and in them are all lying in the room
+  expect:
+    location: The Clerk's Study (realized)
+    here: [desk, windowsill, coal scuttle, ward stamp, potted fern, lump of coal]
+    carrying: []
+    changed: false
+    refused: false
+
+- id: a-look-at-the-desk-is-a-look-at-a-record
+  type: /inspect the desk
+  why: >-
+    the desk is on record, so the look resolves to it rather than to nothing.
+    With no model a look at a thing with no writing on it is prose this mode
+    does not write, so it is refused in those words -- after resolving
+  expect:
+    understood: examine -> desk
+    refused: true
+    offers:
+    - there is nothing written on the desk
+    changed: false
+
+- id: the-desk-does-not-move
+  type: take the desk
+  why: a fixture is immovable, so a take of it is refused as a filing press's is
+  expect:
+    understood: take -> desk
+    refused: true
+    offers:
+    - desk is immovable and does not move for anybody
+    changed: false
+    carrying: []
+
+- id: the-stamp-comes-off-the-desk
+  type: take the ward stamp
+  why: a thing on a fixture is takeable, and taking it lifts it off the fixture
+  expect:
+    understood: take -> ward stamp
+    changed: true
+    carrying: [ward stamp]
+    here: [desk, windowsill, coal scuttle, potted fern, lump of coal]
+
+- id: and-down-onto-the-floor
+  type: drop the ward stamp
+  why: a drop puts it on the floor, not back on the desk it came from
+  expect:
+    changed: true
+    carrying: []
+    here: [desk, windowsill, coal scuttle, ward stamp, potted fern, lump of coal]
+
+- id: out-of-the-scuttle
+  type: take the lump of coal
+  why: a thing lying in a hollow fixture is takeable the same way
+  expect:
+    understood: take -> lump of coal
+    changed: true
+    carrying: [lump of coal]
+
+- id: to-the-stall
+  type: go to Cinder Lane Stall
+  why: a market stall's counter and a shut crate, in another setting's words
+  expect:
+    changed: true
+    location: Cinder Lane Stall (realized)
+    here: [market stall, crate, apple]
+
+- id: an-apple-off-the-counter
+  type: take the apple
+  why: the apple lies on the stall's counter and comes off it into her hands
+  expect:
+    understood: take -> apple
+    changed: true
+    carrying: [apple, lump of coal]
+    here: [market stall, crate]
+
+- id: the-crate-does-not-move-either
+  type: take the crate
+  why: a closed fixture is still a fixture
+  expect:
+    refused: true
+    offers:
+    - crate is immovable and does not move for anybody
+    here: [market stall, crate]
+
+- id: back-through-the-study-to-the-clearing
+  type: go to The Clerk's Study
+  why: on the way to the clearing behind the office
+  expect:
+    changed: true
+    location: The Clerk's Study (realized)
+
+- id: into-the-clearing
+  type: go to The Beech Clearing
+  why: an old beech and a fallen log with a pine cone on it
+  expect:
+    changed: true
+    location: The Beech Clearing (realized)
+    here: [old beech, fallen log, pine cone]
+
+- id: a-cone-off-the-log
+  type: take the pine cone
+  why: the same take off a fixture, outdoors
+  expect:
+    understood: take -> pine cone
+    changed: true
+    carrying: [apple, lump of coal, pine cone]
+    here: [old beech, fallen log]

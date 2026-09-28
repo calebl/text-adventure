@@ -1,0 +1,86 @@
+# A ROOM IS FURNISHED FROM ITS KIT BEFORE IT IS DESCRIBED.
+#
+# The reading room is a stub the world file left a kind and a density on
+# (`study`, `lived-in`). Walking into it realizes it through fixed replies, and
+# before the room writer is asked anything the engine rolls the room's kit on
+# its name (`Item::Kit`, `Roll::KIT`) and writes it as the world's own rows: the
+# pieces that came up, what lies on each in plain view, and the small stuff.
+# The detail prompt then states it, in the "Already Here" block, which the
+# reply below holds the prompt to; the writer's own thing (a brass letter
+# knife) is admitted beside the kit, since a kit's rows are not the writer's
+# caps.
+#
+# WHAT IT ASSERTS: the whole set lying in the room once it is written, which is
+# the kit's roll on "The Reading Room" and the writer's one thing -- the kit is
+# seeded on the room's name, so this set is the same on any database. The
+# records file pins every row the step wrote, `tier`, `holds`, `within`, `how`
+# and `kit_key` among them. A second entry furnishes nothing twice.
+story: The Furnished Rooms
+why: a stub with a kind is furnished from its kit before its writer describes it, and told what is there
+steps:
+- id: into-the-reading-room
+  type: /move The Reading Room
+  why: the room is furnished, and the detail prompt states what the kit put there
+  browser:
+    token: first-entry
+    realizes: The Reading Room
+    replies:
+    - purpose: location
+      prompt_includes:
+      - "## Already Here, Decided By The Game"
+      - "Fixed in place: desk (unsearched), bookcase, windowsill."
+      - "On the desk: paperweight."
+      - "Loose, and could be picked up: chair, lamp, button, coin."
+      - "Nobody has searched the desk yet, so do not say what is in it."
+      content:
+        description: A quiet room of books, a desk under the window.
+        lore: The clerk reads here when the ward is quiet.
+        items:
+        - name: brass letter knife
+          description: A thin brass knife for slitting envelopes.
+          use_kind: ordinary
+          combustible: false
+          readable: false
+        people: []
+    - purpose: location
+      content:
+        exits: []
+    - purpose: arrival
+      unavailable: true
+  expect:
+    location: The Reading Room (realized)
+    here: [desk, bookcase, windowsill, chair, lamp, paperweight, bound volume, journal, candle stub, dead fly, button, coin, brass letter knife]
+    changed: true
+    refused: false
+
+- id: a-paperweight-off-the-desk
+  type: take the paperweight
+  why: a kit's thing lying on a kit's desk is taken off it like any other
+  expect:
+    understood: take -> paperweight
+    changed: true
+    carrying: [paperweight]
+
+- id: the-kits-desk-does-not-move
+  type: take the desk
+  why: a kit's fixture is immovable too
+  expect:
+    refused: true
+    offers:
+    - desk is immovable and does not move for anybody
+
+- id: out-and-back
+  type: go to The Clerk's Study
+  why: out of the room, to walk in again
+  expect:
+    changed: true
+    location: The Clerk's Study (realized)
+
+- id: nothing-furnished-twice
+  type: go to The Reading Room
+  why: a written room is never furnished again, so the room is as she left it
+  expect:
+    changed: true
+    location: The Reading Room (realized)
+    here: [desk, bookcase, windowsill, chair, lamp, bound volume, journal, candle stub, dead fly, button, coin, brass letter knife]
+    carrying: [paperweight]

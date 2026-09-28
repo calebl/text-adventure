@@ -1,0 +1,133 @@
+# THREE ROOMS FURNISHED BY HAND, AND ONE THE ENGINE FURNISHES.
+#
+# The study, the clearing and the stall are written with the seed keys a world
+# file places fixtures with: `holds:` makes a thing a fixture and `within:` lays
+# a thing on or in one. The reading room is a stub with a kind and a density,
+# so the engine furnishes it from its kit the moment it is written
+# (`Item::Kit`), and tells the room writer what it put there.
+format: 2
+universe:
+  physics: Ordinary physics.
+  technology: Ink, lamps and hand carts.
+  weapons: Walking sticks.
+  geographies: A ward office, a wood behind it and a market street.
+  civilizations: A walled town that keeps its records.
+  history: The ward office has kept the town's ledgers for a century.
+  economics: Coins and stamped receipts.
+  politics: The ward keeps the peace.
+  religion: The town keeps its own festivals.
+  races:
+  - name: Townsfolk
+    description: Ordinary people of the town.
+story:
+  title: The Furnished Rooms
+  genre: town adventure
+  start_time: '2026-09-28T09:00:00Z'
+  preface: A clerk's study opens onto a wood and a market.
+  summary: Mira looks over the ward clerk's rooms.
+opening_scene:
+  location: The Clerk's Study
+  characters: [Mira Vell]
+  description: You stand in the clerk's study.
+  summary: Mira arrives in the study.
+characters:
+- fullname: Mira Vell
+  nickname: Mira
+  race: Townsfolk
+  age: 34
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: A ward auditor sent to look over the clerk's rooms.
+  personality: Careful and dry.
+  appearance: An ink-stained coat.
+  likes: A tidy ledger.
+  dislikes: Loose paper.
+  fears: A lost record.
+  stats: {level: 3, hit_die: 8, strength: 10, dexterity: 12, will: 12}
+locations:
+- name: The Clerk's Study
+  detail_level: realized
+  opening: true
+  description: A narrow study with a desk under the window and a coal scuttle by the grate.
+  teaser: A clerk's study.
+  lore: The ward clerk has worked here for twenty years.
+  items:
+  - name: desk
+    description: A clerk's desk with two shut drawers.
+    properties: '{}'
+    holds: closed
+  - name: windowsill
+    description: A deep sill over the yard.
+    properties: '{}'
+    holds: top
+  - name: coal scuttle
+    description: A black iron scuttle by the grate.
+    properties: '{}'
+    holds: hollow
+  - name: ward stamp
+    description: A brass stamp on a wooden handle.
+    properties: '{}'
+    within: desk
+  - name: potted fern
+    description: A fern in a cracked pot.
+    properties: '{}'
+    within: windowsill
+  - name: lump of coal
+    description: A fist-sized lump of coal.
+    properties: '{}'
+    combustible: true
+    within: coal scuttle
+- name: The Beech Clearing
+  detail_level: realized
+  description: A clearing under old beeches, a log across it.
+  teaser: A clearing behind the office.
+  lore: The clerks take their lunch here in summer.
+  items:
+  - name: old beech
+    description: A beech older than the office.
+    properties: '{}'
+    holds: nothing
+  - name: fallen log
+    description: A mossy log across the clearing.
+    properties: '{}'
+    holds: top
+  - name: pine cone
+    description: A dry pine cone.
+    properties: '{}'
+    within: fallen log
+- name: Cinder Lane Stall
+  detail_level: realized
+  description: A fruit stall on a narrow lane.
+  teaser: A stall on the lane.
+  lore: The stall has stood here since the market moved.
+  items:
+  - name: market stall
+    description: A trestle counter under a striped awning.
+    properties: '{}'
+    holds: top
+  - name: crate
+    description: A lidded crate under the counter.
+    properties: '{}'
+    holds: closed
+  - name: apple
+    description: A red apple.
+    properties: '{}'
+    use_kind: food
+    within: market stall
+- name: The Reading Room
+  detail_level: stub
+  population: nobody
+  kind: study
+  density: lived-in
+  teaser: A quiet room off the study.
+connections:
+- between: [The Clerk's Study, The Beech Clearing]
+  distance: adjacent
+  travel_method: walking
+- between: [The Clerk's Study, Cinder Lane Stall]
+  distance: a short walk
+  travel_method: walking
+- between: [The Clerk's Study, The Reading Room]
+  distance: adjacent
+  travel_method: walking

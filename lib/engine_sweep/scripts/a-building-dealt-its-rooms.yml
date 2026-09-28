@@ -6,13 +6,14 @@
 # place call, whose answer says what sort of building it is, and the engine
 # lays it out and deals every room its sort (`Location::Kind.deal`).
 #
-# NOTHING A PLAYER SEES CHANGES, which is the point: nothing reads the words
-# yet, so every expectation below is one a walk without them would meet. What
-# this walk pins is the rows. The engine's records for it hold every location
-# row each step wrote, column for column, so the stub keeping `workshop` and
-# `cluttered`, the second stub keeping only the density its answer spelled
-# right, and each room of the building carrying the word it was dealt and the
-# building's density are all facts a regression would move.
+# WHAT THIS WALK PINS IS THE ROWS. The engine's records for it hold every
+# location row each step wrote, column for column, so the stub keeping
+# `workshop` and `cluttered`, the second stub keeping only the density its
+# answer spelled right, and each room of the building carrying the word it was
+# dealt and the building's density are all facts a regression would move. The
+# first room of the yard is written with its word, so it is furnished from the
+# workshop kit as it is (`Item::Kit`), and the records hold those rows too;
+# `a-room-furnished-as-it-is-written.yml` is the walk about that.
 story: The Unfinished Workshop
 why: the words a model picks for a place are kept on the stub, and a building's rooms are dealt theirs
 steps:
