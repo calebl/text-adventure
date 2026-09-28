@@ -1410,27 +1410,22 @@ case's whole prompt differs between repetitions by construction, and
 `Eval::Prompt::Version` says so rather than hiding it. The facts the engine owns
 in that prompt are as fixed as any other case's.
 
-**The residual 0.100 is a SECOND false-positive class in the same check, found
-by the re-buy and reported rather than fixed.** Both flagged passages put the
-iron key *in the mud* — *"the prince's signet ring heavy in your grip, the iron
-key discarded in the mud beside his stiffened corpse"* — and the check fires
-because a true claim about the RING precedes the key in the same clause list, so
-the possession window carries the first item's claim onto the second:
+**The residual 0.100 was a SECOND false-positive class in the same check, found
+by the re-buy and since fixed in the check.** Both flagged passages put the iron
+key *in the mud* — *"the prince's signet ring heavy in your grip, the iron key
+discarded in the mud beside his stiffened corpse"* — and the check fired because
+a true claim about the RING preceded the key in the same clause list, so the
+possession window carried the first item's claim across the comma onto the
+second. `Story::Audit#possession_claimed?` now ends that window at a comma when
+a noun phrase already stands before the place phrase in its own clause, and no
+longer reads a possession verb straight after `your` ("your grip") as a verb;
+`Eval::Prompt::EndingKeptSetTest` holds the sentence as the regression.
 
-```ruby
-audit = Story::Audit.allocate
-audit.send(:possession_claimed?, "the iron key discarded in the mud beside his corpse", "iron key")
-# => false   -- read correctly on its own
-audit.send(:possession_claimed?,
-  "the prince's signet ring heavy in your grip, the iron key discarded in the mud", "iron key")
-# => true    -- the ring's claim reaches across the comma
-```
-
-`Eval::Prompt::EndingKeptSetTest` pins that class offline and for free, so the
-diagnosis is a test rather than a paragraph. **The fix belongs to the check** and
-is a measurement-file change with its own before/after over the pinned corpora,
-which is why it is not in the change that found it — the same rule that kept the
-alias fix out of PR 162.
+**The kept 0.100 does not move, and cannot:** a kept set holds no prose, so the
+after side's `item_not_held` is what the check read before this fix — history,
+like the 2026-09-08 pair's 0.200. The verdict it feeds was already NOISE, so
+nothing is re-bought for it. Every corpus that carries its passages re-scored
+unchanged.
 
 ### Serial, for now
 
