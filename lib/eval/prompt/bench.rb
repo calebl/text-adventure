@@ -268,6 +268,7 @@ class Eval::Prompt::Bench
     intent = intent_for(kase, standing)
     from = playthrough.current_location
     @ending_request = nil
+    cut = { missing_fields: [], cap_hits: [] }
 
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     begin
@@ -285,7 +286,13 @@ class Eval::Prompt::Bench
       # Recovery completes engine effects despite an unavailable renderer.
       # Adapt that receipt to the existing failed-call row; engine-authored
       # fallback words must never become model prose or change refusal counts.
-      raise(failure || RenderingFellBack.new("the renderer did not answer, so the engine's words stand")) if scene&.engine_fallback?
+      # What the provider sent is still on its receipt, and an arrival refused
+      # for reaching its cap is exactly what `cap_hits` counts, so the failed
+      # row keeps both halves of `#cap_hits`' figure.
+      if scene&.engine_fallback?
+        cut = receipts_for(answering.receipts).slice(:missing_fields, :cap_hits)
+        raise(failure || RenderingFellBack.new("the renderer did not answer, so the engine's words stand"))
+      end
 
       elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
       receipts = receipts_for(answering.receipts)
@@ -318,7 +325,7 @@ class Eval::Prompt::Bench
       Reading.new(kase: kase, arm: arm.id, rep: rep, story: story.title, pass: kase.pass,
                   text: nil, facts: {}, seconds: nil, input_tokens: 0, output_tokens: 0,
                   calls: 0, answered_by: nil, instructions: nil, prompt: nil,
-                  missing_fields: [], cap_hits: [], error: "#{error.class}: #{error.message}")
+                  **cut, error: "#{error.class}: #{error.message}")
     end
   end
 
@@ -380,10 +387,11 @@ class Eval::Prompt::Bench
   # AND HALF TWO: A FIELD THAT ARRIVED AT ITS CAP, which is the provider cutting
   # the answer off rather than the model finishing it
   # (`SanitizesGeneratedText::TruncatedTextError`, and its header for why an
-  # exact hit is truncation rather than a coincidence). `Scene::Generator` does
-  # NOT pass its caps to the sanitizer, so this is measured here rather than
-  # raised there -- and measuring it is the point: `truncated_prose` reads the
-  # stored passage and can only see a cut that left a sentence hanging.
+  # exact hit is truncation rather than a coincidence). The engine refuses such
+  # an arrival and tells it in its own words, so the case is a failed row --
+  # and this still counts it off the provider's receipt, because measuring it is
+  # the point: `truncated_prose` reads the stored passage and can only see a
+  # cut that left a sentence hanging.
   def cap_hits(receipt)
     schema = receipt&.schema
     body = receipt&.raw

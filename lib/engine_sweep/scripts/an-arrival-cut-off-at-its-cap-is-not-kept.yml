@@ -1,0 +1,47 @@
+# A provider that enforces a field's maxLength stops the answer at the cap
+# and hands back what it had, so a description that arrives AT its cap is a
+# fragment rather than a shorter arrival. The arrival is asked of the next
+# model, and one nobody finished falls to the engine's own words: half a
+# sentence is never kept as the moment the player walked into.
+story: A Clerk With Somewhere To Be
+steps:
+- id: up-to-a-landing-cut-off-at-its-cap
+  type: "/move The Landing"
+  why: 'the provider stopped the description at its 900-character cap, mid-word, and
+    the one model this step has is the last one there is: the arrival is told in the
+    engine''s own words, and the fragment is never written to the scene'
+  browser:
+    token: cut-up
+    replies:
+    - purpose: arrival
+      content:
+        description: The stair turns once and the half-landing opens under a high
+          window, its sill thick with dust. The stair turns once and the half-landing
+          opens under a high window, its sill thick with dust. The stair turns once
+          and the half-landing opens under a high window, its sill thick with dust.
+          The stair turns once and the half-landing opens under a high window, its
+          sill thick with dust. The stair turns once and the half-landing opens under
+          a high window, its sill thick with dust. The stair turns once and the half-landing
+          opens under a high window, its sill thick with dust. The stair turns once
+          and the half-landing opens under a high window, its sill thick with dust.
+          The stair turns once and the half-landing opens under a high window, its
+          sill thick with dust. The stair turns once and the half-landing opens under
+          a high window, its sill thick with dust. A clerk waits by the rail, turned
+          half toward
+        summary: Wick climbs to the landing.
+  expect:
+    location: The Landing (realized)
+    changed: true
+- id: back-down-to-a-finished-arrival
+  type: "/move The Records Office"
+  why: an arrival that finished under its cap is kept as it was written
+  browser:
+    token: finished-down
+    replies:
+    - purpose: arrival
+      content:
+        description: You come back down into the office.
+        summary: Wick goes back down to the office.
+  expect:
+    location: The Records Office (realized)
+    changed: true

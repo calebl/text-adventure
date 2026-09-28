@@ -93,7 +93,9 @@ class Scene::Generator
     elapsed = location.time_since_last_visit(chain_head, at)
     cast = characters_present
 
-    answer = agent.with_schema(Scene::Schema).ask(arrival_prompt(returning, elapsed, cast)).content
+    answer = agent.with_schema(Scene::Schema).ask(
+      arrival_prompt(returning, elapsed, cast), verify: method(:finished!)
+    ).content
 
     scene = Playthrough::Command::Journal.commit("arrival") do
       row = persist_arrival!(answer, cast: cast, at: at, engine_fact: arrival_engine_fact)
@@ -289,6 +291,16 @@ class Scene::Generator
     agent.attribute_to!(scene)
   rescue StandardError => error
     Rails.logger.warn("Arrival attribution failed: #{error.class}")
+  end
+
+  # THROUGH `BaseAgent#ask`'s `verify:` SEAM, so an answer the provider cut
+  # off at a cap is a failed call that rotates, and an arrival no model
+  # finished falls to `#fallback!` -- rather than half a sentence being kept
+  # as the moment and shown to the player.
+  def finished!(content)
+    Scene::Schema::MAX_LENGTHS.each do |field, cap|
+      sanitize_string(content[field.to_s], max_length: cap)
+    end
   end
 
   def arrival_context

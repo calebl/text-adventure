@@ -169,6 +169,8 @@ class Eval::Prompt::BenchTest < ActiveSupport::TestCase
                                                     .deep_stringify_keys.dig("schema", "properties", "description", "maxLength"))
     assert_equal [ "summary" ], row(cut.passes.sole, "a-move")["missing_fields"]
     assert_equal [ "description" ], row(cut.passes.sole, "a-move")["cap_hits"]
+    assert_match "RenderingFellBack", row(cut.passes.sole, "a-move")["error"],
+                 "an arrival cut at its cap is refused, and the engine's words stand"
   end
 
   test "the digests describe what was measured" do
