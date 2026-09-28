@@ -633,6 +633,66 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_empty EngineSweep::Invariants.new(story, seed: seed).check
   end
 
+  # A WALK AND THEN A TRAVEL AGREEMENT, which is a walk the Rust engine plays
+  # on some roll identities: Grenn goes down to the hallway and up into the
+  # bell tower, the player climbs in after him, Grenn decides to go with them,
+  # and the player comes back down with Grenn beside them. His `move:` receipt
+  # for the bell was true when it was written, and the `follow` after it is
+  # what his whereabouts answer to now. Stated with the one writer of these
+  # rows, `Playthrough::Volition`, so it is the records a walk leaves.
+  test "a walk a later travel agreement superseded is not a broken invariant" do
+    seed, story = seeded_copy("the-lunar-cartographer")
+    room, hallway, bell = the_way_up_the_tower(story)
+    game = create(:playthrough, story: story, character: story.protagonist, current_location: room)
+    grenn = story.characters.find_by!(fullname: "Grenn Ollivar")
+
+    Playthrough::Volition.new(game, grenn, location: room).apply!("move:#{hallway.id}")
+    Playthrough::Volition.new(game, grenn, location: hallway).apply!("move:#{bell.id}")
+    game.update!(current_location: bell)
+    Playthrough::Volition.new(game, grenn, location: bell).apply!("follow")
+    game.advance_followers_to!(hallway)
+    game.update!(current_location: hallway)
+
+    assert_equal [ [ "move:#{hallway.id}", "applied" ], [ "move:#{bell.id}", "applied" ], [ "follow", "applied" ] ],
+                 game.volitions.order(:id).pluck(:chosen, :status)
+    assert_equal hallway, game.location_of(grenn)
+    assert_empty EngineSweep::Invariants.new(story, seed: seed).check
+  end
+
+  test "a walk the records contradict is caught after it" do
+    seed, story = seeded_copy("the-lunar-cartographer")
+    room, hallway, = the_way_up_the_tower(story)
+    game = create(:playthrough, story: story, character: story.protagonist, current_location: room)
+    grenn = story.characters.find_by!(fullname: "Grenn Ollivar")
+
+    Playthrough::Volition.new(game, grenn, location: room).apply!("move:#{hallway.id}")
+    game.npc_states.find_by!(character: grenn).update_columns(location_id: room.id)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "volitions_moved_what_they_named", broken.invariant
+    assert_match(/Grenn Ollivar's "move:#{hallway.id}" receipt says applied and they are in ##{room.id}/, broken.to_s)
+  end
+
+  # ONLY A LATER AGREEMENT SUPERSEDES A WALK. Somebody who agreed to travel
+  # and then walked off on their own is where that walk took them, which is
+  # what `Playthrough::Volition#walk_to!` writes and this still asks about.
+  test "a walk after a travel agreement is still asked about" do
+    seed, story = seeded_copy("the-lunar-cartographer")
+    room, hallway, = the_way_up_the_tower(story)
+    game = create(:playthrough, story: story, character: story.protagonist, current_location: room)
+    grenn = story.characters.find_by!(fullname: "Grenn Ollivar")
+
+    Playthrough::Volition.new(game, grenn, location: room).apply!("follow")
+    Playthrough::Volition.new(game, grenn, location: room).apply!("move:#{hallway.id}")
+    game.npc_states.find_by!(character: grenn).update_columns(location_id: room.id)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "volitions_moved_what_they_named", broken.invariant
+    assert_match(/"move:#{hallway.id}" receipt says applied/, broken.to_s)
+  end
+
   # `present` is the closed set `talk` resolves against, read back with no
   # model -- which is what it took to make presence sweepable at all.
   test "a present expectation reads who the records place in the room" do
@@ -1252,6 +1312,13 @@ class EngineSweepTest < ActiveSupport::TestCase
     seed = WorldSeed.parse(File.read(Rails.root.join("test/fixtures/files/a-world-with-an-interior.yml")))
 
     [ seed, WorldSeed::Loader.new(seed.deep_dup).load! ]
+  end
+
+  # Room 3, the hallway below it and the bell tower the hallway opens onto, in
+  # the order Grenn walks them.
+  def the_way_up_the_tower(story)
+    [ "Grenn's Boarding House, Room 3", "Grenn's Boarding House hallway", "The Bell of Saint Aravel" ]
+      .map { |name| story.locations.find_by!(name: name) }
   end
 
   # A seeded world loaded the way a walk loads it -- under its own title, so

@@ -264,7 +264,9 @@
 #                        earlier `move:A` receipt is historically true and no
 #                        longer a claim about the world the walk left behind, so
 #                        only their latest applied move is checked. The same for
-#                        a take that a later give of the same item superseded.
+#                        a take that a later give of the same item superseded,
+#                        and for a move that a later `follow` superseded: from
+#                        then on they go where the player goes.
 #   nothing_was_written  no room changed detail level. This is the offline
 #                        mode's own premise: with no model there is nothing to
 #                        write a room WITH, so a stub walked into stays a stub.
@@ -883,7 +885,9 @@ class EngineSweep::Invariants
 # is the world the walk LEFT BEHIND, which is what every other invariant in
 # this file is stated against. So only each person's latest applied move is
 # checked, and an applied take that a later give of the same item superseded
-# is skipped the same way.
+# is skipped the same way. A later applied `follow` supersedes a move too:
+# the person then goes where the player goes, so the room the walk named is
+# no longer a claim about where they are.
 def volitions_moved_what_they_named
   broken_rows = Playthrough.where(story: story).flat_map { |game| volition_faults(game) }
   return nil if broken_rows.empty?
@@ -896,16 +900,26 @@ def volition_faults(game)
   latest = rows.each_with_object({}) do |row, seen|
     seen[[ row.character_id, row.chosen ]] = row
   end
-  latest_move = rows.select { |row| row.status == "applied" && row.chosen.match?(Playthrough::Volition::MOVE) }
-                    .each_with_object({}) { |row, seen| seen[row.character_id] = row }
+  latest_whereabouts = rows.select { |row| row.status == "applied" && places_somebody?(row.chosen) }
+                           .each_with_object({}) { |row, seen| seen[row.character_id] = row }
 
   latest.each_value.filter_map do |row|
     next if row.status == "applied" && row.chosen.match?(Playthrough::Volition::MOVE) &&
-            latest_move[row.character_id] != row
+            latest_whereabouts[row.character_id] != row
     next if take_superseded_by_later_give?(rows, row)
 
     volition_fault(game, row)
   end
+end
+
+# THE TWO ACTS THAT DECIDE WHERE SOMEBODY IS. A walk puts them in the room its
+# token names; an agreement to travel puts them with the party, and from then
+# on every move the player makes carries them along
+# (`Playthrough#advance_followers_to!`). So a `follow` after a walk is what
+# their whereabouts answer to, and the walk's receipt is history. A
+# `stop_following` leaves them where they already stand, so it decides nothing.
+def places_somebody?(chosen)
+  chosen == "follow" || chosen.match?(Playthrough::Volition::MOVE)
 end
 
 def take_superseded_by_later_give?(rows, row)
