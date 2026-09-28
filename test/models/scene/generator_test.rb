@@ -152,10 +152,20 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
 
   # --- first visit versus return ------------------------------------------
 
-  test "a first visit is narrated as discovery" do
-    location = realized_location(name: "The Drowned Ledger", last_protagonist_visit: nil)
+  # THIS GAME'S CHAIN: a scene in `room` `ago` before the moment it leaves
+  # from, then that moment somewhere else. Returns the moment it leaves from.
+  def left_after_visiting(room, ago:)
+    lane = realized_location(name: "Mournwell Lane")
+    visit = create(:scene, story: @story, location: room, story_timestamp: @story.start_time)
+    create(:scene, story: @story, location: lane, previous_scene: visit,
+                   story_timestamp: @story.start_time + ago)
+  end
 
-    _scene, agent = generate(location)
+  test "a first visit is narrated as discovery" do
+    location = realized_location(name: "The Drowned Ledger")
+    left = create(:scene, story: @story, location: realized_location(name: "Mournwell Lane"))
+
+    _scene, agent = generate(location, previous_scene: left)
 
     prompt = agent.prompts.first
     assert_match "never been here", prompt
@@ -164,9 +174,9 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
   end
 
   test "a return visit is narrated as coming back, and says how long they were gone" do
-    location = realized_location(name: "The Drowned Ledger", last_protagonist_visit: 2.hours.ago)
+    location = realized_location(name: "The Drowned Ledger")
 
-    _scene, agent = generate(location)
+    _scene, agent = generate(location, previous_scene: left_after_visiting(location, ago: 2.hours))
 
     prompt = agent.prompts.first
     assert_match "stood here before", prompt
@@ -176,28 +186,46 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
   end
 
   test "the elapsed time is the real gap, not a fixed phrase" do
-    _scene, agent = generate(realized_location(last_protagonist_visit: 3.days.ago))
+    location = realized_location
+
+    _scene, agent = generate(location, previous_scene: left_after_visiting(location, ago: 3.days))
 
     assert_match "3 days ago", agent.prompts.first
   end
 
-  # `Scene#mark_location_visit` is an after_create that stamps the visit with
-  # now. Read the gap after the record exists and every return reads as "less
-  # than a minute ago", which is the one thing this generator is for.
-  test "reads the elapsed time before creating the scene stamps it away" do
-    location = realized_location(last_protagonist_visit: 5.days.ago)
+  # THE DEFECT. `locations.last_protagonist_visit` is the world's, written by
+  # every game of the story; another game having stood here is not this one
+  # coming back.
+  test "a room only another game has stood in is narrated as discovery" do
+    location = realized_location(name: "The Drowned Ledger")
+    left_after_visiting(location, ago: 28.minutes)
+    assert_not_nil location.reload.last_protagonist_visit, "the other game stamped the world's column"
+    ours = create(:scene, story: @story, location: realized_location(name: "The Quay"),
+                          story_timestamp: @story.start_time + 30.minutes)
 
-    _scene, agent = generate(location)
+    _scene, agent = generate(location, previous_scene: ours)
 
-    assert_match "5 days ago", agent.prompts.first
-    assert_in_delta Time.current, location.reload.last_protagonist_visit, 5.seconds
+    assert_match "never been here", agent.prompts.first
+    assert_no_match(/stood here before/, agent.prompts.first)
   end
 
-  test "the second arrival in a location is a return even though the first was not" do
-    location = realized_location(last_protagonist_visit: nil)
+  test "world-building has no party, so it has been nowhere" do
+    _scene, agent = generate(realized_location(last_protagonist_visit: 3.days.ago))
 
-    _first, first_agent = generate(location)
-    _second, second_agent = generate(location.reload)
+    assert_match "never been here", agent.prompts.first
+  end
+
+  # The arrival joins the chain it read, so the next arrival here is a return.
+  # Read after it was written and every return reads as "less than a minute
+  # ago", which is the one thing this generator is for.
+  test "the second arrival in a location is a return even though the first was not" do
+    location = realized_location
+    lane = realized_location(name: "Mournwell Lane")
+
+    first, first_agent = generate(location)
+    left = create(:scene, story: @story, location: lane, previous_scene: first,
+                          story_timestamp: first.story_timestamp + 10.minutes)
+    _second, second_agent = generate(location, previous_scene: left)
 
     assert_match "never been here", first_agent.prompts.first
     assert_match "stood here before", second_agent.prompts.first

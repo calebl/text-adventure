@@ -125,6 +125,9 @@ module Eval
     db/eval/prompt-2026-09-10/receipts.json
     db/eval/prompt-2026-09-26/prompt.json
     db/eval/prompt-2026-09-26/receipts.json
+    db/eval/prompt-2026-09-28/prompt.json
+    db/eval/prompt-2026-09-28/receipts.json
+    db/eval/prompt-2026-09-28/README.md
     db/eval/classifier-2026-09-10/classifier.json
     db/eval/classifier-2026-09-10/receipts.json
     db/eval/classifier-2026-09-10/offline.json

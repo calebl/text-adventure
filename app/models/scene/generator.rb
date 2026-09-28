@@ -16,11 +16,16 @@
 #     is two unstreamed calls and ~670 output tokens. Streaming the ~120 tokens
 #     that follow them is not what the player is waiting on.
 #
-# Arrival reads differently the second time. `Location#last_protagonist_visit`
-# is the whole mechanism: a location the protagonist has never stood in gets
-# narrated as discovery, and one they have gets narrated as coming back, with
-# how long they were gone stated in the prompt. Walking into a room you left an
-# hour ago should not read like finding it.
+# Arrival reads differently the second time. THIS GAME's own scene chain is the
+# whole mechanism (`Location#last_visit_in`): a location this party has never
+# stood in gets narrated as discovery, and one it has gets narrated as coming
+# back, with how long they were gone stated in the prompt. Walking into a
+# room you left an hour ago should not read like finding it.
+#
+# NOT `Location#last_protagonist_visit`, which is the WORLD's stamp and is
+# written by every playthrough of the story. Reading it here told a player on
+# their first arrival that they were last here 28 minutes ago, because another
+# game had been; it is `Story::Map`'s frontier, where world-wide is right.
 class Scene::Generator
   include SanitizesGeneratedText
   include ActionView::Helpers::DateHelper
@@ -81,13 +86,11 @@ class Scene::Generator
 
     raise ArgumentError, "cannot narrate arriving in #{location.name.inspect}: it is still a stub" unless location.realized?
 
-    # Read BEFORE the scene is created. `Scene#mark_location_visit` is an
-    # after_create that stamps `last_protagonist_visit` with THIS arrival's own
-    # story time, so by the time the record exists every arrival looks like a
-    # return that happened zero minutes ago.
-    returning = location.last_protagonist_visit.present?
+    # Read off the chain BEFORE this arrival joins it, or every arrival would
+    # look like a return that happened zero minutes ago.
+    returning = returning?
     at = story_timestamp
-    elapsed = location.time_since_last_visit(at)
+    elapsed = location.time_since_last_visit(chain_head, at)
     cast = characters_present
 
     answer = agent.with_schema(Scene::Schema).ask(arrival_prompt(returning, elapsed, cast)).content
@@ -130,6 +133,21 @@ class Scene::Generator
     end
   end
 
+  # Whether THIS GAME's party has stood here before, off its chain up to the
+  # moment before this arrival. The opening arrival has no chain, so it is a
+  # first.
+  def returning?
+    !location.last_visit_in(chain_head).nil?
+  end
+
+  # The newest moment of this game before the arrival: the scene it came from,
+  # or the game's current one when a caller gave no link.
+  def chain_head
+    return nil if opening?
+
+    previous_scene || @playthrough&.current_scene
+  end
+
   # WHEN IN THE STORY THIS ARRIVAL HAPPENS, and the one place the game turns a
   # journey into elapsed story time.
   #
@@ -145,8 +163,8 @@ class Scene::Generator
   # prompt -- is measured in the fiction rather than against whenever the player
   # happened to have a browser open. That is the wall-clock defect, and it is
   # fixed in this one place: `Time.current` is gone from the whole arrival path,
-  # so `Location#last_protagonist_visit` holds a story moment rather than an
-  # instant on the machine's clock.
+  # so a visit holds a story moment rather than an instant on the machine's
+  # clock.
   def story_timestamp
     return story.start_time if opening?
     return story.clock if previous_scene.nil?

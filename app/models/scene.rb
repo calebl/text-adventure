@@ -364,14 +364,16 @@ class Scene < ApplicationRecord
 
   private
 
-  # Arriving somewhere is what puts the protagonist in a room, and the stamp is
-  # what makes walking back in later read as coming back rather than as finding
-  # (Scene::Generator, Location#time_since_last_visit).
+  # Arriving somewhere is what puts the protagonist in a room, and this is the
+  # WORLD's record of it: every playthrough of the story writes the one column,
+  # so it answers whether anybody has stood here, which is `Story::Map`'s
+  # frontier. Whether THIS game has -- what makes walking back in read as coming
+  # back -- is that game's scene chain (`Location#last_visit_in`), and
+  # `Scene::Generator` never reads this.
   #
   # Stamped with this scene's OWN `story_timestamp` rather than with
   # `Time.current`: the visit happened at the moment in the story that the scene
-  # happened at, and that is what makes "you were last here about an hour ago"
-  # mean an hour of the story rather than an hour of somebody's afternoon.
+  # happened at, not at an hour of somebody's afternoon.
   #
   # The opening arrival is the exception, and it has to be. It is world data:
   # generated once when the world is built and loaded out of a seed file, which

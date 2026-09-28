@@ -419,26 +419,52 @@ class Location < ApplicationRecord
     connected_locations
   end
 
-  # How long the protagonist has been away, IN STORY TIME.
+  # WHEN ONE GAME'S PARTY LAST STOOD HERE, in story time, or nil when it never
+  # has: the latest scene in this room on that game's own chain, walked back
+  # from `scene` along `previous_scene` (`Playthrough#scene_chain` walks the
+  # same links). One query, however long the game.
   #
-  # `last_protagonist_visit` holds a moment on `Story#clock`, not a wall clock,
-  # and that is the whole of the fix for the defect this used to have: it read
-  # `Time.current - last_protagonist_visit`, so a player who closed the tab for
-  # a week and came back was told in fiction that they had been gone a week.
-  # Nothing about a story's own passage of time has anything to do with when
-  # somebody had a browser open.
-  #
-  # `now` defaults to the story's clock so any caller gets the right answer
-  # without knowing that; `Scene::Generator` passes the arrival's own story
-  # timestamp instead, because an arrival happens at the end of the journey
-  # rather than at the moment the turn started.
-  def time_since_last_visit(now = story.clock)
-    return nil unless last_protagonist_visit
-    return nil if now.nil?
+  # Never `last_protagonist_visit`, which is the WORLD's: every playthrough of
+  # the story stamps it, so read as one game's memory it narrated a first
+  # arrival as a return because somebody else's game had been here. A nil
+  # scene -- world-building, which has no party and no chain -- has been
+  # nowhere. The opening arrival heads every game's chain, so the room a game
+  # starts in counts as visited at the story's start.
+  def last_visit_in(scene)
+    return nil if scene.nil? || !persisted?
 
-    now - last_protagonist_visit
+    step = Scene.joins("INNER JOIN chain ON scenes.id = chain.previous_scene_id")
+                .select("scenes.id", "scenes.previous_scene_id")
+    Scene.with_recursive(chain: [ Scene.where(id: scene.id).select(:id, :previous_scene_id), step ])
+         .where(location_id: id).where("scenes.id IN (SELECT id FROM chain)")
+         .maximum(:story_timestamp)
   end
 
+  # How long ONE GAME'S party has been away, IN STORY TIME, reading that game's
+  # chain from `scene` (see `#last_visit_in`).
+  #
+  # Story time, not a wall clock, and that is the whole of the fix for an older
+  # defect: this used to read `Time.current - last_protagonist_visit`, so a
+  # player who closed the tab for a week and came back was told in fiction that
+  # they had been gone a week. Nothing about a story's own passage of time has
+  # anything to do with when somebody had a browser open.
+  #
+  # `now` defaults to the story time of `scene` itself -- that game's present,
+  # not the story's clock, which is every game's high-water mark;
+  # `Scene::Generator` passes the arrival's own story timestamp instead,
+  # because an arrival happens at the end of the journey rather than at the
+  # moment the turn started.
+  def time_since_last_visit(scene, now = scene&.story_timestamp)
+    visited = last_visit_in(scene)
+    return nil if visited.nil? || now.nil?
+
+    now - visited
+  end
+
+  # THE WORLD'S STAMP, written by every game: the last story moment anybody
+  # stood here in any playthrough. `Story::Map` reads it for the frontier, where
+  # world-wide is exactly the question; an arrival asks `#last_visit_in`.
+  #
   # `at` is story time, and it is required rather than defaulted for the reason
   # above: every caller knows which story moment the protagonist arrived at, and
   # a default would quietly reintroduce the wall clock.

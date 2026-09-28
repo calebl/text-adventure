@@ -1,0 +1,80 @@
+---
+story: A Clerk With Somewhere To Be
+steps:
+- id: talk-to-the-clerk
+  type: "/talk Bell"
+  browser:
+    token: talk
+    replies:
+    - purpose: character
+      content:
+        pre_thought: I will hear Wick out.
+        pre_feeling: hurried
+        action: Bell answers Wick over her shoulder.
+        post_thought: I am late.
+        post_feeling: restless
+        inner_resolution: I will get up to the landing.
+        engine_action: none
+    - purpose: interaction-narration
+      content: Bell answers you over her shoulder, keys turning in her hand.
+  expect:
+    changed: true
+    present:
+    - Bell
+- id: she-leaves-after-the-second-answer
+  type: "/talk Bell"
+  browser:
+    token: again
+    replies:
+    - purpose: character
+      content:
+        pre_thought: Wick is still talking.
+        pre_feeling: hurried
+        action: Bell answers Wick from the doorway.
+        post_thought: I am later still.
+        post_feeling: restless
+        inner_resolution: I will get up to the landing now.
+        engine_action: none
+    - purpose: interaction-narration
+      content: Bell answers you from the doorway, already half turned to the stairs.
+      prompt_includes:
+      - 'What else happened here, recorded by the game: Bell picked up quarter receipt'
+  expect:
+    changed: true
+    present: []
+- id: follow-her-up
+  type: "/move The Landing"
+  browser:
+    token: follow
+    replies:
+    - purpose: arrival
+      content:
+        description: You come up onto the half-landing.
+        summary: Wick climbs to the landing.
+      prompt_excludes:
+      - Bell walked out
+  expect:
+    location: The Landing (realized)
+    present:
+    - Bell
+- id: the-departure-is-told-here
+  type: "/talk Bell"
+  browser:
+    token: landing
+    replies:
+    - purpose: character
+      content:
+        pre_thought: Wick has followed me up.
+        pre_feeling: hurried
+        action: Bell keeps her eyes on the survey.
+        post_thought: I am still late.
+        post_feeling: restless
+        inner_resolution: I will finish the survey.
+        engine_action: none
+    - purpose: interaction-narration
+      content: Bell is bent over the survey, and answers without looking up.
+      prompt_includes:
+      - 'What else happened here, recorded by the game: Bell walked out of The Records
+        Office to The Landing'
+  expect:
+    location: The Landing (realized)

@@ -1,0 +1,7 @@
+{
+  "source": "OpenRouter account usage read immediately before and after the run (the account is shared, so this is an upper bound)",
+  "usage_before_usd": 61.640661993,
+  "usage_after_usd": 61.846990271,
+  "calls_including_warmups": 361,
+  "accounted_usd": 0.206328
+}

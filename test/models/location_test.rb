@@ -50,15 +50,21 @@ class LocationTest < ActiveSupport::TestCase
     assert_includes @location.connected_locations, other_location
   end
 
-  test "should track time since last visit" do
+  test "should track time since last visit, along one game's chain" do
     @location.save!
+    elsewhere = create(:location, story: @story)
+    start = create(:scene, story: @story, location: elsewhere, story_timestamp: @story.start_time)
 
     # No visit yet
-    assert_nil @location.time_since_last_visit
+    assert_nil @location.time_since_last_visit(start)
 
-    @location.update!(last_protagonist_visit: @story.start_time)
+    here = create(:scene, story: @story, location: @location, previous_scene: start,
+                          story_timestamp: @story.start_time + 10.minutes)
+    left = create(:scene, story: @story, location: elsewhere, previous_scene: here,
+                          story_timestamp: @story.start_time + 30.minutes)
 
-    assert_equal 90.minutes, @location.time_since_last_visit(@story.start_time + 90.minutes)
+    assert_equal @story.start_time + 10.minutes, @location.last_visit_in(left)
+    assert_equal 90.minutes, @location.time_since_last_visit(left, @story.start_time + 100.minutes)
   end
 
   # THE WALL-CLOCK DEFECT, and the assertion that closes it. This used to be
@@ -66,24 +72,32 @@ class LocationTest < ActiveSupport::TestCase
   # week and came back was told in fiction that they had been gone a week.
   test "time since last visit is measured in story time, not against the wall clock" do
     @location.save!
-    @location.update!(last_protagonist_visit: @story.start_time)
-    # Somewhere else, so the visit stamp this scene writes is not on @location.
-    create(:scene, story: @story, location: create(:location, story: @story),
-                   story_timestamp: @story.start_time + 20.minutes)
+    here = create(:scene, story: @story, location: @location, story_timestamp: @story.start_time)
+    left = create(:scene, story: @story, location: create(:location, story: @story), previous_scene: here,
+                          story_timestamp: @story.start_time + 20.minutes)
 
     travel 3.weeks do
-      assert_equal 20.minutes, @location.time_since_last_visit,
+      assert_equal 20.minutes, @location.time_since_last_visit(left),
                    "three weeks of somebody's life is not twenty minutes of the story"
     end
   end
 
-  test "time since last visit defaults to the story's own clock" do
+  # `last_protagonist_visit` is the WORLD's; a game reads its own chain.
+  test "another game's visit is not this game's" do
     @location.save!
-    @location.update!(last_protagonist_visit: @story.start_time)
-    create(:scene, story: @story, location: create(:location, story: @story),
-                   story_timestamp: @story.start_time + 4.hours)
+    create(:scene, story: @story, location: @location, story_timestamp: @story.start_time)
+    ours = create(:scene, story: @story, location: create(:location, story: @story),
+                          story_timestamp: @story.start_time + 5.minutes)
 
-    assert_equal 4.hours, @location.time_since_last_visit
+    assert_not_nil @location.reload.last_protagonist_visit
+    assert_nil @location.last_visit_in(ours)
+    assert_nil @location.time_since_last_visit(ours)
+  end
+
+  test "no chain has been nowhere" do
+    @location.save!
+
+    assert_nil @location.last_visit_in(nil)
   end
 
   test "should mark protagonist visit at a story moment" do

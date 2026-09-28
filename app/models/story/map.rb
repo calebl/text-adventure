@@ -47,7 +47,9 @@
 # story. Every stub is one by construction -- walking into a stub is what
 # realizes it. An edge is on the frontier when either end is unvisited, which is
 # the honest reading of "an exit not yet taken" from records that never recorded
-# a crossing.
+# a crossing. World-wide is the right question for a map of the world; it is the
+# wrong one for an arrival, which asks whether THIS game has been here
+# -- its own scene chain, `Location#last_visit_in` -- and never reads this column.
 #
 # THE GEOMETRY IS `Location::Box`'s, AND IS NOT RE-DERIVED. Every position and
 # extent on this page comes off a box; what this class adds is the pixels, which

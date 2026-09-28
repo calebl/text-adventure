@@ -1,0 +1,46 @@
+---
+story: A Clerk With Somewhere To Be
+steps:
+- id: first-up-to-the-landing
+  type: "/move The Landing"
+  browser:
+    token: first-up
+    replies:
+    - purpose: arrival
+      content:
+        description: You come up onto the half-landing for the first time.
+        summary: Wick climbs to the landing.
+      prompt_includes:
+      - The player has never been here.
+  expect:
+    location: The Landing (realized)
+- id: second-up-to-the-landing
+  type: "/move The Landing"
+  player: second
+  browser:
+    token: second-up
+    replies:
+    - purpose: arrival
+      content:
+        description: You come up onto the half-landing for the first time.
+        summary: Wick climbs to the landing.
+      prompt_includes:
+      - The player has never been here.
+      prompt_excludes:
+      - The player has stood here before.
+  expect:
+    location: The Landing (realized)
+- id: second-back-down-to-where-it-began
+  type: "/move The Records Office"
+  player: second
+  browser:
+    token: second-down
+    replies:
+    - purpose: arrival
+      content:
+        description: You come back down into the office.
+        summary: Wick goes back down to the office.
+      prompt_includes:
+      - The player has stood here before. They were last here
+  expect:
+    location: The Records Office (realized)
