@@ -40,6 +40,25 @@
 class Location::PlaceSchema < RubyLLM::Schema
   class_eval(&Location::DetailSchema::PROSE_FIELDS)
 
+  # WHAT SORT OF BUILDING THIS IS -- or ship, or station: a place with rooms in
+  # it, in whatever setting the story has -- which decides what sort of room
+  # each of its rooms is born as (`Location::Kind.deal`). Its rooms get no exits call, so
+  # this is the only question that can put a word on one before its own detail
+  # call. A closed list, `Location::Kind::BUILDINGS`.
+  #
+  # OPTIONAL, AND OUTSIDE `parameters`. Outside, because an answer carrying only
+  # this would otherwise make `parameters` present and the layout a building
+  # somebody was asked about (`Location::Interior`'s header on why nil and
+  # `Location::Parameters.none` are different states). Optional, because
+  # `BaseAgent#missing_schema_keys` fails a call that leaves out a required
+  # top-level key, and a building with no sort is a building whose rooms carry
+  # no word -- nothing worth a failed call.
+  string :place_kind,
+         description: "What sort of place with rooms this is -- a building, a ship, a station -- as the " \
+                      "game will lay out and furnish its rooms: pick the closest. The game decides which rooms " \
+                      "it has and what stands in each; you describe it from outside and at its way in.",
+         enum: Location::Kind::BUILDINGS, required: false
+
   object :parameters,
          description: "What kind of building this is. Every field is optional; leave one out and the " \
                       "game takes the quietest option. Answer for the place you have just described.",

@@ -4,7 +4,8 @@
 module EngineVectors::RequestIdentity
   SOURCES = [ "lib/eval/request_identity.rb", "lib/eval/classifier/version.rb", "lib/eval/prompt/request_version.rb",
               "app/models/playthrough/intent_schema.rb", "app/models/interaction/schema.rb",
-              "app/models/location/detail_schema.rb" ].freeze
+              "app/models/location/detail_schema.rb", "app/models/location/exits_schema.rb",
+              "app/models/location/place_schema.rb", "app/models/location/kind.rb" ].freeze
   NOTES = "Two kinds of case. A `schema` case names a RubyLLM::Schema (`schema`, a class name; `for` and " \
           "`args` when it is built by that class method from those arguments) and its output is " \
           "schema.new.to_json_schema, keys in the order RubyLLM writes them. An `identity` case holds " \

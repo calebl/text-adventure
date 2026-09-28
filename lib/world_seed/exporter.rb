@@ -516,6 +516,11 @@ class WorldSeed::Exporter
       # word and a room nothing ever named exports no key, and both load back as
       # what they were.
       document["population"] = location.population if location.population.present?
+      # AND WHAT SORT OF PLACE IT IS AND HOW CLUTTERED, on `population`'s terms
+      # one line up: omitted when nobody picked a word, so both load back as
+      # what they were.
+      document["kind"] = location.kind if location.kind.present?
+      document["density"] = location.density if location.density.present?
       # WHAT THE PLACE DOES TO SOMEBODY STANDING IN IT. Omitted rather than
       # written null when there is none, which is the rule every key above it
       # follows -- and here it is also what the loader reads back as "this room

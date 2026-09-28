@@ -221,8 +221,10 @@ class EngineSweep::Walk
     unless room.stub?
       raise EngineSweep::InvalidScript, "#{step.label}: realizes must name a stub, got #{name.inspect}"
     end
+    connections = LocationConnection.where(location: story.locations).includes(:location, :connected_location)
     { room: room, characters: story.characters.pluck(:id), items: Item.in_story(story).templates.pluck(:id),
-      locations: story.locations.pluck(:id), connections: LocationConnection.where(location: story.locations).pluck(:id) }
+      locations: story.locations.pluck(:id), connections: connections.map(&:id),
+      doors: connections.to_h { |row| [ row.id, [ row.location.name, row.connected_location.name ].sort ] } }
   end
 
   def record_realization!(before)
@@ -259,7 +261,19 @@ class EngineSweep::Walk
                               .includes(:location, :connected_location)
                               .map { |row| [ row.location.name, row.connected_location.name ].sort }.uniq
     @loaded["locations"] = Array(@loaded["locations"]) + born
-    @loaded["connections"] = Array(@loaded["connections"]) + doors.map { |pair| { "between" => pair } }
+    @loaded["connections"] = Array(@loaded["connections"]).reject { |row| moved_in(story, before).include?(Array(row["between"]).sort) } +
+                             doors.map { |pair| { "between" => pair } }
+  end
+
+  # AND THE DOORS A BUILDING'S REALIZATION MOVED. Laying a building out moves
+  # every doorway onto it onto a room of it (`Location::Generator#open_the_way_in!`),
+  # so the door to the building itself is gone and the door to its entry room is
+  # born. Only a door onto the ONE declared room may go this way; any other door
+  # that vanished is still the walk closing it.
+  def moved_in(story, before)
+    room = before.fetch(:room).name
+    gone = before.fetch(:connections) - LocationConnection.where(location: story.locations).pluck(:id)
+    before.fetch(:doors).values_at(*gone).select { |pair| pair.include?(room) }.uniq
   end
 
   # Mechanics moves without asking for arrival prose. Read the generator's

@@ -36,14 +36,14 @@ class Location::ExitsSchemaTest < ActiveSupport::TestCase
     exit_properties.each_value { |property| assert property["description"].present? }
   end
 
-  # FIVE FIELDS, AND THE FIFTH IS A FACT ABOUT THE FAR END. `population` is the
-  # word the narrator picks for how populated that place is -- the captain's
-  # ruling of 2026-09-07 -- and it is asked here because the count has to be
-  # known before that room's OWN detail prompt is built. See
-  # `Location::Population`.
+  # AND THE LAST THREE ARE FACTS ABOUT THE FAR END. `population` is the word the
+  # narrator picks for how populated that place is, and `kind` and `density` what
+  # sort of place it is and how cluttered -- all asked here because they have to
+  # be known before that room's OWN detail prompt is built. See
+  # `Location::Population` and `Location::Kind`.
   test "an exit carries what a stub location and its connection both need" do
-    assert_equal %w[name teaser distance travel_method inside population], exit_properties.keys
-    assert_equal %w[name teaser distance travel_method population],
+    assert_equal %w[name teaser distance travel_method inside population kind density], exit_properties.keys
+    assert_equal %w[name teaser distance travel_method population kind density],
                  schema_properties(SCHEMA)["exits"]["items"]["required"].map(&:to_s)
   end
 
@@ -68,6 +68,13 @@ class Location::ExitsSchemaTest < ActiveSupport::TestCase
   test "how populated a place is, is one of the engine's own words" do
     assert_equal Location::Population::LABELS, exit_properties["population"]["enum"]
     assert_includes schema_properties(SCHEMA)["exits"]["items"]["required"].map(&:to_s), "population"
+  end
+
+  # AND WHAT SORT OF PLACE IT IS, AND HOW CLUTTERED, ARE CLOSED LISTS TOO: a word
+  # the engine keys on, never a list of furniture or a count.
+  test "what sort of place it is and how cluttered are the engine's own words" do
+    assert_equal Location::Kind::KINDS, exit_properties["kind"]["enum"]
+    assert_equal Location::Kind::DENSITIES, exit_properties["density"]["enum"]
   end
 
   # It follows from the other two, so asking for it was a decision bought that

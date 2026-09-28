@@ -327,6 +327,18 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_equal "a crowd", locations.last["population"]
   end
 
+  test "exports what sort of place a room is and how cluttered, and round-trips both" do
+    @stub.update!(kind: "shore", density: "sparse")
+
+    document = WorldSeed::Exporter.new(@story).document
+    assert_not document["locations"].first.key?("kind"), "a room nobody picked for should not claim a word"
+    assert_not document["locations"].first.key?("density")
+    assert_equal [ "shore", "sparse" ], document["locations"].last.values_at("kind", "density")
+
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load!
+    assert_equal [ "shore", "sparse" ], reloaded.locations.find_by(name: @stub.name).then { |room| [ room.kind, room.density ] }
+  end
+
   test "a room the narrator called empty round-trips as empty rather than as unpicked" do
     @opening.update!(population: nil)
     @stub.update!(population: "nobody")

@@ -341,6 +341,7 @@ class WorldSeed::Loader
                   .merge("name" => written, "danger" => attributes["danger"].presence || Location::SAFE,
                          "generation_checkpoint" => nil,
                          "population" => attributes["population"].presence,
+                         "kind" => attributes["kind"].presence, "density" => attributes["density"].presence,
                          "hazard" => attributes["hazard"].presence, "hazard_die" => attributes["hazard_die"],
                          "surface" => attributes["surface"].presence)
                   .merge(Location::Box::COLUMNS.to_h { |column| [ column, attributes[column] ] })
@@ -987,6 +988,7 @@ class WorldSeed::Loader
     validate_physical_parameters!
     validate_dangers!
     validate_populations!
+    validate_kinds!
     validate_hazards!
     validate_boxes!
     validate_positions!
@@ -1338,6 +1340,22 @@ class WorldSeed::Loader
       raise InvalidWorld, "#{where}: location #{attributes.fetch("name").inspect} has " \
                           "`population: #{population.inspect}`; " \
                           "there is: #{Location::Population::LABELS.join(", ")}"
+    end
+  end
+
+  # A SORT OF PLACE OR A DENSITY THE ENGINE HAS NO WORD FOR. `Location::Kind`'s
+  # lists are closed, so a word outside them is a typo and is named here with
+  # the file and the room, `#validate_populations!`'s rule and its reason; a
+  # blank key means the file does not say, and passes.
+  def validate_kinds!
+    location_documents.each do |attributes|
+      { "kind" => Location::Kind::KINDS, "density" => Location::Kind::DENSITIES }.each do |key, words|
+        word = attributes[key]
+        next if word.blank? || words.include?(word)
+
+        raise InvalidWorld, "#{where}: location #{attributes.fetch("name").inspect} has " \
+                            "`#{key}: #{word.inspect}`; there is: #{words.join(", ")}"
+      end
     end
   end
 
