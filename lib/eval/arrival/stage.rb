@@ -53,7 +53,7 @@ class Eval::Arrival::Stage
     # A return is THIS GAME having stood here, so the earlier visit is on the
     # chain the arrival walks back along.
     if kase["state"] == "returning"
-      earlier = Scene.create!(story: story, location: room, story_timestamp: story.start_time,
+      earlier = Scene.create!(id: -920003, story: story, location: room, story_timestamp: story.start_time,
         description: "You stand beside the desk.", summary: "Iri visits the counting house.")
     end
     previous = Scene.create!(story: story, location: origin, story_timestamp: story.start_time + 2.hours, previous_scene: earlier,
