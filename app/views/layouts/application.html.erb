@@ -48,11 +48,12 @@
         flex: 1; background: #0e1013; color: #cfd3d8; border: 1px solid #333b44;
         padding: .5rem .6rem; font: inherit;
       }
-      button {
+      /* `form.submit` renders an input, `button_to` a button; one house style. */
+      button, input[type=submit] {
         background: #262b31; color: #cfd3d8; border: 1px solid #3a424b;
         padding: .5rem .9rem; font: inherit; cursor: pointer;
       }
-      button:hover { background: #333b44; }
+      button:hover, input[type=submit]:hover { background: #333b44; }
       .cursor::after { content: "\2588"; animation: blink 1s steps(2) infinite; }
       @keyframes blink { 50% { opacity: 0; } }
       .empty { color: #6b737b; }

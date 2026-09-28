@@ -233,6 +233,33 @@ class Playthrough::Session
     end
   end
 
+  # WHAT THE LAST TURN LEFT THE PLAYER TOLD, rebuilt from its submission row so
+  # a reload says what the broadcast said: the refusal, the crisis notice, the
+  # setup or failure copy. Only the newest finished submission speaks, and only
+  # while nothing is queued behind it -- a later line is its own answer. The
+  # engine's own words for a turn it could not play are not stored, so a failed
+  # row reads as the app's failure copy. Reads only.
+  def last_ending
+    latest = playthrough.commands.order(:id).last
+    return Ending.plain if latest.nil? || latest.status.in?(%w[pending running])
+
+    case latest.status
+    when "failed"
+      case latest.error_kind
+      when "crisis" then Ending.new(error: nil, safety_notice: true, refusal: nil)
+      when "error" then Ending.new(error: Playthrough::TurnFailureNotice::MESSAGE, safety_notice: false, refusal: nil)
+      else Ending.plain
+      end
+    else
+      outcome = latest.outcome
+      Ending.new(
+        error: (Playthrough::SetupNotice.for(outcome.rendering_error) if outcome.is_a?(Scene)),
+        safety_notice: outcome.is_a?(Scene) && outcome.safety_notice.present?,
+        refusal: (outcome if outcome.is_a?(Playthrough::Refusal))
+      )
+    end
+  end
+
   # WHAT THE SIDE PANELS SHOW NOW, and which verbs are open from here: a fresh
   # read of the records every call, so a front end asks again after a turn.
   # Reads only; see `Playthrough::Glance`.

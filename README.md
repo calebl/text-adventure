@@ -125,7 +125,8 @@ bin/dev                # then open http://localhost:3000
 formation if something else already has 3000.
 
 Why two: **a turn is a `NarrationJob`, not a request.** The browser posts the
-command, gets its own text echoed back immediately, and reads the prose as Turbo
+command, gets an acknowledgement back immediately (a fresh submission token;
+`play.js` echoes the typed line itself), and reads the prose as Turbo
 Streams broadcast over Action Cable while the job writes it — which is what makes
 a turn survive the tab closing, and what stops a twenty-second model call from
 holding a Puma thread. So a web process alone accepts a command and then nothing
@@ -640,7 +641,7 @@ cascade for the failure policy and the kept set.
 
 ```mermaid
 flowchart TD
-    IN["Player types a command<br/>TurnsController enqueues NarrationJob and answers at once<br/>with the command echoed back and an empty #stream"]
+    IN["Player types a command<br/>TurnsController enqueues NarrationJob and answers at once<br/>with a fresh request token and no page; the job broadcasts the rest"]
     SSE["NarrationJob hands the whole turn to<br/>Playthrough::Turn#play, with a block to broadcast into<br/>batched ~20 characters at a time over Action Cable"]
     IN --> SSE
 

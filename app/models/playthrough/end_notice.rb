@@ -64,7 +64,9 @@ class Playthrough::EndNotice
   # game has at most one ending.
   def concluded? = playthrough.endings.exists?
 
-  def died? = !concluded?
+  # Whether the records say the protagonist died -- not merely "not concluded".
+  # An `:unrecorded` game is neither; it still RENDERS the death copy, as above.
+  def died? = reason == :died
 
   # WHICH RECORD ACTUALLY ANSWERED, for `Story::Doctor` and for a test that
   # wants to say *and it was derived, not defaulted*. `:unrecorded` is the third

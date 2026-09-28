@@ -24,6 +24,7 @@ class PlaythroughsController < ApplicationController
   # link and the end of a turn all produce the same page.
   def show
     @playthrough = Playthrough.find(params[:id])
+    @ending = Playthrough::Session.new(@playthrough).last_ending
     bind_session_to(@playthrough)
   end
 

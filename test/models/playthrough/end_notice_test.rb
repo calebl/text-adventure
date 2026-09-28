@@ -59,6 +59,16 @@ class Playthrough::EndNoticeTest < ActiveSupport::TestCase
     assert_equal :unrecorded, Playthrough::EndNotice.for(castless).reason
   end
 
+  # `#died?` used to be `!concluded?`, so it said "died" of a game nobody died in.
+  test "an unrecorded game neither concluded nor died" do
+    @game.end!
+
+    notice = Playthrough::EndNotice.for(@game)
+
+    assert_not_predicate notice, :concluded?
+    assert_not_predicate notice, :died?
+  end
+
   test "an ended game with neither record is unrecorded" do
     @game.end!
 

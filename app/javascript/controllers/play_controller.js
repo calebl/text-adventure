@@ -12,7 +12,7 @@ import { Controller } from "@hotwired/stimulus"
 // comment there. Three of the four things below were found in a browser rather
 // than in the suite, and each one is a comment because losing it is silent.
 export default class extends Controller {
-  static targets = [ "command", "receipt", "recovery" ]
+  static targets = [ "command", "receipt", "recovery", "rejected" ]
 
   // ARMED FROM BOTH ENDS, and it has to be both -- measured, not assumed:
   //
@@ -81,7 +81,11 @@ export default class extends Controller {
   // A hidden field is a battle button's fixed line: it is echoed and never
   // cleared, because clearing it would disarm the button.
   acknowledgeSubmission(event) {
-    if (!event.detail?.success) return
+    if (!event.detail?.success) {
+      this.reject(event.detail?.fetchResponse?.statusCode)
+      return
+    }
+    if (this.hasRejectedTarget) this.rejectedTarget.hidden = true
 
     const form = event.target
     const line = event.detail.formSubmission?.body?.get?.("command")
@@ -95,6 +99,19 @@ export default class extends Controller {
 
     this.receiptTarget.textContent = `> ${line}`
     this.receiptTarget.hidden = false
+  }
+
+  // A REFUSED SUBMISSION SAYS SO. Only the two statuses the turns controller
+  // answers on purpose have copy; anything else is Turbo's to report.
+  reject(status) {
+    if (!this.hasRejectedTarget) return
+
+    const copy = { 409: "conflict", 402: "limit" }[status]
+    if (!copy) return
+
+    this.rejectedTarget.textContent = this.rejectedTarget.dataset[copy]
+    this.rejectedTarget.hidden = false
+    this.follow()
   }
 
   // Follow the narration down, but only while the player is already reading the

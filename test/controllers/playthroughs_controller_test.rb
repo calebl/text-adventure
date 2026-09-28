@@ -1014,4 +1014,70 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     create(:playthrough, story: story, character: hero, current_location: room,
                          current_scene: create(:scene, story: story, location: room))
   end
+
+  # WHAT THE LAST TURN SAID SURVIVES A RELOAD. The broadcast that carried a
+  # refusal, a crisis notice or a failure used to be the only place it was ever
+  # drawn, so reloading the page dropped it and left the player reading a turn
+  # that did not match the one they took.
+  test "a reload still shows the refusal the last line got" do
+    game = create(:playthrough, :started)
+    create(:playthrough_command, playthrough: game, command: "take the moon", status: "completed",
+                                 refusal: { kind: "unresolved", typed: "take the moon", fact: "There is no moon here." })
+
+    get playthrough_path(game)
+
+    assert_select "#turn_log p.command", text: "> take the moon"
+    assert_select "#turn_log .notice p", text: /\AThere is no moon here\./
+  end
+
+  test "a reload still shows the crisis notice and the failure copy" do
+    game = create(:playthrough, :started)
+    create(:playthrough_command, playthrough: game, status: "failed", error_kind: "crisis")
+    get playthrough_path(game)
+    assert_select "#turn_log .notice strong", text: Playthrough::SafetyNotice::HEADING
+
+    create(:playthrough_command, playthrough: game, status: "failed", error_kind: "error")
+    get playthrough_path(game)
+    assert_select "#turn_log p.alert", text: Playthrough::TurnFailureNotice::MESSAGE
+    assert_select "#turn_log .notice strong", count: 0
+  end
+
+  test "a line the next turn answered leaves nothing standing on reload" do
+    game = create(:playthrough, :started)
+    create(:playthrough_command, playthrough: game, status: "failed", error_kind: "error")
+    create(:playthrough_command, playthrough: game, status: "completed", result_scene: game.current_scene)
+
+    get playthrough_path(game)
+
+    assert_select "#turn_log p.alert", count: 0
+  end
+
+  # The page anchors at `#bottom`, so the failure line belongs at the foot of
+  # the log with the other notices -- above it, a long log hid it off screen.
+  test "the failure line stands under the log, not above it" do
+    game = create(:playthrough, :started)
+    create(:playthrough_command, playthrough: game, status: "failed", error_kind: "error")
+
+    get playthrough_path(game)
+
+    html = css_select("#turn_log").first.to_html
+    assert_operator html.index('class="log'), :<, html.index('class="alert"')
+  end
+
+  # A 409 or 402 from the turns controller used to change nothing on the page.
+  test "show carries the copy a refused submission is answered with" do
+    game = create(:playthrough, :started)
+
+    get playthrough_path(game)
+
+    assert_select "p.alert[data-play-target=rejected][hidden][data-conflict][data-limit]"
+  end
+
+  # Go, Play and Start-new are `form.submit` inputs; `button_to` renders a
+  # button. The house rule has to name both, or the inputs render unstyled.
+  test "the house button style covers submit inputs too" do
+    get root_path
+
+    assert_match(/button, input\[type=submit\] \{/, response.body)
+  end
 end
