@@ -163,11 +163,20 @@ class Eval::Realization::Corpus
   # `expects` IS A HASH FROM A PICK'S NAME TO THE LABELS HE ALLOWS, and
   # `expects_danger_at_least` is the one ordinal floor. Both are *don't care*
   # when absent, on `expects_inside`'s rule.
+  #
+  # `kind` AND `density` ARE THE WORDS THE CALL NEXT DOOR WOULD HAVE PICKED
+  # (`Location::Kind`), and unlike `inside` and `population` a case that FINDS
+  # its room may carry them too. Every world file the bench stages is older
+  # than the words, so no room it finds has them on its own row, and a bench
+  # whose rooms never carry a kind is blind to everything built on one -- the
+  # kit a room is furnished from and the block that states it. So the case says
+  # what the room is, the stage writes it onto the stub, and the world files
+  # the sweep walks are left as they are.
   Case = Data.define(:id, :story, :room, :teaser, :reached_from, :also_reaches, :absent, :unwritten,
-                     :danger, :inside, :population, :expects_new_ground, :expects_inside,
+                     :danger, :inside, :population, :kind, :density, :expects_new_ground, :expects_inside,
                      :expects_danger_at_least, :expects, :shape, :why, :staging) do
     def initialize(teaser: nil, reached_from: nil, also_reaches: [], absent: [], unwritten: [],
-                   danger: nil, inside: nil, population: nil, expects_new_ground: nil,
+                   danger: nil, inside: nil, population: nil, kind: nil, density: nil, expects_new_ground: nil,
                    expects_inside: nil, expects_danger_at_least: nil, expects: {}, shape: nil,
                    why: nil, staging: {}, **rest)
       super
@@ -241,7 +250,7 @@ class Eval::Realization::Corpus
              reached_from: row["reached_from"], also_reaches: Array(row["also_reaches"]),
              absent: Array(row["absent"]),
              unwritten: Array(row["unwritten"]), danger: row["danger"], inside: row["inside"],
-             population: row["population"],
+             population: row["population"], kind: row["kind"], density: row["density"],
              expects_new_ground: row["expects_new_ground"], expects_inside: row["expects_inside"],
              expects_danger_at_least: row[DANGER_FLOOR_KEY], expects: expects(row),
              shape: row["shape"], why: row["why"], staging: row.fetch("staging", {}))
@@ -398,6 +407,12 @@ class Eval::Realization::Corpus
     if kase.population.present? && !Location::Population::LABELS.include?(kase.population)
       found << "#{kase.id}: population #{kase.population.inspect} is not one of " \
                "#{Location::Population::LABELS.join(", ")}"
+    end
+    if kase.kind.present? && !Location::Kind::KINDS.include?(kase.kind)
+      found << "#{kase.id}: kind #{kase.kind.inspect} is not one of Location::Kind::KINDS"
+    end
+    if kase.density.present? && !Location::Kind::DENSITIES.include?(kase.density)
+      found << "#{kase.id}: density #{kase.density.inspect} is not one of #{Location::Kind::DENSITIES.join(", ")}"
     end
 
     found

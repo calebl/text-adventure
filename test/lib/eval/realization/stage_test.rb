@@ -21,6 +21,13 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
     end
   end
 
+  # WHAT SORT OF PLACE THE CASE SAYS IT IS, written on the stub.
+  test "a case's kind and density are the stub's" do
+    stage(kase(room: "The Long Hallway", reached_from: "Ward Office 12", kind: "corridor", density: "lived-in")) do |standing|
+      assert_equal [ "corridor", "lived-in" ], [ standing.location.kind, standing.location.density ]
+    end
+  end
+
   # THE SURGERY, ONE KEY AT A TIME.
   test "every edge but the way in is removed when no other neighbour is declared" do
     # The closet is realized in the seed and reached from the office; wound back,
@@ -336,10 +343,10 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
   private
 
   def kase(room:, reached_from: nil, story: "The Unrecorded Hour", also_reaches: [], absent: [],
-           unwritten: [], danger: nil)
+           unwritten: [], danger: nil, kind: nil, density: nil)
     Eval::Realization::Corpus::Case.new(
       id: "a-case", story: story, room: room, reached_from: reached_from, also_reaches: also_reaches,
-      absent: absent, unwritten: unwritten, danger: danger, expects_new_ground: true,
+      absent: absent, unwritten: unwritten, danger: danger, kind: kind, density: density, expects_new_ground: true,
       shape: "corridor", why: "a test"
     )
   end

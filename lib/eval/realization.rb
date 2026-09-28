@@ -240,7 +240,8 @@ module Eval::Realization
           kase.expects_danger_at_least.inspect, kase.expectation_line,
           kase.also_reaches.join("|"),
           kase.absent.join("|"), kase.unwritten.join("|") ].join(" ") +
-          (kase.staging.empty? ? "" : " #{JSON.generate(kase.staging)}")
+          (kase.staging.empty? ? "" : " #{JSON.generate(kase.staging)}") +
+          (kase.kind.blank? && kase.density.blank? ? "" : " kind=#{kase.kind} density=#{kase.density}")
       }.join("\n")
     ).first(16)
   end

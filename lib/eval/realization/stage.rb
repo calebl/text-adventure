@@ -444,7 +444,8 @@ class Eval::Realization::Stage
 
     drop_edges_except!(room, [ keep, *reached ].compact) unless interior_room?(room)
     room.items.destroy_all
-    room.update!(description: nil, lore: nil, detail_level: :stub, danger: kase.danger.presence || room.danger)
+    room.update!(description: nil, lore: nil, detail_level: :stub, danger: kase.danger.presence || room.danger,
+                 kind: kase.kind.presence || room.kind, density: kase.density.presence || room.density)
     room.reload
   end
 
@@ -462,7 +463,8 @@ class Eval::Realization::Stage
   def stand_up!(story)
     stub = Location::Generator.create_stub!(story, name: kase.room, teaser: kase.teaser,
                                             inside: kase.inside.presence,
-                                            population: kase.population.presence)
+                                            population: kase.population.presence,
+                                            kind: kase.kind.presence, density: kase.density.presence)
     stub.update!(danger: kase.danger) if kase.danger.present?
     open_the_way_in!(story, stub)
     stub.reload

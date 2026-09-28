@@ -45,6 +45,16 @@
 #                       alike; the cases below were re-spelled and not
 #                       re-labelled.
 #
+# AND WHAT SORT OF PLACE EACH ROOM IS, for every case that finds its room as
+# well as one that carries it:
+#
+#   kind                the words the exits call next door would have picked
+#   density             for this room (`Location::Kind`), written onto the stub
+#                       as it is staged. Every world file here is older than the
+#                       words, so without them no staged room is furnished from
+#                       a kit and the bench cannot see anything built on one.
+#                       The world files stay as they are: the sweep walks them.
+#
 # AND THE KEYS A CASE PROMOTED OUT OF THE REALIZATION LAB CARRIES. A kind the
 # captain typed and scored (`Lab::Realization`) is in no world file, so it has no
 # room to be found -- such a case CARRIES its stub instead, and
@@ -118,6 +128,8 @@ cases:
 - id: hour-long-hallway
   story: The Unrecorded Hour
   room: The Long Hallway
+  kind: corridor
+  density: lived-in
   reached_from: Ward Office 12
   expects_new_ground: true
   shape: written-neighbour
@@ -135,6 +147,8 @@ cases:
 - id: hour-long-hallway-early
   story: The Unrecorded Hour
   room: The Long Hallway
+  kind: corridor
+  density: lived-in
   reached_from: Ward Office 12
   unwritten:
   - The Supply Closet
@@ -149,6 +163,8 @@ cases:
 - id: hour-supply-closet
   story: The Unrecorded Hour
   room: The Supply Closet
+  kind: storeroom
+  density: cluttered
   reached_from: Ward Office 12
   unwritten:
   - The Long Hallway
@@ -166,6 +182,8 @@ cases:
 - id: assizes-vestry-hulk
   story: The Salt Assizes
   room: The Vestry Hulk
+  kind: office
+  density: cluttered
   reached_from: The Causeway Court
   expects_new_ground: true
   shape: written-neighbour
@@ -179,6 +197,8 @@ cases:
 - id: assizes-vestry-hulk-early
   story: The Salt Assizes
   room: The Vestry Hulk
+  kind: office
+  density: cluttered
   reached_from: The Causeway Court
   unwritten:
   - The Tide Post
@@ -191,6 +211,8 @@ cases:
 - id: assizes-tide-post
   story: The Salt Assizes
   room: The Tide Post
+  kind: shore
+  density: sparse
   reached_from: The Causeway Court
   unwritten:
   - The Vestry Hulk
@@ -213,6 +235,8 @@ cases:
 - id: lunar-mournwell-lane
   story: The Lunar Cartographer
   room: Mournwell Lane
+  kind: street
+  density: lived-in
   reached_from: Grenn's Boarding House, Room 3
   also_reaches:
   - Sovereign's Circle
@@ -231,6 +255,8 @@ cases:
 - id: lunar-larkspur-rooftops
   story: The Lunar Cartographer
   room: Larkspur Quarter rooftops
+  kind: rooftop
+  density: sparse
   reached_from: Grenn's Boarding House, Room 3
   also_reaches:
   - The Celestial Spire
@@ -247,6 +273,8 @@ cases:
 - id: lunar-boarding-house-hallway
   story: The Lunar Cartographer
   room: Grenn's Boarding House hallway
+  kind: corridor
+  density: lived-in
   reached_from: Grenn's Boarding House, Room 3
   also_reaches:
   - The Bell of Saint Aravel
@@ -268,6 +296,8 @@ cases:
 - id: lunar-celestial-spire
   story: The Lunar Cartographer
   room: The Celestial Spire
+  kind: square
+  density: sparse
   reached_from: Larkspur Quarter rooftops
   expects_new_ground: true
   shape: landmark
@@ -279,6 +309,8 @@ cases:
 - id: lunar-bell-of-saint-aravel
   story: The Lunar Cartographer
   room: The Bell of Saint Aravel
+  kind: shrine
+  density: sparse
   reached_from: Grenn's Boarding House hallway
   expects_new_ground: false
   shape: dangerous
@@ -293,6 +325,8 @@ cases:
 - id: lunar-sovereigns-circle
   story: The Lunar Cartographer
   room: Sovereign's Circle
+  kind: square
+  density: sparse
   reached_from: Mournwell Lane
   danger: dangerous
   expects_new_ground: true
@@ -309,6 +343,8 @@ cases:
 - id: iron-gate-blackfang-deep
   story: The Iron Gate Descends
   room: Blackfang Tunnel
+  kind: cave
+  density: sparse
   reached_from: obsidian maw
   absent:
   - surface
@@ -330,6 +366,8 @@ cases:
 - id: iron-gate-obsidian-maw
   story: The Iron Gate Descends
   room: obsidian maw
+  kind: cave
+  density: sparse
   reached_from: Iron Gate Chamber
   absent:
   - Blackfang Tunnel
@@ -350,6 +388,8 @@ cases:
 - id: iron-gate-tunnel-upward
   story: The Iron Gate Descends
   room: tunnel upward
+  kind: cave
+  density: sparse
   reached_from: Iron Gate Chamber
   absent:
   - surface
@@ -370,6 +410,8 @@ cases:
 - id: iron-gate-surface
   story: The Iron Gate Descends
   room: surface
+  kind: mountainside
+  density: sparse
   reached_from: tunnel upward
   absent:
   - Spire’s Rest
@@ -387,6 +429,8 @@ cases:
 - id: iron-gate-hollows-end
   story: The Iron Gate Descends
   room: Hollow’s End
+  kind: street
+  density: lived-in
   reached_from: surface
   expects_new_ground: true
   expects_inside: at least one  # a walled town, so what leads out of it is what is inside it
@@ -400,6 +444,8 @@ cases:
 - id: iron-gate-spires-rest
   story: The Iron Gate Descends
   room: Spire’s Rest
+  kind: street
+  density: lived-in
   reached_from: surface
   expects_new_ground: true
   expects_inside: at least one  # the capital, and the seat of a council that meets somewhere
@@ -468,6 +514,8 @@ cases:
 - id: quay-entry-room
   story: The Quay House
   room: The Custom House room 1
+  kind: office
+  density: cluttered
   reached_from: The Quay
   expects_new_ground: false
   shape: interior-room
@@ -482,6 +530,8 @@ cases:
 - id: quay-dangerous-back-room
   story: The Quay House
   room: The Custom House room 3
+  kind: storeroom
+  density: lived-in
   reached_from: The Custom House room 2
   expects_new_ground: false
   shape: interior-room
@@ -496,6 +546,8 @@ cases:
 - id: quay-upper-floor-room
   story: The Quay House
   room: The Custom House room 6
+  kind: office
+  density: lived-in
   reached_from: The Custom House room 5
   expects_new_ground: false
   shape: interior-room
@@ -513,6 +565,8 @@ cases:
 - id: branch-quest-reach-location
   story: The Quay House
   room: The Custom House room 1
+  kind: office
+  density: cluttered
   reached_from: The Quay
   expects_new_ground: false
   shape: interior-room
@@ -529,6 +583,8 @@ cases:
 - id: branch-quest-speak-to
   story: The Quay House
   room: The Custom House room 1
+  kind: office
+  density: cluttered
   reached_from: The Quay
   expects_new_ground: false
   shape: interior-room
@@ -545,6 +601,8 @@ cases:
 - id: branch-quest-hold-item
   story: The Quay House
   room: The Custom House room 1
+  kind: office
+  density: cluttered
   reached_from: The Quay
   expects_new_ground: false
   shape: interior-room
@@ -561,6 +619,8 @@ cases:
 - id: branch-named-siblings
   story: The Quay House
   room: The Custom House room 1
+  kind: office
+  density: cluttered
   reached_from: The Quay
   expects_new_ground: false
   shape: interior-room
@@ -577,6 +637,8 @@ cases:
 - id: branch-saturated-items
   story: The Quay House
   room: The Custom House room 1
+  kind: office
+  density: cluttered
   reached_from: The Quay
   expects_new_ground: false
   shape: interior-room
@@ -590,6 +652,8 @@ cases:
 - id: branch-geometry-stairs
   story: The Quay House
   room: The Custom House room 1
+  kind: office
+  density: cluttered
   reached_from: The Quay
   expects_new_ground: false
   shape: interior-room
@@ -603,6 +667,8 @@ cases:
 - id: branch-restored-conversation
   story: The Quay House
   room: The Quay
+  kind: shore
+  density: lived-in
   expects_new_ground: true
   shape: restored-conversation
   staging:
