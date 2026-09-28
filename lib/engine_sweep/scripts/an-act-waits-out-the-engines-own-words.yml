@@ -1,0 +1,71 @@
+---
+story: A Clerk With Somewhere To Be
+steps:
+- id: talk-to-the-clerk
+  type: "/talk Bell"
+  browser:
+    token: talk
+    replies:
+    - purpose: character
+      content:
+        pre_thought: I will hear Wick out.
+        pre_feeling: hurried
+        action: Bell answers Wick over her shoulder.
+        post_thought: I am late.
+        post_feeling: restless
+        inner_resolution: I will get up to the landing.
+        engine_action: none
+    - purpose: interaction-narration
+      content: Bell answers you over her shoulder, keys turning in her hand.
+  expect:
+    changed: true
+    volitions: 1
+- id: the-engine-answers-in-its-own-words
+  type: "/talk Bell"
+  browser:
+    token: unanswered
+    replies:
+    - purpose: character
+      content:
+        pre_thought: Wick is still here.
+        pre_feeling: hurried
+        action: Bell nods at Wick.
+        post_thought: I am late.
+        post_feeling: restless
+        inner_resolution: I will get up to the landing.
+        engine_action: none
+    - purpose: interaction-narration
+      unavailable: true
+  expect:
+    changed: true
+- id: follow-her-up
+  type: "/move The Landing"
+  browser:
+    token: follow
+    replies:
+    - purpose: arrival
+      content:
+        description: You come up onto the half-landing.
+        summary: Wick climbs to the landing.
+  expect:
+    location: The Landing (realized)
+    present:
+    - Bell
+- id: the-act-is-told-here
+  type: "/talk Bell"
+  browser:
+    token: landing
+    replies:
+    - purpose: character
+      content:
+        pre_thought: Wick has followed me up.
+        pre_feeling: hurried
+        action: Bell keeps her eyes on the survey.
+        post_thought: I am still late.
+        post_feeling: restless
+        inner_resolution: I will finish the survey.
+        engine_action: none
+    - purpose: interaction-narration
+      content: Bell is bent over the survey, the receipt at her elbow.
+      prompt_includes:
+      - 'What else happened here, recorded by the game: Bell picked up quarter receipt'
