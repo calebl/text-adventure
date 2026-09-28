@@ -10,50 +10,30 @@ class Eval::Prompt::EndingVersionTest < ActiveSupport::TestCase
     @game = create(:playthrough, story: story, character: character, current_location: room, current_scene: @scene)
     quest = create(:quest, story: story)
     @outcome = create(:quest_outcome, :default, quest: quest)
-    @conclusion = Struct.new(:scene, :outcome).new(@scene, @outcome)
   end
 
-  test "prelude description and summary vary without changing the scaffold or outgoing request" do
+  test "prelude description and summary vary without changing the scaffold" do
     before = capture
     @prelude.update!(description: "A different paragraph. " * 100, summary: "Another generated summary. " * 100)
-    @scene.reload
-    @game.reload
     after = capture
 
-    refute_equal before[:prompt], after[:prompt]
     refute_equal before[:prelude], after[:prelude]
     assert_equal before[:scaffold], after[:scaffold]
     assert_equal @prelude.description, after.dig(:prelude, :description)
     assert_equal @prelude.summary, after.dig(:prelude, :summary)
     assert_not after[:prelude_stable]
-    assert_nil Thread.current[Eval::Prompt::EndingVersion::KEY]
-    assert_nil Thread.current[Eval::Prompt::EndingVersion::FIELDS_KEY]
+    assert_equal "sent", after[:prompt], "the live prompt is kept as the engine sent it"
   end
 
   test "record context and production framing remain in the scaffold" do
     before = capture
-    @outcome.summary = "The recorded outcome has changed."
+    @outcome.update!(summary: "The recorded outcome has changed.")
     after = capture
     refute_equal before[:scaffold], after[:scaffold]
     assert_includes after.dig(:scaffold, :user), @outcome.summary
     assert_includes after.dig(:scaffold, :user), "Write the ending."
+    assert_includes after.dig(:scaffold, :user), Eval::Prompt::EndingVersion::DESCRIPTION
     assert_equal Scene::Ending::INSTRUCTIONS, after.dig(:scaffold, :system)
-  end
-
-  test "the scaffold reads the actual agent system and schema" do
-    renderer = Scene::Ending.new(@game)
-    before = capture(renderer)
-    renderer.send(:agent).with_instructions("Changed system instructions.").with_schema(Scene::Schema)
-    after = capture(renderer)
-    refute_equal before[:scaffold], after[:scaffold]
-    assert_equal "Changed system instructions.", after.dig(:scaffold, :system)
-    assert_equal Scene::Schema.new.to_json_schema, after.dig(:scaffold, :schema)
-  end
-
-  test "capture unwinds when request assembly exits early" do
-    assert_raises(RuntimeError) { Eval::Prompt::EndingVersion.capture { raise "stop" } }
-    assert_nil Thread.current[Eval::Prompt::EndingVersion::KEY]
-    assert_nil Thread.current[Eval::Prompt::EndingVersion::FIELDS_KEY]
   end
 
   test "every live ending branch matches offline scaffold identity with varying prelude prose" do
@@ -87,11 +67,5 @@ class Eval::Prompt::EndingVersionTest < ActiveSupport::TestCase
 
   private
 
-  def capture(renderer = Scene::Ending.new(@game))
-    normal = renderer.send(:prompt_for, @conclusion)
-    sent, recorded = Eval::Prompt::EndingVersion.capture { renderer.send(:prompt_for, @conclusion) }
-    assert_equal normal, sent
-    assert_equal sent, recorded[:prompt]
-    recorded
-  end
+  def capture = Eval::Prompt::EndingVersion.scaffold(@game, outcome: @outcome, prelude: @prelude, prompt: "sent")
 end

@@ -135,13 +135,14 @@ module Eval::Prompt
   # THE ONE ACT THIS BENCH CANNOT MEASURE, stated with its reason because it is
   # a hole in the coverage and not an oversight.
   #
-  # A `talk` turn's prose is `InteractionAgent`'s second pass, and that pass
-  # sends NO instructions: its prose rules live inside the per-turn user prompt
-  # with the character's name and pronouns interpolated through them. There is
-  # therefore no instruction text to version -- a digest of that prompt is a
-  # digest of the cast -- and a bench whose whole point is "per prompt version"
-  # cannot honestly carry a pass it cannot version. It costs two model calls a
-  # case besides, where every other shape costs one.
+  # A `talk` turn's prose is the exchange's (`Playthrough::Turn#converse`)
+  # second pass, and that pass sends NO instructions: its prose rules live
+  # inside the per-turn user prompt with the character's name and pronouns
+  # interpolated through them. There is therefore no instruction text to version
+  # -- a digest of that prompt is a digest of the cast -- and a bench whose
+  # whole point is "per prompt version" cannot honestly carry a pass it cannot
+  # version. It costs two model calls a case besides, where every other shape
+  # costs one.
   #
   # What that leaves uncovered is `interaction-narration` prose, which is real
   # and is measured today by `rake eval:run` and `rake game:score` exactly as

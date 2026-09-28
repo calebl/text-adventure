@@ -22,7 +22,7 @@
 # journal each committed effect and resume unfinished work after a worker dies.
 # Older running rows have no receipts and cannot be replayed safely.
 # Provider failures after a committed action instead finish with factual prose
-# (Scene::Narrator and Scene::Generator), including the world's response.
+# (the narrator and Scene::Generator), including the world's response.
 class Playthrough::Command < ApplicationRecord
   self.table_name = "playthrough_commands"
 

@@ -68,7 +68,7 @@ class Playthrough::GlanceTest < ActiveSupport::TestCase
     quest = create(:quest, story: @story)
     create(:quest_step, quest: quest, summary: "Find where they are keeping him.")
     assert_equal "Find where they are keeping him.", glance.next_beat
-    assert_equal Playthrough::Moment.new(@playthrough.reload).send(:next_beat), glance.next_beat
+    assert_includes EngineMoment.new(@playthrough.reload).narration_context, glance.next_beat
   end
 
   test "the session answers the glance and the read-out makes no model call" do

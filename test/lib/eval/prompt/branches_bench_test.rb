@@ -47,5 +47,7 @@ class Eval::Prompt::BranchesBenchTest < ActiveSupport::TestCase
     end
 
     def attribute_to!(scene) = @chat.messages.where.not(role: "system").update_all(scene_id: scene.id)
+
+    def recorded_chat = @chat
   end
 end

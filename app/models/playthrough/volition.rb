@@ -63,7 +63,7 @@
 # evaluates nothing, and it runs on every line the engine PLAYED.
 #
 # WHAT THE NARRATOR IS TOLD IS `playthrough_volitions.fact` AND NOTHING ELSE
-# (`Playthrough::Moment#volition_fact`): what somebody DID, never why, and
+# (the engine's `moment`): what somebody DID, never why, and
 # never what anybody wants. The four objects of desire reach exactly one
 # prompt, which is the character's own sheet.
 class Playthrough::Volition
@@ -148,10 +148,12 @@ class Playthrough::Volition
   # see `Eval::Classifier::Stage`. The live game and `EngineSweep::Walk` never
   # enter it; a global constant or environment flag would reach them.
   #
-  # THE TYPED DECISION COMES FIRST AND THE DIE DECIDES WHATEVER IT DID NOT.
-  # `line:` is the line the player typed, for the System One state; every row
-  # says which of the two decided it (`decided_by`), and a failed call is
-  # written onto the rows the die then decided rather than dropped.
+  # THE DIE DECIDES, in this Ruby reference loop. A turn the game plays asks
+  # System One first where it is on and lets the die decide whatever it did not
+  # (the Rust engine's `volition`, with `decided_by` saying which); this loop,
+  # which the test suite plays, has no System One reader, so every row it
+  # writes is `DECIDED_BY_DIE`. `line:` is the line the player typed, which
+  # only that request reads.
   def self.run!(playthrough, location:, round: 1, line: nil)
     return [] if playthrough.nil? || location.nil? || playthrough.over? || held?
 
@@ -159,17 +161,8 @@ class Playthrough::Volition
     cast = playthrough.cast_in(location).sort_by(&:id).select do |who|
       who != playthrough.character && !who.is_protagonist? && !fighting.include?(who.id) && Playthrough::Volition::Weights.weighted?(who.desire_pursuit)
     end
-    typed = Playthrough::Volition::SystemOne.new(playthrough, cast, location: location, line: line).decisions
 
-    cast.filter_map do |who|
-      chosen = typed.acts&.fetch(who.id, nil)
-      if chosen
-        new(playthrough, who, location: location, round: round, decided_by: DECIDED_BY_SYSTEM_ONE).apply!(chosen)
-      else
-        by = typed.failure ? DECIDED_BY_DIE_AFTER_FAILURE : DECIDED_BY_DIE
-        new(playthrough, who, location: location, round: round, decided_by: by, system_one_error: typed.failure).decide!
-      end
-    end
+    cast.filter_map { |who| new(playthrough, who, location: location, round: round).decide! }
   end
 
   # HOLD THE ROOM STILL FOR THE DURATION OF THE BLOCK. Nested holds nest: the

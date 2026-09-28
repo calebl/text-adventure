@@ -88,7 +88,7 @@ class Character::DesiresTest < ActiveSupport::TestCase
     game = create(:playthrough, story: @story, character: player, current_location: room)
     person = create(:character, :driven, story: @story, location: room,
                                 conscious_desire: "Vance wants the query answered in writing before seven")
-    context = Playthrough::Moment.new(game).narration_context
+    context = EngineMoment.new(game).narration_context
 
     assert_includes context, person.fullname, "who is here is a fact the narrator is told"
     Character::DESIRES.each do |field|

@@ -37,10 +37,11 @@
 # -- two records will not fit in one `target` -- so it reaches this loop only
 # through `Playthrough::Grammar`. See `#throw_item!`.
 #
-# Everything else -- a look at something with nothing written on it, and anything
-# unclassifiable -- falls through to `Scene::Narrator`, which answers the raw
-# command in prose. They are told apart so the classification is honest and so
-# the branches that need to exist have somewhere to land.
+# Everything else -- a look at something with nothing written on it, and
+# anything unclassifiable -- falls through to the narrator
+# (`Playthrough::Turn#narrate`), which answers the raw command in prose. They
+# are told apart so the classification is honest and so the branches that need
+# to exist have somewhere to land.
 #
 # AND A GAME THAT IS OVER, WHICH IS NOT A TURN EITHER: once the player is dead
 # `#play` refuses every line in front of everything else it does -- before the
@@ -58,10 +59,11 @@
 # `Playthrough::Refusal` instead of a turn. That is the captain's ruling, and it
 # replaced narrating the attempt: a `move` to a door that is not there, a `talk`
 # to nobody, a `take` of what is not lying here and a `drop` of what is not
-# carried all used to reach `Scene::Narrator` with a fact saying so. A look at
-# something with nothing written on it is NOT one of them -- an `examine` is not
-# reaching for a record it can miss, so it narrates exactly as it always did.
-# Read `Playthrough::Refusal`'s header before changing which lines land there.
+# carried all used to reach the narrator (`Playthrough::Turn#narrate`) with a
+# fact saying so. A look at something with nothing written on it is NOT one of
+# them -- an `examine` is not reaching for a record it can miss, so it narrates
+# exactly as it always did. Read `Playthrough::Refusal`'s header before changing
+# which lines land there.
 #
 # AND THE LINE IS NOT ALWAYS READ BY A MODEL, since the captain's ruling of
 # 2026-09-04, evening: *"support a slash prefix autocomplete in the text box,
@@ -75,6 +77,8 @@
 # which reader answered, and everything below the read is one path either way --
 # the grammar builds the same `Intent` the classifier does, on purpose.
 class Playthrough::Turn
+  include SanitizesGeneratedText
+
   attr_reader :playthrough, :safety_notice
 
   def initialize(playthrough)
@@ -83,10 +87,11 @@ class Playthrough::Turn
 
   # Plays `command` and returns the Scene it produced, or nil if it produced
   # none, or a `Playthrough::Refusal` for a line the engine will not play at
-  # all. Chunks of prose are yielded as they become available: `Scene::Narrator`
-  # streams token by token, and a schema'd generator yields its finished
-  # paragraph in one piece, because a schema'd call cannot stream (see the
-  # comment on `Scene::Narrator`).
+  # all. Chunks of prose are yielded as they become available: the narrator
+  # (`Playthrough::Turn#narrate`) streams token by token, and a schema'd
+  # generator yields its finished paragraph in one piece, because a schema'd
+  # call cannot stream (see the comment on the narrator
+  # (`Playthrough::Turn#narrate`)).
   #
   # THE THIRD RETURN IS THE ONE THING A CONSUMER HAS TO KNOW about this method:
   # a refusal is not a turn, so there is no Scene to hand back, and the text is
@@ -356,7 +361,7 @@ class Playthrough::Turn
     @safety_notice ||= scene&.safety_notice
 
     # AND WHAT THE WORLD ITSELF TOOK IS FILED UNDER THE TURN THAT TOLD THE
-    # PLAYER ABOUT IT. `Playthrough::Moment` states the UNTOLD tolls to the
+    # PLAYER ABOUT IT. The engine's `moment` states the UNTOLD tolls to the
     # prose as facts, so one of them has to stop being untold once a paragraph
     # has carried it or every later turn would be told again. Here rather than
     # in `Playthrough::Hazards`, and for the reason `typed` is written here: this
@@ -375,7 +380,7 @@ class Playthrough::Turn
     Playthrough::Command::Journal.commit("told_tolls") { claim_tolls!(scene) }
 
     # AND WHAT THE OTHER PEOPLE IN THE ROOM DID IS CLAIMED BY THE PARAGRAPH
-    # THAT CARRIED IT, on `#claim_tolls!`'s reasoning exactly: `Playthrough::Moment`
+    # THAT CARRIED IT, on `#claim_tolls!`'s reasoning exactly: the engine's `moment`
     # states the UNTOLD acts as facts, so one of them has to stop being untold
     # once a paragraph has said it or every later turn would be told again.
     #
@@ -631,8 +636,7 @@ class Playthrough::Turn
     result = Playthrough::Command::Journal.commit("physical_effect") do
       Playthrough::PhysicalAction.new(playthrough).apply!(choice)
     end
-    Scene::Narrator.new(playthrough).narrate(command, fact: result.fact, intent: :use,
-      fallback_text: result.fact, &block)
+    narrate(command, fact: result.fact, doing: :use, fallback_text: result.fact, &block)
   end
 
   # THE LOAD-OR-GENERATE SEAM. Everything the project is about is these four
@@ -779,8 +783,7 @@ class Playthrough::Turn
   def talk_to(character, command, offered_item: nil, &block)
     return Playthrough::Command::Journal.read("talked") if Playthrough::Command::Journal.saved?("talked")
 
-    agent = InteractionAgent.new(character, playthrough: playthrough, offered_item: offered_item)
-    exchange = agent.ask(command, &block)
+    exchange = converse(character, command, offered_item: offered_item, &block)
     return if exchange.narration.blank?
 
     scene = nil
@@ -812,8 +815,87 @@ class Playthrough::Turn
       scene
     end
 
-    attribute_conversation!(agent, scene)
+    exchange.agents.each { |agent| attribute_conversation!(agent, scene) }
     scene
+  end
+
+  # ONE EXCHANGE, IN TWO CALLS, and both requests are the engine's
+  # (`Playthrough::Requests`): the character answers in their own
+  # conversation with this game and picks one of the actions the engine
+  # offered (`Playthrough::NpcAction`), the action is applied, and the
+  # narrator writes the exchange from the reaction and the receipt for what
+  # was applied. The reaction is sanitized and validated before anything is
+  # applied; a failed or blank paragraph after an applied decision is told in
+  # the engine's own words, and the decision stands.
+  #
+  # `ask` is how each call is asked: `(agent, request, verify)` -> a response
+  # whose `content` is the answer, `request` being the engine's request for
+  # it. The dialogue bench hands its own, to keep each request it measured and
+  # to replay a stored answer (`Eval::Dialogue::Bench`).
+  Exchange = Data.define(:reaction, :narration, :effect, :fallback, :safety_notice, :rendering_error, :agents) do
+    def fallback? = fallback
+  end
+
+  ASK = lambda do |agent, request, verify|
+    verify ? agent.ask(request.fetch("user"), verify: verify) : agent.ask(request.fetch("user")) { |_chunk| }
+  end
+
+  def converse(character, command, offered_item: nil, ask: ASK, &block)
+    actions = Playthrough::NpcAction.new(playthrough, character, offered_item: offered_item)
+    character_request = lambda do
+      Playthrough::Requests.build(:character, playthrough: playthrough.id, character: character.id,
+                                              line: command.to_s, offered_item: offered_item&.id)
+    end
+    character_agent = BaseAgent.new(purpose: Chat::CHARACTER, playthrough: playthrough, character: character,
+                                    chat: Chat.conversation_with(character, playthrough))
+                               .with_instructions(character_request.call.fetch("system"))
+                               .with_schema(Interaction::Schema.with_actions(actions.choices.keys))
+    # THE CONVERSATION FIRST, THEN THE REQUEST THAT CONTINUES IT: the request's
+    # history is the conversation's rows, and a first exchange's conversation
+    # is written with its instructions as it is opened.
+    character_agent.chat
+    asked = character_request.call
+    reaction, fields = Playthrough::Command::Journal.remember("character_answer") do
+      verified = nil
+      answer = ask.call(character_agent, asked, ->(content) { verified = verified_reaction(character, content) }).content
+      [ answer, verified ]
+    end
+
+    effect = Playthrough::Command::Journal.commit("character_effect") do
+      actions.apply!(reaction.fetch("engine_action", Playthrough::NpcAction::NONE))
+    end
+    told = Playthrough::Requests.build(:interaction_narration, playthrough: playthrough.id, character: character.id,
+                                                               line: command.to_s, reaction: reaction, fact: effect&.fact.to_s)
+    narrator_agent = BaseAgent.new(purpose: "interaction-narration", playthrough: playthrough)
+    agents = [ character_agent, narrator_agent ]
+    begin
+      narration = ask.call(narrator_agent, told, nil).content.to_s
+      raise BaseAgent::SchemaIgnoredError, "The interaction narrator returned no prose" if narration.blank?
+
+      block&.call(narration)
+      Exchange.new(reaction: fields, narration: narration, effect: effect, fallback: false,
+                   safety_notice: nil, rendering_error: nil, agents: agents)
+    rescue StandardError => error
+      raise unless effect
+
+      Rails.logger.warn { "Interaction narration failed after decision: #{error.class}: #{error.message}" }
+      fallback = "You speak with #{character.fullname}. #{effect.fact}"
+      block&.call(fallback)
+      Exchange.new(reaction: fields, narration: fallback, effect: effect, fallback: true,
+                   safety_notice: error.is_a?(BaseAgent::CrisisResponseError), rendering_error: error, agents: agents)
+    end
+  end
+
+  # THE CHARACTER'S FIVE FIELDS, sanitized to their caps and validated as the
+  # interaction they will be saved as, inside the call so a rejected answer
+  # asks the next model.
+  def verified_reaction(character, content)
+    response = content.presence || {}
+    fields = Interaction::Schema.required_properties.to_h do |field|
+      [ field.to_sym, sanitize_string(response[field.to_s], max_length: Interaction::Schema.max_length_for(field)) ]
+    end
+    Interaction.new(fields.merge(character: character)).validate!
+    fields
   end
 
   # WHICH WAY THE ITEM GOES. One method because the two are one guarantee: an
@@ -844,14 +926,15 @@ class Playthrough::Turn
   #
   # A PLAYTHROUGH WITH NO CHARACTER NEVER REACHES HERE, and that is the fix of
   # 2026-09-05 rather than an assumption. It used to: the guard on this method
-  # answered a protagonist-less game by handing `Scene::Narrator` the bare
-  # command, so the model wrote a perfect paragraph about pocketing the thing
-  # and the row stayed on the floor -- the captain's playthrough 24, where he
-  # picked up a signet ring and a key and the machinery panel showed both still
-  # lying there. The comment above that guard said *"nothing in the app creates
-  # such a playthrough"*, and the Play button did: his story had no character
-  # marked `is_protagonist`, so `story.protagonist` was nil and
-  # `PlaythroughsController#create` opened the game on it anyway.
+  # answered a protagonist-less game by handing the narrator
+  # (`Playthrough::Turn#narrate`) the bare command, so the model wrote a perfect
+  # paragraph about pocketing the thing and the row stayed on the floor -- the
+  # owner's playthrough 24, where they picked up a signet ring and a key and the
+  # machinery panel showed both still lying there. The comment above that guard
+  # said *"nothing in the app creates such a playthrough"*, and the Play button
+  # did: their story had no character marked `is_protagonist`, so
+  # `story.protagonist` was nil and `PlaythroughsController#create` opened the
+  # game on it anyway.
   #
   # So the answer is a REFUSAL in front of the dispatch
   # (`Playthrough::Refusal`'s `:unplayable`), and the controller will not start
@@ -864,11 +947,11 @@ class Playthrough::Turn
 
     Playthrough::Command::Journal.commit("take") { carry!(item) }
 
-    Scene::Narrator.new(playthrough).narrate(
+    narrate(
       command,
       fact: taken_fact(item, taker, from),
       fallback_text: "You pick up #{item.definite_name}.",
-      handled: Playthrough::Moment::Handled.new(item: item, direction: :taken),
+      handled: { item: item, direction: :taken },
       &block
     )
   end
@@ -894,11 +977,11 @@ class Playthrough::Turn
 
     Playthrough::Command::Journal.commit("drop") { put_down!(item) }
 
-    Scene::Narrator.new(playthrough).narrate(
+    narrate(
       command,
       fact: dropped_fact(item, here, dropper),
       fallback_text: "You put down #{item.definite_name} in #{here.name}.",
-      handled: Playthrough::Moment::Handled.new(item: item, direction: :dropped),
+      handled: { item: item, direction: :dropped },
       &block
     )
   end
@@ -928,9 +1011,7 @@ class Playthrough::Turn
     inscriber = Item::Inscriber.new(item, playthrough: playthrough)
     words = inscriber.inscribe!
 
-    scene = Scene::Narrator.new(playthrough).narrate(
-      command, fact: read_fact(item, words), fallback_text: "On #{item.definite_name} you read: #{words}", &block
-    )
+    scene = narrate(command, fact: read_fact(item, words), fallback_text: "On #{item.definite_name} you read: #{words}", &block)
 
     # The words cost a call on the one turn that wrote them, and that call
     # happens before there is a scene to file it under -- so the scene it paid
@@ -973,10 +1054,8 @@ class Playthrough::Turn
     end
     return narrate(command, &block) if outcome.nil?
 
-    Scene::Narrator.new(playthrough).narrate(
-      command, fact: thrown_fact(outcome, thrower),
-      fallback_text: "Your throw of #{intent.item.definite_name}: #{outcome.outcome_in_words}.", &block
-    )
+    narrate(command, fact: thrown_fact(outcome, thrower),
+                     fallback_text: "Your throw of #{intent.item.definite_name}: #{outcome.outcome_in_words}.", &block)
   end
 
   # THE THREE WRITES THAT MOVE THE WORLD, each one named rather than left inline
@@ -1307,7 +1386,7 @@ class Playthrough::Turn
   # `#claim_tolls!` one table over. The acts are stated together in one
   # sentence, so a paragraph that carried the sentence claims them together
   # (nil). A scene whose prompt never stated it -- an arrival, whose prompt is
-  # `Scene::Generator`'s and not a `Playthrough::Moment`, or a fallback --
+  # `Scene::Generator`'s and not the engine's `moment`, or a fallback --
   # says so with an empty list, and the acts wait for the next paragraph whose
   # prompt does carry them. Claiming them on the arrival would record a
   # departure as told that nobody told.
@@ -1499,7 +1578,7 @@ class Playthrough::Turn
   # the take-denied fix of 2026-09-05. It used to read *"Odile Vance has picked
   # up the Ward Office 12 daybook and is now carrying it"* -- a perfect
   # description of where the row now stands and no account at all of where it
-  # stood a moment ago. Beside it `Playthrough::Moment` listed the daybook under
+  # stood a moment ago. Beside it the engine's `moment` listed the daybook under
   # *"The player is carrying:"*, because by then it truly was, and the two
   # together read as one fact stated twice: the thing is theirs. So the narrator
   # wrote the pickup as redundant -- *"You reach for the daybook, but it is
@@ -1508,7 +1587,7 @@ class Playthrough::Turn
   #
   # The sentence now says WHEN (this turn and not before it), WHERE IT WAS
   # (lying in this room, not in their hands) and WHAT TO WRITE (the taking).
-  # `Playthrough::Moment::Handled` is the other half and marks the same row on
+  # the engine's `moment::Handled` is the other half and marks the same row on
   # the carried list, so the standing state and the fact agree about which of
   # the two they are.
   #
@@ -1550,7 +1629,7 @@ class Playthrough::Turn
   # FOUR SENTENCES FOR FOUR OUTCOMES, and each of them says the two things the
   # prose must not contradict: WHETHER THE THING LEFT THE HANDS, and WHERE IT IS
   # NOW. The numbers are deliberately NOT restated here on a hit --
-  # `Playthrough::Moment#struck_fact` reads the blow out of `playthrough_blows`
+  # the engine's `moment` reads the blow out of `playthrough_blows`
   # and already tells the narrator the damage, whether the body lived, and that
   # the figures do not change. Saying it twice in one prompt would be two facts
   # about one die.
@@ -1613,26 +1692,91 @@ class Playthrough::Turn
       "are; do not add to them, and do not write different ones."
   end
 
-  # Everything else. `Scene::Narrator` owns its own turn end to end: it streams,
-  # it persists in an `ensure` so a closed tab does not lose the prose, and it
-  # sets `current_scene` itself. Movement is the one thing it cannot do, which
-  # is why it does not touch `current_location`.
+  # THE NARRATOR'S PARAGRAPH, and every branch that tells a turn in prose ends
+  # here. It streams, it keeps its own journal step, and it sets
+  # `current_scene` itself. Movement is the one thing it cannot do, which is
+  # why it does not touch `current_location`.
   #
-  # `intent` is what the classifier decided, when the caller has one, and it
-  # goes along only as the label for the narrator's one line about what kind of
-  # turn this is (`Scene::Narrator::DOING`) -- so a look is narrated as a look.
+  # THE PROMPT IS THE ENGINE'S. `Playthrough::Requests.narration` builds it
+  # out of the rows as they stand after the branch wrote what it did, so this
+  # loop sends the words the game sends; only asking, keeping and persisting
+  # are done here.
+  #
+  # `intent` is what the classifier decided, when the caller has one, and
+  # `doing` the kind of turn a branch names itself; either goes along only as
+  # the label for the narrator's one line about what kind of turn this is
+  # (`scene/narrator.yml`'s `doing`) -- so a look is narrated as a look.
+  # `handled` is the item the branch moved and which way, which the moment
+  # marks on its list.
+  #
+  # A FAILED OR BLANK PARAGRAPH IS KEPT AS THE ENGINE'S OWN WORDS when the
+  # branch wrote an effect and has `fallback_text` for it: the effect stands,
+  # and nobody gets a free turn out of a lost paragraph.
   #
   # WHAT USED TO ARRIVE HERE AND NO LONGER DOES is a reach that resolved to
   # nothing. `#reach_fact` stated it to the narrator as a fact -- the ways out
   # are exactly the ones listed, nothing moved -- because before that the
   # narrator got the bare command and walked the player through a door that did
   # not exist. It was the right answer while a failed reach still had to produce
-  # a turn; on the captain's ruling of 2026-09-04 it does not, so the whole
-  # branch is gone and `#refuse` answers instead. That also retires its one
-  # known cost: a classifier miss on a real exit used to read as prose denying a
-  # door that is there, and now nothing is written at all.
-  def narrate(command, intent: nil, &block)
-    Scene::Narrator.new(playthrough).narrate(command, intent: intent&.action, &block)
+  # a turn; on the owner's ruling of 2026-09-04 it does not, so the whole
+  # branch is gone and `#refuse` answers instead.
+  def narrate(command, intent: nil, doing: intent&.action, fact: nil, handled: nil, fallback_text: nil, &block)
+    return Playthrough::Command::Journal.read("narrated") if Playthrough::Command::Journal.saved?("narrated")
+
+    request = Playthrough::Requests.narration(playthrough, command: command, fact: fact, doing: doing, handled: handled)
+    agent = BaseAgent.new(request.fetch("system"), purpose: "narration", playthrough: playthrough)
+    fallback = false
+    begin
+      text = agent.ask(request.fetch("user")) do |chunk|
+        part = chunk.content.to_s
+        next if part.empty?
+
+        block&.call(part)
+      end.content.to_s
+    rescue StandardError => e
+      raise if fallback_text.blank?
+
+      Rails.logger.warn { "Narration kept its engine outcome: #{e.class}: #{e.message}" }
+      fallback = true
+      rendering_error = e
+      safety_notice = e.is_a?(BaseAgent::CrisisResponseError)
+      text = fallback_text
+    end
+    if text.blank? && fallback_text.present?
+      fallback = true
+      rendering_error = BaseAgent::UnusableResponseError.new("Narration was blank")
+      text = fallback_text
+    end
+    raise BaseAgent::UnusableResponseError, "Narration was blank" if text.blank?
+
+    Playthrough::Command::Journal.commit("narrated") do
+      row = persist_narration(agent, text, fallback: fallback, engine_fact: fact)
+      row.narrated_toll_ids = [] if fallback
+      row.narrated_volition_ids = [] if fallback
+      row.safety_notice = safety_notice
+      row.rendering_error = rendering_error
+      row
+    end
+  end
+
+  # The paragraph as the turn's scene, with the call that wrote it filed
+  # under it.
+  def persist_narration(agent, text, fallback:, engine_fact:)
+    scene = Scene.transaction do
+      row = Scene.create!(
+        story: playthrough.story,
+        location: playthrough.current_location,
+        previous_scene: playthrough.current_scene,
+        description: text,
+        engine_fact: engine_fact,
+        engine_fallback: fallback,
+        story_timestamp: playthrough.story_time_after("action")
+      )
+      playthrough.update!(current_scene: row)
+      row
+    end
+    attribute_conversation!(agent, scene)
+    scene
   end
 
   # WHAT THE TURN DID, in the two columns `Scene` keeps it in.

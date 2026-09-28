@@ -3,17 +3,18 @@
 #
 # This is the Turbo adapter of `Playthrough::Session` and nothing else. The loop
 # still classifies, moves, talks and narrates exactly as it did behind the SSE
-# controller this replaces -- `Scene::Narrator` takes a block precisely so that
-# swapping the consumer touches nothing that generates or persists prose.
+# controller this replaces -- the narrator (`Playthrough::Turn#narrate`) takes a
+# block precisely so that swapping the consumer touches nothing that generates
+# or persists prose.
 #
 # Four things a job fixes that a streaming request could not:
 #
 #   * A TURN OUTLIVES ITS CONNECTION. `ActionController::Live` raised
 #     ClientDisconnected and killed the generation mid-sentence; the `ensure` in
-#     `Scene::Narrator` salvaged whatever had arrived. Here nobody is watching in
-#     the first place, so closing the tab costs nothing -- and the finished turn
-#     is broadcast to whoever reopens the page, because the subscription is to
-#     the playthrough and not to a socket.
+#     the narrator (`Playthrough::Turn#narrate`) salvaged whatever had arrived.
+#     Here nobody is watching in the first place, so closing the tab costs
+#     nothing -- and the finished turn is broadcast to whoever reopens the page,
+#     because the subscription is to the playthrough and not to a socket.
 #   * NO PUMA THREAD IS HELD. SSE held one for the whole 20-30 seconds; three
 #     readers stalled the site on a default 3-thread Puma. WebSockets do not
 #     consume request threads at all.

@@ -21,7 +21,7 @@ class Eval::Prompt::VersionTest < ActiveSupport::TestCase
   end
 
   # THE SECOND DIGEST COVERS WHAT THE FIRST CANNOT: the framing of a fact, the
-  # fact sentence itself, and every record `Playthrough::Moment` builds. It is
+  # fact sentence itself, and every record the engine's `moment` builds. It is
   # only meaningful because the corpus is fixed -- which is what `corpus_digest`
   # is for.
   test "a changed fact sentence changes the prompt digest and not the instructions digest" do

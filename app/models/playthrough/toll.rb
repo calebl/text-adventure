@@ -54,7 +54,7 @@ class Playthrough::Toll < ApplicationRecord
   # app is read in.
   scope :chronological, -> { order(:id) }
 
-  # THE ROWS NO SCENE HAS TOLD THE PLAYER ABOUT: what `Playthrough::Moment`
+  # THE ROWS NO SCENE HAS TOLD THE PLAYER ABOUT: what the engine's `moment`
   # states as a fact, once. `Playthrough::Blow.open`'s shape, named for what nil
   # means here -- a toll is not "open" the way a fight is, because nothing about
   # it is still going on.
@@ -132,6 +132,18 @@ class Playthrough::Toll < ApplicationRecord
 
   def condition
     Playthrough::Vitals::Condition.new(character: character, hp: hp_after, max: character.max_hp)
+  end
+
+  # THE TOLL AS A PROMPT STATES IT: what it cost and the facts about it a
+  # paragraph must not contradict. The engine states an untold toll to the
+  # narrator in these words (`moment::one_toll`); an arrival this game writes
+  # itself states one the same way (`Scene::ArrivalContext#facts`).
+  def fact
+    return "#{character.fullname} got clear of #{where_it_was} and lost nothing." if saved?
+
+    "#{where_it_was} cost #{character.fullname} #{damage} hit point#{"s" unless damage == 1} " \
+      "-- #{words}. #{character.fullname} is " \
+      "#{killed? ? "dead: that was what killed them" : "alive"}."
   end
 
   # For the play page's consequence notice and the mechanics read-out. The

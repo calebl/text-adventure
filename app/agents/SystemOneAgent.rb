@@ -9,10 +9,12 @@
 # would have meant `#with_schema` and `#ask` that lie about what is sent, so this
 # class exposes `#ask_questions(state:, questions:)` and nothing chat-shaped.
 #
-# WHAT IT IS FOR: `Playthrough::Classifier::Cascade`, which asks one request of
-# ten questions in front of the turn and composes the answer in the engine. See
-# that class's header for the rules and `Playthrough::Classifier::Request` for
-# the questions.
+# WHAT IT IS FOR: the benches that measure a System One request the engine
+# built (`Eval::Classifier::Bench`'s cascade arm, which asks the classifier's
+# request of ten questions in front of a line and hands the answers back to the
+# engine to compose). The requests and the rules that read their answers are
+# the engine's (`renderedstep_engine::cascade`, `volition`), and a turn the
+# game plays sends them itself (`Playthrough::RustEngine`).
 #
 # THE KEY IS THE SWITCH AND THERE IS NO FLAG. `.configured?` is the whole of it:
 # with EITHER `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` in the environment the
@@ -181,9 +183,12 @@ class SystemOneAgent
   # `usage.cost`. Those are kept as provenance on this object and never consulted
   # by the cascade or any other game path.
   class Answers
-    attr_reader :usage, :model, :provider, :response_id
+    # `payload` is the provider's whole body, which a caller composing the
+    # answers itself (the engine, through a bench) reads again.
+    attr_reader :usage, :model, :provider, :response_id, :payload
 
     def initialize(payload, questions)
+      @payload = payload
       @answers = payload["answers"]
       @usage = payload["usage"]
       @model = payload["model"]
@@ -223,7 +228,7 @@ class SystemOneAgent
     end
 
     # Whether a question was asked at all. A target question whose record set is
-    # empty is not sent -- see `Playthrough::Classifier::Request` -- and its
+    # empty is not sent -- see the engine's `cascade::request` -- and its
     # intent resolves to nothing by construction rather than by an answer.
     def asked?(id) = @questions.key?(id.to_s)
 

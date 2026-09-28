@@ -26,9 +26,10 @@ class Eval::Prompt::Branches::Stage
     self
   end
 
-  def narrator = @narrator ||= Scene::Narrator.new(game)
-  def prompt = narrator.send(:prompt_for, kase.typed, fact)
-  def narrate = narrator.narrate(kase.typed, fact: fact)
+  # THE NARRATOR'S REQUEST FOR THE STAGED MOMENT, the engine's, built from the
+  # rows the stage wrote with nothing played: `{system, user}`.
+  def request = @request ||= Playthrough::Requests.narration(game, command: kase.typed, fact: fact)
+  def prompt = request.fetch("user")
 
   def facts
     quest = game.story.main_quest

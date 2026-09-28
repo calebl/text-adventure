@@ -1,8 +1,9 @@
 # Ending identity separates record-derived framing from generated prelude data.
-# Re-render the production builder with only the preceding Scene's description
-# and summary replaced, through thread-local readers: no database write and no
-# replacement of any request sent to a provider. Both fields matter because
-# Moment reads the description directly and recap reads summary (or prose).
+# Re-render the engine's ending request with only the preceding Scene's
+# description and summary replaced, in the rows handed to the builder: no
+# database write and no replacement of any request sent to a provider. Both
+# fields matter because the moment reads the description directly and the
+# recap reads summary (or prose).
 #
 # Do not scrub strings out of an assembled prompt: prose may repeat record text,
 # and its length may change which earlier recap lines fit. Rebuilding with fixed
@@ -13,60 +14,29 @@
 module Eval::Prompt::EndingVersion
   extend self
 
-  KEY = :eval_ending_request_capture
-  FIELDS_KEY = :eval_ending_prelude_fields
   DESCRIPTION = "[generated prelude description]".freeze
   SUMMARY = "[generated prelude summary]".freeze
 
-  module SceneFields
-    def description
-      fields = Thread.current[Eval::Prompt::EndingVersion::FIELDS_KEY]
-      fields && id == fields[:id] ? Eval::Prompt::EndingVersion::DESCRIPTION : super
+  # THE SCAFFOLD OF ONE ENDING: the engine's request for `playthrough`'s last
+  # paragraph, for the reached `outcome`, built from the rows the connection
+  # sees with the `prelude` scene's description and summary replaced by the
+  # fixed words above; beside it the prelude as it was and the live prompt the
+  # engine sent (`prompt`).
+  def scaffold(playthrough, outcome:, prelude:, prompt:)
+    rows = Playthrough::Requests.dump
+    rows.fetch("scenes").each do |row|
+      next unless row["id"] == prelude.id
+
+      row["description"] = DESCRIPTION
+      row["summary"] = SUMMARY
     end
-
-    def summary
-      fields = Thread.current[Eval::Prompt::EndingVersion::FIELDS_KEY]
-      fields && id == fields[:id] ? Eval::Prompt::EndingVersion::SUMMARY : super
-    end
+    built = Playthrough::Requests.build(:ending, rows: JSON.generate(rows), playthrough: playthrough.id, outcome: outcome.id)
+    {
+      scaffold: Eval::RequestIdentity.request(built.fetch("system"), built.fetch("user"), nil),
+      prelude: { description: prelude.description, summary: prelude.summary }, prelude_stable: false,
+      prompt: prompt
+    }
   end
-
-  module PromptCapture
-    private
-
-    def prompt_for(conclusion)
-      live = super
-      capture = Thread.current[Eval::Prompt::EndingVersion::KEY]
-      return live unless capture
-
-      prelude = conclusion.scene.previous_scene
-      fields = { description: prelude.description, summary: prelude.summary }
-      previous = Thread.current[Eval::Prompt::EndingVersion::FIELDS_KEY]
-      begin
-        Thread.current[Eval::Prompt::EndingVersion::FIELDS_KEY] = { id: prelude.id }
-        scaffold = super
-      ensure
-        Thread.current[Eval::Prompt::EndingVersion::FIELDS_KEY] = previous
-      end
-      capture[:request] = {
-        scaffold: Eval::RequestIdentity.request(agent.instructions, scaffold, agent.schema),
-        prelude: fields, prelude_stable: false, prompt: live
-      }
-      live
-    end
-  end
-
-  def capture
-    Scene.prepend(SceneFields) unless Scene.ancestors.include?(SceneFields)
-    Scene::Ending.prepend(PromptCapture) unless Scene::Ending.ancestors.include?(PromptCapture)
-    previous = Thread.current[KEY]
-    captured = {}
-    Thread.current[KEY] = captured
-    [ yield, captured[:request] ]
-  ensure
-    Thread.current[KEY] = previous
-  end
-
-  def current = Thread.current[KEY]&.fetch(:request, nil)
 
   def identity(requests, corpus)
     Eval::RequestIdentity.of(corpus: Eval::Prompt.digest(corpus), requests: requests)

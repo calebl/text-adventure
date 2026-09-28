@@ -513,7 +513,8 @@ class Playthrough::Debug
   #   arrival       the location changed, which only a move can do -- or the
   #                 chain starts here, which is the fallback opening scene
   #                 `PlaythroughsController` writes for a world with none.
-  #   narration     everything else: `Scene::Narrator` answers the command in
+  #   narration     everything else: the narrator
+  #                 (`Playthrough::Turn#narrate`) answers the command in
   #                 place. It records a cast like every other branch does --
   #                 `Playthrough::Turn#play` snapshots the room's people onto
   #                 every turn -- so the cast is not what tells the branches
@@ -548,12 +549,12 @@ class Playthrough::Debug
       end
       lines << cast_line(scene)
     when :narration
-      lines << "no Interaction, same location -- Scene::Narrator answered the command in place"
+      lines << "no Interaction, same location -- the narrator answered the command in place"
       lines << cast_line(scene)
     end
 
     lines << "story time +#{format_minutes(elapsed)}: #{cost}" if cost
-    lines << "no summary written -- Scene::Generator writes one, Scene::Narrator does not" if scene.summary.blank?
+    lines << "no summary written -- an arrival writes one, the narrator does not" if scene.summary.blank?
     lines
   end
 

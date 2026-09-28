@@ -46,7 +46,7 @@ class Playthrough::Volition::Record < ApplicationRecord
   scope :chronological, -> { order(:id) }
 
   # THE ROWS NO PARAGRAPH HAS CARRIED YET, and only the ones that MOVED
-  # something. `Playthrough::Moment` states these to the narrator once.
+  # something. The engine's `moment` states these to the narrator once.
   #
   # `applied` ONLY, which is the one place this scope is narrower than
   # `Playthrough::Toll.untold`. A rejected pick moved nothing and a `wait`

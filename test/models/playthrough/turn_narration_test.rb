@@ -1,13 +1,18 @@
 require "test_helper"
 
-class Scene::NarratorTest < ActiveSupport::TestCase
+# THE NARRATOR'S PARAGRAPH, AS THE RUBY LOOP ASKS FOR IT AND KEEPS IT.
+#
+# The prompt is the engine's (`Playthrough::Requests.narration`); what these pin
+# is the asking, the streaming and the scene that is kept, and that the
+# engine's prompt carries what the moment holds.
+class Playthrough::TurnNarrationTest < ActiveSupport::TestCase
   test "yields the narration in chunks and returns the persisted scene" do
     playthrough = create(:playthrough, :started)
     agent = FakeAgent.new("You step into the hall.")
 
     chunks = []
     scene = BaseAgent.stub(:new, agent) do
-      Scene::Narrator.new(playthrough).narrate("go inside") { |chunk| chunks << chunk }
+      Playthrough::Turn.new(playthrough).narrate("go inside") { |chunk| chunks << chunk }
     end
 
     assert_operator chunks.length, :>, 1
@@ -22,7 +27,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     fact = "You consumed the draught. It is gone from your possessions."
 
     scene = BaseAgent.stub(:new, FakeAgent.new("You drink the draught.")) do
-      Scene::Narrator.new(playthrough).narrate("drink it", fact: fact, fallback_text: fact)
+      Playthrough::Turn.new(playthrough).narrate("drink it", fact: fact, fallback_text: fact)
     end
 
     assert_equal fact, scene.engine_fact
@@ -32,7 +37,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     playthrough = create(:playthrough, :started)
 
     scene = BaseAgent.stub(:new, FakeAgent.new("You wait.")) do
-      Scene::Narrator.new(playthrough).narrate("wait")
+      Playthrough::Turn.new(playthrough).narrate("wait")
     end
 
     assert_nil scene.engine_fact
@@ -42,7 +47,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     playthrough = create(:playthrough, :started)
     agent = FakeAgent.new("You step into the hall.")
 
-    BaseAgent.stub(:new, agent) { Scene::Narrator.new(playthrough).narrate("go inside") }
+    BaseAgent.stub(:new, agent) { Playthrough::Turn.new(playthrough).narrate("go inside") }
 
     assert_empty agent.schemas
   end
@@ -52,7 +57,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     playthrough.current_scene.update!(description: "The door swings open.")
     agent = FakeAgent.new("Rain starts falling.")
 
-    BaseAgent.stub(:new, agent) { Scene::Narrator.new(playthrough).narrate("look up") }
+    BaseAgent.stub(:new, agent) { Playthrough::Turn.new(playthrough).narrate("look up") }
 
     prompt = agent.prompts.first
     assert_match playthrough.story.title, prompt
@@ -65,10 +70,10 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     playthrough = create(:playthrough, :started)
 
     first = BaseAgent.stub(:new, FakeAgent.new("One.")) do
-      Scene::Narrator.new(playthrough).narrate("go inside")
+      Playthrough::Turn.new(playthrough).narrate("go inside")
     end
     second = BaseAgent.stub(:new, FakeAgent.new("Two.")) do
-      Scene::Narrator.new(playthrough.reload).narrate("keep going")
+      Playthrough::Turn.new(playthrough.reload).narrate("keep going")
     end
 
     assert_equal first, second.previous_scene
@@ -82,7 +87,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
 
     assert_raises(RuntimeError) do
       BaseAgent.stub(:new, agent) do
-        Scene::Narrator.new(playthrough).narrate("go inside") do |chunk|
+        Playthrough::Turn.new(playthrough).narrate("go inside") do |chunk|
           raise "client vanished" if chunk.include?("three")
         end
       end
@@ -97,7 +102,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     assert_no_difference -> { Scene.count } do
       assert_raises(BaseAgent::UnusableResponseError) do
         BaseAgent.stub(:new, FakeAgent.new("")) do
-          Scene::Narrator.new(playthrough).narrate("go inside")
+          Playthrough::Turn.new(playthrough).narrate("go inside")
         end
       end
     end
@@ -120,7 +125,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     assert_no_difference -> { Scene.count } do
       assert_raises(BaseAgent::RefusalError) do
         BaseAgent.stub(:new, agent) do
-          Scene::Narrator.new(playthrough).narrate("do it") { |chunk| chunks << chunk }
+          Playthrough::Turn.new(playthrough).narrate("do it") { |chunk| chunks << chunk }
         end
       end
     end
@@ -138,7 +143,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
 
     assert_no_difference -> { Scene.count } do
       assert_raises(BaseAgent::CrisisResponseError) do
-        BaseAgent.stub(:new, agent) { Scene::Narrator.new(playthrough).narrate("goad him") }
+        BaseAgent.stub(:new, agent) { Playthrough::Turn.new(playthrough).narrate("goad him") }
       end
     end
 
@@ -155,7 +160,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
 
     chunks = []
     scene = BaseAgent.stub(:new, agent) do
-      Scene::Narrator.new(playthrough).narrate("shove it") { |chunk| chunks << chunk }
+      Playthrough::Turn.new(playthrough).narrate("shove it") { |chunk| chunks << chunk }
     end
 
     assert_match "I won't write that.", chunks.join, "the block saw both attempts"
@@ -208,7 +213,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     playthrough.update!(current_scene: second)
 
     agent = FakeAgent.new("You look up.")
-    BaseAgent.stub(:new, agent) { Scene::Narrator.new(playthrough).narrate("look up") }
+    BaseAgent.stub(:new, agent) { Playthrough::Turn.new(playthrough).narrate("look up") }
     prompt = agent.prompts.first
 
     assert_includes prompt, "Long prose about the clerk.", "the turn just taken is still there in full"
@@ -220,7 +225,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     playthrough = create(:playthrough, :started)
     agent = FakeAgent.new("You look up.")
 
-    BaseAgent.stub(:new, agent) { Scene::Narrator.new(playthrough).narrate("look up") }
+    BaseAgent.stub(:new, agent) { Playthrough::Turn.new(playthrough).narrate("look up") }
 
     assert_not_includes agent.prompts.first, "Earlier, in order:"
   end
@@ -240,7 +245,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     create(:item, :carried, playthrough: playthrough, name: "Brass Key")
 
     agent = FakeAgent.new("You look around.")
-    BaseAgent.stub(:new, agent) { Scene::Narrator.new(playthrough).narrate("look around") }
+    BaseAgent.stub(:new, agent) { Playthrough::Turn.new(playthrough).narrate("look around") }
     prompt = agent.prompts.first
 
     assert_match(/Ways out of here: The Sunken Stair\./, prompt)
@@ -249,7 +254,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
   end
 
   test "the instructions point the narrator at those lists" do
-    assert_match(/do not add a\s+way out, a person or a possession that is not on those lists/, Scene::Narrator::INSTRUCTIONS)
+    assert_match(/do not add a\s+way out, a person or a possession that is not on those lists/, Playthrough::PromptVersion.narrator_instructions)
   end
 
   # --- what kind of turn this is -------------------------------------------
@@ -260,7 +265,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     playthrough = create(:playthrough, :started)
     agent = FakeAgent.new("The ledger is bound in cracked leather.")
 
-    BaseAgent.stub(:new, agent) { Scene::Narrator.new(playthrough).narrate("look at the ledger", intent: :examine) }
+    BaseAgent.stub(:new, agent) { Playthrough::Turn.new(playthrough).narrate("look at the ledger", doing: :examine) }
 
     assert_match(/looking more closely at something that is here/, agent.prompts.first)
     assert_match(/nobody arrives and nobody leaves/, agent.prompts.first)
@@ -270,7 +275,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     playthrough = create(:playthrough, :started)
     agent = FakeAgent.new("You wait.")
 
-    BaseAgent.stub(:new, agent) { Scene::Narrator.new(playthrough).narrate("wait", intent: :other) }
+    BaseAgent.stub(:new, agent) { Playthrough::Turn.new(playthrough).narrate("wait", doing: :other) }
 
     assert_no_match(/looking more closely/, agent.prompts.first)
     assert_no_match(/ALREADY happened/, agent.prompts.first)

@@ -106,7 +106,7 @@ class Eval::Classifier::BenchTest < ActiveSupport::TestCase
       readings = %w[Perrin Halkett].map do |recipient|
         choice = standing.offered_for(:use).find { |offer| offer.recipient.fullname.start_with?(recipient) }
         agent = FakeAgent.new({ "intent" => "use", "target" => choice.token, "also_named" => "nothing" })
-        BaseAgent.stub(:new, agent) { bench.send(:read, corpus.lines.sole, standing, arm, 1) }
+        BaseAgent.stub(:new, agent) { bench.send(:read, corpus.lines.sole, standing, arm, 1, Playthrough::Requests.rows) }
       end
 
       assert_predicate readings.first, :right?, readings.first.error

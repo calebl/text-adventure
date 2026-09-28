@@ -15,7 +15,7 @@
 #
 # WHY THE FACTS ARE NOT WRITTEN IN THE FILE. A case that declared its own room
 # description and its own floor would be measuring prompts the app does not
-# build: `Playthrough::Moment` is the one builder of what a prose pass is told,
+# build: the engine's `moment` is the one builder of what a prose pass is told,
 # and a corpus that hand-wrote its input would drift away from it the first time
 # a fact was added there. So a case names a POSITION and the position is staged
 # offline through the app's own loader and mechanics (`Eval::Classifier::Stage`,

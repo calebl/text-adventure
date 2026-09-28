@@ -22,7 +22,7 @@
 #   copy has neither holder nor floor and remains only to prevent respawning.
 #   THIS IS THE ONLY LAYER PLAY EVER READS OR WRITES: `Playthrough::Classifier`'s
 #   closed sets, `Playthrough::Turn#carry!` / `#put_down!` / `#read_item`,
-#   `Playthrough::Moment`, `Playthrough::Refusal`'s lists and the
+#   the engine's `moment`, `Playthrough::Refusal`'s lists and the
 #   `rake game:mechanics` read-out see instances and nothing else.
 #
 # `template_id` IS THE LINK, and it is what makes the split answerable. It says
@@ -319,7 +319,7 @@ class Item < ApplicationRecord
   # and the frame it is read in.
   #
   # THIS IS THE READER A LATER SLICE CALLS. Nothing in the play path reads it
-  # yet: `Playthrough::Moment` -- what the narrator and an NPC are told about
+  # yet: the engine's `moment` -- what the narrator and an NPC are told about
   # the moment -- is slice 3's file and is not touched here, and this is public
   # and tested so that slice needs no new reader of its own.
   def position = Location::Spot.of(self)

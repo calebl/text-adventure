@@ -209,7 +209,7 @@ class Location::PlanTest < ActiveSupport::TestCase
   end
 
   # THE CLOSED SET, STATED AS A FACT. The cheap half of the standing constraint,
-  # said the way `Playthrough::Moment` says it about exits.
+  # said the way the engine's `moment` says it about exits.
   test "the ways out are stated as every way out there is" do
     taproom = room("the taproom", x: 0, y: 0, width: 6, depth: 4)
     join!(taproom, room("the snug", x: 6, y: 0, width: 6, depth: 4))

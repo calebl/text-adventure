@@ -1,6 +1,10 @@
 require "test_helper"
 
-class InteractionAgentAgencyTest < ActiveSupport::TestCase
+# WHAT AN EXCHANGE MAY CHANGE, AND WHEN (`Playthrough::Turn#converse`): the
+# character picks one of the actions offered, the action is applied before the
+# narrator is asked, and nothing the narrator streams escapes unless it is
+# kept.
+class Playthrough::TurnExchangeAgencyTest < ActiveSupport::TestCase
   setup do
     @game = create(:playthrough, :started)
     @npc = create(:character, story: @game.story, location: @game.current_location,
@@ -11,14 +15,16 @@ class InteractionAgentAgencyTest < ActiveSupport::TestCase
   end
 
   test "the schema offers only current actions and preserves all reaction fields" do
-    BaseAgent.stub(:new, FakeAgent.new) do
-      schema = InteractionAgent.new(@npc, playthrough: @game).character_agent.schemas.last
-      assert_equal Interaction::Schema.required_properties + [ :engine_action ], schema.required_properties
-      Interaction::Schema.properties.each do |name, property|
-        assert_equal property, schema.properties.fetch(name)
-      end
-      assert_equal [ "none", "give:#{@key.id}", "follow" ], schema.properties.fetch(:engine_action).fetch(:enum)
+    character = FakeAgent.new(reaction("none"))
+    queue = [ character, FakeAgent.new("Maren waits.") ]
+    BaseAgent.stub(:new, ->(*, **) { queue.shift }) { Playthrough::Turn.new(@game).converse(@npc, "Hello.") }
+    schema = character.schemas.last
+
+    assert_equal Interaction::Schema.required_properties + [ :engine_action ], schema.required_properties
+    Interaction::Schema.properties.each do |name, property|
+      assert_equal property, schema.properties.fetch(name)
     end
+    assert_equal [ "none", "give:#{@key.id}", "follow" ], schema.properties.fetch(:engine_action).fetch(:enum)
   end
 
   test "an accepted gift is already in the player's hands when the narrator is called" do
@@ -33,7 +39,7 @@ class InteractionAgentAgencyTest < ActiveSupport::TestCase
     end
     queue = [ character, narrator ]
     exchange = BaseAgent.stub(:new, ->(*, **) { queue.shift }) do
-      InteractionAgent.new(@npc, playthrough: @game).ask("Please return the key.")
+      Playthrough::Turn.new(@game).converse(@npc, "Please return the key.")
     end
 
     assert observed
@@ -45,7 +51,7 @@ class InteractionAgentAgencyTest < ActiveSupport::TestCase
   test "an unsupported action produces a rejected fact and no invented state" do
     fake = FakeAgent.new(reaction("give:9999999"), "Maren has no crown to give you.")
     exchange = BaseAgent.stub(:new, fake) do
-      InteractionAgent.new(@npc, playthrough: @game).ask("Give me the crown.")
+      Playthrough::Turn.new(@game).converse(@npc, "Give me the crown.")
     end
 
     assert_equal "rejected", exchange.effect.status
@@ -64,7 +70,7 @@ class InteractionAgentAgencyTest < ActiveSupport::TestCase
     queue = [ character, narrator ]
     chunks = []
     exchange = BaseAgent.stub(:new, ->(*, **) { queue.shift }) do
-      InteractionAgent.new(@npc, playthrough: @game).ask("The key, please.") { |part| chunks << part }
+      Playthrough::Turn.new(@game).converse(@npc, "The key, please.") { |part| chunks << part }
     end
 
     assert_predicate exchange, :fallback?
@@ -86,7 +92,7 @@ class InteractionAgentAgencyTest < ActiveSupport::TestCase
     queue = [ character, narrator ]
     chunks = []
     exchange = BaseAgent.stub(:new, ->(*, **) { queue.shift }) do
-      InteractionAgent.new(@npc, playthrough: @game).ask("Hello.") { |part| chunks << part }
+      Playthrough::Turn.new(@game).converse(@npc, "Hello.") { |part| chunks << part }
     end
 
     assert_not_predicate exchange, :fallback?
@@ -100,7 +106,7 @@ class InteractionAgentAgencyTest < ActiveSupport::TestCase
     assert_no_difference [ -> { Scene.count }, -> { Interaction.count }, -> { @game.npc_states.count } ] do
       BaseAgent.stub(:new, ->(*, **) { queue.shift }) do
         assert_raises(ActiveRecord::RecordInvalid) do
-          InteractionAgent.new(@npc, playthrough: @game).ask("The key, please.")
+          Playthrough::Turn.new(@game).converse(@npc, "The key, please.")
         end
       end
     end

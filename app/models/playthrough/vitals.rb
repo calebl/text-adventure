@@ -69,7 +69,7 @@ class Playthrough::Vitals < ApplicationRecord
   # WHAT A CONSUMER IS TOLD, AND IT EXISTS EVEN WHEN THE ROW DOES NOT.
   #
   # `Playthrough#vitals_for` answers with one of these whether or not anything
-  # has happened to the body, which is what lets `Playthrough::Moment`, the
+  # has happened to the body, which is what lets the engine's `moment`, the
   # `rake game:mechanics` read-out and `EngineSweep::Expectation` all read one
   # shape and never write the "absent row means unhurt" rule out a second time.
   #

@@ -314,12 +314,13 @@ class Playthrough::Refusal
   #
   # WHAT THIS REPLACED, and it is the whole reason the shape exists.
   # `Playthrough::Turn#take_item` used to answer a protagonist-less game by
-  # calling `Scene::Narrator` with the bare command -- so the model was asked to
-  # narrate "take iron key" with no fact under it, wrote a perfect paragraph
-  # about pocketing the key, and the key stayed on the floor. That is the
-  # captain's playthrough 24 of 2026-09-05. Each of those branches carried a
-  # comment saying *"nothing in the app creates such a playthrough"*, and
-  # `rake game:new` followed by the Play button is exactly what does.
+  # calling the narrator (`Playthrough::Turn#narrate`) with the bare command --
+  # so the model was asked to narrate "take iron key" with no fact under it,
+  # wrote a perfect paragraph about pocketing the key, and the key stayed on the
+  # floor. That is the owner's playthrough 24 of 2026-09-05. Each of those
+  # branches carried a comment saying *"nothing in the app creates such a
+  # playthrough"*, and `rake game:new` followed by the Play button is exactly
+  # what does.
   def self.unplayable(intent, playthrough:, typed:)
     action = intent.action.to_sym
 

@@ -1,35 +1,26 @@
-# Calls the production generator once, intercepting only provider answers for
-# offline replay. Request capture occurs at ask, after with_schema; equality
-# with Stage#request prevents the digest task from measuring a parallel builder.
+# Sends the engine's own arrival request once (`Eval::Arrival::Stage#request`,
+# the request a turn walking into the room sends), intercepting only provider
+# answers for offline replay, and keeps the description and summary the way a
+# written arrival keeps them.
 class Eval::Arrival::Bench
-  Response = Data.define(:content)
+  include SanitizesGeneratedText
 
   def read(kase, rep:, replay: nil)
     Eval::Arrival::Stage.open(kase) do |stage|
-      expected = stage.request
+      request = stage.request
       facts = stage.facts
-      generator = stage.generator
-      agent = generator.agent
-      original = agent.method(:ask)
-      requests = []
-      agent.define_singleton_method(:ask) do |prompt, **options, &block|
-        request = { "system" => instructions, "user" => prompt,
-          "schema" => JSON.parse(JSON.generate(schema.new.to_json_schema)),
-          "history" => chat.messages.order(:id).reject { |m| m.role == "system" }.map { |m| { "role" => m.role, "content" => m.text } } }
-        raise "Arrival request differs from offline builder" unless request == expected
-        requests << request
-        replay ? Response.new(content: replay) : original.call(prompt, **options, &block)
-      end
-      scene = nil
+      requests = [ request ]
+      answer = nil
       error = nil
       begin
-        scene = generator.generate!
+        answer = replay || send_arrival(stage, request)
       rescue StandardError => exception
         error = "#{exception.class}: #{exception.message}"
       end
       { "id" => kase.fetch("id"), "rep" => rep, "facts" => facts,
         "requests" => requests, "request_identity" => Eval::RequestIdentity.of(requests),
-        "description" => scene&.description, "summary" => scene&.summary, "error" => error }
+        "description" => answer && sanitize_string(answer["description"]),
+        "summary" => answer && sanitize_string(answer["summary"]), "error" => error }
     end
   end
 
@@ -58,5 +49,15 @@ class Eval::Arrival::Bench
       end
     end
     data
+  end
+
+  private
+
+  def send_arrival(stage, request)
+    sender = Eval::EngineCalls::Sender.new(stage.game)
+    answered = sender.call(request.merge("kind" => "chat", "purpose" => "arrival", "stream" => false))
+    raise sender.failure if sender.failure
+
+    answered.fetch("content")
   end
 end

@@ -16,7 +16,7 @@ module Eval::Prompt::Branches
                                    label: Eval::Prompt::Corpus::STAGE_LABEL, retitle: true,
                                    roots: Eval::Prompt::WORLD_ROOTS) do |stages|
         stage = Stage.new(kase, stages.fetch(kase.position).playthrough).prepare
-        { "request" => Eval::RequestIdentity.request(Scene::Narrator::INSTRUCTIONS, stage.prompt, nil),
+        { "request" => Eval::RequestIdentity.request(stage.request.fetch("system"), stage.prompt, nil),
           "facts" => stage.facts }
       end
     end.sort.to_h

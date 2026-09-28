@@ -20,7 +20,7 @@
 # The playthrough is `story_id` too. A key left out takes the column's default.
 module EngineVectors::Room
   Built = Data.define(:playthrough, :records) do
-    def classifier = Playthrough::Classifier.new(playthrough, system_one: false)
+    def classifier = Playthrough::Classifier.new(playthrough)
     def grammar = Playthrough::Grammar.new(playthrough, classifier: classifier)
 
     # A record by its explicit id: a Location, a Character or an Item.

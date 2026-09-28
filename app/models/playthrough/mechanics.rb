@@ -18,7 +18,8 @@
 #                    there. The world auto-generates exactly as it does in the
 #                    browser, so what is walked is the real world and not a
 #                    frozen one.
-#   the narration    DROPPED. No `Scene::Narrator`, no `InteractionAgent`, no
+#   the narration    DROPPED. No narrator (`Playthrough::Turn#narrate`), no
+#                    exchange (`Playthrough::Turn#converse`), no
 #                    character prose, and nothing prose-shaped is printed. What
 #                    comes back is the engine's own view of the records after
 #                    the command, plus one line saying what changed.
@@ -194,14 +195,14 @@ class Playthrough::Mechanics
         # subset of the line above it, and empty in every game nobody swung in.
         [ "provoked", provoked.map(&:fullname), "nobody provoked" ],
         # HOW MUCH IS LEFT OF THE PLAYER, out of `Playthrough#vitals_for` -- the
-        # same one reader `Playthrough::Moment` states it to the narrator from,
+        # same one reader the engine's `moment` states it to the narrator from,
         # so the prose and the read-out cannot disagree about a number. Empty
         # for a playthrough whose protagonist has no stat block, which is the
         # honest nothing rather than an invented "unhurt".
         [ "condition", [ condition&.in_words, ("THIS PLAYTHROUGH IS OVER" if over) ].compact, "no stat block" ],
         # HOW MUCH IS LEFT OF EVERYBODY ELSE STANDING HERE, out of the same one
         # reader (`Playthrough#vitals_for`). `unhurt` is said here where the
-        # narrator is not told it (`Playthrough::Moment`), because this is a
+        # narrator is not told it (the engine's `moment`), because this is a
         # read-out and a blank line reads as a missing number rather than as a
         # whole body. Bounded by `Character::Registry::MAX_PER_ROOM`.
         [ "others", others_condition, "nobody else" ],

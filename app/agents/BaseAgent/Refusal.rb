@@ -1,10 +1,10 @@
 # WHAT A MODEL SAID INSTEAD OF NARRATING, AND HOW THE APP TELLS THE TWO APART.
 #
-# `Scene::Narrator` and `InteractionAgent`'s second pass are the two unschema'd
-# calls in the app (`Scene::Narrator`'s header says why), so they are the two
-# that can come back as prose about the request rather than prose answering it. A
-# schema'd call cannot fail this way and is not read here: it either returns the
-# Hash it was asked for or `verify_schema_honored!` fails it.
+# The narrator (`Playthrough::Turn#narrate`) and the exchange's second pass
+# (`Playthrough::Turn#converse`) are the two unschema'd calls in the app (the engine's `data/scene/narrator.yml` says why), so they are the two
+# that can come back as prose about the request rather than prose answering it.
+# A schema'd call cannot fail this way and is not read here: it either returns
+# the Hash it was asked for or `verify_schema_honored!` fails it.
 #
 # MEASURED, NOT GUESSED, and the measurement is checked in. The corpus is 127
 # real prose responses from `minimax/minimax-m3` and `mistralai/mistral-medium-3.1`
@@ -29,7 +29,7 @@
 #     refusal to any pattern matching on words.
 #
 # So the signature is STRUCTURAL, and it comes from the narrator's own prompt
-# (`Scene::Narrator::INSTRUCTIONS`): the narrator writes in the SECOND person
+# (the engine's `scene/narrator.yml`): the narrator writes in the SECOND person
 # and characters speak inside quotation marks, so an unquoted "I" near the top
 # is the model talking about itself rather than the world. And a bulleted or
 # numbered list is a menu, which that prompt already forbids in as many words.

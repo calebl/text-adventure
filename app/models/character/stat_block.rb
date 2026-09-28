@@ -11,7 +11,7 @@
 # further. Those are rolled by the engine and STATED in the realization prompt
 # before the model answers, because *"asking for a value the prompt just
 # supplied is a decision bought twice"*. A stat block is not even stated: the
-# prose has no use for a hit die, and `Playthrough::Moment` tells the narrator
+# prose has no use for a hit die, and the engine's `moment` tells the narrator
 # how much is LEFT of the player rather than what they are made of.
 #
 # TWO ENTRY POINTS, and the difference between them is which roll this is.

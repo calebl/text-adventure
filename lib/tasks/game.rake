@@ -731,23 +731,18 @@ namespace :game do
     puts "Deleted #{story.title.inspect} and #{removed.values.sum} record(s) that belonged to it."
   end
 
-  desc "Walk a world with the narration switched off. Usage: rake 'game:mechanics[3]', NO_MODEL=1 for the offline grammar"
+  desc "Walk a world with the narration switched off, on the engine the game plays, with no model. Usage: rake 'game:mechanics[3]'"
   task :mechanics, [ :story ] => :environment do |t, args|
     playthrough = Helpers.mechanics_playthrough!(args[:story])
-    model = ENV["NO_MODEL"].blank?
-    mechanics = Playthrough::Mechanics.new(playthrough, model: model)
+    abort "The engine's extension is not built (#{Playthrough::RustEngine.load_error}); run bin/rails engine:build." if Playthrough::RustEngine.extension.nil?
+
+    mechanics = EngineSweep::RustMechanics.new(playthrough)
     story = playthrough.story
 
     puts "#{story.title} (story ##{story.id}) -- MECHANICS ONLY: the narration is off."
-    if model
-      puts "The classifier still reads what you type (one model call a command, so this needs"
-      puts "a key), and the world still generates itself as you walk into it. What you do not"
-      puts "get is prose: no narrator, no character, just the records and what changed."
-      puts "NO_MODEL=1 for the offline grammar instead."
-    else
-      puts "NO MODEL AT ALL: a fixed grammar instead of the classifier, no generation, no API"
-      puts "key, no network. A room nobody has written stays unwritten. `help` for the grammar."
-    end
+    puts "Every line is played by the Rust engine the game plays, with no model at all: its fixed"
+    puts "grammar instead of the classifier, no generation, no API key, no network. A room nobody"
+    puts "has written stays unwritten. `help` for the grammar."
     puts "Playing as #{playthrough.character&.fullname || "nobody"}, playthrough ##{playthrough.id}."
     puts "`help` for what this understands, `glance` for the panels, `quit` to stop."
     puts
@@ -767,10 +762,6 @@ namespace :game do
       puts "> #{line}" unless interactive
       break if Helpers::MECHANICS_QUIT.include?(line.strip.downcase)
 
-      # A FAILED MODEL CALL IS NOT A BAD COMMAND, and the console says which it
-      # was rather than dying on it: the classifier is the only thing here that
-      # can fail that way, and a session that ends on a rate limit loses the walk
-      # that was being set up.
       # THE PANELS A FRONT END WOULD DRAW, out of the same reader the driver
       # answers (`Playthrough::Session#glance`). Reads only; not a turn.
       if line.strip.downcase == "glance"
@@ -779,11 +770,13 @@ namespace :game do
         next
       end
 
+      # A LINE THE ENGINE COULD NOT PLAY IS NOT A BAD COMMAND, and the console
+      # says which it was rather than dying on it: nothing it played is kept.
       begin
         puts mechanics.run(line)
-      rescue StandardError => e
-        puts "  FAILED:     the classifier call did not land -- #{e.class}: #{e.message}"
-        puts "              Nothing changed. Try again, or run with NO_MODEL=1 for the offline grammar."
+      rescue EngineSweep::RustMechanics::Failed, Playthrough::RustEngine::EngineError => e
+        puts "  FAILED:     #{e.message}"
+        puts "              Nothing changed."
         puts mechanics.state
       end
       puts

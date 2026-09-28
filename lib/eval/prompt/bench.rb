@@ -1,12 +1,15 @@
-# THE CORPUS, PLAYED THROUGH THE REAL TURN LOOP, ONE CALL A CASE.
+# THE CORPUS, PLAYED BY THE ENGINE THE GAME PLAYS, ONE CALL A CASE.
 #
-# `Playthrough::Turn#play` runs whole, on a staged position, with ONE thing
-# replaced: the classifier. A case declares the answer the classifier would have
-# given and `Eval::Prompt::Bench::FixedClassifier` returns it, so the turn takes
-# the branch the app chooses, writes the row the app writes, and builds the
-# prompt the app builds -- `Playthrough::Moment` and `Playthrough::Turn`'s own
-# fact sentences, not a copy of them here. What is measured is the prose that
-# comes back.
+# Each case is one submitted line played by the Rust engine
+# (`Playthrough::Requests.submit_fixed`), whole, on a staged position, with ONE
+# thing fixed: the reading. A case declares the answer the classifier would
+# have given, and the engine takes it wherever it would have asked the
+# classifier (`turn::Fixed`), so the turn takes the branch the engine chooses,
+# writes the rows the engine writes, and builds the prompt the engine builds --
+# its moment and its fact sentences, not a copy of them here. Every other call
+# the turn makes comes back to this bench as the engine's request, and the
+# bench sends it (`Eval::EngineCalls::Sender`). What is measured is the prose
+# that comes back.
 #
 # WHY THE CLASSIFIER IS THE THING REPLACED, and only it. It is the one call in a
 # turn that is not the thing being measured: leaving it in would put a second
@@ -24,32 +27,22 @@
 # and the board says so if it was ever more than one.
 #
 # AN ENDING CASE IS THE ONE SHAPE THAT BUYS TWO, and it is not an oversight in
-# the paragraph above: an ending happens on the turn AFTER a line the engine
-# played, so the take or the look or the arrival is narrated first and
-# `Scene::Ending` is written second. `Reading#calls` sees only the second,
-# because the first is attributed to the turn's own Scene and the scored passage
-# is the LAST Scene the turn wrote -- so `extra_calls` still reads 0 and the
-# figure that tells the truth about the spend is the estimate
+# the paragraph above: an ending happens on the line that concludes the arc,
+# so the take or the look or the arrival is narrated first and the ending is
+# written second. `Reading#calls` counts only the prose calls that are not a
+# prelude to the one scored -- so `extra_calls` still reads 0 and the figure
+# that tells the truth about the spend is the estimate
 # (`Eval::Prompt::PER_CALL["ending"]`, and `Corpus::Case#calls`).
 #
 # ITS OWN COPY OF THE WORLD PER CASE, THROUGH THE STAGING SEAM AND NOT AROUND
 # IT. A case moves rows -- a `take` takes, a `drop` drops, a `move` moves -- so
 # two cases sharing one staged position would not be two cases. Each one is
-# therefore staged on its own: `Eval::Classifier::Stage.open` loads that
-# position's world, walks its setup lines offline, and rolls the whole thing
-# back when the passage and the facts have been read out into Ruby.
-#
-# THERE IS EXACTLY ONE STAGING SEAM AND THIS CLASS OPENS NO TRANSACTION OF ITS
-# OWN, which is deliberate: `Stage.open`'s `requires_new` block is due to be
-# swapped for a pinned connection, and a bench that had rolled its own savepoint
-# around each case would be a second place to fix. Both benches call the one
-# entry point.
-#
-# AND IT IS THE SHORTEST LOCK EITHER BENCH TAKES, which is PR 119's lesson taken
-# one step further. SQLite gives one writer: the classifier bench holds a write
-# transaction for a whole pass, and a pass here would be several minutes with a
-# provider round trip inside every one of them. Per case it is one call, and a
-# seed load offline costs milliseconds against it.
+# therefore staged on its own: `Eval::Classifier::Stage.on_file` loads that
+# position's world on a scratch copy of this database, walks its setup lines
+# offline, and deletes the copy when the passage and the facts have been read
+# out into Ruby. A copy rather than a rolled-back transaction, because the
+# engine plays on a connection of its own and reads only what is committed;
+# nothing a case does ever reaches this database.
 #
 # SEVERAL REPETITIONS, BECAUSE ONE IS NOT A MEASUREMENT. This is prose at the
 # app's own temperature and two identical runs disagree -- that finding is
@@ -78,20 +71,6 @@
 # first pass, timed, reported as `first call` and excluded from the latencies --
 # so the figures the board prints are WARM-CACHE FIGURES and say so.
 class Eval::Prompt::Bench
-  # THE CLASSIFIER'S ANSWER, DECIDED BY THE CORPUS. A subclass rather than a
-  # stub object, because `Playthrough::Turn` asks it for two more things than
-  # `#classify` -- `#agent`, to file the turn's conversations under the scene,
-  # and `#offered_for`, to build a refusal -- and a double that answered those
-  # differently would be a second engine.
-  class FixedClassifier < Playthrough::Classifier
-    def initialize(playthrough, intent)
-      super(playthrough)
-      @intent = intent
-    end
-
-    def classify(_command) = @intent
-  end
-
   # THE NAME A FALLBACK IS FILED UNDER, and it is a class rather than a string
   # for the reason every other failure here is one: `Reading#error_class` splits
   # on colon-space and the board groups by what it finds, so a failure with no
@@ -266,47 +245,55 @@ class Eval::Prompt::Bench
   end
 
   # ONE CASE, IN ITS OWN COPY OF ITS WORLD. Everything worth keeping is read out
-  # into Ruby before `Stage.open` rolls the copy back, because after that there
+  # into Ruby before `Stage.on_file` deletes the copy, because after that there
   # is nothing left to read.
   def read(kase, arm, rep)
-    Eval::Classifier::Stage.open([ corpus.position(kase.position) ],
-                                 label: Eval::Prompt::Corpus::STAGE_LABEL, retitle: true,
-                                 roots: Eval::Prompt::WORLD_ROOTS) do |stages|
-      play_case(kase, stages.fetch(kase.position), arm, rep)
+    Eval::Classifier::Stage.on_file([ corpus.position(kase.position) ],
+                                    label: Eval::Prompt::Corpus::STAGE_LABEL, retitle: true,
+                                    roots: Eval::Prompt::WORLD_ROOTS) do |stages, file|
+      play_case(kase, stages.fetch(kase.position), arm, rep, file)
     end
   end
 
-  def play_case(kase, standing, arm, rep)
+  # The purpose the engine files a game's last paragraph under.
+  ENDING = "ending".freeze
+
+  # THE CASE, PLAYED BY THE ENGINE ON THE STAGED COPY AT `file`, its calls
+  # answered by `answering` (`Eval::EngineCalls`): the arm's own sender on a
+  # paid pass, and fixed words when the request itself is all a caller wants
+  # (`Eval::Prompt::RequestVersion`).
+  def play_case(kase, standing, arm, rep, file, answering: Eval::EngineCalls::Sender.new(standing.playthrough))
     playthrough = standing.playthrough
     story = playthrough.story
     intent = intent_for(kase, standing)
     from = playthrough.current_location
-
-    turn = Playthrough::Turn.new(playthrough)
-    turn.instance_variable_set(:@classifier, FixedClassifier.new(playthrough, intent))
+    @ending_request = nil
 
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     begin
-      scene, ending_request = if kase.ending?
-        Eval::Prompt::EndingVersion.capture { turn.play(kase.typed) }
-      else
-        [ turn.play(kase.typed), nil ]
+      answer = Playthrough::Requests.submit_fixed(file, playthrough, kase.typed, token: SecureRandom.uuid,
+                                                  fixed: { action: kase.act.to_s, target: kase.target.presence }) do |call|
+        scaffold_ending!(playthrough, call) if kase.ending? && call["purpose"] == ENDING
+        answering.call(call)
       end
-      # Recovery now completes engine effects despite an unavailable renderer.
+      failure = answering.respond_to?(:failure) ? answering.failure : nil
+      if (error = answer["error"])
+        raise failure || Playthrough::RustEngine::EngineError.new(error.fetch("kind"), error.fetch("message"))
+      end
+
+      scene = answer.dig("turned", "scene") && Scene.find(answer.dig("turned", "scene"))
+      # Recovery completes engine effects despite an unavailable renderer.
       # Adapt that receipt to the existing failed-call row; engine-authored
       # fallback words must never become model prose or change refusal counts.
-      if scene&.engine_fallback?
-        raise(scene.rendering_error || RenderingFellBack.new("the renderer did not answer, so the engine's words stand"))
-      end
+      raise(failure || RenderingFellBack.new("the renderer did not answer, so the engine's words stand")) if scene&.engine_fallback?
+
       elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
-      receipts = receipts_for(scene)
+      receipts = receipts_for(answering.receipts)
       # THE ENDING THAT FELL BACK, read off the row the engine labelled -- see
-      # `EndingFellBack`. Nothing else in this method asks the app what happened;
+      # `EndingFellBack`. Nothing else in this method asks the game what happened;
       # this one has to, because the pass being measured answers a Scene whether
       # or not a model wrote it.
-      fell_back = kase.ending? && scene&.engine_authored?
-
-      if fell_back
+      if kase.ending? && scene&.engine_authored?
         return Reading.new(
           kase: kase, arm: arm.id, rep: rep, story: story.title, pass: kase.pass,
           text: nil, facts: {}, seconds: nil, input_tokens: receipts[:input_tokens],
@@ -322,7 +309,8 @@ class Eval::Prompt::Bench
         seconds: elapsed, input_tokens: receipts[:input_tokens], output_tokens: receipts[:output_tokens],
         calls: receipts[:calls], answered_by: receipts[:answered_by],
         instructions: receipts[:instructions], prompt: receipts[:prompt],
-        missing_fields: receipts[:missing_fields], cap_hits: receipts[:cap_hits], error: nil, ending_request: ending_request
+        missing_fields: receipts[:missing_fields], cap_hits: receipts[:cap_hits], error: nil,
+        ending_request: @ending_request
       )
     rescue StandardError => error
       # A FAILED CALL HAS NO LATENCY, deliberately: how long it took to fail is
@@ -354,28 +342,22 @@ class Eval::Prompt::Bench
     )
   end
 
-  # WHAT THE TURN COST AND WHAT IT WAS TOLD, read off the conversation it left
-  # behind -- the same records `Playthrough::Feedback#provenance_for` reads, for
-  # the same reason: they are the app's own account of the call rather than this
-  # class's.
-  def receipts_for(scene)
-    return { pass: nil, calls: 0, input_tokens: 0, output_tokens: 0 } if scene.nil?
+  # WHAT THE TURN COST AND WHAT IT WAS TOLD, out of the receipt of every call
+  # it made (`Eval::EngineCalls::Receipt`): the pass that answered is the last
+  # prose pass, what it was told is what the engine asked, and what it cost is
+  # every call's conversation.
+  def receipts_for(calls)
+    kept = calls.select { |receipt| Eval::Prompt::PASSES.include?(receipt.purpose) }.last
 
-    messages = scene.messages.includes(:usage_receipt, :ruby_llm_usages, :chat).sort_by(&:id)
-    answered = messages.select { |message| message.role.to_s == "assistant" }
-    prose = answered.select { |message| Eval::Prompt::PASSES.include?(message.chat&.purpose) }
-    kept = prose.last
-    chat = kept&.chat
-
-    { pass: chat&.purpose,
-      calls: answered.size,
-      answered_by: kept&.answering_model_id,
-      input_tokens: messages.sum { |message| message.input_tokens.to_i },
-      output_tokens: messages.sum { |message| message.output_tokens.to_i },
-      instructions: chat&.messages&.find_by(role: "system")&.content,
-      prompt: chat && chat.messages.where(role: "user").order(:id).last&.content,
-      missing_fields: missing_fields(chat, kept),
-      cap_hits: cap_hits(chat, kept) }
+    { pass: kept&.purpose,
+      calls: kept&.purpose == ENDING ? 1 : calls.size,
+      answered_by: kept&.answered_by,
+      input_tokens: calls.sum(&:input_tokens),
+      output_tokens: calls.sum(&:output_tokens),
+      instructions: kept&.system,
+      prompt: kept&.user,
+      missing_fields: missing_fields(kept),
+      cap_hits: cap_hits(kept) }
   end
 
   # WHAT STORED PROSE CANNOT SHOW, HALF ONE: A REQUIRED FIELD THAT NEVER
@@ -384,15 +366,14 @@ class Eval::Prompt::Bench
   # provider's own stored JSON against the schema's own
   # `required` list. `BaseAgent#missing_schema_keys` fails the call when a field
   # is truly absent, which is the claim this checks rather than assumes.
-  def missing_fields(chat, message)
-    schema = schema_for(chat)
-    body = raw_answer(message)
+  def missing_fields(receipt)
+    schema = receipt&.schema
+    body = receipt&.raw
     return [] if schema.nil? || body.nil?
 
-    # `.map(&:to_s)`, because `deep_stringify_keys` stringifies KEYS and not the
-    # values inside an array -- so `required` comes back as symbols against a
-    # body whose keys are strings, and every field read as absent. Measured: 24
-    # phantom omissions on the first 90-case run, two per arrival.
+    # `.map(&:to_s)`, because a schema's `required` can come back as symbols
+    # against a body whose keys are strings, and every field read as absent.
+    # Measured: 24 phantom omissions on the first 90-case run, two per arrival.
     Array(schema.dig("schema", "required")).map(&:to_s).reject { |field| body[field].to_s.present? }
   end
 
@@ -403,9 +384,9 @@ class Eval::Prompt::Bench
   # NOT pass its caps to the sanitizer, so this is measured here rather than
   # raised there -- and measuring it is the point: `truncated_prose` reads the
   # stored passage and can only see a cut that left a sentence hanging.
-  def cap_hits(chat, message)
-    schema = schema_for(chat)
-    body = raw_answer(message)
+  def cap_hits(receipt)
+    schema = receipt&.schema
+    body = receipt&.raw
     return [] if schema.nil? || body.nil?
 
     Array(schema.dig("schema", "properties")).filter_map do |field, rules|
@@ -416,19 +397,15 @@ class Eval::Prompt::Bench
     end
   end
 
-  # The JSON schema one pass sends, by purpose. A map rather than a lookup on
-  # the agent, because the agent is gone by the time this runs and the pass is
-  # what a stored row records.
-  SCHEMAS = { "arrival" => Scene::Schema }.freeze
-
-  # `RubyLLM::Schema` builds its JSON on an INSTANCE, not on the class -- the
-  # class method exists and raises. Built fresh each time; it is a hash literal.
-  def schema_for(chat)
-    klass = SCHEMAS[chat&.purpose]
-    klass && klass.new.to_json_schema.deep_stringify_keys
+  # THE ENDING'S SCAFFOLD, from the rows as they stand when the ending is
+  # asked (`Eval::Prompt::EndingVersion.scaffold`): the closing scene is the
+  # game's current one, and the prelude the scene before it.
+  def scaffold_ending!(playthrough, call)
+    closing = Playthrough.find(playthrough.id).current_scene
+    outcome = Playthrough::Ending.find_by!(playthrough_id: playthrough.id).quest_outcome
+    @ending_request = Eval::Prompt::EndingVersion.scaffold(playthrough, outcome: outcome, prelude: closing.previous_scene,
+                                                                        prompt: call.fetch("user"))
   end
-
-  def raw_answer(message) = message&.structured_content
 
   # THE MOMENT AS THE RECORDS HELD IT, AFTER THE TURN, and every list in it is
   # asked of `Story::Audit` rather than rebuilt: the checks read these lists off

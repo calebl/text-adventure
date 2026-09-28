@@ -15,7 +15,7 @@ class EngineVectorsTest < ActiveSupport::TestCase
     assert_empty stale.keys, "run `bin/rails engine:vectors` and commit the diff; see docs/engine-vectors.md"
   end
 
-  test "every file in the directory is a portion that is generated" do
+  test "every file in the directory is a portion that is generated here or vendored from the engine" do
     expected = (EngineVectors::PORTIONS.keys | EngineVectors::ENGINE_OWNED).map { |portion| "#{portion}.json" }.sort
 
     assert_equal expected, DIRECTORY.children.map { |path| path.basename.to_s }.sort
@@ -45,11 +45,11 @@ class EngineVectorsTest < ActiveSupport::TestCase
     assert_equal Eval::Classifier.corpus.lines.map(&:id), ids
   end
 
-  # The export stops if either fixture is not reproduced; these pin that the
-  # cases which reproduce them stay in the files.
+  # The two System One requests the game keeps as fixtures are cases of the
+  # portions the engine owns, so the engine is held to them.
   test "the two stored System One requests are vectors" do
     scored = JSON.parse(DIRECTORY.join("classifier_request.json").read).fetch("cases")
-                 .find { |one| one["input"] == { "world" => "scored", "typed" => EngineVectors::ClassifierRequest::SCORED_LINE } }
+                 .find { |one| one["input"] == { "world" => "scored", "typed" => "ask Rowe and Perrin what happened at four o'clock" } }
     stored = JSON.parse(file_fixture("scored_classifier_request.json").read)
 
     assert_equal stored.fetch("state"), scored.dig("output", "state")
@@ -65,7 +65,7 @@ class EngineVectorsTest < ActiveSupport::TestCase
   end
 
   test "each file declares the format and version it is written in" do
-    EngineVectors::PORTIONS.each_key do |portion|
+    (EngineVectors::PORTIONS.keys | EngineVectors::ENGINE_OWNED).each do |portion|
       document = JSON.parse(DIRECTORY.join("#{portion}.json").read)
 
       assert_equal [ EngineVectors::FORMAT, EngineVectors::FORMAT_VERSION, portion ],

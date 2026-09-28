@@ -1,12 +1,12 @@
 # THE TWO TOOL-CALL SHAPES OF THE CLASSIFIER'S CLOSED SET, BUILT FOR THE BENCH
-# ONLY. Nothing here is reachable from a live turn: `Playthrough::Classifier`
-# still asks `Playthrough::IntentSchema.for` through `response_format`, exactly
-# as it always has. This module exists so `Eval::Classifier::Bench` can measure
+# ONLY. Nothing here is reachable from a live turn: the engine's classifier
+# call still carries its intent schema through `response_format`, exactly as
+# it always has. This module exists so `Eval::Classifier::Bench` can measure
 # what a forced tool call would cost and catch, next to that same schema arm,
 # in the same pass -- see `data/ta-tool-calls-scout/report.md`, sections 4-5.
 #
-# SHAPE B (`+tool`) wraps `Playthrough::IntentSchema.for(targets)` -- the
-# IDENTICAL closed set the app sends today -- in one `RubyLLM::Tool`, with
+# SHAPE B (`+tool`) wraps the engine's intent schema -- the IDENTICAL closed
+# set the game sends today -- in one `RubyLLM::Tool`, with
 # `tool_choice` naming it. Nothing about the schema changes; only the envelope
 # it crosses the wire in does. It is the control: if this arm does not read
 # like the schema arm, the harness is what is wrong.
@@ -34,27 +34,27 @@ module Eval::Classifier::ToolShapes
   SINGLE_NAME = "player_intent".freeze
   SINGLE_DESCRIPTION = "Record what one typed line was aimed at.".freeze
 
-  # Shape B: one tool, the identical schema, forced by name.
+  # Shape B: one tool, the identical schema, forced by name. `schema` is the
+  # engine's request's `schema` (`{name, description, schema}`), and the
+  # tool's parameters are the JSON schema inside it.
   def single(schema)
-    tool = build_tool(SINGLE_NAME, SINGLE_DESCRIPTION, schema, inject_intent: false)
+    tool = build_tool(SINGLE_NAME, SINGLE_DESCRIPTION, schema.fetch("schema"), inject_intent: false)
     { tools: [ tool ], choice: tool.name.to_sym }
   end
 
   # Shape C: one tool per intent, each with only its own target set, and the
-  # model forced to pick one of them. `classifier` is asked for the SAME
-  # closed sets `Playthrough::Classifier#ask_the_model` already builds
-  # (`#exits_here`, `#characters_here`, `#items_here`, `#items_carried`,
-  # `#physical_actions` -- all public readers), so this reaches no private
-  # method and reimplements no resolution rule, only the naming of a target.
-  def per_intent(classifier)
-    tools = Playthrough::IntentSchema::INTENTS.map { |intent| intent_tool(intent, classifier) }
+  # model forced to pick one of them. `room` is the SAME closed sets the
+  # engine's classifier call is built from (`Playthrough::Requests`, `room`),
+  # so this reimplements no resolution rule, only the naming of a target.
+  def per_intent(room)
+    tools = Playthrough::IntentSchema::INTENTS.map { |intent| intent_tool(intent, room) }
     { tools: tools, choice: :required }
   end
 
   private
 
-  def intent_tool(intent, classifier)
-    choices = target_names(intent, classifier)
+  def intent_tool(intent, room)
+    choices = target_names(intent, room)
     build_tool(intent, "Record a #{intent}, aimed at one of the things offered for it.",
                per_intent_schema(choices), inject_intent: true)
   end
@@ -64,23 +64,18 @@ module Eval::Classifier::ToolShapes
   # `.send` on a private method: this is bench request construction, not the
   # engine, and the engine's own copy of this table never changes underneath
   # it. `other` carries no target and never will -- see `IntentSchema`'s header.
-  def target_names(intent, classifier)
+  def target_names(intent, room)
     case intent.to_sym
-    when :move then classifier.exits_here.map(&:name)
-    when :talk, :attack
-      classifier.characters_here.flat_map { |character| [ character.fullname, character.nickname ] }
-    when :take then classifier.items_here.map(&:name)
-    when :drop then classifier.items_carried.map(&:name)
-    when :examine then (classifier.items_here + classifier.items_carried).map(&:name)
-    when :use then classifier.physical_actions.map(&:token)
+    when :move then room.fetch("exits")
+    when :talk, :attack then room.fetch("cast").flat_map { |person| [ person["fullname"], person["nickname"] ] }
+    when :take then room.fetch("lying")
+    when :drop then room.fetch("carried")
+    when :examine then room.fetch("lying") + room.fetch("carried")
+    when :use then room.fetch("physical").map { |choice| choice.fetch("token") }
     else []
     end
   end
 
-  # `target`/`also_named`, VERBATIM OFF `Playthrough::IntentSchema.for` -- built
-  # from the real factory so the field descriptions and the `nothing` value are
-  # never retyped by hand, then `intent` is dropped, because which tool was
-  # called already answers it.
   def per_intent_schema(choices)
     full = Playthrough::IntentSchema.for(choices).new.to_json_schema.fetch(:schema)
     full.merge(properties: full.fetch(:properties).except(:intent),

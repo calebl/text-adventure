@@ -15,7 +15,7 @@ class BaseAgent
 
   # THE PARENT OF THE TWO FAILURES WHOSE TEXT MUST NEVER BE KEPT, so a caller
   # that persists prose can discard both in one rescue without having to know
-  # which one happened (`Scene::Narrator#narrate`). What `#ask` DOES about them
+  # which one happened (`Playthrough::Turn#narrate`). What `#ask` DOES about them
   # is not shared, and must not be -- see the two subclasses.
   class UnusableResponseError < StandardError; end
 
@@ -60,7 +60,7 @@ class BaseAgent
   # which is what `SchemaIgnoredError` already buys a second model for. Treating
   # the two differently was never chosen -- it was only where the raise happened.
   #
-  # WHERE THE RAISE HAPPENS IS THE WHOLE FIX. `InteractionAgent#ask` called the
+  # WHERE THE RAISE HAPPENS IS THE WHOLE FIX. `Playthrough::Turn#converse` called the
   # sanitizer AFTER `#ask` had returned, so the rotation never saw it: on
   # `minimax/minimax-m3`, 15 of 16 attempted narrations died this way and 1 of 18
   # turns completed (`data/ta-conversation-read/report.md` §4) -- every one of

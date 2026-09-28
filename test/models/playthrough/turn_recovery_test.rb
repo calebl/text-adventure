@@ -188,7 +188,7 @@ class Playthrough::TurnRecoveryTest < ActiveSupport::TestCase
     agent = FakeAgent.new("A sentence that never finished.")
     assert_raises(RuntimeError) do
       BaseAgent.stub(:new, agent) do
-        Scene::Narrator.new(@game).narrate("look") { raise "broadcast failed" }
+        Playthrough::Turn.new(@game).narrate("look") { raise "broadcast failed" }
       end
     end
     assert_equal @opening, @game.reload.current_scene

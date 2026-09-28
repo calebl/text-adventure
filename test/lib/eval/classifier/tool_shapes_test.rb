@@ -8,7 +8,7 @@ require "test_helper"
 class Eval::Classifier::ToolShapesTest < ActiveSupport::TestCase
   test "shape B wraps the identical schema in one tool, forced by its own name" do
     schema = Playthrough::IntentSchema.for(%w[north south])
-    built = Eval::Classifier::ToolShapes.single(schema)
+    built = Eval::Classifier::ToolShapes.single(engine_json(schema))
 
     assert_equal %w[player_intent], built[:tools].map(&:name)
     assert_equal :player_intent, built[:choice]
@@ -22,7 +22,7 @@ class Eval::Classifier::ToolShapesTest < ActiveSupport::TestCase
   # no chat is sent and the placeholder key never reaches the network.
   test "shape B's closed set crosses the wire byte for byte the same as the schema call" do
     schema = Playthrough::IntentSchema.for(%w[north south])
-    built = Eval::Classifier::ToolShapes.single(schema)
+    built = Eval::Classifier::ToolShapes.single(engine_json(schema))
 
     with_openrouter_key do
       schema_chat = rendered_chat.with_schema(schema)
@@ -44,7 +44,7 @@ class Eval::Classifier::ToolShapesTest < ActiveSupport::TestCase
 
   test "shape C builds one tool per intent, each carrying only its own target set" do
     classifier = staffed_classifier
-    built = Eval::Classifier::ToolShapes.per_intent(classifier)
+    built = Eval::Classifier::ToolShapes.per_intent(room_of(classifier))
 
     assert_equal :required, built[:choice]
     assert_equal Playthrough::IntentSchema::INTENTS, built[:tools].map(&:name)
@@ -80,7 +80,7 @@ class Eval::Classifier::ToolShapesTest < ActiveSupport::TestCase
 
   test "a shape C tool waits for approval and injects its own name when called directly" do
     classifier = staffed_classifier
-    move = Eval::Classifier::ToolShapes.per_intent(classifier)[:tools].find { |tool| tool.name == "move" }
+    move = Eval::Classifier::ToolShapes.per_intent(room_of(classifier))[:tools].find { |tool| tool.name == "move" }
 
     result = move.call("target" => "The Long Hallway", "also_named" => "nothing")
 
@@ -95,6 +95,12 @@ class Eval::Classifier::ToolShapesTest < ActiveSupport::TestCase
     chat.add_message(role: :user, content: "classify this line")
     chat
   end
+
+  # A schema class's JSON as the engine hands it over: string keys.
+  def engine_json(schema) = JSON.parse(JSON.generate(schema.new.to_json_schema))
+
+  # The room's closed sets, as the engine reads them.
+  def room_of(classifier) = Playthrough::Requests.build(:room, playthrough: classifier.playthrough.id)
 
   def with_openrouter_key
     original = RubyLLM.config.openrouter_api_key

@@ -56,7 +56,7 @@ class Eval::Arrival::Stage
       earlier = Scene.create!(id: -920003, story: story, location: room, story_timestamp: story.start_time,
         description: "You stand beside the desk.", summary: "Iri visits the counting house.")
     end
-    previous = Scene.create!(story: story, location: origin, story_timestamp: story.start_time + 2.hours, previous_scene: earlier,
+    previous = @previous = Scene.create!(story: story, location: origin, story_timestamp: story.start_time + 2.hours, previous_scene: earlier,
       description: "You leave the market for the counting house.", summary: "You leave the market for the counting house.")
     @game = Playthrough.create!(id: -920001, story: story, character: player, current_location: origin, current_scene: previous)
     Item.create!(name: "brass key", description: "A brass key.", location: room, properties: "{}")
@@ -97,7 +97,20 @@ class Eval::Arrival::Stage
 
   def generator_time = story.start_time + 2.hours + 1.minute
 
+  # THE ARRIVAL REQUEST THE ENGINE BUILDS for this staged case -- the one a
+  # turn walking into the room sends, or, for an opening, the one a new
+  # world's first scene is written from -- built from the staged rows with
+  # nothing played: `{system, user, schema, history}`.
   def request
+    Playthrough::Requests.build(:arrival, playthrough: game&.id, location: room.id, previous_scene: @previous&.id,
+                                          opening: kase["opening"] ? true : false)
+  end
+
+  # THE SAME REQUEST AS THIS GAME'S OWN ARRIVAL WRITER BUILDS IT
+  # (`Scene::Generator`), which still writes a world's opening arrival and the
+  # Ruby reference loop's: the golden vectors hold the two builders to the same
+  # bytes (`EngineVectors::KeptRequests`).
+  def generator_request
     at = generator.story_timestamp
     { "system" => generator.system_prompt,
       "user" => generator.arrival_prompt(generator.returning?, room.time_since_last_visit(generator.chain_head, at), generator.characters_present),

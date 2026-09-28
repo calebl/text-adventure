@@ -1,6 +1,6 @@
-# One character's reaction to what the player said or did. InteractionAgent
+# One character's reaction to what the player said or did. The exchange
 # interpolates all five fields into the narrator prompt by string key, so the
-# names here are a hard contract with InteractionAgent#narrator_instructions.
+# names here are a hard contract with the engine's `dialogue::narrator_request`.
 #
 # Lengths are explicit on every field, and they matter more here than anywhere
 # else in the app: this is the only schema that runs once per turn of dialogue,

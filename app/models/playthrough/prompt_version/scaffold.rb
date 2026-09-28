@@ -2,14 +2,14 @@
 # CAN COVER IT.
 #
 # WHAT THE SCAFFOLD IS. A narrated turn's prompt is not one block of text: it is
-# `Scene::Narrator::INSTRUCTIONS` as the system message, and then a user message
-# the app builds out of `Scene::Narrator#prompt_for` -- the framing of a `fact:`
-# and the `DOING` line -- wrapped around whatever `Playthrough::Turn` wrote as
-# that fact (`#taken_fact`, `#dropped_fact`, `#thrown_fact`, `#read_fact`,
-# `#written_words_fact`). Every one of those sentences is an INSTRUCTION in
-# every meaningful sense: "Narrate it as done. Do not contradict it and do not
-# undo it." is the app telling the narrator how to write, and changing it
-# changes the prose exactly the way changing the instruction block does.
+# the narrator's instructions as the system message, and then a user message the
+# engine builds (`renderedstep_engine::narration`) -- the framing of a `fact:`
+# and the `DOING` line -- wrapped around whatever the turn wrote as that fact (a
+# take, a drop, a throw, a reading, written words). Every one of those sentences
+# is an INSTRUCTION in every meaningful sense: "Narrate it as done. Do not
+# contradict it and do not undo it." is the app telling the narrator how to
+# write, and changing it changes the prose exactly the way changing the
+# instruction block does.
 #
 # WHY IT WAS NOT COVERED, AND WHAT CHANGED. `Playthrough::PromptVersion` read
 # the instruction text back off the stored conversation, and the scaffold cannot
@@ -43,13 +43,14 @@
 # the digest for no prompt change.
 #
 # WHAT IS STILL NOT COVERED, stated so nobody reads more into a matching digest
-# than it can carry: the rest of `Playthrough::Moment#narration_context`'s own
-# framing -- its `Handled` note IS rendered, because it is a fixed sentence about
-# a change of possession and belongs with the fact that names the same row, but
-# the surrounding lines are built together with the live records they state and
-# rendering them needs a database -- and `Scene::Generator`'s arrival prompt.
-# Both are covered by `Eval::Prompt::Version#prompt_digest`, which is a
-# fingerprint of everything and the reason that digest exists.
+# than it can carry: the rest of the framing of the engine's
+# `moment::narration_context` -- its `Handled` note IS rendered, because it is a
+# fixed sentence about a change of possession and belongs with the fact that
+# names the same row, but the surrounding lines are built together with the live
+# records they state and rendering them needs a database -- and
+# `Scene::Generator`'s arrival prompt. Both are covered by
+# `Eval::Prompt::Version#prompt_digest`, which is a fingerprint of everything
+# and the reason that digest exists.
 class Playthrough::PromptVersion::Scaffold
   def self.text = Playthrough::RustEngine.scaffold
 end

@@ -12,7 +12,7 @@
 # WHAT IT IS A DIGEST OF, stated narrowly because a version nobody can define is
 # a version nobody can trust: THE INSTRUCTION TEXT ACTUALLY SENT WITH THE CALL --
 # the system message of the conversation that answered
-# (`Scene::Narrator::INSTRUCTIONS` for a narrated turn,
+# (the narrator's instructions, the engine's `scene/narrator.yml`, for a narrated turn,
 # `Scene::Generator#system_prompt` for an arrival), read back off `messages`
 # rather than recomputed from a constant, so a digest describes what was sent on
 # the day rather than what the file says now -- AND, FOR A NARRATED TURN, THE
@@ -38,24 +38,24 @@
 #
 # WHAT IT IS DELIBERATELY NOT A DIGEST OF:
 #
-#   * THE FACTS. `Playthrough::Moment` builds those out of the records, and they
-#     differ every turn by design -- folding them in would give every turn its
+#   * THE FACTS. The engine's `moment` builds those out of the records,
+#     and they differ every turn by design -- folding them in would give every turn its
 #     own "version" and group nothing. The scaffold is the frame around them and
 #     the frame is what is covered: the placeholders
 #     `Playthrough::PromptVersion::Scaffold` renders against are where the facts
 #     would go.
-#   * `Playthrough::Moment#narration_context`'s own framing, which is built out
+#   * the engine's `moment::narration_context` framing, which is built out
 #     of the live records in the same breath as the facts and cannot be rendered
 #     without a database; and `Scene::Generator`'s arrival prompt, whose
 #     scaffold is its own and is not covered by the narration digest. Read
 #     `Eval::Prompt::Version` before assuming a matching digest here means two
 #     turns had identical prompts: `prompt_digest` is the fingerprint of
 #     everything, and it can be, only because its corpus is fixed.
-#   * `InteractionAgent`'s narrator pass, which sends NO system message at all
-#     -- its prose rules are interpolated into the per-turn user prompt with the
-#     character's name and pronouns inside them. A talk turn therefore has no
-#     instruction digest, and nil is the honest answer rather than a digest of
-#     the cast.
+#   * the exchange's narrator pass (`Playthrough::Turn#converse`), which sends
+#     NO system message at all -- its prose rules are interpolated into the
+#     per-turn user prompt with the character's name and pronouns inside them. A
+#     talk turn therefore has no instruction digest, and nil is the honest
+#     answer rather than a digest of the cast.
 #
 # SIXTEEN HEX CHARACTERS, the same length and for the same reason as
 # `Eval::Classifier.digest`: it is read by a person off a board and compared by
@@ -81,7 +81,7 @@ class Playthrough::PromptVersion
   end
 
   # THE PROSE PASS WHOSE SCAFFOLD THIS CLASS COVERS, as `BaseAgent` labels it
-  # (`Scene::Narrator#agent`). A name and not a list: `arrival` and
+  # (`Playthrough::Turn#narrate`). A name and not a list: `arrival` and
   # `interaction-narration` have scaffolds of their own and neither is rendered
   # here, so folding them under one branch would claim a coverage that does not
   # exist.
@@ -122,14 +122,17 @@ class Playthrough::PromptVersion
   # scaffold into that question would make a kept set unreadable the first time
   # a fact sentence was edited, which is a different question from the one it
   # asks.
-  def self.narration_instructions = of(Scene::Narrator::INSTRUCTIONS)
+  def self.narration_instructions = of(narrator_instructions)
 
   # WHAT THE APP WOULD SEND TODAY for the narrated turn -- the commonest prose
   # call in the game and the one `Eval::Prompt` is built around: the instruction
   # block AND the per-turn scaffold. Read from the code rather than from a
   # conversation, so a test and a doc can name today's version without a
   # database.
-  def self.narration = with_scaffold(Scene::Narrator::INSTRUCTIONS)
+  def self.narration = with_scaffold(narrator_instructions)
+
+  # The narrator's system message, the engine's (`scene/narrator.yml`).
+  def self.narrator_instructions = EngineData.fetch("scene/narrator").fetch("instructions")
 
   # ONE DIGEST OVER TWO TEXTS, joined rather than digested separately and
   # concatenated: a version is one short string a person compares by eye, and

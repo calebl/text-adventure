@@ -273,7 +273,7 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   end
 
   # THE CASCADE PAIR -- the two sides of the request-wording restoration. Both
-  # are `Playthrough::Classifier::Cascade` in front of the same arm the kept
+  # are the engine's `cascade` in front of the same arm the kept
   # Mistral-alone row above measures, so `cascade` is the only field that tells
   # a cascade set apart from an arm-alone one and nothing invents a separate
   # provider entry.
@@ -286,6 +286,12 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   # second, and neither is defensible without the side before it.
   CASCADE_KEPT = "classifier-cascade-state-20260919".freeze
   CASCADE_SETS = [ CASCADE_BEFORE, CASCADE_AFTER, CASCADE_KEPT ].freeze
+
+  # The cascade's two flags, as the engine that composes the answers reads
+  # them (the constants of the `cascade` vector portion it blesses).
+  CASCADE_TABLES = JSON.parse(Rails.root.join("test/engine_vectors/cascade.json").read).fetch("constants")
+  PRESENCE_THRESHOLD = CASCADE_TABLES.fetch("presence_threshold")
+  TWO_NAME_THRESHOLD = CASCADE_TABLES.fetch("two_name_threshold")
 
   test "both cascade sets are cascade runs of the same arm, corpus and schema as the kept Mistral row" do
     CASCADE_SETS.each do |set|
@@ -334,8 +340,8 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   test "the two flags never fire together, in either cascade set" do
     CASCADE_SETS.each do |set|
       both = load_kept(set).rows.count do |row|
-        row["target_present"] < Playthrough::Classifier::Cascade::PRESENCE_THRESHOLD &&
-          row["named_more_than_one"] >= Playthrough::Classifier::Cascade::TWO_NAME_THRESHOLD
+        row["target_present"] < PRESENCE_THRESHOLD &&
+          row["named_more_than_one"] >= TWO_NAME_THRESHOLD
       end
 
       assert_equal 0, both, "#{set}: a line both flags fired on would make the escalation rate unreadable"
@@ -345,8 +351,8 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   test "a cascade row escalated exactly when one of the two flags fired" do
     CASCADE_SETS.each do |set|
       load_kept(set).rows.each do |row|
-        flagged = row["target_present"] < Playthrough::Classifier::Cascade::PRESENCE_THRESHOLD ||
-                  row["named_more_than_one"] >= Playthrough::Classifier::Cascade::TWO_NAME_THRESHOLD
+        flagged = row["target_present"] < PRESENCE_THRESHOLD ||
+                  row["named_more_than_one"] >= TWO_NAME_THRESHOLD
         assert_equal flagged, row["resolved_by"] == "typed_model_escalated", "#{set}: #{row["id"]}"
       end
     end

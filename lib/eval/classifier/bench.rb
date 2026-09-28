@@ -439,7 +439,9 @@ class Eval::Classifier::Bench
           arm.pinned do
             warmups << warm(arm)
             (1..reps).each do |rep|
-              Eval::Classifier::Stage.open(corpus.positions) { |stages| passes << play(arm, rep, stages) }
+              Eval::Classifier::Stage.open(corpus.positions) do |stages|
+                passes << play(arm, rep, stages, Playthrough::Requests.rows)
+              end
             end
           end
         end
@@ -469,7 +471,7 @@ class Eval::Classifier::Bench
 
     Eval::Classifier::Stage.open([ corpus.position(line.position) ]) do |stages|
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      reading = read(line, stages.fetch(line.position), arm, 0)
+      reading = read(line, stages.fetch(line.position), arm, 0, Playthrough::Requests.rows)
       seconds = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
       error = reading.error
     end
@@ -487,11 +489,14 @@ class Eval::Classifier::Bench
   # a reading appended as it arrives would land against whichever line finished
   # in that slot, and the corpus would be scored against the wrong labels with
   # no error anywhere. Measured identical at N=1 and N=8 on the same lines.
-  def play(arm, rep, stages)
+  #
+  # `rows` is every staged position's rows, written once for the pass: a line
+  # read writes nothing, so every line of the pass reads the same rows.
+  def play(arm, rep, stages, rows)
     threads = concurrency_for(arm)
     io&.print format("  %-22s rep %d ", arm.id, rep)
     readings = Eval::Concurrency.fan(corpus.lines, threads: threads) do |line|
-      read(line, stages.fetch(line.position), arm, rep)
+      read(line, stages.fetch(line.position), arm, rep, rows)
     end
     pass = Pass.new(arm: arm.id, rep: rep, readings: readings)
     io&.puts format("%3d/%-3d right (%.3f), %2d misses, %.2fs median / %.2fs p95%s%s",
@@ -502,78 +507,120 @@ class Eval::Classifier::Bench
     pass
   end
 
-  # ONE LINE. A fresh `Playthrough::Classifier` per line, because the agent it
-  # memoizes is one conversation and the classifier is stateless by design --
-  # "there is nothing in last turn's exchange worth replaying".
-  def read(line, standing, arm, rep)
+  # ONE LINE, READ BY THE ENGINE AS A TURN READS IT (`Playthrough::Requests
+  # .read_line`): System One first where this arm's cascade is on, then the
+  # classifier call, each asked through this arm (`Answering`). The engine
+  # builds both requests and resolves both answers; this bench only carries
+  # them.
+  def read(line, standing, arm, rep, rows)
     # A FRESH `Playthrough` PER CALL, AND NOT THE STAGED ONE. An AR object's
     # association cache is not thread-safe, and the staged object is shared by
     # every worker on that position. One indexed read against a 0.6s call.
-    # `system_one:` PINS WHICH READER MAY ANSWER, the way `Arm#pinned` pins
-    # which model does -- `false` unless this arm's cascade is on, in which
-    # case it is `nil` (ambient) or a pinned `SystemOneAgent`. See `#initialize`.
-    classifier = Playthrough::Classifier.new(Playthrough.find(standing.playthrough.id),
-                                             system_one: system_one_for(arm))
-    prepare_agent!(classifier, arm)
+    playthrough = Playthrough.find(standing.playthrough.id)
+    answering = Answering.new(self, arm, playthrough, rows)
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
     begin
-      intent = classifier.classify(line.typed)
-      elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+      read = Playthrough::Requests.read_line(playthrough, line.typed, system_one: system_one?(arm), rows: rows,
+                                                                      &answering.method(:call))
+      raise answering.failure if answering.failure
 
+      elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+      intent = read.fetch("intent")
       Reading.new(line: line, arm: arm.id, rep: rep, error: nil, seconds: elapsed,
-                  answered_by: classifier.agent.current_model[:model],
-                  raw: raw_answer(classifier), resolved_by: classifier.resolved_by,
-                  target_present: classifier.target_present, named_more_than_one: classifier.named_more_than_one,
-                  out_of_set: intent.reached_for_nothing?,
-                  system_one_transport: classifier.system_one_transport,
-                  answer: Eval::Classifier::Corpus::Answer.from_intent(intent))
+                  answered_by: answering.answered_by, raw: answering.raw, resolved_by: read["resolved_by"],
+                  target_present: read["target_present"], named_more_than_one: read["named_more_than_one"],
+                  out_of_set: intent["reached_for_nothing"], system_one_transport: answering.transport,
+                  answer: Eval::Classifier::Corpus::Answer.new(intent: intent.fetch("action").to_sym,
+                                                              target: intent["target"], also_named: intent["also_named"],
+                                                              thrown_at: intent["thrown_at"]))
     rescue StandardError => error
       # A FAILED CALL HAS NO LATENCY, deliberately: how long it took to fail is
       # a fact about the failure and not about how fast this model answers, and
       # folding it into the median would make a flaky arm look slow instead of
       # flaky. The failure count and its error classes are the figure for it.
       Reading.new(line: line, arm: arm.id, rep: rep, answer: nil, answered_by: nil, raw: nil,
-                  seconds: nil, error: "#{error.class}: #{error.message}", resolved_by: classifier.resolved_by,
-                  target_present: classifier.target_present, named_more_than_one: classifier.named_more_than_one,
-                  system_one_transport: classifier.system_one_transport)
+                  seconds: nil, error: "#{error.class}: #{error.message}", resolved_by: nil,
+                  target_present: nil, named_more_than_one: nil, system_one_transport: answering.transport)
     end
   end
 
-  # THE ONLY PLACE A TOOL ARM DIFFERS FROM A SCHEMA ARM: before the one model
-  # call this line makes, swap `classifier`'s memoized agent for an
-  # `Eval::Classifier::ToolAgent` built for this arm's shape -- the exact
-  # substitution `Eval::Classifier::Version::CaptureAgent` already does for an
-  # offline capture, here driving a real call instead of throwing one away.
-  # `#classify` and every resolution rule downstream of it run UNCHANGED: the
-  # substituted agent answers `.with_schema(schema).ask(prompt).content` with
-  # the same shape `Playthrough::Classifier#ask_the_model` already expects,
-  # whichever envelope it crossed the wire in. A schema arm does nothing here
-  # at all.
-  def prepare_agent!(classifier, arm)
-    return if arm.shape == :schema
+  # WHETHER SYSTEM ONE IS ASKED FIRST ON THIS ARM: never unless its cascade is
+  # on; then always for an arm that pinned a transport, and otherwise where the
+  # environment has a credential, exactly as a live turn decides.
+  def system_one?(arm) = cascade_for?(arm) && (arm.pins_system_one_transport? || SystemOneAgent.configured?)
 
-    original = classifier.agent
-    tool_agent = Eval::Classifier::ToolAgent.new(shape: arm.shape, classifier: classifier,
-                                                 purpose: original.purpose, playthrough: classifier.playthrough)
-                   .with_instructions(original.instructions)
-                   .with_temperature(Playthrough::Classifier::TEMPERATURE)
-    classifier.instance_variable_set(:@agent, tool_agent)
-  end
+  # THE TWO CALLS OF ONE LINE, answered through one arm. A System One call goes
+  # through the arm's `SystemOneAgent` (`#system_one_for`), and a failure of
+  # any kind answers as unavailable, which the engine reads as its cue to ask
+  # the classifier. The classifier call goes through `BaseAgent` -- or, on a
+  # tool arm, `Eval::Classifier::ToolAgent`, the only place a tool arm differs
+  # from a schema arm -- with the engine's schema, instructions and
+  # temperature. A failed classifier call is answered as the failure it was
+  # and kept (`#failure`) for the reading.
+  class Answering
+    attr_reader :failure, :transport
 
-  # THE PROVIDER'S OWN JSON for the call just made. `#recorded_chat` is the
-  # non-building reader on purpose -- looking for a conversation must not create
-  # one.
-  def raw_answer(classifier)
-    stored = classifier.agent.recorded_chat&.messages&.where(role: "assistant")&.order(:id)&.last
-    body = stored&.structured_content
-    return body if body
-
-    call = stored&.ruby_llm_tool_calls&.sole&.to_llm
-    return unless call
-
-    call.arguments.transform_keys(&:to_s).tap do |arguments|
-      arguments["intent"] = call.name unless call.name == Eval::Classifier::ToolShapes::SINGLE_NAME
+    def initialize(bench, arm, playthrough, rows)
+      @bench = bench
+      @arm = arm
+      @playthrough = playthrough
+      @rows = rows
     end
+
+    def call(request)
+      request["kind"] == "system_one" ? questions(request) : classifier(request)
+    end
+
+    def answered_by = @agent&.current_model&.dig(:model)
+
+    # THE PROVIDER'S OWN JSON for the call just made. `#recorded_chat` is the
+    # non-building reader on purpose -- looking for a conversation must not
+    # create one.
+    def raw
+      stored = @agent&.recorded_chat&.messages&.where(role: "assistant")&.order(:id)&.last
+      body = stored&.structured_content
+      return body if body
+
+      call = stored&.ruby_llm_tool_calls&.sole&.to_llm
+      return unless call
+
+      call.arguments.transform_keys(&:to_s).tap do |arguments|
+        arguments["intent"] = call.name unless call.name == Eval::Classifier::ToolShapes::SINGLE_NAME
+      end
+    end
+
+    private
+
+    def questions(request)
+      agent = @bench.system_one_for(@arm) || SystemOneAgent.new(purpose: "classifier")
+      @transport = agent.transport_name
+      agent.ask_questions(state: request.fetch("state"), questions: request.fetch("questions")).payload
+    rescue SystemOneAgent::Unavailable, Timeout::Error => e
+      { "unavailable" => "#{e.class}: #{e.message}" }
+    end
+
+    def classifier(request)
+      @agent = agent_for(request)
+      { "content" => @agent.ask(request.fetch("user")).content, "model" => answered_by }
+    rescue StandardError => e
+      @failure = e
+      { "failure" => { "kind" => "provider", "message" => "#{e.class}: #{e.message}" } }
+    end
+
+    def agent_for(request)
+      options = { purpose: "classifier", playthrough: @playthrough }
+      agent = if @arm.shape == :schema
+        BaseAgent.new(**options)
+      else
+        Eval::Classifier::ToolAgent.new(shape: @arm.shape, room: room, **options)
+      end
+      agent.with_instructions(request.fetch("system"))
+           .with_temperature(request.fetch("temperature"))
+           .with_schema(Eval::EngineCalls::Schema.new(request.fetch("schema")))
+    end
+
+    # The room's closed sets, which a per-intent tool arm splits its targets by.
+    def room = Playthrough::Requests.build(:room, rows: @rows, playthrough: @playthrough.id)
   end
 end

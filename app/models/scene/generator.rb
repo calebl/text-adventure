@@ -1,11 +1,11 @@
 # Narrates arriving somewhere and keeps the moment as a Scene.
 #
-# NOT `Scene::Narrator`, and the difference is the point. The narrator answers
-# what the player TYPED: it streams unschema'd prose because a player is
-# watching it land a token at a time, and that is the one documented exception
-# to the structured-output rule. This narrates walking INTO a place, which is
-# not a turn -- it is the record of a moment in the world, written the way
-# every other record here is written:
+# NOT the narrator (`Playthrough::Turn#narrate`), and the difference is the
+# point. The narrator answers what the player TYPED: it streams unschema'd prose
+# because a player is watching it land a token at a time, and that is the one
+# documented exception to the structured-output rule. This narrates walking INTO
+# a place, which is not a turn -- it is the record of a moment in the world,
+# written the way every other record here is written:
 #
 #   * schema'd, one call, two fields. The description is what the player reads;
 #     the summary is what the rest of the game remembers (see Scene::Schema).

@@ -305,7 +305,7 @@ class LocationTest < ActiveSupport::TestCase
   end
 
   # EVERY ENTRY IS WELL FORMED, which is what lets `Playthrough::Hazards` fetch
-  # `:when` without a default and `Playthrough::Moment` fetch `:words`.
+  # `:when` without a default and the engine's `moment` fetch `:words`.
   test "every catalogue entry names a moment, a save and its words" do
     Location::HAZARDS.each do |key, entry|
       assert_includes Location::HAZARD_MOMENTS, entry[:when], "#{key} has an unroutable `when:`"

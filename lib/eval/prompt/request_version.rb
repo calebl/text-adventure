@@ -1,30 +1,14 @@
-# Run the real turn to its request boundary, inside rolled-back staging.
-# No provider conversation is built. Synthetic ending preludes only reach the
-# request boundary; EndingVersion replaces their fields to identify the stable
-# scaffold. Legacy digests still use the synthetic assembly, never scored prose.
+# Play the real turn to its request boundary, on a staged copy nobody keeps.
+# The engine plays the case exactly as a paid pass plays it, and every call it
+# makes is answered with fixed words (`Eval::EngineCalls::Canned`), so nothing
+# reaches a provider; the request captured is the one the engine asked. An
+# ending case's prelude is answered the same way, and EndingVersion replaces
+# its fields to identify the stable scaffold. Legacy digests still use the
+# synthetic assembly, never scored prose.
 module Eval::Prompt::RequestVersion
   extend self
 
-  PRELUDE = "The measured action is complete.".freeze
-  Response = Struct.new(:content)
-  KEY = :eval_prompt_request_capture
-
-  module Capture
-    def ask(prompt, **options, &block)
-      capture = Thread.current[Eval::Prompt::RequestVersion::KEY]
-      return super unless capture
-
-      capture.call(self, prompt, block)
-    end
-
-    private
-
-    def build_chat
-      raise "Offline request capture attempted a provider conversation" if Thread.current[Eval::Prompt::RequestVersion::KEY]
-
-      super
-    end
-  end
+  PRELUDE = Eval::EngineCalls::PRELUDE
 
   def offline(corpus = Eval::Prompt.corpus)
     designated, captured, ending = capture_all(corpus)
@@ -51,50 +35,38 @@ module Eval::Prompt::RequestVersion
 
   # [shape => designated case, case id => captured request, whether every case is an ending].
   def capture_all(corpus)
-    BaseAgent.prepend(Capture) unless BaseAgent.ancestors.include?(Capture)
-    # Pending branch moments need their producer stager, not an extra Turn#play.
-    bench_class = corpus.path.to_s == Eval::Prompt::BRANCHES_CORPUS.to_s ? Eval::Prompt::Branches::Bench : Eval::Prompt::Bench
-    bench = bench_class.new(corpus: corpus, io: nil)
     designated = corpus.cases.group_by { |kase| kase.shape.to_s }.sort.to_h
                        .transform_values { |cases| cases.min_by(&:id) }
     ending = corpus.cases.all?(&:ending?)
     cases = ending ? corpus.cases.sort_by(&:id) : designated.values
-    captured = cases.to_h do |kase|
-      request = nil
-      Eval::Classifier::Stage.open([ corpus.position(kase.position) ],
-                                   label: Eval::Prompt::Corpus::STAGE_LABEL, retitle: true,
-                                   roots: Eval::Prompt::WORLD_ROOTS) do |stages|
-        request = capture(kase) do
-          bench.send(:play_case, kase, stages.fetch(kase.position), Eval::Classifier::Arm.parse("offline"), 0)
-        end
-      end
-      raise "No designated request captured for #{kase.id}" unless request
-      [ kase.id, request ]
+    captured = if corpus.path.to_s == Eval::Prompt::BRANCHES_CORPUS.to_s
+      # A pending branch moment is staged by its producer and narrated with
+      # nothing played (`Eval::Prompt::Branches`).
+      Eval::Prompt::Branches.capture(corpus).transform_keys { |shape| designated.fetch(shape).id }
+                            .transform_values { |row| row.fetch("request").symbolize_keys }
+    else
+      bench = Eval::Prompt::Bench.new(corpus: corpus, io: nil)
+      cases.to_h { |kase| [ kase.id, capture(bench, corpus, kase) ] }
     end
     [ designated, captured, ending ]
   end
 
-  def capture(kase)
-    previous = Thread.current[KEY]
-    catch(:eval_request_captured) do
-      Thread.current[KEY] = lambda do |agent, prompt, block|
-        if !kase.ending? || agent.purpose == "ending"
-          request = Eval::RequestIdentity.request(agent.instructions, prompt, agent.schema)
-          request[:ending_scaffold] = Eval::Prompt::EndingVersion.current.fetch(:scaffold) if kase.ending?
-          throw :eval_request_captured, request
-        end
-        if agent.schema
-          raise "Unexpected structured ending prelude" unless agent.purpose == "arrival" && agent.schema == Scene::Schema
-          Response.new({ "description" => PRELUDE, "summary" => PRELUDE })
-        else
-          block&.call(Response.new(PRELUDE))
-          Response.new(PRELUDE)
-        end
-      end
-      yield
-      nil
+  def capture(bench, corpus, kase)
+    answering = Eval::EngineCalls::Canned.new
+    reading = nil
+    Eval::Classifier::Stage.on_file([ corpus.position(kase.position) ],
+                                    label: Eval::Prompt::Corpus::STAGE_LABEL, retitle: true,
+                                    roots: Eval::Prompt::WORLD_ROOTS) do |stages, file|
+      reading = bench.send(:play_case, kase, stages.fetch(kase.position), Eval::Classifier::Arm.parse("offline"), 0,
+                           file, answering: answering)
     end
-  ensure
-    Thread.current[KEY] = previous
+    raise "#{kase.id} did not play offline: #{reading.error}" if reading.failed?
+
+    receipt = kase.ending? ? answering.receipts.find { |call| call.purpose == Eval::Prompt::Bench::ENDING } : answering.receipts.first
+    raise "No designated request captured for #{kase.id}" unless receipt
+
+    request = receipt.request
+    request[:ending_scaffold] = reading.ending_request.fetch(:scaffold) if kase.ending?
+    request
   end
 end

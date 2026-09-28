@@ -6,7 +6,7 @@ FactoryBot.define do
   # that writes here.
   #
   # `scene` is nil, which is what makes a row UNTOLD: no paragraph has carried
-  # it yet, and `Playthrough::Moment` states exactly those. `:told` is the other
+  # it yet, and the engine's `moment` states exactly those. `:told` is the other
   # half. `location_connection` is nil, which is what makes it a ROOM's hazard;
   # `:on_a_doorway` is the other half.
   factory :playthrough_toll, class: "Playthrough::Toll" do

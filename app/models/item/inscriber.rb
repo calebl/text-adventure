@@ -88,7 +88,7 @@ class Item::Inscriber
 
   # THROUGH `BaseAgent#ask`'s `verify:` SEAM, so a provider that cut the answer
   # off is a failed call that ROTATES rather than a raise outside the loop. It
-  # is the same argument `InteractionAgent#ask` makes and it matters more here:
+  # is the same argument `Playthrough::Turn#converse` makes and it matters more here:
   # this field is written once and then quoted to the player verbatim on every
   # later reading, so half a sentence would be half a sentence forever.
   def written_words

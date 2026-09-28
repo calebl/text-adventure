@@ -1,13 +1,11 @@
 # Store actual request bytes, then replay the stored answers through today's
-# builders. Each narrator hash therefore includes its own particular reaction
+# engine builders. Each narrator hash therefore includes its own particular reaction
 # and verified receipt; comparisons never pretend that two live reactions are
 # the same fixed string. A changed request is detected without a paid call.
 module Eval::Dialogue::Version
-  def self.request(agent, prompt)
-    chat = agent.chat
-    { "system" => agent.instructions, "user" => prompt,
-      "schema" => agent.schema && JSON.parse(JSON.generate(agent.schema.new.to_json_schema)),
-      "history" => chat.messages.order(:id).map { |m| { "role" => m.role, "content" => m.text } } }
+  # The engine's request for one pass, as a set stores it.
+  def self.request(built)
+    built.slice("system", "user", "schema", "history")
   end
 
   def self.digest(requests) = Digest::SHA256.hexdigest(JSON.generate(requests))

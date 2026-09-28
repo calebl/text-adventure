@@ -1,37 +1,34 @@
-# Both passes run InteractionAgent#ask, including sanitization, engine validation
-# and narration fallback. Replay substitutes only BaseAgent's provider answer;
-# it rebuilds each request with today's application and the stored first-pass
-# response. Thus nondeterministic reactions do not prevent a byte-level check
-# of the narrator request. Full history (even empty) and emitted schemas remain
-# in every receipt; no normalization erases IDs or descriptor changes.
+# Both passes run the exchange a turn runs (`Playthrough::Turn#converse`),
+# including sanitization, engine validation and narration fallback, and both
+# requests are the engine's (`Playthrough::Requests`). Replay substitutes only
+# the provider's answer; it rebuilds each request with today's engine and the
+# stored first-pass response. Thus nondeterministic reactions do not prevent a
+# byte-level check of the narrator request. Full history (even empty) and
+# emitted schemas remain in every receipt; no normalization erases IDs or
+# descriptor changes.
 class Eval::Dialogue::Bench
   Response = Data.define(:content)
 
   def read(kase, rep:, replay: nil)
     Eval::Dialogue::Stage.open(kase) do |stage|
-      exchange = InteractionAgent.new(stage.npc, playthrough: stage.game)
       requests = []
       answers = replay&.fetch("calls")&.map { |call| call.fetch("raw_answer", call["answer"]) }
-      [ exchange.character_agent, exchange.narrator_agent ].each do |agent|
-        original = agent.method(:ask)
-        agent.define_singleton_method(:ask) do |prompt, **options, &block|
-          request = Eval::Dialogue::Version.request(self, prompt)
-          requests << request
-          if answers
-            content = answers.shift
-            options[:verify]&.call(content)
-            response = Response.new(content: content)
-          else
-            response = original.call(prompt, **options, &block)
-          end
-          stage.after_character! if purpose == Chat::CHARACTER
-          response
+      ask = lambda do |agent, request, verify|
+        requests << Eval::Dialogue::Version.request(request)
+        response = if answers
+          content = answers.shift
+          verify&.call(content)
+          Response.new(content: content)
+        else
+          Playthrough::Turn::ASK.call(agent, request, verify)
         end
+        stage.after_character! if agent.purpose == Chat::CHARACTER
+        response
       end
       error = nil
       result = nil
       begin
-        result = exchange.ask(kase.fetch("line"))
+        result = Playthrough::Turn.new(stage.game).converse(stage.npc, kase.fetch("line"), ask: ask)
       rescue StandardError => exception
         error = "#{exception.class}: #{exception.message}"
       end

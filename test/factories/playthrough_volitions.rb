@@ -6,7 +6,7 @@ FactoryBot.define do
   # thing in the app that writes here.
   #
   # `scene` is nil, which is what makes a row UNTOLD: no paragraph has carried
-  # it yet, and `Playthrough::Moment` states exactly those. `:told` is the
+  # it yet, and the engine's `moment` states exactly those. `:told` is the
   # other half. The default is an APPLIED walk, because that is the row the
   # narrator reader and the sweep both care about; `:waited` and `:rejected`
   # are the two that moved nothing.

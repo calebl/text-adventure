@@ -9,16 +9,11 @@ require "test_helper"
 # way and nothing offline noticed, because its pinned fixture pinned the empty
 # map along with everything else.
 #
-# So this builds each request the app sends, for a room with somebody and
-# something in it, and checks every Noul question in it. The source scan at the
-# bottom keeps the list of builders honest: a new file that writes a Noul
-# question fails here until it is added above.
+# So this builds each request the game sends -- the engine builds both, through
+# `Playthrough::Requests` -- for a room with somebody and something in it, and
+# checks every Noul question in it. The source scan at the bottom keeps it that
+# way: a Ruby file that writes a Noul question of its own fails here.
 class SystemOneNoulCriteriaTest < ActiveSupport::TestCase
-  BUILDERS = %w[
-    app/models/playthrough/classifier/request.rb
-    app/models/playthrough/volition/system_one.rb
-  ].freeze
-
   setup do
     @story = create(:story)
     @room = create(:location, story: @story, name: "The Counting Room")
@@ -32,23 +27,24 @@ class SystemOneNoulCriteriaTest < ActiveSupport::TestCase
   end
 
   test "the classifier's Noul questions each carry a true and a false criterion" do
-    state = Playthrough::Classifier::State.new(Playthrough::Classifier.new(@game), "take the brass ledger key")
+    request = Playthrough::Requests.build(:cascade, playthrough: @game.id, line: "take the brass ledger key")
 
-    assert_both_ends Playthrough::Classifier::Request.new(state).to_h
+    assert_both_ends request.fetch("questions")
   end
 
   test "the volition request's Noul questions each carry a true and a false criterion" do
     Playthrough::Volition.new(@game, @clerk, location: @room).apply!(Playthrough::Volition::WAIT)
-    request = Playthrough::Volition::SystemOne.new(@game, [ @clerk ], location: @room, line: "read the docket").request
+    request = Playthrough::Requests.build(:volition, playthrough: @game.id, characters: [ @clerk.id ],
+                                                     location: @room.id, line: "read the docket")
 
-    assert_both_ends request[:questions]
+    assert_both_ends request.fetch("questions")
   end
 
-  test "no other file writes a Noul question" do
+  test "no Ruby file writes a Noul question of its own" do
     writers = Dir[Rails.root.join("{app,lib}/**/*.rb")].select { |path| File.read(path).match?(/"type"\s*=>\s*"noul",\s*"instructions"/) }
     writers = writers.map { |path| Pathname(path).relative_path_from(Rails.root).to_s }
 
-    assert_equal BUILDERS.sort, writers.sort, "a new Noul question builder needs a case in this file"
+    assert_empty writers, "a System One request is the engine's to build, and a new one needs a case in this file"
   end
 
   private

@@ -88,7 +88,7 @@ class Eval::Classifier::Result
 
   # `cascade` IS PROVENANCE, NOT A METRIC: whether this set was taken with
   # `Eval::Classifier::Bench.new(cascade: true)`, so the READER measured was
-  # `Playthrough::Classifier::Cascade` in front of the arm rather than the arm
+  # the engine's `cascade` in front of the arm rather than the arm
   # alone. The arm named is unchanged either way -- the cascade's escalation
   # target -- which is what lets `rake eval:classifier_compare` pair a cascade
   # set against the kept Mistral-alone set with no separate provider entry:

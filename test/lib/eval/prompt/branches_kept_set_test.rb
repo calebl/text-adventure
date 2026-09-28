@@ -18,7 +18,7 @@ class Eval::Prompt::BranchesKeptSetTest < ActiveSupport::TestCase
     kept.rows.each do |row|
       designated = captured.fetch(row.fetch("shape"))
       assert_equal designated.fetch("request")[:user], row.fetch("prompt"), row.fetch("id")
-      assert_equal Playthrough::PromptVersion.of(Scene::Narrator::INSTRUCTIONS), row.fetch("instructions_digest")
+      assert_equal Playthrough::PromptVersion.narration_instructions, row.fetch("instructions_digest")
       assert_equal designated.fetch("facts"), row.fetch("facts").slice(*designated.fetch("facts").keys)
       assert_equal 1, row.fetch("calls")
       assert_nil row["error"]
