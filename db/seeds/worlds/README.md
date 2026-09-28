@@ -1123,9 +1123,11 @@ cannot, and still deletes nothing**:
   Nothing in the file says which room it replaced. So the row is created and the
   load prints a `WARNING:` naming it, on a world that has been played; the old
   room is still there and `rake game:doctor` reports the pair whenever it can
-  recognize one. Two hand-written names for one room of a place are this shape
-  too: the box pass above takes a rename across the provisional line and not a
-  second deliberate name, which is a known limit left open on purpose.
+  recognize one. A room of a place is not this shape: the box pass above pairs
+  the one room this file declares that the database lacks with the one room the
+  database holds that this file never names, whether the engine, the author or
+  both wrote the two names. A box already holding two rooms this file never
+  names is ambiguous, so neither is taken and the load warns.
 
 What still happens on every re-seed, and is the rule rather than a defect: **the
 file re-asserts itself over the world layer.** An item the file puts on a shelf

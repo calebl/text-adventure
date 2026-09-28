@@ -981,25 +981,58 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_equal "the counting room", room.reload.name, "a provisional number does not overwrite a name"
   end
 
-  # AND TWO NAMES A PERSON WROTE ARE STILL NEVER FOLDED TOGETHER, which is the
-  # case `WorldSeed.exactly_one_name_is_a_placeholder?` refuses and the one rule
-  # above would admit -- the row's name is nowhere in the file, so it is
-  # unclaimed, and only the placeholder test keeps the box from identifying it
-  # with a room somebody named by hand. It is the KNOWN LIMIT, left open on
-  # purpose: the load creates a second row and says so, rather than guessing
-  # that two deliberate names are one room.
-  test "a room the engine named is not folded into a room the file names by hand" do
+  # AND A ROOM THE ENGINE NAMED AND THE AUTHOR THEN RENAMED IS STILL ONE ROOM.
+  # The file declared a numbered stub, a player walked in and the engine named
+  # the row `the counting room`, and then the author hand-edited the file to
+  # call that room `The Cellar` -- ordinary authoring, and what a polished
+  # `rake game:export` of a played world looks like. Neither name is
+  # provisional, neither written-name pass matches, and the load used to write
+  # a SECOND room at the same parent and the same box. The box pairs the one
+  # declaration with no row against the one row with no declaration, and the
+  # file's spelling wins because it is a name somebody wrote.
+  test "a room the engine named and the file then renamed by hand is the same room, renamed" do
+    story = WorldSeed::Loader.new(a_building_with_one_room("The Rusted Anchor room 1")).load!
+    room = story.locations.find_by(name: "The Rusted Anchor room 1")
+    room.update!(last_protagonist_visit: story.start_time)
+    create(:playthrough, story: story, current_location: room)
+    room.update!(name: "the counting room")
+    loader = WorldSeed::Loader.new(a_building_with_one_room("The Cellar"))
+
+    assert_no_difference [ "Location.count", "LocationConnection.count" ] do
+      loader.load!
+    end
+
+    assert_equal "The Cellar", room.reload.name, "the file's hand-written name wins"
+    assert_equal story.start_time, room.last_protagonist_visit, "the row kept everything hanging off it"
+    assert_equal [ "The Hallway" ], room.exits.pluck(:name)
+    assert_match(/"the counting room" is "The Cellar" in the file, so the row was renamed/, loader.reconciled.join("\n"))
+    assert_empty loader.warnings
+
+    codes = Story::Doctor.new(story.reload).findings.map(&:code)
+    assert_not_includes codes, :duplicate_locations
+    assert_not_includes codes, :overlapping_sibling_locations
+  end
+
+  # AND THE BOX IS READ ONLY WHEN THE PAIR IS ONE TO ONE. A database already
+  # holding two rooms the file never names in the one box is one the doctor
+  # reports, and choosing between them by id would be a guess about which one
+  # the file means -- so the load recognizes neither, creates the file's room
+  # and says so.
+  test "a box holding two rooms the file never names identifies neither" do
     story = WorldSeed::Loader.new(a_building_with_one_room("The Rusted Anchor room 1")).load!
     room = story.locations.find_by(name: "The Rusted Anchor room 1")
     create(:playthrough, story: story, current_location: room)
     room.update!(name: "the counting room")
+    other = room.dup
+    other.update!(name: "the tally room")
     loader = WorldSeed::Loader.new(a_building_with_one_room("The Cellar"))
 
     assert_difference -> { Location.count }, 1 do
       loader.load!
     end
 
-    assert_equal "the counting room", room.reload.name, "the played row is not renamed on coordinates alone"
+    assert_equal "the counting room", room.reload.name
+    assert_equal "the tally room", other.reload.name
     assert_match(/created location "The Cellar"/, loader.warnings.join("\n"))
   end
 

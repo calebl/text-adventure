@@ -99,7 +99,10 @@ module WorldSeed
   #      `Story::Doctor#duplicate_locations` exists to report and
   #      `Location::Interior`'s reachability guarantee assumes away -- while
   #      `Story::Repair#repair_seeded_whereabouts` raised on the name it could
-  #      not find.
+  #      not find. It reaches a rename the engine and the author made between
+  #      them too -- the row named by the engine, the file since hand-edited
+  #      to another name -- because what it reads is the box, not how either
+  #      name was written (`.find_placed_location`).
   #
   # A ROOM'S IDENTITY INSIDE A PLACE IS ITS BOX. The coordinates are the
   # engine's own, no model ever proposes one and nothing in the app moves a room
@@ -146,13 +149,6 @@ module WorldSeed
   # and it recurses no further than once, because a place is declared with a
   # FOOTPRINT and no position, so the box test below refuses it.
   #
-  # AT MOST ONE ROW CAN MATCH ON THE BOX and that is a guarantee on both sides
-  # rather than a hope: `WorldSeed::Loader#validate_boxes_do_not_overlap!`
-  # refuses a file that declares two rooms of one place in the same place at
-  # once, and `Story::Doctor#overlapping_sibling_rooms` reports a database that
-  # holds two. `order(:id)` so a database that holds one anyway is answered the
-  # same way twice.
-  #
   # --- THE ONE RULE, AND IT IS `#unclaimed_by_name?` -------------------------
   #
   # A ROW IS IDENTIFIED BY ITS COORDINATES ONLY WHERE THE DOCUMENT DOES NOT
@@ -175,11 +171,48 @@ module WorldSeed
   #
   # Held to this rule, the answer cannot turn on order. A row the file names
   # somewhere is refused whichever declaration reaches it first, so the pass
-  # sees only rows the document has no name for -- and it keeps doing the one
-  # job it exists for, because an engine-renamed row's name appears NOWHERE in
-  # the file: the file still carries `The Custom House room 1` and the row
-  # carries `the counting room` (`Location::RoomName`). That is the whole
-  # reason the box is worth reading at all.
+  # sees only rows the document has no name for.
+  #
+  # --- AND WHAT IT ADMITS: ONE UNACCOUNTED DECLARATION, ONE UNACCOUNTED ROW ----
+  #
+  # By the time this pass runs, the declaration it was asked about has no row
+  # of its own -- both written-name passes missed. The rule above makes the
+  # candidate a row with no declaration of its own. So what the box pairs is
+  # the one room the file names that the database lacks with the one room the
+  # database holds that the file never names, at the same coordinates of the
+  # same place. HOW THE TWO NAMES CAME APART DOES NOT ENTER INTO IT:
+  #
+  #   the ENGINE renamed the row -- the file still carries
+  #   `The Custom House room 1`, the row carries `the counting room`
+  #   (`Location::RoomName`), and the row's name appears nowhere in the file;
+  #
+  #   the AUTHOR named a room the engine had not got to -- the file says
+  #   `the counting room`, the row still carries the number;
+  #
+  #   and BOTH -- the engine named the row, and the author then hand-renamed
+  #   that room in the file to `The Cellar`, which is ordinary authoring and
+  #   what a polished `rake game:export` of a played world looks like.
+  #
+  # The last used to be refused because neither name is provisional, and the
+  # load wrote a second room at the same parent and the same box. That refusal
+  # did not keep two rooms apart; it made two rooms out of one. A box inside a
+  # place holds ONE room -- the file cannot declare two in it
+  # (`#validate_boxes_do_not_overlap!`), `Location::Interior`'s reachability
+  # assumes it, and `Story::Doctor#overlapping_sibling_rooms` reports a
+  # database that breaks it -- so a room the file draws in a box where the
+  # database already holds a room the file never mentions is either that room
+  # or a defect. There is no third reading for a second row to be. The rename
+  # is still said out loud (`WorldSeed::Loader#note_rename`), and the file's
+  # spelling wins by the loader's standing rule unless it is a placeholder
+  # (`.keeps_its_own_name?`).
+  #
+  # WHAT IT STILL REFUSES: a box that is not exactly equal, a room with no
+  # parent or no box (every flat world, where a rename no normalized name
+  # recognizes is still created and warned about), and MORE THAN ONE unaccounted
+  # row in the box. The file guarantees at most one declaration per box; a
+  # database that holds two rows there is one the doctor already reports, and
+  # picking one of them by id would be a guess about which one the file means.
+  # So the pair is taken only when it is one to one on both sides.
   def self.find_placed_location(story, declared, key)
     declaration = declared && declared[key]
     return nil if declaration.nil? || declaration["parent"].blank?
@@ -189,10 +222,10 @@ module WorldSeed
     return nil if place.nil?
 
     box = Location::Box.of(declaration)
-    Location.where(story_id: story.id, parent_location_id: place.id).order(:id).detect do |room|
-      room.box == box && unclaimed_by_name?(declared, room) &&
-        exactly_one_name_is_a_placeholder?(place, declaration["name"], room.name)
+    candidates = Location.where(story_id: story.id, parent_location_id: place.id).select do |room|
+      room.box == box && unclaimed_by_name?(declared, room)
     end
+    candidates.one? ? candidates.first : nil
   end
 
   # WHETHER NO DECLARATION IN THIS FILE ALREADY NAMES THIS ROW -- the rule
@@ -204,42 +237,6 @@ module WorldSeed
   # the same thing to all three passes or a row could be claimed twice.
   def self.unclaimed_by_name?(declared, room)
     !declared.key?(natural_key(room.name))
-  end
-
-  # AND SUBORDINATE TO THAT RULE, WHAT THE BOX PASS IS *FOR*: exactly one of the
-  # two names is a number `Location::Interior` wrote. `#unclaimed_by_name?`
-  # decides which rows may be reached at all; this decides which of those the
-  # box is evidence about, and it is a narrower question.
-  #
-  # THE PAIR IT ADMITS IS A RENAME ACROSS THE PROVISIONAL LINE, both ways round.
-  # The file carrying the number while the row is named is a room somebody
-  # walked into (`Location::RoomName`); the file naming the room while the row
-  # still carries the number is an author naming a room the engine had not got
-  # to. Each is one room whose name moved off, or onto, a placeholder -- and a
-  # placeholder is provisional (`Location::Interior.placeholder_name`), which is
-  # what makes the coordinates better evidence of identity than the name.
-  #
-  # WHAT IT STILL REFUSES THAT THE ONE RULE WOULD ADMIT, and this is the reason
-  # it is not redundant: TWO NAMES A PERSON WROTE, neither of them provisional.
-  # A row the engine named `the counting room` and a file that has since been
-  # hand-edited to call that room `The Cellar` are two deliberate names, and
-  # nothing on record says they are one room -- so this refuses the box match
-  # and the load creates a second row, which `WorldSeed::Loader#note_creation`
-  # says out loud and `Story::Doctor`'s duplicate and overlapping-room findings
-  # report. THAT IS THE KNOWN LIMIT, left open on purpose and filed as its own
-  # work: closing it needs an identity rule that reaches past a placeholder, and
-  # a loader that silently folded two hand-written names into one row would
-  # destroy play rather than duplicate it -- `.natural_key`'s own argument for
-  # not widening past what the evidence supports.
-  #
-  # SO: EXACTLY ONE, NOT AT LEAST ONE. Two numbered rooms satisfy an `||`, and
-  # they are the pair a hand-edited file is likeliest to shuffle, since
-  # `rake game:export` writes the engine's numbers straight out. Nothing is lost
-  # by refusing them: pass 1 matches a numbered room by its exact name before
-  # this pass is ever consulted.
-  def self.exactly_one_name_is_a_placeholder?(place, declared, carried)
-    Location::Interior.placeholder_name?(place, declared) ^
-      Location::Interior.placeholder_name?(place, carried)
   end
 
   # WHETHER A ROW `.find_location` RECOGNIZED KEEPS THE NAME IT ALREADY HAS
@@ -375,5 +372,5 @@ module WorldSeed
   end
 
   private_class_method :node, :inline_array?, :needs_quoting?, :style_for, :scalar, :find_placed_location,
-                       :exactly_one_name_is_a_placeholder?, :unclaimed_by_name?
+                       :unclaimed_by_name?
 end
