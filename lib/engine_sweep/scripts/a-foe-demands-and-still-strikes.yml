@@ -1,0 +1,54 @@
+# A FOE REACTS TO YOUR ENTRANCE WITH WORDS, AND STRIKES ON THE NEXT LINE.
+#
+# Somebody fighting the party may react to its arrival only by speaking, and
+# only by demanding a thing the player carries or telling them to leave: a foe
+# swings, it does not also wander off, and attack is not a volition. The blow
+# stays the riposte's, on the next line the player plays, from the room that
+# line begins in -- never on the arrival itself.
+#
+# WHAT EACH STEP IS FOR:
+#
+#   1  Wren walks into the toll booth and Grist, who is hostile, demands her
+#      toll token. The arrival prompt carries his words, and nothing changed
+#      hands: she still carries it. His one row is the demand; no act row, and
+#      no blow.
+#   2  The next line in the booth: Grist strikes, from the riposte. He has
+#      spoken inside his cooldown and takes no act, so the line writes no
+#      volition.
+story: A Lodge Inside the Gate
+steps:
+- id: the-keeper-demands-the-token
+  type: /move The Toll Booth
+  why: a foe reacts to the arrival only with a demand or a dismissal, and does not strike on it
+  browser:
+    token: in
+    replies:
+    - purpose: arrival
+      content:
+        description: The toll keeper plants his staff across the doorway and holds out his hand for your token.
+        summary: Wren comes into the toll booth and the keeper demands her token.
+      prompt_includes:
+      - '## As You Come In'
+      - Grist Harrow spoke up unasked and demanded toll token from Wren Adley. Nothing changed hands.
+  expect:
+    location: The Toll Booth (realized)
+    present: [Grist Harrow]
+    foes: [Grist Harrow]
+    carrying: [toll token]
+    volitions: 1
+    acts: 1
+    blows: 0
+- id: the-blow-comes-on-the-next-line
+  type: /examine toll token
+  why: the blow is the riposte's, on the next line, and a foe who spoke takes no act
+  browser:
+    token: look
+    replies:
+    - purpose: narration
+      content: The token is warm from your hand.
+      prompt_excludes:
+      - Grist Harrow spoke up unasked
+  expect:
+    carrying: [toll token]
+    volitions: 0
+    blows: 1

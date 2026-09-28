@@ -10,7 +10,8 @@
 # character pass and its narration have no Ruby builder any more, so they are
 # the engine's `dialogue_requests` portion.
 module EngineVectors::KeptRequests
-  SOURCES = [ "lib/eval/arrival/stage.rb", "lib/eval/realization/branch_requests.rb", "lib/eval/realization/stage.rb",
+  SOURCES = [ "lib/eval/arrival/stage.rb", "lib/eval/arrival/reactions/stage.rb",
+              "lib/eval/realization/branch_requests.rb", "lib/eval/realization/stage.rb",
               "app/models/scene/generator.rb", "app/models/location/generator.rb" ].freeze
   NOTES = "Each case is one request from a kept set (`set`, the directory under db/eval; `id` the case, " \
           "`call` which of its calls, from 0) and `records`, every row the database held when the request " \
@@ -18,9 +19,16 @@ module EngineVectors::KeptRequests
           "The output is the request as the set stores it -- {system, user, schema, history}, schema a " \
           "to_json_schema output or null and history the replayed conversation -- and the export stops " \
           "if today's builders do not reproduce the stored bytes. `arrival` is every case of the arrival " \
-          "set, and `realization` every branch case of the realization bench's current baseline.".freeze
+          "set, `reactions` one case of the set where the people in the room react to the arrival, with the ids " \
+          "of the rows they wrote (`reactions`) that the request tells, and `realization` every branch case " \
+          "of the realization bench's current baseline.".freeze
 
   ARRIVAL = Eval::Arrival::BASELINE.basename.to_s.freeze
+  REACTIONS = Eval::Arrival::Reactions::BASELINE.basename.to_s.freeze
+  # ONE CASE OF THE REACTIONS SET, as the owner's plan asks: the walk-out, a
+  # person who reacted with an act and so is gone from who is here, which is
+  # the reaction that moves the most of the request.
+  REACTION = "walk_out".freeze
   # The realization set whose requests today's builders send: the bench's
   # current baseline, which superseded the physical-realization set of
   # 2026-09-10 when the generator's prompt moved on.
@@ -28,7 +36,7 @@ module EngineVectors::KeptRequests
   def self.constants_table = {}
 
   def self.cases
-    arrival + realization
+    arrival + reactions + realization
   end
 
   def self.arrival
@@ -39,6 +47,18 @@ module EngineVectors::KeptRequests
         Eval::Arrival::Stage.open(kase) do |stage|
           kept_case(ARRIVAL, kase.fetch("id"), 0, stage.generator_request, row.fetch("requests").first)
         end
+      end
+    end
+  end
+
+  def self.reactions
+    stored = JSON.parse(Eval.kept_root.join(REACTIONS, Eval::Arrival::RESULTS).read).fetch("rows")
+    kase = Eval::Arrival::Reactions.cases.find { |one| one.fetch("id") == REACTION }
+    row = stored.find { |one| one.fetch("id") == REACTION && one.fetch("rep") == 1 }
+    EngineVectors::Records.frozen do
+      Eval::Arrival::Reactions::Stage.open(kase) do |stage|
+        [ kept_case(REACTIONS, REACTION, 0, stage.generator_request, row.fetch("requests").first,
+                    reactions: stage.reactions) ]
       end
     end
   end
@@ -54,10 +74,11 @@ module EngineVectors::KeptRequests
     cases
   end
 
-  def self.kept_case(set, id, call, built, stored, records = EngineVectors::Records.dump)
+  def self.kept_case(set, id, call, built, stored, records = EngineVectors::Records.dump, **named)
     request = JSON.parse(JSON.generate(built))
     raise "#{set} #{id} call #{call} no longer reproduces the stored request" unless JSON.generate(request) == JSON.generate(stored)
 
-    EngineVectors.case_for("#{set} #{id} #{call}", { "set" => set, "id" => id, "call" => call, "records" => records }, request)
+    input = { "set" => set, "id" => id, "call" => call, "records" => records }.merge(named.transform_keys(&:to_s))
+    EngineVectors.case_for("#{set} #{id} #{call}", input, request)
   end
 end

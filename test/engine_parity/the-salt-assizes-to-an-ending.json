@@ -141,7 +141,7 @@
         "offers": null,
         "understood": "move -> The Tide Post",
         "resolved_by": "grammar",
-        "note": "someone here: Ammon Brace walked out of The Causeway Court to The Vestry Hulk and is no longer in The Causeway Court.\nthe world: flooded on The Tide Post cost Coraith Vell 1 hit point (the water takes your legs); Coraith Vell is hurt (17 of 18)\nthe story: Go out to the tide post and read the stain band against the water yourself.",
+        "note": "someone here: Neb Halloran spoke up unasked and greeted Coraith Vell.\nsomeone here: Ammon Brace walked out of The Causeway Court to The Vestry Hulk and is no longer in The Causeway Court.\nthe world: flooded on The Tide Post cost Coraith Vell 1 hit point (the water takes your legs); Coraith Vell is hurt (17 of 18)\nthe story: Go out to the tide post and read the stain band against the water yourself.",
         "drifts": 0,
         "blows": 0,
         "hazards": 1,
@@ -150,8 +150,8 @@
           "2": "bound",
           "3": "bound"
         },
-        "volitions": 1,
-        "acts": 1,
+        "volitions": 2,
+        "acts": 2,
         "ending": "none",
         "ending_words": null,
         "scheduled": 0,
@@ -270,12 +270,7 @@
             "name": "Neb's knotted cord"
           }
         ],
-        "present": [
-          {
-            "id": 1000000003,
-            "name": "Neb Halloran"
-          }
-        ],
+        "present": [],
         "foes": [],
         "inscription": [
           {
@@ -285,9 +280,7 @@
           }
         ],
         "hp": 17,
-        "hp_of": {
-          "Neb Halloran": 10
-        },
+        "hp_of": {},
         "abilities": {
           "strength": 13,
           "dexterity": 10,
@@ -300,7 +293,7 @@
         "offers": null,
         "understood": "move -> The Causeway Court",
         "resolved_by": "grammar",
-        "note": null,
+        "note": "someone here: Neb Halloran walked out of The Causeway Court to The Vestry Hulk and is no longer in The Causeway Court.",
         "drifts": 0,
         "blows": 0,
         "hazards": 0,
@@ -309,8 +302,8 @@
           "2": "reached",
           "3": "bound"
         },
-        "volitions": 0,
-        "acts": 0,
+        "volitions": 1,
+        "acts": 1,
         "ending": "none",
         "ending_words": null,
         "scheduled": 0,
@@ -380,7 +373,7 @@
         "offers": null,
         "understood": "take -> Assize hand-bell",
         "resolved_by": "grammar",
-        "note": "someone here: Neb Halloran walked out of The Causeway Court to The Tide Post and is no longer in The Causeway Court.\nthe story: Take the hand-bell off its hook and ring the court up on the true figure.\nthe story is over: You ring the court up on the water's own figure, with Neb's cord for the count and nobody's chalk for the hour. Justicar Brace hears him with the stain band still dry above his head, and the seventy minutes go into the record as what they were -- somebody's hand, and not the sea's.",
+        "note": "the story: Take the hand-bell off its hook and ring the court up on the true figure.\nthe story is over: You ring the court up on the water's own figure, with Neb's cord for the count and nobody's chalk for the hour. Justicar Brace hears him with the stain band still dry above his head, and the seventy minutes go into the record as what they were -- somebody's hand, and not the sea's.",
         "drifts": 0,
         "blows": 0,
         "hazards": 0,
@@ -389,8 +382,8 @@
           "2": "reached",
           "3": "reached"
         },
-        "volitions": 1,
-        "acts": 1,
+        "volitions": 0,
+        "acts": 0,
         "ending": "the-court-rises-true",
         "ending_words": "You ring the court up on the water's own figure, with Neb's cord for the count and nobody's chalk for the hour. Justicar Brace hears him with the stain band still dry above his head, and the seventy minutes go into the record as what they were -- somebody's hand, and not the sea's.",
         "scheduled": 0,

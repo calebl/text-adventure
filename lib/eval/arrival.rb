@@ -15,10 +15,11 @@ module Eval::Arrival
   BASELINE = Rails.root.join("db/eval/arrival-first-visit-2026-09-28")
 
   def self.cases = JSON.parse(CORPUS.read).fetch("cases")
+  def self.stage = Stage
   def self.model = JSON.parse(STUDY.join("arrival-after.json").read).fetch("model")
   def self.digest = Digest::SHA256.hexdigest(CORPUS.read)
 
-  def self.estimate(reps: Eval::Noise::MIN_RUNS)
+  def self.estimate(reps: Eval::Noise::MIN_RUNS, cases: self.cases)
     price = Eval::Cost.price(model)
     raise ArgumentError, "Load the model registry before pricing arrival" unless
       price.input_per_million.positive? && price.output_per_million.positive?

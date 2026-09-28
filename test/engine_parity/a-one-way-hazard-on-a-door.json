@@ -615,7 +615,7 @@
         "offers": null,
         "understood": "move -> The Tide Post",
         "resolved_by": "grammar",
-        "note": "someone here: Ammon Brace walked out of The Causeway Court to The Vestry Hulk and is no longer in The Causeway Court.\nthe world: flooded on The Tide Post cost Coraith Vell 4 hit points (the water takes your legs); Coraith Vell is hurt (14 of 18)\nthe story: Go out to the tide post and read the stain band against the water yourself.",
+        "note": "someone here: Neb Halloran spoke up unasked and greeted Coraith Vell.\nsomeone here: Ammon Brace walked out of The Causeway Court to The Vestry Hulk and is no longer in The Causeway Court.\nthe world: flooded on The Tide Post cost Coraith Vell 4 hit points (the water takes your legs); Coraith Vell is hurt (14 of 18)\nthe story: Go out to the tide post and read the stain band against the water yourself.",
         "drifts": 0,
         "blows": 0,
         "hazards": 1,
@@ -624,8 +624,8 @@
           "2": "bound",
           "3": "bound"
         },
-        "volitions": 1,
-        "acts": 1,
+        "volitions": 2,
+        "acts": 2,
         "ending": "none",
         "ending_words": null,
         "scheduled": 0,
@@ -803,12 +803,7 @@
             "name": "Assize tide-slate"
           }
         ],
-        "present": [
-          {
-            "id": 1000000003,
-            "name": "Neb Halloran"
-          }
-        ],
+        "present": [],
         "foes": [],
         "inscription": [
           {
@@ -818,9 +813,7 @@
           }
         ],
         "hp": 14,
-        "hp_of": {
-          "Neb Halloran": 10
-        },
+        "hp_of": {},
         "abilities": {
           "strength": 13,
           "dexterity": 10,
@@ -833,7 +826,7 @@
         "offers": null,
         "understood": "move -> The Causeway Court",
         "resolved_by": "grammar",
-        "note": null,
+        "note": "someone here: Neb Halloran walked out of The Causeway Court to The Vestry Hulk and is no longer in The Causeway Court.",
         "drifts": 0,
         "blows": 0,
         "hazards": 0,
@@ -842,8 +835,8 @@
           "2": "bound",
           "3": "bound"
         },
-        "volitions": 0,
-        "acts": 0,
+        "volitions": 1,
+        "acts": 1,
         "ending": "none",
         "ending_words": null,
         "scheduled": 0,
