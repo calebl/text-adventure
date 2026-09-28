@@ -9,8 +9,8 @@ module EngineVectors::Refusal
           "lib/engine_vectors/room.rb writes one and `offered` a list of record ids. `unplayable`: " \
           "Refusal.unplayable(intent, playthrough: the room's, typed:). `dead`: Refusal.dead(typed:, " \
           "character:), `character` an id or null. `over`: Refusal.over(playthrough:, typed:) after the " \
-          "game ended one way -- `concluded` (it reached a default ending) or `died` (the " \
-          "protagonist's hit points are 0). `new`: Refusal.new(kind:, typed:, fact:), which answers " \
+          "game ended one way -- `concluded` (it reached a default ending), `died` (the " \
+          "protagonist's hit points are 0) or `unrecorded` (neither: `ended_at` alone). `new`: Refusal.new(kind:, typed:, fact:), which answers " \
           "{error} for a kind outside `kinds`. The output is {kind, fact, offer, reason, text, " \
           "game_over} with nulls left out, or null for no refusal.".freeze
 
@@ -129,7 +129,7 @@ module EngineVectors::Refusal
       input = { "world" => "refusal", "entry" => "dead", "typed" => "go north", "character" => character }
       EngineVectors.case_for("dead #{character.inspect}", input, EngineVectors.rolled_back { refuse(input) })
     end
-    over = %w[concluded died].map do |ending|
+    over = %w[concluded died unrecorded].map do |ending|
       input = { "world" => "refusal", "entry" => "over", "typed" => "go north", "ending" => ending }
       EngineVectors.case_for("over #{ending}", input, EngineVectors.rolled_back { refuse(input) })
     end
@@ -170,7 +170,10 @@ module EngineVectors::Refusal
       outcome = Quest::Outcome.create!(id: playthrough.id, quest: quest, name: "rescued", summary: "They came back.",
                                        is_default: true)
       Playthrough::Ending.create!(playthrough: playthrough, quest_outcome: outcome, reached_at: playthrough.story_now)
-    else
+    elsif ending == "died"
+      # A body with no stat block has no hit points to be at zero, so the world's
+      # protagonist is given one before it is killed.
+      playthrough.character.update!(level: 1, hit_die: 8)
       Playthrough::Vitals.find_or_initialize_by(playthrough: playthrough, character: playthrough.character)
                          .update!(hp_current: 0)
     end

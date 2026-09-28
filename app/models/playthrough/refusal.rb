@@ -81,6 +81,11 @@
 #                         chooses between the two, off records, through
 #                         `Playthrough::EndNotice`; `.for` never returns one
 #                         either.
+#   :stopped              THE GAME IS OVER AND THE RECORDS DO NOT SAY WHY -- no
+#                         ending reached and nobody at zero. The same shape
+#                         again, in `Playthrough::StoppedNotice`'s words, which
+#                         claim neither a death nor an ending; `.over` picks it
+#                         through `Playthrough::EndNotice` like the other two.
 #
 # THE COUNTERS ARE UNTOUCHED BY THE RULING, and that is deliberate: it changes
 # what a turn DOES, not what is measured. `Playthrough::Classifier#classify`
@@ -118,13 +123,13 @@
 # (`fact`, `offer`, `UNCHANGED`) so that both orders read as English rather than
 # as one string with another bolted onto the end.
 class Playthrough::Refusal
-  KINDS = %i[named_more_than_one unresolved immovable unreadable unplayable dead concluded].freeze
+  KINDS = %i[named_more_than_one unresolved immovable unreadable unplayable dead concluded stopped].freeze
 
-  # THE TWO KINDS THAT ARE NOT A READING OF THE LINE BUT A STATE OF THE GAME.
-  # Both are terminal and neither leaves the player anything to try again, which
+  # THE KINDS THAT ARE NOT A READING OF THE LINE BUT A STATE OF THE GAME.
+  # All are terminal and none leaves the player anything to try again, which
   # is what `#game_over?` is asked for; they differ only in WHY the game is
   # over, and `Playthrough::EndNotice` is the one place that decides that.
-  GAME_OVER = %i[dead concluded].freeze
+  GAME_OVER = %i[dead concluded stopped].freeze
 
   # ONE ACT, PHRASED AS THE PLAYER WOULD HAVE TYPED IT, so a refusal that says
   # "pick one" is naming two things somebody can actually pick between.
@@ -292,9 +297,10 @@ class Playthrough::Refusal
   #
   # THE REASON IS DERIVED OFF RECORDS AND IS NOT DECIDED HERE.
   # `Playthrough::EndNotice` owns the rule -- an ending row means the story
-  # concluded, a protagonist at zero means death -- and owns both sets of words,
-  # so this refusal and the standing statement the play page shows where the
-  # input used to be cannot come to disagree about why the game stopped.
+  # concluded, a protagonist at zero means death, and neither means the game
+  # stopped -- and owns all three sets of words, so this refusal and the
+  # standing statement the play page shows where the input used to be cannot
+  # come to disagree about why the game stopped.
   def self.over(playthrough:, typed:)
     notice = Playthrough::EndNotice.for(playthrough)
 
