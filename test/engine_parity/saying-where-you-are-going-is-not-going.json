@@ -1,0 +1,241 @@
+{
+  "script": "saying-where-you-are-going-is-not-going",
+  "story": "A Turn at the Gate",
+  "steps": [
+    {
+      "step": "step 1 telling-somebody-here-is-the-talk",
+      "player": "first",
+      "typed": "tell Maren I am going to the courtyard",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Market",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000003,
+            "name": "red coin"
+          }
+        ],
+        "carrying": [],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000002,
+            "name": "Maren"
+          }
+        ],
+        "inscription": [],
+        "hp": 52,
+        "hp_of": {
+          "Maren": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "talk -> Maren",
+        "resolved_by": "typed_model",
+        "note": "told-maren: completed",
+        "drifts": 0,
+        "blows": 1,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 going-there-is-the-move",
+      "player": "first",
+      "typed": "go to the courtyard",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Courtyard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Tower",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 48,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Courtyard",
+        "resolved_by": "typed_model",
+        "note": "to-the-courtyard: completed",
+        "drifts": 0,
+        "blows": 1,
+        "hazards": 1,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 11.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 telling-nobody-is-a-talk-that-reaches-for-nobody",
+      "player": "first",
+      "typed": "tell her you are going to the tower",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "Courtyard",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Market",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000003,
+            "name": "Tower",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 48,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "There is nobody here to talk to. Nothing has changed.",
+        "understood": null,
+        "resolved_by": null,
+        "note": "told-nobody: completed",
+        "drifts": 1,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 going-and-then-telling-is-the-move",
+      "player": "first",
+      "typed": "go to the tower and tell Maren where I went",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Tower",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "Courtyard",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 48,
+        "hp_of": {},
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Tower",
+        "resolved_by": "typed_model",
+        "note": "to-the-tower: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 20.0,
+        "shown": null
+      }
+    }
+  ]
+}
