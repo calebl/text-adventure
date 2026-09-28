@@ -182,6 +182,32 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_not_predicate flat, :place?
   end
 
+  # ONE PLACE PER NAME IN A STORY, WHATEVER ITS CASE. Two realizations that
+  # both looked the name up before either wrote it each reach `create_stub!`;
+  # the index refuses the second row, and the generator that lost takes the
+  # first one's.
+  test "two creates of one name that both missed the lookup leave one row" do
+    first = Location::Generator.create_stub!(@story, name: "The Rope Walk", teaser: "A long shed.")
+
+    assert_raises(ActiveRecord::RecordNotUnique) do
+      Location::Generator.create_stub!(@story, name: "the rope walk", teaser: "A long shed.")
+    end
+
+    second = Location::Generator.new(stub_location).send(:create_stub!, "THE ROPE WALK", "A long shed.")
+
+    assert_equal first, second
+    assert_equal 1, @story.locations.where("LOWER(name) = ?", "the rope walk").count
+  end
+
+  test "the same name in another story is another place" do
+    Location::Generator.create_stub!(@story, name: "The Rope Walk", teaser: "A long shed.")
+    other = create(:story)
+
+    assert_difference -> { Location.count } do
+      Location::Generator.create_stub!(other, name: "The Rope Walk", teaser: "A long shed.")
+    end
+  end
+
   # THE ONE THAT MUST NOT FIRE: a road, a shore, a clearing. And an answer with
   # no pick at all, which is a legal answer and the commonest one.
   test "an exit given no inside, or none at all, is born with no footprint" do
