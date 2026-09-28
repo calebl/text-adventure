@@ -43,12 +43,20 @@ class Eval::Arrival::StageTest < ActiveSupport::TestCase
     end
   end
 
+  # The study was bought before the discovery line lost its "first", which the
+  # study's own arrivals echoed as "The first thing that strikes you". Its
+  # retained bytes stay as they ran; today's builder reproduces them with that
+  # one edit applied, and with nothing else moved.
+  DISCOVERY_BEFORE = "what catches them first on the way in"
+  DISCOVERY_AFTER = "what catches them on the way in"
+
   test "study cases rebuild the retained candidate user and system bytes" do
     rows = JSON.parse(Eval::Arrival::STUDY.join("arrival-after.json").read).fetch("rows")
     rows.uniq { |r| r.fetch("case") }.each do |row|
       kase = Eval::Arrival.cases.find { |k| k["id"] == row["case"] }
       Eval::Arrival::Stage.open(kase) do |stage|
-        assert_equal row.fetch("prompt"), stage.request.fetch("user")
+        assert_includes row.fetch("prompt"), DISCOVERY_BEFORE
+        assert_equal row.fetch("prompt").sub(DISCOVERY_BEFORE, DISCOVERY_AFTER), stage.request.fetch("user")
         assert_equal row.fetch("instructions"), stage.request.fetch("system")
         assert_equal row.fetch("calls").first.fetch("schema"), stage.request.fetch("schema")
       end

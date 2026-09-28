@@ -101,6 +101,7 @@ module Eval
     test/lib/eval/arrival/scorer_test.rb
     test/lib/eval/arrival/stage_test.rb
     db/eval/arrival-branches/arrival.json
+    db/eval/arrival-first-visit-2026-09-28/arrival.json
     db/eval/adversarial-20260909/arrival-before.json
     db/eval/adversarial-20260909/arrival-after.json
     db/eval/adversarial-20260909/arrival-reading-key.json

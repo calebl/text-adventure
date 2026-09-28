@@ -2288,9 +2288,9 @@ DATABASE_URL=sqlite3:tmp/arrival/bench.sqlite3 bundle exec rake ruby_llm:load_mo
 DATABASE_URL=sqlite3:tmp/arrival/bench.sqlite3 bundle exec rake eval:estimate
 DATABASE_URL=sqlite3:tmp/arrival/bench.sqlite3 EVAL_LIVE=1 \
   EVAL_BUDGET_FILE=tmp/arrival/budget.json SET=my-arrival bundle exec rake eval:arrival
-bundle exec rake eval:arrival_score SET=arrival-branches
-bundle exec rake eval:arrival_board SET=arrival-branches
-bundle exec rake eval:arrival_compare BEFORE=arrival-branches AFTER=my-arrival
+bundle exec rake eval:arrival_score SET=arrival-first-visit-2026-09-28
+bundle exec rake eval:arrival_board SET=arrival-first-visit-2026-09-28
+bundle exec rake eval:arrival_compare BEFORE=arrival-first-visit-2026-09-28 AFTER=my-arrival
 bundle exec rake eval:arrival_digest
 ```
 
@@ -2314,6 +2314,16 @@ Neither the regexes nor the corpus measure general semantic contradiction,
 recognition quality on a revisit or prose quality. A clean lexical reading is
 not evidence of those properties. Receipts include all attempts; superseded
 fixture readings, when present, contribute to spend and not to baseline scores.
+
+`first_thing_opener` asks whether a first visit's first sentence says "first
+thing" -- the stock opener the discovery line invited while it read "what
+catches them first on the way in". Arrival sets keep their rows, so it re-scores
+every kept set offline. `arrival-branches`, bought before the line lost its
+"first", reads 22 of 36; `arrival-first-visit-2026-09-28`, the baseline since,
+reads 14 of 36, a real difference with every other reading noise. It counts one
+phrase and says nothing about how varied the openings are. That set's one
+superseded row is a call the receipt halted because it could not read RubyLLM
+2's usage fields; its charge is on the ledger.
 
 ## Conditional narrator moments
 

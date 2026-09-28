@@ -11,7 +11,7 @@ namespace :eval do
   desc "Re-score stored arrival fields offline: SET=name ANNOTATIONS=optional.json"
   task arrival_score: :environment do
     annotations = ENV["ANNOTATIONS"] ? JSON.parse(File.read(ENV.fetch("ANNOTATIONS"))) : {}
-    result = Eval::Arrival::Result.load(Eval.set_path(ENV.fetch("SET", "arrival-branches")), annotations: annotations)
+    result = Eval::Arrival::Result.load(Eval.set_path(ENV.fetch("SET", Eval::Arrival::BASELINE.basename.to_s)), annotations: annotations)
     puts result.board
     puts Eval::Arrival::Result.study_board
   end
