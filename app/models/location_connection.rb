@@ -57,10 +57,20 @@ class LocationConnection < ApplicationRecord
   # `save` is the ability, or nil for a thing nobody can dodge. There is no
   # `when:` on this table and there does not need to be: an edge has exactly one
   # moment, which is when it is walked (`Playthrough::Hazards#on_arrival!`).
+  #
+  # A FALL IS THE ONE HAZARD WITH NO DIE ON THE ROW. The Rust engine throws its
+  # dice from the storeys between the edge's two rooms and the world's gravity
+  # (`universes.gravity`, and the tables in the engine's `data/physics.yml`), so
+  # a `fall` row carries no `hazard_die` and nothing is thrown in a world with
+  # no gravity. A window is a pair like any other doorway: the row down is a
+  # `fall` and the row up is a climb.
   HAZARDS = {
     "drop" => { save: :dexterity, words: "the way down is further than it looks from the top" },
-    "undertow" => { save: :strength, words: "the water pulls at you the whole way across" }
+    "undertow" => { save: :strength, words: "the water pulls at you the whole way across" },
+    "fall" => { save: :dexterity, words: "a fall" }
   }.freeze
+
+  FALL = "fall"
 
   belongs_to :location
   belongs_to :key_template, class_name: "Item", optional: true
@@ -161,6 +171,10 @@ class LocationConnection < ApplicationRecord
   private
 
   def a_hazard_is_whole
+    if hazard == FALL
+      errors.add(:hazard_die, "is not a fall's: its dice are the storeys it drops and the world's gravity") if hazard_die.present?
+      return
+    end
     return if hazard.blank? == hazard_die.blank?
 
     errors.add(:hazard, "and hazard_die go together: a hazard is a key and a die, or it is neither")

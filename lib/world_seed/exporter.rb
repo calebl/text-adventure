@@ -339,7 +339,11 @@ class WorldSeed::Exporter
   def universe_document
     universe = story.universe
 
-    UNIVERSE_FIELDS.index_with { |field| text(universe.public_send(field)) }.stringify_keys.merge(
+    fields = UNIVERSE_FIELDS.index_with { |field| text(universe.public_send(field)) }.stringify_keys
+    # Omitted rather than written empty: a world that says nothing about
+    # gravity has none.
+    fields["gravity"] = universe.gravity if universe.gravity.present?
+    fields.merge(
       "races" => universe.races.order(:name).map do |race|
         document = { "name" => race.name }
         # THE MONSTROUS HALF OF THE WORLD'S OWN RACE LIST, omitted rather than

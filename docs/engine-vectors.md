@@ -91,7 +91,9 @@ commit's, byte for byte. `bin/rails engine:vectors` leaves it alone, and the
 Ruby builder stays, so the Ruby loop can still be asked what it would have
 answered.
 
-`shuffle_connections` is the one so far. A portion joins the list only once
+`shuffle_connections` joined it that way. `physics` (falls) was written in
+the engine and never had a Ruby builder, so it is the engine's from the start.
+Any other portion joins the list only once
 its Ruby code runs nowhere else: `world_mechanic` stays Ruby's while the debug
 view reads a mechanic's boundaries, and the dice and geometry stay Ruby's for as
 long as world creation, seeding, repair and the doctor run them.

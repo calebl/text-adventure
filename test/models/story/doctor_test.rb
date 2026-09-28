@@ -1391,7 +1391,8 @@ class Story::DoctorTest < ActiveSupport::TestCase
     LocationConnection::HAZARDS.each_key do |hazard|
       story = healthy_story
       edge = LocationConnection.joins(:location).where(locations: { story_id: story.id }).first
-      edge.update!(hazard: hazard, hazard_die: 4)
+      # A fall carries no die: its dice are the storeys and the world's gravity.
+      edge.update!(hazard: hazard, hazard_die: hazard == LocationConnection::FALL ? nil : 4)
 
       assert_not_includes codes(story), :connection_with_an_unknown_hazard, hazard
     end

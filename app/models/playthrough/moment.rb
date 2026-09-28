@@ -495,7 +495,7 @@ class Playthrough::Moment
   # One toll, and the facts about it a paragraph must not contradict.
   def one_toll(toll)
     where = toll.where_it_was
-    return "#{toll.character.fullname} got clear of #{where} and lost nothing." if toll.saved?
+    return "#{toll.character.fullname} got clear of #{where} and lost nothing." if toll.got_clear?
 
     "#{where} cost #{toll.character.fullname} #{toll.damage} hit point#{"s" unless toll.damage == 1} " \
       "-- #{toll.words}. #{toll.character.fullname} is " \

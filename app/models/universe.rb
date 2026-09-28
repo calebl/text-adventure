@@ -47,6 +47,11 @@ class Universe < ApplicationRecord
     scene: %i[physics technology]
   }.freeze
 
+  # HOW STRONGLY THINGS FALL HERE, as the engine rolls it: the rows of
+  # `gravity` in the Rust engine's `data/physics.yml`. Nil is a world that says
+  # nothing about gravity, and in one a fall costs nothing.
+  GRAVITIES = %w[light ordinary heavy].freeze
+
   has_many :stories, dependent: :destroy
   has_many :races, dependent: :destroy
 
@@ -60,6 +65,7 @@ class Universe < ApplicationRecord
   validates :politics, presence: true
   validates :religion, presence: true
   validates :races, presence: true
+  validates :gravity, inclusion: { in: GRAVITIES }, allow_nil: true
 
   # One "Name -- description" line per race. Characters are assigned from this
   # list, so prompts need to show what is on offer.

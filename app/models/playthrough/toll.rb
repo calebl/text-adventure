@@ -88,6 +88,13 @@ class Playthrough::Toll < ApplicationRecord
   # not a save -- two different facts that one number would collapse.
   def saved? = saved
 
+  # WHETHER IT COST NOTHING BECAUSE THE SAVE WAS MADE. A fall's save only
+  # halves it (the Rust engine's `physics` module), so a saved fall that still
+  # cost something is a cost, and it is told as one.
+  def got_clear? = saved? && (!fall? || damage.zero?)
+
+  def fall? = hazard == LocationConnection::FALL
+
   def killed? = hp_after.zero?
 
   # WHAT TOOK IT, in the app's own words, out of the table the key belongs to.
@@ -109,7 +116,11 @@ class Playthrough::Toll < ApplicationRecord
 
   # The catalogue's own sentence about it, or the bare key for a row whose key
   # the table no longer has -- the honest nothing, rather than a blank.
-  def words = entry&.fetch(:words) || hazard
+  def words
+    return fall_words if fall?
+
+    entry&.fetch(:words) || hazard
+  end
 
   # WHERE IT WAS PAID, as a phrase. A doorway names both ends and the direction,
   # because a one-way hazard's whole content is which way you were going.
@@ -127,9 +138,24 @@ class Playthrough::Toll < ApplicationRecord
   # numbers, because a number is a fact where "badly" is a mood -- the rule
   # `Playthrough::Blow#to_s` is written under.
   def to_s
-    return "#{character.fullname} got clear of #{hazard} on #{where_it_was}" if saved?
+    return "#{character.fullname} got clear of #{hazard} on #{where_it_was}" if got_clear?
 
     "#{hazard} on #{where_it_was} cost #{character.fullname} #{damage} hit " \
       "point#{"s" unless damage == 1} (#{words}); #{character.fullname} is #{condition.in_words}"
+  end
+
+  private
+
+  # How far down, and whether a landing halved it: the engine's
+  # `physics::words`, word for word.
+  def fall_words
+    edge = location_connection
+    storeys = edge && edge.location.z && edge.connected_location.z && (edge.location.z - edge.connected_location.z)
+    words =
+      if storeys.nil? || storeys < 1 then "a fall"
+      elsif storeys == 1 then "a fall of 1 storey"
+      else "a fall of #{storeys} storeys"
+      end
+    saved? && damage.positive? ? "#{words}, and a good landing halved it" : words
   end
 end

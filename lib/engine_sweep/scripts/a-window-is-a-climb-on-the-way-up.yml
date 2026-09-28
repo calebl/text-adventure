@@ -1,0 +1,76 @@
+# THE STAIR BOTH WAYS AND THE WINDOW UP: nothing here falls.
+#
+# The same farm as `a-jump-from-the-loft-window.yml`, walked the other way
+# round. The stair from the loft into the kitchen is an ordinary doorway
+# between two storeys, and a stair is not a fall: only a doorway row that
+# carries `hazard: fall` is. The window climbed from the yard is the row with
+# no hazard. `jump` through an ordinary doorway is a walk, and a jump at a
+# place that is not a way out is refused and writes nothing.
+story: A Window Over the Yard
+why: a stair between storeys and the climb up through a window cost nothing, and jump is only go
+steps:
+- id: into-the-yard
+  type: go to the yard
+  why: in off the lane
+  expect:
+    changed: true
+    location: The Yard (realized)
+    storey: 0
+    hazards: 0
+
+- id: into-the-kitchen
+  type: go to the kitchen
+  why: an ordinary doorway on one storey
+  expect:
+    changed: true
+    location: The Kitchen (realized)
+    storey: 0
+    hazards: 0
+
+- id: up-the-stair
+  type: go to the loft
+  why: the stair up into the loft
+  expect:
+    changed: true
+    location: The Loft (realized)
+    storey: 1
+    hazards: 0
+
+- id: down-the-stair
+  type: go to the kitchen
+  why: an ordinary doorway down a storey is a stair, and a stair is not a fall
+  expect:
+    changed: true
+    location: The Kitchen (realized)
+    storey: 0
+    hazards: 0
+    blows: 0
+
+- id: jump-into-the-yard-from-the-kitchen
+  type: jump into the yard
+  why: jumping through a doorway on one storey is walking through it
+  expect:
+    changed: true
+    location: The Yard (realized)
+    storey: 0
+    hazards: 0
+
+- id: a-jump-at-nowhere
+  type: jump into the well
+  why: the well is not a way out, so the line is refused and writes nothing
+  expect:
+    refused: true
+    changed: false
+    location: The Yard (realized)
+    hazards: 0
+
+- id: up-through-the-window
+  type: go to the loft
+  why: the window's row up is a climb with no hazard
+  expect:
+    changed: true
+    location: The Loft (realized)
+    storey: 1
+    hp: 18
+    hazards: 0
+    blows: 0

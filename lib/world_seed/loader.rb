@@ -231,6 +231,8 @@ class WorldSeed::Loader
   def load_universe!
     universe = existing_story&.universe || Universe.new
     universe.assign_attributes(universe_document.except("races"))
+    # Written on every load, so a file that stops naming a gravity takes it off.
+    universe.gravity = universe_document["gravity"].presence
 
     races = universe_document.fetch("races").map do |attributes|
       race = universe.races.detect { |candidate| candidate.name == attributes.fetch("name") } ||
@@ -974,6 +976,7 @@ class WorldSeed::Loader
 
     validate_inscriptions!
     validate_bulks!
+    validate_gravity!
     validate_physical_parameters!
     validate_dangers!
     validate_populations!
@@ -1618,6 +1621,13 @@ class WorldSeed::Loader
       raise InvalidWorld, "#{where}: #{where_it_is} has `hazard: #{hazard.inspect}`; there is: #{catalogue.keys.join(", ")}"
     end
 
+    if catalogue.equal?(LocationConnection::HAZARDS) && hazard == LocationConnection::FALL
+      return if die.blank?
+
+      raise InvalidWorld, "#{where}: #{where_it_is} has `hazard: fall` and `hazard_die: #{die.inspect}`; a fall's dice " \
+                          "are the storeys it drops and the world's gravity, so it takes no die"
+    end
+
     return if Location::HAZARD_DICE.include?(die)
 
     raise InvalidWorld, "#{where}: #{where_it_is} has `hazard_die: #{die.inspect}`; a hazard is a key AND a die, " \
@@ -1687,6 +1697,13 @@ class WorldSeed::Loader
                             "there is: #{Item::BULK.keys.join(", ")}"
       end
     end
+  end
+
+  def validate_gravity!
+    gravity = universe_document["gravity"]
+    return if gravity.blank? || Universe::GRAVITIES.include?(gravity)
+
+    raise InvalidWorld, "#{where}: the universe has `gravity: #{gravity.inspect}`; there is: #{Universe::GRAVITIES.join(", ")}"
   end
 
   # A mechanic that cannot run is the worst kind of seed-file typo: the world

@@ -1318,6 +1318,51 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_equal "drop", LocationConnection.walked(closet, office).hazard
   end
 
+  # A FALL TAKES NO DIE: the storeys it drops and the world's gravity are its
+  # dice, so the row carries the key alone and the world carries the gravity.
+  test "a world's gravity and a doorway's fall load, and the fall has no die" do
+    falling = document
+    falling["universe"]["gravity"] = "heavy"
+    falling["connections"].first.merge!("hazard" => "fall", "hazard_from" => "The Office")
+
+    WorldSeed::Loader.new(falling).load!
+
+    story = Story.find_by(title: "A Seeded World")
+    office = story.locations.find_by(name: "The Office")
+    closet = story.locations.find_by(name: "The Closet")
+    edge = LocationConnection.walked(office, closet)
+    assert_equal "heavy", story.universe.gravity
+    assert_equal "fall", edge.hazard
+    assert_nil edge.hazard_die
+    assert_nil LocationConnection.walked(closet, office).hazard
+  end
+
+  test "re-seeding without a gravity takes it back off" do
+    falling = document
+    falling["universe"]["gravity"] = "light"
+    WorldSeed::Loader.new(falling).load!
+
+    WorldSeed::Loader.new(document).load!
+
+    assert_nil Story.find_by(title: "A Seeded World").universe.gravity
+  end
+
+  test "a gravity the engine has no dice for is refused by name" do
+    broken = document
+    broken["universe"]["gravity"] = "sideways"
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/gravity: "sideways".*light, ordinary, heavy/, error.message)
+  end
+
+  test "a fall with a die is refused by name" do
+    broken = document
+    broken["connections"].first.merge!("hazard" => "fall", "hazard_die" => 6, "hazard_from" => "The Office")
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/The Office <-> The Closet.*hazard: fall.*takes no die/, error.message)
+  end
+
   test "a room hazard the catalogue has no entry for is refused by name" do
     broken = document
     broken["locations"].last.merge!("hazard" => "haunted", "hazard_die" => 4)

@@ -91,6 +91,29 @@ class Playthrough::TollTest < ActiveSupport::TestCase
     assert_match(/got clear of/, toll.to_s)
   end
 
+  # A FALL'S SAVE HALVES IT, so a saved fall that still cost something is told
+  # as a cost, with how far it was and the landing that halved it.
+  test "a fall reads out how far it was, and a saved one what the landing did" do
+    # Only the two storeys matter to the words, so no whole box is built.
+    @here.update_columns(z: 0)
+    loft = create(:location, story: @story, name: "The Loft")
+    loft.update_columns(z: 1)
+    edge = create(:location_connection, location: loft, connected_location: @here, hazard: "fall")
+    fell = create(:playthrough_toll, playthrough: @game, hazard: "fall", damage: 5,
+                                     location: @here, location_connection: edge)
+    landed = create(:playthrough_toll, playthrough: @game, hazard: "fall", damage: 2, saved: true,
+                                       location: @here, location_connection: edge)
+    clear = create(:playthrough_toll, playthrough: @game, hazard: "fall", damage: 0, saved: true,
+                                      location: @here, location_connection: edge)
+
+    assert_equal "a fall of 1 storey", fell.words
+    assert_match(/\Afall on the way from The Loft into The Causeway Court cost Hero Protagonist 5 hit points \(a fall of 1 storey\); /, fell.to_s)
+    assert_not landed.got_clear?
+    assert_match(/cost Hero Protagonist 2 hit points \(a fall of 1 storey, and a good landing halved it\)/, landed.to_s)
+    assert clear.got_clear?
+    assert_match(/got clear of fall/, clear.to_s)
+  end
+
   test "a killing toll reads out with the numbers" do
     toll = create(:playthrough_toll, :killing, playthrough: @game, damage: 4)
 

@@ -42,7 +42,7 @@ One file is one universe and one story. Keys are written in this order:
 | key             | what it holds                                                          |
 | --------------- | ---------------------------------------------------------------------- |
 | `format`        | bumped when the format changes; the loader refuses one it cannot read   |
-| `universe`      | the nine prompt fields, plus `races` (name, description, optional `monstrous`) |
+| `universe`      | the nine prompt fields, plus `races` (name, description, optional `monstrous`); optional `gravity` |
 | `story`         | title, genre, `start_time`, preface, summary                            |
 | `opening_scene` | the narrated moment the story starts in — see below                     |
 | `characters`    | one entry each, `race` by name, optional `location` (or `absent`) + a position in it (`x`, `y`), optional `hostile`, optional `stats`, optional `conscious_desire` / `unconscious_desire` / `recognized_need` / `unrecognized_need` / `desire_pursuit` / `need_pursuit`, and `items` |
@@ -667,7 +667,7 @@ connections:
   strikes back in. So a room can charge you for coming in or for staying, and
   which of the two is a property of the hazard rather than of the room.
 - **`hazard` on a connection is a key into `LocationConnection::HAZARDS`** —
-  `drop`, `undertow` — and it is paid when that doorway is walked.
+  `drop`, `undertow`, `fall` — and it is paid when that doorway is walked.
 - **`hazard_die` is the parameter**: one of `Location::HAZARD_DICE` (4, 6, 8,
   10), thrown when the save is missed. A hazard is a key **and** a die, or it is
   neither; half of one is refused by the file and by the record.
@@ -686,6 +686,26 @@ connections:
   **A one-way hazard is not a one-way exit.** Both rows are still written, the
   door still leads both ways, and `Location#exits` is unchanged; only the cost
   differs. One-way exits stay unsupported and deliberately deferred.
+- **`fall` is the one doorway hazard with no `hazard_die`**, and a file that
+  gives it one is refused. Its dice are the storeys the doorway drops (the
+  `z` of the room you leave less the `z` of the room you land in) times the
+  world's `universe.gravity` — `light`, `ordinary` or `heavy`
+  (`Universe::GRAVITIES`, whose dice per storey are in the Rust engine's
+  `data/physics.yml`) — against a dexterity save that halves it. A world with
+  no `gravity`, or a `fall` that does not go down, costs nothing, so the key is
+  inert until a world sets both. A window is an ordinary pair: the row down
+  carries `hazard: fall` and the row up is a `climbing` like any other.
+
+  ```yaml
+  universe:
+    gravity: ordinary
+  connections:
+  - between: [The Loft, The Yard]
+    distance: adjacent
+    travel_method: climbing
+    hazard: fall
+    hazard_from: The Loft
+  ```
 - Both are **omitted rather than written out** on export, like `opening`,
   `mobile` and `danger`, and both are **re-asserted in both directions** on
   load: deleting `hazard:` from a file and re-seeding takes it back off, so a
@@ -944,6 +964,9 @@ locations:
   catalogue (`Location::HAZARDS` / `LocationConnection::HAZARDS`) and comes with
   a `hazard_die` in `Location::HAZARD_DICE`. Half a hazard is refused: a key
   with no die is a file that looks as though it said something and did not.
+  The one exception is a doorway's `fall`, which takes no die at all.
+- A `universe.gravity`, when the file gives one, is one of `light`,
+  `ordinary`, `heavy` (`Universe::GRAVITIES`); an absent key is no gravity.
 - A connection with a `hazard` carries a `hazard_from`, and that name is one of
   the edge's **own two ends**. Without it there is no way to say which direction
   costs something; with the wrong name the edge would load with no hazard at all
@@ -1170,7 +1193,8 @@ written before they existed still loads and still means exactly what it meant.
 `hazard_from` were added to format 2 on that same rule: every one of them is
 optional, all of them default to a world that does nothing to anybody for
 walking around it, and the columns are nullable so no existing database needs a
-backfill either.
+backfill either. `universe.gravity` and the `fall` doorway hazard joined them
+on the same rule.
 
 The optional `mechanics` key and `locations[].mobile` were added to format 2
 rather than bumping it to 3, which is the rule `WorldSeed::FORMAT` states:

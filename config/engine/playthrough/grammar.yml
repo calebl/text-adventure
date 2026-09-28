@@ -18,6 +18,8 @@ verbs:
   move: go
   walk: go
   enter: go
+  jump: go
+  leap: go
   take: take
   get: take
   grab: take
