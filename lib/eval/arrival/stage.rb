@@ -50,11 +50,13 @@ class Eval::Arrival::Stage
       LocationConnection.create!(location: room, connected_location: origin,
         distance: "adjacent", travel_method: "walking", time_to_travel: 1)
     end
+    # A return is THIS GAME having stood here, so the earlier visit is on the
+    # chain the arrival walks back along.
     if kase["state"] == "returning"
-      Scene.create!(story: story, location: room, story_timestamp: story.start_time,
+      earlier = Scene.create!(story: story, location: room, story_timestamp: story.start_time,
         description: "You stand beside the desk.", summary: "Iri visits the counting house.")
     end
-    previous = Scene.create!(story: story, location: origin, story_timestamp: story.start_time + 2.hours,
+    previous = Scene.create!(story: story, location: origin, story_timestamp: story.start_time + 2.hours, previous_scene: earlier,
       description: "You leave the market for the counting house.", summary: "You leave the market for the counting house.")
     @game = Playthrough.create!(id: -920001, story: story, character: player, current_location: origin, current_scene: previous)
     Item.create!(name: "brass key", description: "A brass key.", location: room, properties: "{}")
@@ -98,7 +100,7 @@ class Eval::Arrival::Stage
   def request
     at = generator.story_timestamp
     { "system" => generator.system_prompt,
-      "user" => generator.arrival_prompt(room.last_protagonist_visit.present?, room.time_since_last_visit(at), generator.characters_present),
+      "user" => generator.arrival_prompt(generator.returning?, room.time_since_last_visit(generator.chain_head, at), generator.characters_present),
       "schema" => JSON.parse(JSON.generate(Scene::Schema.new.to_json_schema)), "history" => [] }
   end
 

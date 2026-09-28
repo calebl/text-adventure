@@ -643,9 +643,9 @@ class Playthrough::Turn
   #     once and walking back reads what was written -- the same call, and no
   #     code path that can regenerate a place the player has already seen.
   #   * `Scene::Generator` then narrates arriving, and reads differently the
-  #     second time: `Location#last_protagonist_visit` is stamped by `Scene`'s
-  #     own after_create, so the room the player left an hour ago is narrated
-  #     as coming back rather than as finding. That is what makes a persisted
+  #     second time: it reads this game's own scene chain, so the room the
+  #     player left an hour ago is narrated as coming back rather than as
+  #     finding -- and a room only another game has stood in is not. That is what makes a persisted
   #     world feel persisted instead of merely being persisted.
   #   * `Scene::Generator` raises on a stub, which is why realizing is first
   #     and not optional.

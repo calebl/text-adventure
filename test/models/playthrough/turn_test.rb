@@ -216,8 +216,12 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "a return visit is narrated as coming back rather than as discovery" do
-    market = create(:location, story: @story, name: "Riverside", last_protagonist_visit: 2.hours.ago,
+    market = create(:location, story: @story, name: "Riverside",
                                description: "Stalls under wet canvas.", lore: "A fish market once.")
+    # This game stood in the market two hours ago, and has been here since.
+    earlier = create(:scene, story: @story, location: market, story_timestamp: @story.start_time)
+    @playthrough.update!(current_scene: create(:scene, story: @story, location: @here, previous_scene: earlier,
+                                                       story_timestamp: @story.start_time + 2.hours))
     create(:location_connection, location: @here, connected_location: market,
                                  distance: "adjacent", travel_method: "walking")
 

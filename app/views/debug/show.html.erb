@@ -62,9 +62,9 @@
 
       <div class="k">last visit</div>
       <div class="v">
-        <%= debug_time(place.last_protagonist_visit, absent: "never — the next arrival narrates as discovery") %>
-        <% if place.last_protagonist_visit %>
-          <span class="note">(<%= debug_minutes((place.time_since_last_visit(@debug.story_clock).to_f / 60).round(2)) %> of story time ago)</span>
+        <%= debug_time(place.last_protagonist_visit, absent: "never — nobody in any game has stood here") %>
+        <% if place.last_protagonist_visit && @debug.story_clock %>
+          <span class="note">(<%= debug_minutes(((@debug.story_clock - place.last_protagonist_visit).to_f / 60).round(2)) %> of story time ago)</span>
         <% end %>
       </div>
 
