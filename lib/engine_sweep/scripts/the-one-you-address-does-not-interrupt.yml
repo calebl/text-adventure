@@ -1,0 +1,40 @@
+# THE PERSON YOU ARE TALKING TO ANSWERS YOU, AND DOES NOT ALSO SPEAK UP.
+#
+# On a talk line the speech die is thrown between the person's answer and the
+# exchange's narrator, so a bystander may interject and the interaction
+# narrator is told it through the "What else happened here" line of its
+# moment. The person spoken to is left out of the throw: they have just
+# answered in their own words, and a second, unasked line from them would be
+# the engine talking over the character pass.
+#
+# Tamsin's die, had she been thrown, would have asked for the ticket, so the
+# exclusion is doing the work here; Rowe's comes up a demand, and he is the
+# one heard.
+story: Two Clerks at One Counter
+steps:
+- id: rowe-interjects
+  type: /talk Tamsin
+  why: the addressee is not thrown, and a bystander who speaks reaches the exchange's narrator
+  browser:
+    token: talk
+    replies:
+    - purpose: character
+      content:
+        pre_thought: Ansel has the ticket in his hand.
+        pre_feeling: eager
+        action: Tamsin smiles at Ansel and opens the ticket book.
+        post_thought: He will hand it over if I am patient.
+        post_feeling: hopeful
+        inner_resolution: I will wait for the ticket.
+        engine_action: none
+    - purpose: interaction-narration
+      content: Tamsin opens the ticket book for you, and behind her Rowe holds out his hand.
+      prompt_includes:
+      - 'What else happened here, recorded by the game: Rowe Harker spoke up unasked and demanded pawn ticket from Ansel Mott. Nothing changed hands.'
+      prompt_excludes:
+      - Tamsin Gale spoke up unasked
+  expect:
+    changed: true
+    carrying: [pawn ticket]
+    present: [Rowe Harker, Tamsin Gale]
+    volitions: 2

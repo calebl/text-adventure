@@ -13,7 +13,8 @@ module Eval::Dialogue::Version
   def self.rebuild(row)
     previous_key = RubyLLM.config.openrouter_api_key
     RubyLLM.config.openrouter_api_key ||= "offline-dialogue-replay"
-    kase = Eval::Dialogue.cases.find { |entry| entry.fetch("id") == row.fetch("id") }
+    kase = Eval::Dialogue::CORPORA.keys.flat_map { |corpus| Eval::Dialogue.cases(corpus) }
+                                  .find { |entry| entry.fetch("id") == row.fetch("id") }
     raise ArgumentError, "unknown case #{row.fetch('id')}" unless kase
     Eval::Classifier::Arm.parse(Eval::Dialogue.model).pinned do
       Eval::Dialogue::Bench.new.read(kase, rep: row.fetch("rep"), replay: row)

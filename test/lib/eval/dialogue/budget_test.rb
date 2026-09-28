@@ -15,10 +15,10 @@ class Eval::Dialogue::BudgetTest < ActiveSupport::TestCase
 
   test "streamed usage is retained when optional billing body is empty or malformed" do
     raw_type = Data.define(:body)
-    response_type = Data.define(:input_tokens, :output_tokens, :raw, :model_id)
     [ "", "{broken" ].each do |body|
-      receipt = Eval::Dialogue::Budget.usage(response_type.new(input_tokens: 100, output_tokens: 30,
-        raw: raw_type.new(body: body), model_id: Eval::Dialogue.model))
+      receipt = Eval::Dialogue::Budget.usage(RubyLLM::Message.new(role: :assistant, content: "{}",
+        tokens: RubyLLM::Tokens.new(input: 100, output: 30), raw: raw_type.new(body: body), model: Eval::Dialogue.model))
+      assert_equal Eval::Dialogue.model, receipt[:actual_model]
       assert_equal 100, receipt[:input_tokens]
       assert_equal 30, receipt[:output_tokens]
       assert_nil receipt[:provider_cost_usd]

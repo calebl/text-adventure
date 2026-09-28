@@ -1,9 +1,10 @@
 # Same named-set vocabulary as the other benches. Paid runs require an explicit
 # scratch DATABASE_URL and durable EVAL_BUDGET_FILE; reads and replay are free.
 namespace :eval do
-  desc "Run the fixed NPC study; SET=name EVAL_LIVE=1 EVAL_BUDGET_FILE=path"
+  desc "Run the fixed NPC study; SET=name CORPUS=main|bystander EVAL_LIVE=1 EVAL_BUDGET_FILE=path"
   task dialogue: :environment do
-    Eval::Dialogue::Bench.new.run(Eval.root.join(ENV.fetch("SET")), reps: ENV.fetch("REPS", Eval::Noise::MIN_RUNS).to_i)
+    Eval::Dialogue::Bench.new(corpus: ENV.fetch("CORPUS", "main"))
+                         .run(Eval.root.join(ENV.fetch("SET")), reps: ENV.fetch("REPS", Eval::Noise::MIN_RUNS).to_i)
   end
 
   %w[score board].each do |verb|
@@ -31,7 +32,7 @@ namespace :eval do
       rebuilt = Eval::Dialogue::Version.rebuild(row)
       row.values_at("id", "rep") unless row.fetch("request_digest") == rebuilt.fetch("request_digest")
     end
-    puts JSON.pretty_generate(corpus_digest: Eval::Dialogue.digest, mismatches: mismatches)
+    puts JSON.pretty_generate(corpus_digest: Eval::Dialogue.digest(result.data.fetch("corpus", "main")), mismatches: mismatches)
     abort "Dialogue requests changed" if mismatches.any?
   end
 end

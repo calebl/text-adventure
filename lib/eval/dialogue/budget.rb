@@ -122,10 +122,14 @@ module Eval::Dialogue::Budget
     end
 
     def usage(response)
-      fields = { input_tokens: :input_tokens, output_tokens: :output_tokens,
-                 cached_tokens: :cached_tokens, cache_creation_tokens: :cache_creation_tokens,
-                 thinking_tokens: :thinking_tokens }
-      tokens = fields.transform_values { |method| response.public_send(method) if response.respond_to?(method) }
+      # RubyLLM 2 reports counts as one `tokens` value and the answering model
+      # as `model`; a persisted record goes back to that public value first
+      # (`Eval::Arrival::Budget.usage` reads them the same way).
+      message = response.is_a?(ActiveRecord::Base) ? response.to_llm : response
+      counts = message.tokens if message.respond_to?(:tokens)
+      fields = { input_tokens: :input, output_tokens: :output, cached_tokens: :cache_read,
+                 cache_creation_tokens: :cache_write, thinking_tokens: :thinking }
+      tokens = fields.transform_values { |method| counts&.public_send(method) }
       if tokens.values.compact.any? { |count| !count.is_a?(Integer) || count.negative? }
         raise Halt, "Invalid provider token accounting"
       end
@@ -148,7 +152,7 @@ module Eval::Dialogue::Budget
       cost = body.is_a?(Hash) ? body.dig("usage", "cost") : nil
       cost = Float(cost) unless cost.nil?
       raise Halt, "Invalid provider charge" if cost && (!cost.finite? || cost.negative?)
-      { **tokens, actual_model: response.respond_to?(:model_id) ? response.model_id : nil,
+      { **tokens, actual_model: message.respond_to?(:model) ? message.model : nil,
         provider: PROVIDER, provider_cost_usd: cost,
         provider_cost_metadata_error: metadata_error,
         registry_cost_usd: response.respond_to?(:cost) ? response.cost.total : nil,
@@ -168,8 +172,11 @@ module Eval::Dialogue::Budget
       unless input_rate&.positive? && output_rate&.positive? && input_rate <= INPUT_RATE && output_rate <= OUTPUT_RATE
         raise Halt, "Pinned model has missing pricing or exceeds the reservation rate bounds"
       end
-      conversation.with_params(max_tokens: MAX_OUTPUT_TOKENS,
-                               provider: { allow_fallbacks: false })
+      # AS PROVIDER OPTIONS: RubyLLM 2 renamed `with_params` to
+      # `with_provider_options`, and the old name failed every case before a
+      # request was sent (`Eval::Arrival::Budget.cap!` has the same fix).
+      conversation.with_provider_options(max_tokens: MAX_OUTPUT_TOKENS,
+                                         provider: { allow_fallbacks: false })
       schema_json = schema&.new&.to_json_schema
       request = { prompt: prompt, instructions: instructions, schema: schema_json,
                   history: conversation.messages.order(:id).map { |message| { role: message.role, content: message.text } } }

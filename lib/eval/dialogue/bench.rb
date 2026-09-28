@@ -9,6 +9,10 @@
 class Eval::Dialogue::Bench
   Response = Data.define(:content)
 
+  attr_reader :corpus
+
+  def initialize(corpus: "main") = @corpus = corpus
+
   def read(kase, rep:, replay: nil)
     Eval::Dialogue::Stage.open(kase) do |stage|
       requests = []
@@ -17,6 +21,10 @@ class Eval::Dialogue::Bench
         requests << Eval::Dialogue::Version.request(request)
         response = if answers
           content = answers.shift
+          # RubyLLM 2 keeps a schema'd answer as the provider's JSON text,
+          # where RubyLLM 1 kept it parsed; replay hands the pass what a live
+          # call hands it.
+          content = JSON.parse(content) if content.is_a?(String) && requests.last["schema"]
           verify&.call(content)
           Response.new(content: content)
         else
@@ -46,17 +54,18 @@ class Eval::Dialogue::Bench
   def run(directory, reps: Eval::Noise::MIN_RUNS)
     raise ArgumentError, "reps must reach Eval::Noise::MIN_RUNS" if reps < Eval::Noise::MIN_RUNS
     Eval::Dialogue::Budget.assert_isolated_database!
-    estimate = Eval::Dialogue.estimate(reps: reps)
+    estimate = Eval::Dialogue.estimate(reps: reps, corpus: corpus)
     raise ArgumentError, "estimate exceeds budget" if estimate.fetch(:estimated_usd) > Eval::Dialogue::Budget::LIMIT_MICROS / 1_000_000.0
     FileUtils.mkdir_p(directory)
     file = Pathname.new(directory).join(Eval::Dialogue::RESULTS)
     raise ArgumentError, "set already exists: #{file}" if file.exist?
-    data = { "model" => Eval::Dialogue.model, "reps" => reps, "corpus_digest" => Eval::Dialogue.digest,
+    data = { "model" => Eval::Dialogue.model, "reps" => reps, "corpus_digest" => Eval::Dialogue.digest(corpus),
       "recorded_at" => Time.now.utc.iso8601, "estimate" => estimate, "rows" => [] }
+    data["corpus"] = corpus unless corpus == "main"
     File.write(file, JSON.pretty_generate(data))
     Eval::Dialogue::Budget.install!
     (1..reps).each do |rep|
-      Eval::Dialogue.cases.each do |kase|
+      Eval::Dialogue.cases(corpus).each do |kase|
         Eval::Dialogue::Budget.label = "#{kase.fetch('id')}:#{rep}"
         Eval::Dialogue::Budget.calls = []
         row = read(kase, rep: rep)

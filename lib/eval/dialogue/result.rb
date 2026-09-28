@@ -60,7 +60,7 @@ class Eval::Dialogue::Result
   end
 
   def validate_complete!
-    expected_ids = Eval::Dialogue.cases.map { |k| k.fetch("id") }.sort
+    expected_ids = Eval::Dialogue.cases(data.fetch("corpus", "main")).map { |k| k.fetch("id") }.sort
     raise ArgumentError, "incomplete repetitions" unless rows.map { |r| r.fetch("rep") }.uniq.sort == (1..data.fetch("reps")).to_a
     rows.group_by { |r| r.fetch("rep") }.each_value do |group|
       raise ArgumentError, "incomplete or duplicated cases" unless group.map { |r| r.fetch("id") }.sort == expected_ids

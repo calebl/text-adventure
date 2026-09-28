@@ -61,6 +61,7 @@ class Eval::Dialogue::Stage
     @key = game.items_held_by(npc).first
     key&.update!(id: 910002)
     Playthrough::NpcAction.new(game, npc).apply!("follow") if kase.fetch("following")
+    stand_a_bystander! if kase["bystander"]
     if kase.fetch("history", []).any?
       chat = Chat.new(purpose: Chat::CHARACTER, playthrough: game, character: npc)
       chat.assume_model_exists = true
@@ -73,6 +74,25 @@ class Eval::Dialogue::Stage
       end
     end
   end
+
+  # SOMEBODY ELSE AT THE BENCH, who spoke up unasked before the exchange was
+  # narrated -- held as the speech die would have written it, with the
+  # engine's own fact (`Eval::HeldSpeech`). A pursuit, because nobody without
+  # one ever speaks up; the one that moves least, so the stage is the same
+  # whoever reads it. What the player carries for them to ask after is the
+  # case's (`carried`), in the party's own hands.
+  def stand_a_bystander!
+    bystander = kase.fetch("bystander")
+    Array(kase["carried"]).each_with_index do |name, index|
+      Item.create!(id: 910_010 + index, playthrough: game, name: name, description: "A #{name}.", properties: "{}")
+    end
+    @tobin = story_of_room.characters.create!(sheet.merge(id: -910003, fullname: bystander.fetch("name"),
+      nickname: bystander.fetch("name"), age: 50, sex: "male", race: npc.race, location: room,
+      backstory: "A regular at the market bench.", personality: "Blunt and quick to speak.", desire_pursuit: "keep"))
+    Eval::HeldSpeech.say!(game.reload, @tobin, bystander.fetch("says"), location: room)
+  end
+
+  def story_of_room = room.story
 
   def sheet
     { backstory: "An ordinary person thrust into extraordinary circumstances",
@@ -127,6 +147,15 @@ class Eval::Dialogue::Stage
       "key_on_floor" => key ? key.reload.location_id == room.id : false,
       "peace_before_attack" => @peace_before_attack, "status" => effect&.status,
       "npc_items" => game.items_held_by(npc).pluck(:name),
-      "world_items" => npc.items.where(playthrough_id: nil).pluck(:name) }
+      "world_items" => npc.items.where(playthrough_id: nil).pluck(:name) }.merge(bystander_facts)
+  end
+
+  # Only on a bystander case, so every other case's facts keep their keys.
+  def bystander_facts
+    return {} unless @tobin
+
+    { "bystander_said" => game.volitions.where(character: @tobin).order(:id).pluck(:fact),
+      "player_items" => game.carried.order(:id).pluck(:name),
+      "bystander_items" => game.items_held_by(@tobin).pluck(:name) }
   end
 end

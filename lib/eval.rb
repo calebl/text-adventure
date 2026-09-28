@@ -129,6 +129,12 @@ module Eval
     db/eval/prompt-2026-09-28/prompt.json
     db/eval/prompt-2026-09-28/receipts.json
     db/eval/prompt-2026-09-28/README.md
+    lib/eval/prompt/speech.rb
+    lib/eval/prompt/speech/stage.rb
+    lib/eval/prompt/speech/bench.rb
+    test/fixtures/files/prompt_speech_corpus.yml
+    db/eval/prompt-speech-2026-09-28/prompt.json
+    db/eval/prompt-speech-2026-09-28/receipts.json
     db/eval/classifier-2026-09-10/classifier.json
     db/eval/classifier-2026-09-10/receipts.json
     db/eval/classifier-2026-09-10/offline.json
@@ -158,6 +164,11 @@ module Eval
     lib/eval/dialogue/version.rb
     lib/tasks/dialogue.rake
     test/fixtures/files/dialogue_corpus.json
+    test/fixtures/files/dialogue_bystander_corpus.json
+    lib/eval/held_speech.rb
+    db/eval/dialogue-bystander-2026-09-28/dialogue.json
+    db/eval/dialogue-bystander-2026-09-28/halted-budget.json
+    db/eval/dialogue-bystander-2026-09-28/README.md
     db/eval/dialogue-2026-09-10/dialogue.json
     db/eval/physical-dialogue-20260910/dialogue.json
     db/eval/physical-dialogue-20260910/before-board.json
