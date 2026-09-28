@@ -182,6 +182,41 @@ class Quest::DeadlineTest < ActiveSupport::TestCase
     assert_predicate prince, :stat_block?, "the engine rolls a body like it does for anybody else"
   end
 
+  # WHETHER A ROOM IS PEOPLED IS ROLLED, and half the rolls say nobody. Which
+  # room comes out deepest is rolled too, off the layout's ids -- so before the
+  # deadline asked, the person was placed or refused by which ids the suite had
+  # handed out. Every roll forced to `nobody` here is the unlucky world.
+  test "the person is admitted even where every rolled room says nobody" do
+    step = create(:quest_step, :speak_to, quest: @quest, position: 1, target_name: "Prince Aurel Durn")
+    deepest = open_rooms(Quest::Deadline::GRACE_ROOMS + 1).last
+
+    Location::Population.stub(:label_for, ->(room, rng:) { room.population.presence || "nobody" }) do
+      Quest::Deadline.after_realizing!(deepest)
+    end
+
+    prince = @story.characters.find_by(fullname: "Prince Aurel Durn")
+
+    assert_not_nil prince
+    assert_equal prince, step.reload.target
+    assert_equal Quest::Deadline::HELD, prince.location.population
+  end
+
+  test "a building whose rooms hold nobody is passed over rather than chosen for ever" do
+    create(:quest_step, :speak_to, quest: @quest, position: 1, target_name: "Prince Aurel Durn")
+    deepest = open_rooms(Quest::Deadline::GRACE_ROOMS + 1).last
+    warren = create(:location, story: @story, name: "Blackfang Warren", width: 12, depth: 10)
+    Location::Interior.lay_out!(warren)
+    warren.child_locations.each { |room| room.update!(population: "nobody") }
+    connect!(deepest, Location::Interior.entry_room(warren))
+
+    Quest::Deadline.after_realizing!(deepest)
+
+    prince = @story.characters.find_by(fullname: "Prince Aurel Durn")
+
+    assert_not_nil prince
+    assert_not_equal warren, prince.location.parent_location
+  end
+
   # --- a thing ---------------------------------------------------------------
 
   test "a thing target is left lying in the deepest room the party can reach" do
@@ -205,7 +240,12 @@ class Quest::DeadlineTest < ActiveSupport::TestCase
     place = create(:location, story: @story, name: "The Old Workings", width: 10, depth: 10)
     Location::Interior.lay_out!(place)
     connect!(cellar, Location::Interior.entry_room(place))
-    below = place.child_locations.order(:z).first
+    # A room that can take another door: the layout is rolled, and the entry
+    # room with the cellar's door on it can already be at MAX_EXITS, which the
+    # anchor rightly passes over.
+    below = place.child_locations.order(:id).detect do |room|
+      LocationConnection.from_location(room).count < Location::ExitsSchema::MAX_EXITS
+    end
     below.update!(z: -2)
 
     create(:quest_step, :reach_location, quest: @quest, position: 1, target_name: "Blackfang Warren")
