@@ -1225,6 +1225,75 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_equal [ "shop", "sparse" ], [ known.reload.kind, known.reload.density ]
   end
 
+  # --- what the game has already put in the room ------------------------------
+  #
+  # The room is furnished from its kit before the writer is asked anything
+  # (`Item::Kit`), and the detail prompt says what is there -- read off the
+  # rows, so the words are what the records hold and nothing else.
+
+  test "a stub with a kind is furnished before it is described, and the prompt says what is there" do
+    location = stub_location(name: "The Reading Room", kind: "study", density: "lived-in")
+    agent = FakeAgent.new(DETAIL, EXITS)
+
+    realize(location, agent)
+
+    assert_equal Item::Kit.roll(name: "The Reading Room", kind: "study", density: "lived-in").map(&:name),
+                 location.reload.items.templates.where.not(kit_key: nil).order(:id).map(&:name)
+    block = agent.prompts.first[/## Already Here, Decided By The Game.*?(?=\n## Instructions)/m]
+    assert_equal <<~BLOCK.chomp, block
+      ## Already Here, Decided By The Game
+      The game's own records of what is in this room, already decided and not yours
+      to change, and it will tell the player so. Write the room around them, and do
+      not add another piece of furniture or fixed thing a player could reach for.
+      Fixed in place: desk (unsearched), bookcase, windowsill.
+      On the desk: paperweight.
+      On the bookcase: bound volume, journal.
+      On the windowsill: candle stub, dead fly.
+      Loose, and could be picked up: chair, lamp, button, coin.
+      Nobody has searched the desk yet, so do not say what is in it.
+      Do not list any of them again as a thing lying here.
+    BLOCK
+    assert_includes agent.prompts.first, "## What Is Lying Here\nList AT MOST 3 portable things"
+  end
+
+  test "a room with nothing already here is asked exactly what it was asked before" do
+    location = stub_location(name: "The Drowned Ledger")
+    create(:item, :lying, location: location, name: "floating ledger")
+    generator = Location::Generator.new(location)
+
+    assert_equal "", generator.send(:already_here)
+    assert_not_includes generator.detail_prompt, "Already Here"
+  end
+
+  test "several shut fixtures are named together, a hollow one says in, and a seeded fixture reads like a kit's" do
+    location = stub_location(name: "The Drowned Ledger")
+    chest = create(:item, :fixture, location: location, name: "sea chest")
+    create(:item, :fixture, location: location, name: "locker")
+    cart = create(:item, :fixture, :hollow, location: location, name: "cart")
+    create(:item, :lying, location: location, name: "coil of rope", within: cart, how: "in")
+    create(:item, :lying, location: location, name: "oilskin", within: chest, how: "on")
+    create(:item, :lying, location: location, name: "floating ledger")
+
+    block = Location::Generator.new(location).send(:already_here)
+
+    assert_includes block, "Fixed in place: sea chest (unsearched), locker (unsearched), cart."
+    assert_includes block, "On the sea chest: oilskin."
+    assert_includes block, "In the cart: coil of rope."
+    assert_includes block, "Nobody has searched the sea chest or the locker yet, so do not say what is in them."
+    assert_not_includes block, "floating ledger", "a seed file's loose thing is the items block's business"
+    assert_not_includes block, "Loose, and could be picked up"
+  end
+
+  test "a realization picked up again after a failed call furnishes nothing twice" do
+    location = stub_location(name: "The Reading Room", kind: "study", density: "lived-in")
+    Location::Generator.new(location).furnish!
+    before = location.items.count
+
+    realize(location, FakeAgent.new(DETAIL, EXITS))
+
+    assert_equal before, location.reload.items.where.not(kit_key: nil).count
+  end
+
   # A BUILDING'S ROOMS ARE DEALT THEIRS by what sort of building the place call
   # said it is, and take the density the building was born with.
   test "the rooms of a building are dealt their sort from the building's own pick" do

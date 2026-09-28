@@ -307,6 +307,20 @@ class Location::Generator
   # What the player reads on arrival, persisted immediately -- and what is lying
   # in it and who is standing in it, out of the same answer.
   #
+  # WHAT STANDS HERE, WRITTEN BEFORE THE ROOM IS DESCRIBED. `Item::Kit` rolls
+  # it from the room's kind and density and writes it as the world's own rows,
+  # once; `#already_here` states it to the writer. Before the paid call and in
+  # a commit of its own, so a call that fails leaves a furnished stub that the
+  # next entry describes around the same furniture rather than rolling it
+  # again. Nothing for a place: a building's things belong to its rooms.
+  # Public because the realization bench stages a stub and states its prompt
+  # without realizing it (`Eval::Realization::Stage`).
+  def furnish!
+    return [] if location.place?
+
+    Item::Kit.new(location).furnish!
+  end
+
   # THE ITEMS RIDE ON THIS CALL rather than a third one of their own. A room
   # already costs two calls to realize; asking separately what is on the floor
   # would be a round trip per room to be told "nothing" most of the time, and
@@ -596,7 +610,7 @@ class Location::Generator
       ## The Place
       name: #{location.name}
       teaser: #{location.teaser}
-      #{geometry_facts}
+      #{geometry_facts}#{already_here}
       ## Instructions
       Write this place out in full.
       - The description is what the player reads on arrival. Address them as "you"
@@ -691,6 +705,50 @@ class Location::Generator
       do not give it a way out this list does not have.
       #{plan.to_prompt}
     PROMPT
+  end
+
+  # WHAT THE GAME HAS ALREADY PUT IN THE ROOM, stated before the room is
+  # described so that it is described around it -- the owner's dense-rooms
+  # decision of 2026-09-27, and `Location::Population`'s "who is here" rule
+  # applied to things: the engine decides and the writer is told. Every line is
+  # a record read out, never the kit table: the fixtures standing here (a
+  # closed one marked, since what is inside it is nobody's to say yet), what
+  # lies on or in each, and the kit's loose things. A seeded fixture reads the
+  # same as a kit's; the writer's own things and a seed file's loose ones are
+  # the items block's business, as they always were.
+  #
+  # IT IS THE INFORM HALF AND NOT THE VERIFY HALF. The rows exist whatever the
+  # writer says; this is what raises the odds that the prose agrees with them.
+  #
+  # EMPTY FOR EVERY ROOM THAT HOLDS NONE OF THEM, and empty means the prompt is
+  # the one a baseline was measured on, character for character: it is appended
+  # to `#geometry_facts`' line rather than standing on one of its own, which
+  # would add a blank line to every prompt in the game the day it was empty.
+  def already_here
+    here = Item.lying_in(location).templates.order(:id).to_a
+    fixed = here.select(&:fixture?)
+    loose = here.select { |item| !item.fixture? && item.within_id.nil? && item.kit_key.present? }
+    return "" if fixed.empty? && loose.empty?
+
+    lines = [ "## Already Here, Decided By The Game",
+              "The game's own records of what is in this room, already decided and not yours",
+              "to change, and it will tell the player so. Write the room around them, and do",
+              "not add another piece of furniture or fixed thing a player could reach for." ]
+    lines << "Fixed in place: #{fixed.map { |item| item.holds == "closed" ? "#{item.name} (unsearched)" : item.name }.join(", ")}." if fixed.any?
+    fixed.each do |fixture|
+      resting = here.select { |item| item.within_id == fixture.id }
+      next if resting.empty?
+
+      lines << "#{resting.first.how == "in" ? "In" : "On"} #{fixture.definite_name}: #{resting.map(&:name).join(", ")}."
+    end
+    lines << "Loose, and could be picked up: #{loose.map(&:name).join(", ")}." if loose.any?
+    closed = fixed.select { |item| item.holds == "closed" }.map(&:definite_name)
+    if closed.any?
+      them = closed.one? ? closed.first : "#{closed[0..-2].join(", ")} or #{closed.last}"
+      lines << "Nobody has searched #{them} yet, so do not say what is in #{closed.one? ? "it" : "them"}."
+    end
+    lines << "Do not list any of them again as a thing lying here."
+    "\n#{lines.join("\n")}"
   end
 
   # WHAT THE MODEL IS TOLD WHEN THE ROOM STILL NEEDS A NAME, and it is one
@@ -864,7 +922,7 @@ class Location::Generator
   # because both registries refuse a name the other's records already hold.
   def known_names_note
     taken = (story.characters.order(:id).limit(20).pluck(:fullname) +
-             registry.story_items.order(:id).limit(20).pluck(:name)).compact_blank
+             registry.named_things.order(:id).limit(20).pluck(:name)).compact_blank
     return "" if taken.empty?
 
     ". Already spoken for in this story, so do not reuse: #{taken.join(", ")}"
@@ -946,6 +1004,7 @@ class Location::Generator
   # making it a durable retry receipt. An unusable answer must remain payable
   # again; a good one and the slots it described must not be rolled again.
   def checkpoint_detail!
+    furnish!
     schema = detail_schema
     prompt = detail_prompt
     detail = ask(schema, prompt)

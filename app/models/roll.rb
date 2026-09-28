@@ -140,6 +140,15 @@ module Roll
   # die. A realized room's cast is not this kind: it draws from the room's own
   # `Location::Danger.generator_for`, after the `monstrous?` throws.
   CAST = 8
+  # 9 AND 10 ARE THE RUST ENGINE'S: a fall through a doorway and whether a thing
+  # that came down on a floor broke, rolled nowhere in this app.
+  #
+  # WHAT STANDS IN A ROOM AND WHAT LIES ABOUT IN IT (`Item::Kit`). Its identity
+  # is WHICH PLACE, by the room's NAME, for `POPULATION`'s reason verbatim: a
+  # room's furniture is a fact about somewhere, a re-seeded world is the same
+  # somewhere, and the realization bench re-loads a world per repetition. A kind
+  # of its own is what keeps a room's furniture from being its population's die.
+  KIT = 11
 
   # THE SEED, FROM FIVE INTEGERS AND NOTHING ELSE. Public because it is the part
   # worth asserting on its own: `RollTest` pins that the same inputs give the

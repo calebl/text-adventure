@@ -39,7 +39,7 @@ module EngineData
 
   # The files the engine owns: read out of its extension, never from `ROOT`.
   ENGINE_OWNED = %w[
-    character/desires item/inscriber location/generator location/kind playthrough/classifier
+    character/desires item/inscriber item/kits location/generator location/kind playthrough/classifier
     playthrough/classifier/request playthrough/grammar playthrough/volition/weights
     scene/ending scene/generator scene/narrator
   ].freeze
@@ -62,6 +62,15 @@ module EngineData
     "character/desires" => { "system_prompt" => String, "more_than_one" => String },
     "character/generator" => { "system_prompt" => String, "protagonist_section" => String },
     "item/inscriber" => { "instructions" => String },
+    "item/kits" => {
+      "kit_die" => Integer, "visible" => Integer,
+      "density" => map([ Integer ]),
+      "kinds" => map({ "pieces" => map(Integer), "loose" => [ String ] }),
+      "pieces" => map(String),
+      "holding" => map(String),
+      "pools" => map({ "count" => [ Integer ], "from" => [ String ] }),
+      "readable" => [ String ], "use_kinds" => map(String), "combustible" => [ String ]
+    },
     "location/generator" => { "nobody_here" => String, "system_prompt" => String, "parameters_instructions" => String },
     "location/kind" => {
       "kinds" => [ String ],

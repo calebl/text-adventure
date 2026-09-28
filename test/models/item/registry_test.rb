@@ -28,6 +28,30 @@ class Item::RegistryTest < ActiveSupport::TestCase
     assert_equal [ @room ], created.map(&:location).uniq
   end
 
+  # A KIT'S ROWS ARE NOT THE WRITER'S CAPS. A furnished study holds a dozen of
+  # the engine's things, and the room writer still has its own three to name.
+  test "a room furnished from its kit still has the writer's whole allowance" do
+    room = create(:location, :stub, story: @story, name: "The Reading Room", kind: "study", density: "lived-in")
+    Item::Kit.new(room).furnish!
+
+    assert_operator room.items.count, :>, Item::Registry::MAX_PER_ROOM
+    assert_equal Item::Registry::MAX_PER_ROOM, Item::Registry.new(room).room_for_items
+    assert_equal Item::Registry::MAX_PER_STORY, Item::Registry.new(room).world_for_items
+    assert_equal [ "brass letter knife" ], admit(candidate("brass letter knife"), location: room).map(&:name)
+  end
+
+  # A KIT'S NAMES REPEAT FROM ROOM TO ROOM, so they are spoken for only in the
+  # room they stand in: a writer may name a desk in the next room, and never a
+  # second one here.
+  test "a kit's name is refused in its own room and nowhere else" do
+    study = create(:location, :stub, story: @story, name: "The Reading Room", kind: "study", density: "lived-in")
+    Item::Kit.new(study).furnish!
+
+    assert_empty admit(candidate("paperweight"), location: study)
+    assert_equal [ "paperweight" ], admit(candidate("paperweight")).map(&:name)
+    assert_not_includes Item::Registry.new(@room).named_things.pluck(:name), "desk"
+  end
+
   # WHOLE, NOT STUBBED. An item is a name and one line riding on a call already
   # being made; there is no second realization for it to wait on, so a row this
   # writes is complete and valid the moment it exists.

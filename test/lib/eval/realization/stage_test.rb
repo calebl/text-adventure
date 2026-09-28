@@ -21,10 +21,16 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
     end
   end
 
-  # WHAT SORT OF PLACE THE CASE SAYS IT IS, written on the stub.
-  test "a case's kind and density are the stub's" do
+  # WHAT SORT OF PLACE THE CASE SAYS IT IS, written on the stub, and the room
+  # furnished from it as the realization would furnish it before asking.
+  test "a case's kind and density are the stub's, and the stub is furnished from them" do
     stage(kase(room: "The Long Hallway", reached_from: "Ward Office 12", kind: "corridor", density: "lived-in")) do |standing|
-      assert_equal [ "corridor", "lived-in" ], [ standing.location.kind, standing.location.density ]
+      room = standing.location
+
+      assert_equal [ "corridor", "lived-in" ], [ room.kind, room.density ]
+      assert_equal Item::Kit.roll(name: room.name, kind: "corridor", density: "lived-in").map(&:name),
+                   room.items.templates.order(:id).map(&:name)
+      assert_includes standing.generator.detail_prompt, "## Already Here, Decided By The Game"
     end
   end
 

@@ -273,7 +273,7 @@ class Eval::Realization::Stage
     # reusing a name it was never shown.
     def taken_names
       (story.characters.order(:id).limit(20).pluck(:fullname) +
-        item_registry.story_items.order(:id).limit(20).pluck(:name)).compact_blank
+        item_registry.named_things.order(:id).limit(20).pluck(:name)).compact_blank
     end
 
     # EVERY NAME IN THE WORLD, truncation and all. What the REGISTRIES check a
@@ -361,6 +361,10 @@ class Eval::Realization::Stage
 
     standing = Standing.new(kase: kase, story: story, location: stub, generator: Location::Generator.new(stub))
     Eval::Realization::Branches.new(standing).stage! unless kase.staging.empty?
+    # AND FURNISHED, as the realization about to be measured would furnish it
+    # before asking anything (`Location::Generator#furnish!`), so a prompt stated
+    # off the staged room is the prompt the realization sends.
+    standing.generator.furnish!
     standing
   end
 
