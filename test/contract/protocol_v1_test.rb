@@ -93,6 +93,8 @@ class ProtocolV1Test < ActionDispatch::IntegrationTest
     people = [ "Yves Last", "Ada First" ].map { |name| create(:character, story: story, fullname: name, location: here) }
     game = Playthrough::Session.begin!(story, player: player).playthrough
     lying = %w[zinc-cup brass-key].map { |name| lying_here(game, here, name: name) }
+    desk = lying_here(game, here, name: "desk", tier: Item::FIXTURE, holds: "top", bulk: Item::IMMOVABLE)
+    lying.last.update!(within: desk, how: "on")
     carried = %w[wand apple].map { |name| create(:item, :carried, playthrough: game, name: name) }
 
     get api_v1_game_path(game.token), headers: { "Authorization" => "Bearer #{token}" }
@@ -102,6 +104,10 @@ class ProtocolV1Test < ActionDispatch::IntegrationTest
     assert_equal ways.sort_by(&:id).map(&:name), glance["exits"].map { |exit| exit["name"] }
     assert_equal people.sort_by(&:id).map(&:fullname), glance["people"].map { |person| person["name"] }
     assert_equal lying.sort_by(&:id).map(&:name), glance["lying_here"].map { |item| item["name"] }
+    assert_equal [ nil, "desk" ], glance["lying_here"].map { |item| item["on"] }
+    assert_equal [ { "name" => "desk", "holds" => "top", "state" => nil, "searched" => nil, "on" => [ "brass-key" ] } ],
+                 glance["fixtures"]
+    assert_equal({ "visible" => 3, "unsearched" => 0 }, glance["counts"])
     assert_equal carried.sort_by(&:id).map(&:name), glance["carrying"].map { |item| item["name"] }
     assert_equal ProtocolV1.document.dig("components", "schemas", "Verb", "properties", "name", "enum"),
                  glance["verbs"].map { |verb| verb["name"] }

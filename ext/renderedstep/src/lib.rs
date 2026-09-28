@@ -898,8 +898,11 @@ fn report_json(report: &Report) -> Value {
     })
 }
 
+fn thing_json(thing: &glanced::Thing) -> Value {
+    json!({ "id": thing.id, "name": thing.name, "on": thing.on })
+}
+
 fn glance_json(glance: &Glance) -> Value {
-    let named = |id: i64, name: &str| json!({ "id": id, "name": name });
     let target = |target: &glanced::Target| match &target.token {
         Some(token) => json!({
             "name": target.name, "token": token, "kind": target.kind, "line": target.line,
@@ -917,8 +920,15 @@ fn glance_json(glance: &Glance) -> Value {
                 "foe": person.foe, "provoked": person.provoked,
             }))
             .collect::<Vec<_>>(),
-        "lying_here": glance.lying_here.iter().map(|thing| named(thing.id, &thing.name)).collect::<Vec<_>>(),
-        "carrying": glance.carrying.iter().map(|thing| named(thing.id, &thing.name)).collect::<Vec<_>>(),
+        "fixtures": glance.fixtures.iter()
+            .map(|fixture| json!({
+                "id": fixture.id, "name": fixture.name, "holds": fixture.holds,
+                "state": fixture.state, "searched": fixture.searched, "on": fixture.on,
+            }))
+            .collect::<Vec<_>>(),
+        "lying_here": glance.lying_here.iter().map(|thing| thing_json(thing)).collect::<Vec<_>>(),
+        "counts": json!({ "visible": glance.counts.visible, "unsearched": glance.counts.unsearched }),
+        "carrying": glance.carrying.iter().map(|thing| thing_json(thing)).collect::<Vec<_>>(),
         "condition": glance.condition,
         "sheet": glance.sheet,
         "next_beat": glance.next_beat,
