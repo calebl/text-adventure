@@ -1377,8 +1377,15 @@ class Location::Generator
   # `Location#population` refuses a word the table has no band for, which is the
   # verify half; sanitizing it to nil first would turn a wrong answer into a
   # failed save of the whole room.
+  #
+  # AND A NAME ANOTHER REALIZATION TOOK FIRST IS THAT PLACE. `#connect_exit!`
+  # looks the name up before it gets here, and two realizations that both
+  # missed would each create one; the unique index on `(story_id, lower(name))`
+  # refuses the second, which then takes the row the first wrote.
   def create_stub!(name, teaser, inside: nil, population: nil)
     self.class.create_stub!(story, name: name, teaser: teaser, inside: inside, population: population)
+  rescue ActiveRecord::RecordNotUnique
+    story.locations.find_by!("LOWER(name) = ?", name.downcase)
   end
 
   # THE WORD THIS ANSWER PICKED FOR THAT PLACE, or nil for anything the table has
