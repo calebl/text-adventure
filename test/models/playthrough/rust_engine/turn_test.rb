@@ -108,6 +108,48 @@ class Playthrough::RustEngine::TurnTest < ActiveSupport::TestCase
     assert_equal "failed", submission.reload.status
   end
 
+  # A TURN THAT CAME BACK WITH NOTHING TO SHOW -- completed, no Scene, no
+  # refusal, no round fought -- is told in the app's failure copy, on the
+  # finish and on a reload, rather than ending in silence.
+  test "a completed turn with nothing to show is told in the app's failure copy" do
+    extension = Extension.new do |game, line, token, _block|
+      Playthrough::Command.accept!(game, line, token).update!(status: "completed")
+      { turned: { scene: nil, refusal: nil, safety_notice: false, setup: false }, state: {} }
+    end
+    finished = []
+
+    on_rust(extension) do
+      Playthrough::Session.new(@game).play("/look", request_token: "t-6", on_finish: ->(ending) { finished << ending })
+    end
+
+    assert_equal Playthrough::TurnFailureNotice::MESSAGE, finished.sole.error
+    assert_equal Playthrough::TurnFailureNotice::MESSAGE, Playthrough::Session.new(@game).last_ending.error
+  end
+
+  # AND A ROUND OF A FIGHT THAT DID NOT END IT IS NOT THAT: its blows are what
+  # the turn did, so the finish carries no failure copy and says what round it
+  # was.
+  test "a round the engine fought with no Scene is not told as a failure" do
+    foe = create(:character, :monster, story: @game.story, location: @game.current_location, fullname: "Marek Sollen")
+    extension = Extension.new do |game, line, token, _block|
+      command = Playthrough::Command.accept!(game, line, token)
+      command.update!(status: "completed", journal: { "version" => 1, "steps" => { "round" => 1 } })
+      create(:playthrough_blow, playthrough: game, attacker: game.character, target: foe, location: game.current_location,
+                                damage: 3, hp_after: 7, round: 1, sequence: 1)
+      { turned: { scene: nil, refusal: nil, safety_notice: false, setup: false }, state: {} }
+    end
+    finished = []
+
+    on_rust(extension) do
+      Playthrough::Session.new(@game).play("/attack marek", request_token: "t-7", on_finish: ->(ending) { finished << ending })
+    end
+
+    assert_nil finished.sole.error
+    round = Playthrough::Session.new(@game).round_fought(@game.commands.find_by!(request_token: "t-7"))
+    assert_equal 1, round.blows.sole.round
+    assert_match(/\ARound 1 is done: you struck Marek Sollen/, round.sentence)
+  end
+
   test "a line with no token is given one, since the engine keeps every line in the queue" do
     extension = Extension.new do |game, line, token, _block|
       Playthrough::Command.accept!(game, line, token).update!(status: "completed")
