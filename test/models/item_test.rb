@@ -436,6 +436,78 @@ class ItemTest < ActiveSupport::TestCase
     assert_not_predicate build(:item, fragility: nil), :valid?
   end
 
+  # ------------------------------------------------------------------------
+  # FIXED IN PLACE, and what lies on it -- `tier`, `holds`, `within`, `how`.
+
+  test "every row is a portable thing holding nothing unless the world says otherwise" do
+    item = create(:item, :lying)
+
+    assert_equal Item::PORTABLE, item.tier
+    assert_nil item.holds
+    assert_not_predicate item, :fixture?
+    assert_predicate build(:item, :lying, holds: "top"), :invalid?
+  end
+
+  test "a fixture is immovable, holds one of the four words and stands in a room" do
+    desk = create(:item, :fixture)
+
+    assert_predicate desk, :fixture?
+    assert_predicate build(:item, :fixture, bulk: "heavy"), :invalid?
+    assert_predicate build(:item, :fixture, holds: "drawers"), :invalid?
+    assert_predicate build(:item, :fixture, holds: nil), :invalid?
+    held = build(:item, :fixture, location: nil, character: create(:character))
+    assert_not_predicate held, :valid?
+    assert_includes held.errors[:base], "is a fixture and is not lying in a room"
+  end
+
+  test "a thing lies on a fixture in its own room and layer, with no position of its own" do
+    desk = create(:item, :fixture)
+    stamp = create(:item, :lying, location: desk.location, within: desk, how: "on")
+
+    assert_equal [ stamp ], desk.resting.to_a
+    assert_predicate build(:item, :lying, location: desk.location, within: desk, how: "on", x: 1, y: 1), :invalid?
+    assert_predicate build(:item, :lying, location: desk.location, within: desk), :invalid?
+    assert_predicate build(:item, :lying, location: desk.location, how: "on"), :invalid?
+    assert_predicate build(:item, :lying, within: desk, how: "on"), :invalid?, "another room"
+  end
+
+  test "on a top or a closed fixture's top, in a hollow one, and on nothing that holds nothing" do
+    room = create(:location)
+    cart = create(:item, :fixture, :hollow, location: room, name: "cart")
+    bench = create(:item, :fixture, location: room, name: "bench", holds: "nothing")
+    desk = create(:item, :fixture, location: room)
+
+    assert_predicate build(:item, :lying, location: room, within: cart, how: "in"), :valid?
+    assert_predicate build(:item, :lying, location: room, within: cart, how: "on"), :invalid?
+    assert_predicate build(:item, :lying, location: room, within: desk, how: "on"), :valid?
+    assert_predicate build(:item, :lying, location: room, within: bench, how: "on"), :invalid?
+    assert_predicate build(:item, :lying, location: room, within: create(:item, :lying, location: room), how: "on"), :invalid?
+  end
+
+  test "a fixture destroyed puts what lay on it on the floor, both columns together" do
+    desk = create(:item, :fixture)
+    stamp = create(:item, :lying, location: desk.location, within: desk, how: "on")
+
+    desk.destroy!
+
+    assert_nil stamp.reload.within_id
+    assert_nil stamp.how
+    assert_predicate stamp, :valid?
+  end
+
+  test "lifting a thing off a floor clears its position and its fixture in one set" do
+    assert_equal({ x: nil, y: nil, within_id: nil, how: nil }, Item.lifted)
+  end
+
+  test "the caps count only the writer's own portable things" do
+    room = create(:location)
+    create(:item, :fixture, location: room)
+    create(:item, :lying, location: room, name: "candle stub", kit_key: "study/loose/candle stub")
+    own = create(:item, :lying, location: room, name: "brass letter knife")
+
+    assert_equal [ own ], Item.lying_in(room).bespoke.to_a
+  end
+
   # --- where in the room it is lying, since slice 4 -------------------------
 
   test "a thing lying somewhere in a room reads its position back" do

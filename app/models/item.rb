@@ -120,6 +120,20 @@
 # exactly `readable`'s reason: how heavy a slate is is a fact about the slate.
 # `BULK` is the closed table, `THROWN_DAMAGE` the second table on the same key,
 # and `Playthrough::Turn#throw_item!` the one writer that reads them.
+#
+# AND WHETHER IT STANDS IN THE ROOM OR LIES IN IT, which is `tier` -- the
+# owner's dense-rooms decision of 2026-09-27 (D1): *fixtures, parts and
+# contents as item rows copied per playthrough.* A desk, a hearth or an old
+# tree is a `FIXTURE`: fixed in place, `immovable`, and never anybody's to
+# carry; everything else is `PORTABLE`, which is every row written before the
+# column. A fixture says what it `holds` -- `HOLDS` -- and a portable thing
+# lying on or in one names it as `within`, with `how` saying which. That is a
+# refinement of the room it lies in rather than a fourth place: a thing on the
+# desk still carries the room as its `location_id`, carries no position of its
+# own (the desk's is its place), and leaves the desk the moment it leaves the
+# floor. `Item::Kit` furnishes a room with them as it is written; a seed file
+# may place them by hand. `kit_key` says which kit entry wrote a row, and it is
+# the whole of what the caps read to count only the room writer's own things.
 class Item < ApplicationRecord
   # World parameters for the physical-action engine. A profile selects a fixed
   # operation in Playthrough::PhysicalAction; description and properties never
@@ -195,6 +209,25 @@ class Item < ApplicationRecord
   # `immovable` is deliberately absent: nothing is thrown, so nothing is dealt.
   THROWN_DAMAGE = { "light" => 4, HANDY => 6, "heavy" => 8 }.freeze
 
+  IMMOVABLE = "immovable"
+
+  # WHETHER A ROW STANDS IN ITS ROOM OR LIES IN IT. `PORTABLE` is the column's
+  # default and every row written before it; a `FIXTURE` is fixed in place,
+  # `immovable`, and always lying in a room -- see this class's header.
+  PORTABLE = "portable"
+  FIXTURE = "fixture"
+  TIERS = [ PORTABLE, FIXTURE ].freeze
+
+  # WHAT A FIXTURE HOLDS, and nothing on a portable row. `top`: things lie on
+  # it. `hollow`: things lie in it, in plain view. `closed`: a shut inside
+  # nobody has looked in -- and it may have a top as well, so a thing lies
+  # `on` a closed fixture too. `nothing`: neither.
+  HOLDS = %w[nothing top hollow closed].freeze
+
+  # HOW A THING LIES ON THE FIXTURE IT NAMES, and which fixtures take which:
+  # `on` a top (a `top` or a `closed` fixture), `in` a `hollow` one.
+  HOWS = { "on" => %w[top closed], "in" => %w[hollow] }.freeze
+
   belongs_to :character, optional: true
   belongs_to :location, optional: true
   # WHICH LAYER, and on an instance also WHOSE GAME. Never "who is carrying it"
@@ -209,6 +242,13 @@ class Item < ApplicationRecord
   belongs_to :template, class_name: "Item", optional: true
   has_many :copies, class_name: "Item", foreign_key: :template_id, inverse_of: :template,
                     dependent: :nullify
+  # THE FIXTURE THIS LIES ON OR IN, in the same room and the same layer, and
+  # what lies on or in a fixture. A fixture destroyed out from under them puts
+  # its things on the floor: both columns cleared together, so none is left
+  # naming half a place.
+  belongs_to :within, class_name: "Item", optional: true
+  has_many :resting, class_name: "Item", foreign_key: :within_id, inverse_of: :within
+  before_destroy { resting.update_all(within_id: nil, how: nil) }
 
   validates :name, presence: true
   validates :description, presence: true
@@ -222,6 +262,10 @@ class Item < ApplicationRecord
   validates :fragility, presence: true, inclusion: { in: FRAGILITIES }
   validates :use_kind, inclusion: { in: USE_KINDS }
   validates :disposition, inclusion: { in: DISPOSITIONS }
+  validates :tier, inclusion: { in: TIERS }
+  validates :how, inclusion: { in: HOWS.keys }, allow_nil: true
+  validate :a_fixture_is_fixed
+  validate :a_within_is_whole
   validate :only_a_game_can_spend_an_item
   validate :in_exactly_one_place
   validate :a_template_is_a_template
@@ -283,6 +327,16 @@ class Item < ApplicationRecord
   scope :available, -> { where(disposition: "intact") }
   scope :in_hand, -> { available.where(character_id: nil, location_id: nil) }
 
+  # FIXED IN PLACE, or not. `portable` is every row written before the column.
+  scope :fixtures, -> { where(tier: FIXTURE) }
+  scope :portable, -> { where(tier: PORTABLE) }
+
+  # WHAT THE CAPS COUNT: the room writer's own things and the world file's,
+  # never a fixture and never a row a kit wrote. `Item::Registry::MAX_PER_ROOM`
+  # and `MAX_PER_STORY` bound what a model may propose; a kit is a closed list
+  # whose names repeat by design, and it is bounded by `Item::Kit::VISIBLE`.
+  scope :bespoke, -> { portable.where(kit_key: nil) }
+
   # Carried by any of these parties, which is the union `Story::Audit` and
   # `Eval::Richness` want when they have a story and no playthrough to narrow to.
   scope :carried_by, ->(playthroughs) { where(playthrough: playthroughs).in_hand }
@@ -343,6 +397,13 @@ class Item < ApplicationRecord
   # the party is the ABSENCE of a room and a holder inside a game -- which is
   # exactly why a template can never be carried and this returns false for one.
   def carried? = intact? && instance? && !held? && !occupies?(:location_id)
+
+  def fixture? = tier == FIXTURE
+
+  # WHAT A WRITER LIFTING A THING OFF A FLOOR CLEARS: its position and the
+  # fixture it lay on or in, in one statement -- `Location::Placement.unplaced`
+  # and the two columns `#a_within_is_whole` refuses half of.
+  def self.lifted = Location::Placement.unplaced.merge(within_id: nil, how: nil)
 
   # WHAT THROWING THIS COSTS THE THROWER'S STRENGTH, out of `BULK`. NIL IS NOT
   # A BIG NUMBER, it is the absence of a throw: `Playthrough::Turn#throw_item!`
@@ -551,12 +612,54 @@ class Item < ApplicationRecord
   # is what `Location`'s own header declines to validate for the same reason:
   # `Story::Doctor` reports it (`thing_positioned_in_a_room_with_no_box`) and
   # `WorldSeed::Loader#validate_positions!` refuses a file that writes it.
+  #
+  # A THING ON A FIXTURE HAS NO POSITION OF ITS OWN: where in the room it is is
+  # where the fixture stands, and two numbers of its own could disagree.
   def a_position_needs_a_floor
     return if Location::Spot::COLUMNS.none? { |column| self[column].present? }
+
+    if within_id.present?
+      errors.add(:base, "lies #{how} a fixture and carries a position of its own; its place in the room is the fixture's")
+      return
+    end
     return if lying?
 
     errors.add(:base, "is #{Location::Spot.of(self) || "part-placed"} and is not lying in a room; a position is " \
                       "read in the plane of the room a thing is lying in, and something in a pair of hands is in none")
+  end
+
+  # A FIXTURE IS FIXED: `immovable`, saying what it holds, and lying in a room
+  # while it is intact -- nobody holds a desk and no party carries one. A
+  # portable row holds nothing, whatever lies near it.
+  def a_fixture_is_fixed
+    unless fixture?
+      errors.add(:holds, "is only for a fixture") if holds.present?
+      return
+    end
+
+    errors.add(:holds, "must be one of #{HOLDS.join(", ")}") unless HOLDS.include?(holds)
+    errors.add(:bulk, "must be #{IMMOVABLE} on a fixture") unless bulk == IMMOVABLE
+    errors.add(:base, "is a fixture and is not lying in a room") if intact? && !lying?
+    errors.add(:within, "is only for a portable thing; a fixture stands on the floor") if within_id.present?
+  end
+
+  # HALF A PLACE ON A FIXTURE IS NOT ONE, `#a_position_is_whole`'s rule: a
+  # `within` and a `how` together or neither. And the fixture named is one --
+  # in the same room, in the same layer (a template lies on a template, one
+  # game's copy on that game's copy), holding the way `how` says.
+  def a_within_is_whole
+    return errors.add(:base, "carries one of within_id and how and not the other") if within_id.present? != how.present?
+    return if within_id.nil?
+
+    errors.add(:base, "lies #{how} a fixture and is not lying in a room") unless lying?
+    fixture = within
+    if fixture.nil? || !fixture.fixture?
+      errors.add(:within, "must be a fixture")
+    elsif fixture.location_id != location_id || fixture.playthrough_id != playthrough_id
+      errors.add(:within, "must stand in the same room, in the same layer")
+    elsif !HOWS.fetch(how, []).include?(fixture.holds)
+      errors.add(:how, "#{how} does not suit a fixture that holds #{fixture.holds}")
+    end
   end
 
   # A TEMPLATE OF A TEMPLATE IS NOT A THING, and neither is a copy of a copy.

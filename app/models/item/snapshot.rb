@@ -47,6 +47,14 @@
 # floor plan and `#put_down!` rolls it a new place, and the world's row stays
 # exactly where it was for the next game.
 #
+# AND WHAT IT LIES ON COMES ALONG AS THIS GAME'S OWN COPY OF IT. A template on
+# the world's desk names the world's desk (`within`), and a copy has to name
+# this game's copy of that desk instead -- the one thing about a copy that is
+# neither brought along nor left behind but translated. So a room's fixtures
+# are copied before anything else in it, and a thing whose fixture this game
+# holds no copy of standing in the same room is set on the floor rather than
+# on somebody else's desk.
+#
 # NO MODEL, NO NETWORK, NO GENERATION. Every row it writes is a copy of a row
 # that already exists.
 class Item::Snapshot
@@ -124,6 +132,8 @@ class Item::Snapshot
     wanted = candidates.reject { |template, _into| already_copied.include?(template.id) }
     return [] if wanted.empty?
 
+    wanted = wanted.partition { |template, _into| template.fixture? }.flatten(1)
+
     Item.transaction do
       wanted.map do |template, into|
         already_copied << template.id
@@ -137,8 +147,18 @@ class Item::Snapshot
   # `items` comes along without anybody remembering it. See that constant.
   def copy!(template, into)
     playthrough.items.create!(
-      template.attributes.except(*Item::NOT_COPIED).merge(template: template, **into)
+      template.attributes.except(*Item::NOT_COPIED).merge(template: template, **into, **within_for(template, into))
     )
+  end
+
+  # THIS GAME'S COPY OF THE FIXTURE A TEMPLATE LIES ON OR IN, or the floor.
+  def within_for(template, into)
+    return {} if template.within_id.nil?
+
+    fixture = playthrough.items.find_by(template_id: template.within_id)
+    return { within_id: nil, how: nil } unless fixture&.lying? && fixture.location_id == into[:location]&.id
+
+    { within_id: fixture.id }
   end
 
   # THE TEMPLATE IDS THIS PLAYTHROUGH ALREADY HOLDS A COPY OF. Read once per
