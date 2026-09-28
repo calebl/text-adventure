@@ -1,0 +1,131 @@
+# TWO PEOPLE WITH SOMETHING TO SAY, AND NOWHERE FOR EITHER OF THEM TO GO.
+#
+# Built for speaking up unasked (the engine's speech die, its
+# `data/playthrough/volition/speech.yml`): Tamsin wants what the player has
+# (`desire_pursuit: obtain`, the row that weighs asking heaviest) and Rowe
+# wants to keep the counter to himself (`keep`, the row that weighs a
+# dismissal heaviest). Two of them in one room is what the per-turn cap and
+# the cooldown need to be seen at all, and a person being spoken to with the
+# other standing by is what "the one you address does not interrupt" needs.
+#
+# ONE ROOM AND A STREET NOBODY HAS WRITTEN, which is the least a world may have
+# and still be one the doctor calls playable. The start time is chosen so both
+# of them are still behind the counter on every line a script here plays: the
+# act die is seeded off the story's clock, as the speech die is. The player
+# carries a pawn ticket from the start and a brass tally lies on the counter,
+# so there is a thing to ask for on the first line and a second one once it is
+# picked up.
+#
+# NOBODY HERE IS HOSTILE, and there is no hazard: a foe may only demand or
+# dismiss, and a warning needs a hazard, and each of those is its own test.
+format: 2
+universe:
+  physics: Ordinary physics.
+  technology: Ledgers, lamps and a brass till.
+  weapons: Nothing anybody carries.
+  geographies: A pawnbroker's counter.
+  civilizations: A town that pawns what it cannot sell.
+  history: The shop has changed hands twice and its counter never.
+  economics: Pledges, tickets and redemptions.
+  politics: The shop answers to the town's licensing clerk.
+  religion: The town keeps a quiet calendar.
+  races:
+  - name: Townsfolk
+    description: Ordinary people of the town.
+story:
+  title: Two Clerks at One Counter
+  genre: town adventure
+  start_time: '2026-09-24T19:05:00Z'
+  preface: Two people are behind the counter and both of them have noticed you.
+  summary: Ansel has come to redeem a pledge; Tamsin wants his ticket and Rowe wants him gone.
+opening_scene:
+  location: The Pawn Counter
+  characters: [Ansel Mott, Tamsin Gale, Rowe Harker]
+  description: You stand at the pawnbroker's counter with your ticket in hand. Tamsin and Rowe are both behind it.
+  summary: Ansel comes to the pawn counter to redeem a pledge.
+characters:
+- fullname: Ansel Mott
+  nickname: Ansel
+  race: Townsfolk
+  age: 38
+  sex: male
+  is_protagonist: true
+  is_companion: false
+  backstory: A carter who pawned his late father's watch and has come to get it back.
+  personality: Quiet and determined.
+  appearance: A carter's coat with straw on the shoulders.
+  likes: A fair count.
+  dislikes: Being kept waiting at a counter.
+  fears: Finding the watch already sold.
+  conscious_desire: Ansel wants his father's watch back across the counter before noon.
+  unconscious_desire: Ansel wants somebody to tell him the pledge was not a betrayal.
+  recognized_need: Ansel needs to keep hold of the ticket, because it is the only proof he has.
+  unrecognized_need: Ansel needs to say out loud why he pawned it.
+  desire_pursuit: obtain
+  need_pursuit: offer
+  stats: {level: 10, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+  items:
+  - name: pawn ticket
+    description: A numbered stub with a date and a pledge written on it.
+    properties: '{}'
+- fullname: Tamsin Gale
+  nickname: Tamsin
+  race: Townsfolk
+  location: The Pawn Counter
+  age: 29
+  sex: female
+  is_protagonist: false
+  is_companion: false
+  backstory: The pawnbroker's niece, who keeps the ticket book and wants every stub back in it.
+  personality: Quick, friendly and acquisitive.
+  appearance: Ink on her cuffs and a pencil behind one ear.
+  likes: A ticket book with no gaps in it.
+  dislikes: A stub that walks out of the shop.
+  fears: Her uncle finding the book short.
+  conscious_desire: Tamsin wants every pawn ticket back in the book, starting with the one in Ansel's hand.
+  unconscious_desire: Tamsin wants to be trusted with the till.
+  recognized_need: Tamsin needs to keep the book square.
+  unrecognized_need: Tamsin needs to let one pledge go without a fight.
+  desire_pursuit: obtain
+  need_pursuit: attend
+  stats: {level: 10, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+- fullname: Rowe Harker
+  nickname: Rowe
+  race: Townsfolk
+  location: The Pawn Counter
+  age: 52
+  sex: male
+  is_protagonist: false
+  is_companion: false
+  backstory: The pawnbroker's partner, who would rather close early than haggle.
+  personality: Gruff and territorial.
+  appearance: A leather apron and a loupe on a cord.
+  likes: An empty shop at closing time.
+  dislikes: Customers who lean on the counter.
+  fears: Being made a fool of by a pledge.
+  conscious_desire: Rowe wants the counter to himself and the door shut.
+  unconscious_desire: Rowe wants somebody to ask his advice.
+  recognized_need: Rowe needs to keep the shop's reputation.
+  unrecognized_need: Rowe needs to admit the watch is already sold.
+  desire_pursuit: keep
+  need_pursuit: withhold
+  stats: {level: 10, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+locations:
+- name: The Pawn Counter
+  detail_level: realized
+  opening: true
+  description: A long counter under a brass till, with shelves of pledges behind it.
+  teaser: A pawnbroker's counter.
+  lore: The counter has been scrubbed so often the grain stands up like cord.
+  items:
+  - name: brass tally
+    description: A brass counter-weight stamped with the shop's mark.
+    properties: '{}'
+- name: The Street
+  detail_level: stub
+  population: nobody
+  teaser: A street of shuttered shops.
+connections:
+- between: [The Pawn Counter, The Street]
+  distance: adjacent
+  travel_method: walking

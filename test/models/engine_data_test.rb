@@ -13,9 +13,10 @@ class EngineDataTest < ActiveSupport::TestCase
   end
 
   # The engine's data is every engine-owned file this game declares, and
-  # physics, whose tables only the engine reads.
+  # physics and the speech die's table, which only the engine reads.
   test "the files the engine owns are the engine's own data files" do
-    assert_equal (EngineData::ENGINE_OWNED + [ "physics" ]).sort, Playthrough::Requests.data.keys.sort
+    assert_equal (EngineData::ENGINE_OWNED + [ "physics", "playthrough/volition/speech" ]).sort,
+                 Playthrough::Requests.data.keys.sort
   end
 
   test "an engine-owned file is read from the engine's data, never from the directory here" do

@@ -1,0 +1,47 @@
+# A WORKER KILLED AFTER SOMEBODY SPOKE DOES NOT THROW THE SPEECH DIE AGAIN.
+#
+# The speech step is a journal commit, like a take or a crossing: what was
+# said is written with its receipt in one transaction, and a step the journal
+# holds answers what it saved. So the next delivery finishes the stopped line
+# with the words already on record and tells them, and nobody says a second
+# thing on a line they were only ever given one throw on.
+#
+# WHAT EACH STEP IS FOR:
+#
+#   1  The worker stops right after the speech step: Tamsin's ask is on
+#      record and the turn is still running. Rowe has not had his turn on
+#      the act die yet, because it comes after the paragraph.
+#   2  The next line finishes the first before it plays: line 1's paragraph
+#      is told Tamsin's ask, and Rowe acts. Then line 2 plays. Three
+#      volitions between them -- Rowe's on line 1 and one each on line 2 --
+#      and none of them a second throw of Tamsin's on line 1.
+story: Two Clerks at One Counter
+steps:
+- id: the-worker-stops-after-speaking
+  type: /take brass tally
+  why: the speech step commits its row and its receipt together
+  browser: {token: take, interrupt_after: speech}
+  expect:
+    carrying: [brass tally, pawn ticket]
+    volitions: 1
+    acts: 1
+    changed: false
+    note: running
+- id: the-next-line-finishes-it-with-the-same-words
+  type: /examine pawn ticket
+  why: the saved step answers again without throwing, and its paragraph tells it
+  browser:
+    token: look
+    replies:
+    - purpose: narration
+      content: You pick up the tally while Tamsin asks for your ticket.
+      prompt_includes:
+      - 'What else happened here, recorded by the game: Tamsin Gale spoke up unasked and asked Ansel Mott for pawn ticket. Nothing changed hands.'
+    - purpose: narration
+      content: The ticket is creased where you have been holding it.
+      prompt_excludes:
+      - Tamsin Gale spoke up unasked
+  expect:
+    carrying: [brass tally, pawn ticket]
+    volitions: 3
+    changed: true

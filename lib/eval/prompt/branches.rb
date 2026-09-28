@@ -14,7 +14,7 @@ module Eval::Prompt::Branches
       kase = cases.first
       Eval::Classifier::Stage.open([ corpus.position(kase.position) ],
                                    label: Eval::Prompt::Corpus::STAGE_LABEL, retitle: true,
-                                   roots: Eval::Prompt::WORLD_ROOTS) do |stages|
+                                   roots: Eval::Prompt::WORLD_ROOTS, pinned: true) do |stages|
         stage = Stage.new(kase, stages.fetch(kase.position).playthrough).prepare
         { "request" => Eval::RequestIdentity.request(stage.request.fetch("system"), stage.prompt, nil),
           "facts" => stage.facts }

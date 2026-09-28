@@ -1,0 +1,32 @@
+{
+  "script": "the-room-reacts-to-your-entrance",
+  "doctor": {
+    "headline": "playable, 1 warning",
+    "findings": [
+      [
+        "no_arc",
+        "warning",
+        "this story has no arc, so no playthrough of it can ever reach an ending: there is no quest for a beat to belong to and no outcome to select. A world file's `quests:` block is where one is written",
+        "manual"
+      ]
+    ]
+  },
+  "audit": {
+    "headline": "3 scenes: 1 contradiction, 0 defects, 0 drifts, 0 still turns",
+    "flags": [
+      [
+        "unrecorded_arrival",
+        1000000002,
+        "the narration walks the player into \"The Back Stair\", and the records have them in \"The Porters' Lodge\"",
+        {
+          "claim": "Mabry looks up from the lodge book with a greeting as you come in, and the under-porter slips out to the back stair.",
+          "named as": "The Back Stair",
+          "records say": "in The Porters' Lodge",
+          "typed": "move The Porters' Lodge",
+          "at": "2026-09-25T07:41:00.000Z"
+        }
+      ]
+    ],
+    "unjudged": []
+  }
+}

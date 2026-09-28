@@ -434,6 +434,17 @@ fn built(kind: &str, records: &Records, args: &Value) -> Result<Value, String> {
             let location = row("locations", "location")?;
             volition::request(&game, &characters, location, text("line"))
         }
+        "speech_choices" => {
+            let game = game()?;
+            let character = row("characters", "character")?;
+            let location = row("locations", "location")?;
+            Value::Array(
+                volition::speech_choices(&game, character, location)
+                    .into_iter()
+                    .map(|(token, fact)| json!({ "token": token, "fact": fact }))
+                    .collect(),
+            )
+        }
         "arrival" => {
             let location = row("locations", "location")?;
             let game = args["playthrough"]
@@ -447,12 +458,19 @@ fn built(kind: &str, records: &Records, args: &Value) -> Result<Value, String> {
                 ),
                 None => None,
             };
+            // The rows the people there wrote as the party came in, which the
+            // arrival tells: none unless a caller names them.
+            let reactions: Vec<i64> = args["reactions"]
+                .as_array()
+                .map(|rows| rows.iter().filter_map(Value::as_i64).collect())
+                .unwrap_or_default();
             Arrival {
                 records,
                 location,
                 previous_scene,
                 game,
                 opening: args["opening"].as_bool().unwrap_or(false),
+                reactions: &reactions,
             }
             .request()
         }

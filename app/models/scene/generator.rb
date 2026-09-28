@@ -43,12 +43,19 @@ class Scene::Generator
   # crossing. Older games can have a fight-closing scene in the room they
   # escaped, so previous_scene is a history link and cannot override the
   # party's actual whereabouts. World-building has no game and uses the link.
-  def initialize(location, previous_scene: nil, opening: false, playthrough: nil)
+  #
+  # `reactions` are the ids of the volition rows the people in the room wrote
+  # as the party came in (the engine's reactions step): what they said or did
+  # is told in the prompt's "As You Come In" block. The Rust engine writes
+  # them on every move; nothing in this loop does, so only a caller that
+  # stages them -- the arrival bench -- names any.
+  def initialize(location, previous_scene: nil, opening: false, playthrough: nil, reactions: [])
     @location = location
     @previous_scene = previous_scene
     @origin = playthrough ? playthrough.current_location : previous_scene&.location
     @opening = opening
     @playthrough = playthrough
+    @reactions = reactions
     @story = location.story
   end
 
@@ -272,7 +279,7 @@ class Scene::Generator
     PROMPT
     return prompt unless arrival_context
 
-    prompt + <<~PROMPT
+    prompt += <<~PROMPT
 
       ## Current State On Arrival
       The place description is the world's original account. These current records
@@ -280,6 +287,23 @@ class Scene::Generator
       recorded crossing result as part of this arrival.
       #{arrival_context.facts.join("\n")}
     PROMPT
+    return prompt if reacted.empty?
+
+    prompt + <<~PROMPT
+
+      ## As You Come In
+      These people reacted to your arrival, recorded by the game. Narrate each as part of this arrival, in the order given. Anyone below who walked out is seen leaving as you come in; add nobody else. Nothing anyone says changes what is recorded above.
+      #{reacted.join("\n")}
+    PROMPT
+  end
+
+  # WHAT THE PEOPLE HERE DID AS THE PARTY CAME IN, in id order: the fact of
+  # each reaction that went through. Silence writes no row, and a reaction that
+  # stayed put or could not be taken tells nothing.
+  def reacted
+    return [] if @reactions.empty? || @playthrough.nil?
+
+    @playthrough.volitions.where(id: @reactions, status: "applied").order(:id).pluck(:fact)
   end
 
   private

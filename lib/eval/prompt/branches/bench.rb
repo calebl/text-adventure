@@ -6,7 +6,7 @@
 # still uses the parent protocol.
 class Eval::Prompt::Branches::Bench < Eval::Prompt::Bench
   def run
-    captured = Eval::Prompt::Branches.capture(corpus)
+    captured = capture
     passes = []
     warmups = []
     arms.each do |arm|
@@ -17,13 +17,19 @@ class Eval::Prompt::Branches::Bench < Eval::Prompt::Bench
     end
     Eval::Prompt::Result.new(
       corpus_size: corpus.size, corpus_digest: Eval::Prompt.digest(corpus),
-      request_identity: Eval::Prompt::Branches.identity(captured),
+      request_identity: identity(captured),
       arms: arms.map(&:id), reps: reps, passes: passes.map(&:stored), warmups: warmups,
       **Eval::Prompt::Version.of(passes)
     )
   end
 
   private
+
+  # WHAT STAGES A MOMENT AND WHAT NAMES ITS REQUESTS, the three places a
+  # sibling corpus of pending moments differs (`Eval::Prompt::Speech::Bench`).
+  def capture = Eval::Prompt::Branches.capture(corpus)
+  def identity(captured) = Eval::Prompt::Branches.identity(captured)
+  def stage(kase, game) = Eval::Prompt::Branches::Stage.new(kase, game).prepare
 
   def warm(arm)
     reading = read(corpus.cases.first, arm, 0)
@@ -38,13 +44,13 @@ class Eval::Prompt::Branches::Bench < Eval::Prompt::Bench
   def read(kase, arm, rep)
     Eval::Classifier::Stage.open([ corpus.position(kase.position) ],
                                  label: Eval::Prompt::Corpus::STAGE_LABEL, retitle: true,
-                                 roots: Eval::Prompt::WORLD_ROOTS) do |stages|
+                                 roots: Eval::Prompt::WORLD_ROOTS, pinned: true) do |stages|
       play_case(kase, stages.fetch(kase.position), arm, rep)
     end
   end
 
   def play_case(kase, standing, arm, rep)
-    stage = Eval::Prompt::Branches::Stage.new(kase, standing.playthrough).prepare
+    stage = stage(kase, standing.playthrough)
     game = stage.game
     intent = intent_for(kase, standing)
     facts = facts_after(kase, intent, game, game.current_location).merge(stage.facts)

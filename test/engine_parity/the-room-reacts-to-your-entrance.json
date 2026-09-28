@@ -1,0 +1,149 @@
+{
+  "script": "the-room-reacts-to-your-entrance",
+  "story": "A Lodge Inside the Gate",
+  "steps": [
+    {
+      "step": "step 1 the-lodge-reacts-as-you-come-in",
+      "player": "first",
+      "typed": "/move The Porters' Lodge",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Porters' Lodge",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Back Stair",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Gate Passage",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000004,
+            "name": "lodge book"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000003,
+            "name": "toll token"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Mabry Quill"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Mabry Quill": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Porters' Lodge",
+        "resolved_by": "grammar",
+        "note": "in: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 2,
+        "acts": 2,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 the-next-paragraph-does-not-say-it-again",
+      "player": "first",
+      "typed": "/examine lodge book",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Porters' Lodge",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000004,
+            "name": "The Back Stair",
+            "detail": "stub"
+          },
+          {
+            "id": 1000000001,
+            "name": "The Gate Passage",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000003,
+            "name": "toll token"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Mabry Quill"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Mabry Quill": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "examine -> lodge book",
+        "resolved_by": "grammar",
+        "note": "look: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 1,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 5.0,
+        "shown": null
+      }
+    }
+  ]
+}

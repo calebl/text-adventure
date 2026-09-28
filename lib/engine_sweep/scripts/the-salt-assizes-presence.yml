@@ -20,10 +20,14 @@
 # A LIVING CAST. Seeded people now carry pursuits, so `Playthrough::Volition`
 # may walk them between typed lines. This script does not pin a still cast: it
 # pins that presence is counted where people actually stand, that Neb at the
-# Tide Post remains reachable when the player arrives (he has had no turn of
-# his own yet on that arrival), and that a name missing from the room's cast is
-# refused against whoever is really there. `cast_unmoved` still holds the
-# WORLD layer still; playthrough whereabouts may move.
+# Tide Post remains reachable when the player arrives (his reaction to that
+# arrival is to greet the player, not to leave), and that a name missing from
+# the room's cast is refused against whoever is really there. The people in a
+# room react to the party walking in, so somebody may leave as the player
+# arrives or be found where they walked to: Neb walks out of the court as the
+# player comes back into it, and is in the Vestry Hulk when the player gets
+# there. `cast_unmoved` still holds the WORLD layer still; playthrough
+# whereabouts may move.
 #
 # THE WORLD IS THE HELD-OUT ONE and that is fine here, for the reason
 # `the-salt-assizes-grammar.yml` gives: `Eval::HELD_OUT` is about not tuning
@@ -104,10 +108,11 @@ steps:
     changed: false
     offers: [talk to whom]
 
-- id: neb-is-not-reachable-from-here
+- id: neb-is-reachable-where-he-walked-to
   type: talk to Neb
-  why: the premise character is not reachable from a room he is not in
+  why: the premise character walked into the Vestry Hulk on his own, and resolves where he now stands
   expect:
+    understood: talk -> Neb Halloran
     refused: true
     changed: false
-    offers: [there is no person here]
+    offers: [Neb Halloran is here and the classifier resolved them]

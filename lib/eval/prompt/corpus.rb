@@ -176,7 +176,7 @@ class Eval::Prompt::Corpus
     return found if found.any?
 
     Eval::Classifier::Stage.open(positions, label: STAGE_LABEL, retitle: true,
-                                 roots: Eval::Prompt::WORLD_ROOTS) do |stages|
+                                 roots: Eval::Prompt::WORLD_ROOTS, pinned: true) do |stages|
       cases.each { |kase| found.concat(problems_for(kase, stages[kase.position])) }
     end
     found

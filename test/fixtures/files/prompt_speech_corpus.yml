@@ -1,0 +1,61 @@
+# What somebody said unasked, held on a staged moment by
+# Eval::Prompt::Speech::Stage with the engine's own fact, and the narrator
+# asked to write the line it was said on. One case per kind of thing said,
+# and one where it stands beside an act of the same person's, so the prompt
+# states two recorded things in id order. Nothing here is played: no typed
+# line is sure to reach a chosen face of the speech die. What a case asks of
+# the prose is that it renders the words, hands nothing over, moves nobody,
+# and adds no second speaker; the facts are stored beside every passage.
+positions:
+- id: office
+  story: The Unrecorded Hour
+  room: Ward Office 12
+- id: court
+  story: The Salt Assizes
+  room: The Causeway Court
+- id: tide
+  story: The Salt Assizes
+  room: The Tide Post
+cases:
+- id: speech-greet
+  position: office
+  typed: look up from the daybook
+  act: other
+  shape: greet
+  why: Rowe greets the player unasked; the prose should give him the greeting and nothing else.
+- id: speech-warn-here
+  position: tide
+  typed: look at the water on the floor
+  act: other
+  shape: warn_here
+  why: Neb warns that the room is flooded; the warning is a fact about a hazard the records hold.
+- id: speech-warn-way
+  position: court
+  typed: look toward the Vestry Hulk
+  act: other
+  shape: warn_way
+  why: Ammon warns of the drop on the way to the Hulk; nobody goes anywhere on this line.
+- id: speech-ask
+  position: office
+  typed: turn a page of the daybook
+  act: other
+  shape: ask
+  why: Rowe asks for the daybook the player holds; nothing changed hands, so it must stay in the player's hands.
+- id: speech-demand
+  position: tide
+  typed: hold the tide-slate up to the lamp
+  act: other
+  shape: demand
+  why: Neb demands the tide-slate; nothing changed hands, so the slate must not be handed over.
+- id: speech-dismiss
+  position: office
+  typed: stand at the desk
+  act: other
+  shape: dismiss
+  why: Rowe tells the player to leave; nobody moved, so the player must still be in the office.
+- id: speech-beside-an-act
+  position: office
+  typed: watch Sub-Inspector Rowe
+  act: other
+  shape: beside_an_act
+  why: Rowe picked something up and then told the player to leave; both facts are stated, oldest first.

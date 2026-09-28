@@ -44,6 +44,11 @@ module Eval::Prompt::RequestVersion
       # nothing played (`Eval::Prompt::Branches`).
       Eval::Prompt::Branches.capture(corpus).transform_keys { |shape| designated.fetch(shape).id }
                             .transform_values { |row| row.fetch("request").symbolize_keys }
+    elsif corpus.path.to_s == Eval::Prompt::SPEECH_CORPUS.to_s
+      # And what somebody said, held on a staged moment the same way
+      # (`Eval::Prompt::Speech`).
+      Eval::Prompt::Speech.capture(corpus).transform_keys { |shape| designated.fetch(shape).id }
+                          .transform_values { |row| row.fetch("request").symbolize_keys }
     else
       bench = Eval::Prompt::Bench.new(corpus: corpus, io: nil)
       cases.to_h { |kase| [ kase.id, capture(bench, corpus, kase) ] }
@@ -56,7 +61,7 @@ module Eval::Prompt::RequestVersion
     reading = nil
     Eval::Classifier::Stage.on_file([ corpus.position(kase.position) ],
                                     label: Eval::Prompt::Corpus::STAGE_LABEL, retitle: true,
-                                    roots: Eval::Prompt::WORLD_ROOTS) do |stages, file|
+                                    roots: Eval::Prompt::WORLD_ROOTS, pinned: true) do |stages, file|
       reading = bench.send(:play_case, kase, stages.fetch(kase.position), Eval::Classifier::Arm.parse("offline"), 0,
                            file, answering: answering)
     end

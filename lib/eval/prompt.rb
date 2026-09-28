@@ -74,7 +74,12 @@ module Eval::Prompt
   # has to be able to say so. `main` is the default everywhere, so every existing
   # caller and every stored set is unaffected.
   BRANCHES_CORPUS = Rails.root.join("test/fixtures/files/prompt_branches_corpus.yml")
-  CORPORA = { "main" => CORPUS, "ending" => ENDING_CORPUS, "branches" => BRANCHES_CORPUS }.freeze
+  # WHAT SOMEBODY SAID UNASKED, a fourth file for the ending corpus's reason:
+  # a case added to `main` would cost its kept set its digest. See
+  # `Eval::Prompt::Speech`.
+  SPEECH_CORPUS = Rails.root.join("test/fixtures/files/prompt_speech_corpus.yml")
+  CORPORA = { "main" => CORPUS, "ending" => ENDING_CORPUS, "branches" => BRANCHES_CORPUS,
+              "speech" => SPEECH_CORPUS }.freeze
 
   # WHERE A STAGED WORLD IS READ FROM, IN ORDER, and the second root is what
   # makes an ending case possible at all.

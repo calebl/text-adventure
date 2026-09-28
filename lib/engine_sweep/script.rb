@@ -163,7 +163,7 @@ class EngineSweep::Script
     unless value.is_a?(Hash) && (value.keys - %w[token fail replies raises realizes accepted_first interrupt_after]).empty? && value["token"].is_a?(String) && value["token"].present?
       raise EngineSweep::InvalidScript, "#{where}: browser expects a token and optional fail: narration or arrival"
     end
-    if value.key?("interrupt_after") && !%w[take arrival_cost physical_effect narrated riposte].include?(value["interrupt_after"])
+    if value.key?("interrupt_after") && !%w[take arrival_cost physical_effect speech narrated riposte].include?(value["interrupt_after"])
       raise EngineSweep::InvalidScript, "#{where}: interrupt_after must name a supported committed turn boundary"
     end
     if value.key?("accepted_first")

@@ -1,0 +1,172 @@
+# TWO ROOMS THAT REACT TO WHOEVER WALKS INTO THEM.
+#
+# Built for the people in a room reacting to the party's arrival (the engine's
+# speech die at the arrival's weight of saying nothing, its
+# `data/playthrough/volition/speech.yml`, and then the act die for whoever
+# stays silent). The player starts in a passage between two written rooms and
+# walks into one of them.
+#
+# THE LODGE holds two porters whose pursuits react differently: Mabry wants
+# to see to whoever comes in (`desire_pursuit: attend`, the row that weighs a
+# greeting heaviest) and Osric wants nothing to do with them (`avoid`, the row
+# that weighs walking out heaviest). Two of them is what an arrival that tells
+# both a word and a walk-out needs, and the back stair nobody has written is
+# where Osric can go.
+#
+# THE TOLL BOOTH holds one keeper who is fighting whoever comes in
+# (`hostile: true`) and wants to keep the booth (`keep`). A foe may only
+# demand or dismiss, never act, and never strikes on the arrival itself: the
+# blow is the riposte's, on the next line. The player carries a toll token,
+# so there is a thing to demand.
+#
+# The start time is chosen so the dice give each script here the arrival it
+# walks: the speech and act dice are seeded off the story's clock.
+format: 2
+universe:
+  physics: Ordinary physics.
+  technology: Lanterns, ledgers and a toll bar on a chain.
+  weapons: A porter's cudgel and a keeper's staff.
+  geographies: A walled town's gate.
+  civilizations: A town that charges for its gate.
+  history: The gate has been tolled since the wall was built.
+  economics: Tokens, tolls and porterage.
+  politics: The gatewarden answers to the town council.
+  religion: The town keeps a quiet calendar.
+  races:
+  - name: Townsfolk
+    description: Ordinary people of the town.
+story:
+  title: A Lodge Inside the Gate
+  genre: town adventure
+  start_time: '2026-09-25T07:40:00Z'
+  preface: The gate is open, and somebody on either side of the passage has seen you.
+  summary: Wren has come through the town gate with a toll token and must pass the lodge or the booth.
+opening_scene:
+  location: The Gate Passage
+  characters: [Wren Adley]
+  description: You stand in the vaulted passage under the gate, a toll token in your hand. A door opens either side.
+  summary: Wren comes in under the town gate.
+characters:
+- fullname: Wren Adley
+  nickname: Wren
+  race: Townsfolk
+  age: 31
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: A drover who sold her flock outside the wall and has come in to pay her way through.
+  personality: Patient and watchful.
+  appearance: A drover's cloak and mud to the knee.
+  likes: A clear road.
+  dislikes: Paying twice for one gate.
+  fears: Being turned back at the wall.
+  conscious_desire: Wren wants to get through the gate and into the town before the market bell.
+  unconscious_desire: Wren wants somebody in town to know her name.
+  recognized_need: Wren needs to keep the token until somebody entitled to it asks.
+  unrecognized_need: Wren needs to ask for help once.
+  desire_pursuit: reach
+  need_pursuit: withhold
+  stats: {level: 10, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+  items:
+  - name: toll token
+    description: A brass token stamped with the gate's mark, good for one passage.
+    properties: '{}'
+- fullname: Mabry Quill
+  nickname: Mabry
+  race: Townsfolk
+  location: The Porters' Lodge
+  age: 44
+  sex: female
+  is_protagonist: false
+  is_companion: false
+  backstory: The head porter, who has met every traveller through this gate for twenty years.
+  personality: Warm and nosy.
+  appearance: A porter's sash and a ring of lodge keys.
+  likes: A traveller with news.
+  dislikes: A cold lodge.
+  fears: Letting the wrong person through.
+  conscious_desire: Mabry wants to see every traveller in and settled before they reach the market.
+  unconscious_desire: Mabry wants to be thanked.
+  recognized_need: Mabry needs to keep the lodge book.
+  unrecognized_need: Mabry needs to let someone pass without questions.
+  desire_pursuit: attend
+  need_pursuit: keep
+  stats: {level: 10, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+- fullname: Osric Venn
+  nickname: Osric
+  race: Townsfolk
+  location: The Porters' Lodge
+  age: 23
+  sex: male
+  is_protagonist: false
+  is_companion: false
+  backstory: The under-porter, who took the post to be left alone and has not been.
+  personality: Shy and restless.
+  appearance: A sash too big for him and ink on one thumb.
+  likes: The back stair when nobody is on it.
+  dislikes: Being looked at.
+  fears: Being asked a question he cannot answer.
+  conscious_desire: Osric wants to be anywhere but the lodge when a traveller comes in.
+  unconscious_desire: Osric wants to be good at the post.
+  recognized_need: Osric needs to answer the door.
+  unrecognized_need: Osric needs to stay in the room.
+  desire_pursuit: avoid
+  need_pursuit: withhold
+  stats: {level: 10, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+- fullname: Grist Harrow
+  nickname: Grist
+  race: Townsfolk
+  location: The Toll Booth
+  age: 57
+  sex: male
+  is_protagonist: false
+  is_companion: false
+  hostile: true
+  backstory: The toll keeper, who has decided every traveller is trying to cheat the bar.
+  personality: Suspicious and quick with a staff.
+  appearance: A keeper's coat and an iron-shod staff.
+  likes: A full toll box.
+  dislikes: Travellers who come into the booth.
+  fears: Being short at the count.
+  conscious_desire: Grist wants the booth to himself and every token in his box.
+  unconscious_desire: Grist wants to be trusted with the gate.
+  recognized_need: Grist needs to keep the count true.
+  unrecognized_need: Grist needs to let one traveller through for nothing.
+  desire_pursuit: keep
+  need_pursuit: withhold
+  stats: {level: 10, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+locations:
+- name: The Gate Passage
+  detail_level: realized
+  opening: true
+  description: A vaulted passage under the town gate, with a lodge door on one side and a booth door on the other.
+  teaser: The passage under the gate.
+  lore: The vault is black with a century of lantern smoke.
+- name: The Porters' Lodge
+  detail_level: realized
+  description: A warm room with a lodge book on a stand and a stove in the corner.
+  teaser: The porters' lodge.
+  lore: Every traveller through the gate is written in the lodge book.
+  items:
+  - name: lodge book
+    description: A ledger of every traveller through the gate, open on its stand.
+    properties: '{}'
+- name: The Toll Booth
+  detail_level: realized
+  description: A cramped booth with a toll box bolted to the wall and a staff rack by the door.
+  teaser: The toll booth.
+  lore: The toll box has been emptied at dusk every day since the wall was built.
+- name: The Back Stair
+  detail_level: stub
+  population: nobody
+  teaser: A narrow stair behind the lodge.
+connections:
+- between: [The Gate Passage, The Porters' Lodge]
+  distance: adjacent
+  travel_method: walking
+- between: [The Gate Passage, The Toll Booth]
+  distance: adjacent
+  travel_method: walking
+- between: [The Porters' Lodge, The Back Stair]
+  distance: adjacent
+  travel_method: walking

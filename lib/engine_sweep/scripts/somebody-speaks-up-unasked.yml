@@ -1,0 +1,58 @@
+# SOMEBODY SPEAKS UP UNASKED, AND THE PARAGRAPH OF THAT LINE SAYS SO.
+#
+# A person in the room may say something the player did not ask for: greet,
+# warn, ask for, demand or dismiss, each naming a record the engine holds and
+# none of them moving anything. It is decided on the speech die (the engine's
+# `data/playthrough/volition/speech.yml`) AFTER the player's act and BEFORE
+# the paragraph is asked for, so the paragraph of the same line is told it
+# through the "What else happened here" line it already has. An act somebody
+# takes on their own is still decided after the paragraph, and reaches the
+# prose a line late; what somebody says never does.
+#
+# WHAT EACH STEP IS FOR:
+#
+#   1  Ansel picks the tally up, and Tamsin, who wants what he holds, asks
+#      him for his ticket. The narration prompt carries her fact on this
+#      line, and nothing changed hands: he still carries both things. Rowe
+#      would have spoken too -- his die came up a demand -- but one person
+#      speaks on a turn, taken in id order, so his words are not in the
+#      prompt, and he takes his turn on the act die instead. Two volitions:
+#      one choice each.
+#   2  The next paragraph does not say it again: the scene of line 1 told it.
+#      (Rowe, who did not speak on line 1, may speak on this one.)
+#
+# WHAT IS DELIBERATELY NOT ASSERTED: that the prose says it. The narrator is
+# told a fact; whether it renders it is the prompt bench's question, never a
+# walk's.
+story: Two Clerks at One Counter
+steps:
+- id: tamsin-asks-for-the-ticket
+  type: /take brass tally
+  why: the speech die is thrown before the paragraph, so this line's paragraph is told what was said
+  browser:
+    token: take
+    replies:
+    - purpose: narration
+      content: You lift the brass tally off the counter, and Tamsin holds out her hand for your ticket.
+      prompt_includes:
+      - 'What else happened here, recorded by the game: Tamsin Gale spoke up unasked and asked Ansel Mott for pawn ticket. Nothing changed hands.'
+      prompt_excludes:
+      - Rowe Harker spoke up unasked
+  expect:
+    changed: true
+    carrying: [brass tally, pawn ticket]
+    present: [Rowe Harker, Tamsin Gale]
+    volitions: 2
+- id: the-next-paragraph-does-not-say-it-again
+  type: /examine pawn ticket
+  why: the scene of the line it was said on told it, so it is not stated twice
+  browser:
+    token: look
+    replies:
+    - purpose: narration
+      content: The ticket is creased where you have been holding it.
+      prompt_excludes:
+      - Tamsin Gale spoke up unasked
+  expect:
+    carrying: [brass tally, pawn ticket]
+    present: [Rowe Harker, Tamsin Gale]

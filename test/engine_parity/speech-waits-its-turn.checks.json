@@ -1,0 +1,32 @@
+{
+  "script": "speech-waits-its-turn",
+  "doctor": {
+    "headline": "playable, 1 warning",
+    "findings": [
+      [
+        "no_arc",
+        "warning",
+        "this story has no arc, so no playthrough of it can ever reach an ending: there is no quest for a beat to belong to and no outcome to select. A world file's `quests:` block is where one is written",
+        "manual"
+      ]
+    ]
+  },
+  "audit": {
+    "headline": "5 scenes: 0 contradictions, 0 defects, 0 drifts, 1 still turn",
+    "flags": [
+      [
+        "still_run",
+        1000000005,
+        "4 turns running, the records show nothing changed, and Tamsin Gale, Rowe Harker are in the room",
+        {
+          "run": "4 turns with no move, no conversation and no world event",
+          "present": "Tamsin Gale, Rowe Harker",
+          "typed": "examine pawn ticket",
+          "where": "The Pawn Counter",
+          "at": "2026-09-24T19:25:00.000Z"
+        }
+      ]
+    ],
+    "unjudged": []
+  }
+}

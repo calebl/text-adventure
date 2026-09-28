@@ -131,8 +131,17 @@ class Eval::Classifier::Stage
   # `rollback_transaction` on the connection directly. A real exception
   # therefore still travels out of here, and the transaction is still rolled
   # back on its way. `Eval::Classifier::StageTest` pins both halves.
-  def self.open(positions, label: LABEL, retitle: false, roots: ROOTS, &block)
+  #
+  # `pinned:` STARTS EVERY TABLE'S IDS AT `EngineSweep::Walk::ID_BASE` first,
+  # as a walk does, and for a walk's reason: the engine's dice are seeded off
+  # row ids -- the story's, the playthrough's, a person's -- so a staging that
+  # took whatever id came next would roll different dice, and build a
+  # different prompt, on every database it was staged in. A bench whose
+  # prompt the engine's dice can reach pins; the counters come back with the
+  # rollback, or with the copy.
+  def self.open(positions, label: LABEL, retitle: false, roots: ROOTS, pinned: false, &block)
     Eval::Concurrency.rolled_back do
+      EngineSweep::Walk.pin_ids!(error: Unstageable) if pinned
       block.call(positions.to_h { |position|
         [ position.id, new(position, label: label, retitle: retitle, roots: roots).stand! ]
       })
@@ -151,11 +160,12 @@ class Eval::Classifier::Stage
   # Every read and write inside the block goes to the copy
   # (`EngineSweep::Parity.on_database`), so what the block reads back is what
   # the engine left.
-  def self.on_file(positions, label: LABEL, retitle: false, roots: ROOTS)
+  def self.on_file(positions, label: LABEL, retitle: false, roots: ROOTS, pinned: false)
     Dir.mktmpdir("eval-stage") do |directory|
       file = File.join(directory, "stage.sqlite3")
       EngineSweep::Parity.copy_database!(file)
       EngineSweep::Parity.on_database(file) do
+        EngineSweep::Walk.pin_ids!(error: Unstageable) if pinned
         yield(positions.to_h { |position|
           [ position.id, new(position, label: label, retitle: retitle, roots: roots).stand! ]
         }, file)

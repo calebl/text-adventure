@@ -1,0 +1,152 @@
+{
+  "script": "somebody-speaks-up-unasked",
+  "story": "Two Clerks at One Counter",
+  "steps": [
+    {
+      "step": "step 1 tamsin-asks-for-the-ticket",
+      "player": "first",
+      "typed": "/take brass tally",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Pawn Counter",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Street",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "brass tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "pawn ticket"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Rowe Harker"
+          },
+          {
+            "id": 1000000002,
+            "name": "Tamsin Gale"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Rowe Harker": 53,
+          "Tamsin Gale": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> brass tally",
+        "resolved_by": "grammar",
+        "note": "take: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 2,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 5.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 the-next-paragraph-does-not-say-it-again",
+      "player": "first",
+      "typed": "/examine pawn ticket",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Pawn Counter",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Street",
+            "detail": "stub"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000004,
+            "name": "brass tally"
+          },
+          {
+            "id": 1000000003,
+            "name": "pawn ticket"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Rowe Harker"
+          },
+          {
+            "id": 1000000002,
+            "name": "Tamsin Gale"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 53,
+        "hp_of": {
+          "Rowe Harker": 53,
+          "Tamsin Gale": 53
+        },
+        "abilities": {
+          "strength": 12,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "examine -> pawn ticket",
+        "resolved_by": "grammar",
+        "note": "look: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 2,
+        "acts": 1,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 5.0,
+        "shown": null
+      }
+    }
+  ]
+}

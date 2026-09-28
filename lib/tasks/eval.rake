@@ -167,7 +167,7 @@ namespace :eval do
     abort error.message
   end
 
-  desc "Feed fixed facts to one turn and score the prose. REPS=4 MODELS=a,b SET=<name> CORPUS=main|ending SAMPLE=12 YES=1"
+  desc "Feed fixed facts to one turn and score the prose. REPS=4 MODELS=a,b SET=<name> CORPUS=main|ending|branches|speech SAMPLE=12 YES=1"
   task prompt: :environment do
     PromptTasks.run!
   end
@@ -223,7 +223,7 @@ namespace :eval do
     abort error.message
   end
 
-  desc "Prompt message and schema request identities -- offline, no model call. CORPUS=main|ending|branches"
+  desc "Prompt message and schema request identities -- offline, no model call. CORPUS=main|ending|branches|speech"
   task prompt_digest: :environment do
     corpus = Eval::Prompt.corpus(PromptTasks.corpus_name)
     puts JSON.pretty_generate(Eval::Prompt::RequestVersion.offline(corpus).merge(corpus_digest: Eval::Prompt.digest(corpus)))
@@ -506,7 +506,8 @@ namespace :eval do
 
       puts "Playing #{corpus.size} #{corpus_name} cases on #{arms.map(&:id).join(", ")}."
       puts
-      bench = corpus_name == "branches" ? Eval::Prompt::Branches::Bench : Eval::Prompt::Bench
+      bench = { "branches" => Eval::Prompt::Branches::Bench, "speech" => Eval::Prompt::Speech::Bench }
+              .fetch(corpus_name, Eval::Prompt::Bench)
       result = bench.new(corpus: corpus, arms: arms, reps: reps).run
 
       written = result.write!(Eval.set_path(set_name), name: set_name)

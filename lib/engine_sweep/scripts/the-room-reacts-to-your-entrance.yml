@@ -1,0 +1,59 @@
+# THE ROOM REACTS TO YOUR ENTRANCE, AND THE ARRIVAL SAYS SO.
+#
+# When the party walks into a room, each person there makes one choice in
+# reaction to it, before the arrival is written: the speech die first, at the
+# arrival's weight of saying nothing (the engine's
+# `data/playthrough/volition/speech.yml`), and then, for whoever stays silent,
+# the act die, with the party counted as already standing in the room. The
+# arrival writer is told what they did as facts, in an "## As You Come In"
+# block after the records, and the arrival's scene claims exactly those rows.
+# Before this, the people in the room did nothing until the next line.
+#
+# WHAT EACH STEP IS FOR:
+#
+#   1  Mabry greets Wren as she comes into the lodge, and Osric, who wants
+#      nothing to do with a traveller, walks out to the back stair. The
+#      arrival prompt carries both facts in the block, and Osric is no longer
+#      among who is here: the room is described as it stands after the
+#      reactions. One row each, and both are acts that went through.
+#   2  The next paragraph does not tell either again: the arrival's scene
+#      claimed them. (Mabry, who spoke as Wren came in, is cooling, so she
+#      says nothing on this line; her act comes after the paragraph.)
+#
+# WHAT IS DELIBERATELY NOT ASSERTED: that the prose says it. The arrival
+# writer is told facts; whether it renders them is the arrival bench's
+# question, never a walk's.
+story: A Lodge Inside the Gate
+steps:
+- id: the-lodge-reacts-as-you-come-in
+  type: /move The Porters' Lodge
+  why: the people in the room react before the arrival is written, so the arrival is told what they did
+  browser:
+    token: in
+    replies:
+    - purpose: arrival
+      content:
+        description: Mabry looks up from the lodge book with a greeting as you come in, and the under-porter slips out to the back stair.
+        summary: Wren comes into the porters' lodge.
+      prompt_includes:
+      - '## As You Come In'
+      - Mabry Quill spoke up unasked and greeted Wren Adley.
+      - Osric Venn walked out of The Porters' Lodge to The Back Stair and is no longer in The Porters' Lodge.
+  expect:
+    location: The Porters' Lodge (realized)
+    present: [Mabry Quill]
+    volitions: 2
+    acts: 2
+- id: the-next-paragraph-does-not-say-it-again
+  type: /examine lodge book
+  why: the arrival's scene told the reactions, so the next paragraph is not told them twice
+  browser:
+    token: look
+    replies:
+    - purpose: narration
+      content: The lodge book is open at today's page.
+      prompt_excludes:
+      - Mabry Quill spoke up unasked
+      - Osric Venn walked out
+  expect:
+    present: [Mabry Quill]
