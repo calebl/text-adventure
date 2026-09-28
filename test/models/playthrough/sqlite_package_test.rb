@@ -29,6 +29,7 @@ class Playthrough::SqlitePackageTest < ActiveSupport::TestCase
                                  status: "completed", result_scene: opening_scene)
     create(:item, :lying, name: "brass key", location: @opening, playthrough: nil)
     create(:item, :carried, name: "brass key", playthrough: @playthrough, location: nil, character: nil)
+    @models = RubyLLM::ActiveRecord::Model.pluck(:id)
     model = create(:model, :ollama)
     chat = create(:chat, playthrough: @playthrough, model: model)
     answer = create(:message, :assistant, chat: chat, model: nil, input_tokens: nil, output_tokens: nil)
@@ -64,6 +65,10 @@ class Playthrough::SqlitePackageTest < ActiveSupport::TestCase
       connection.execute("DELETE FROM chats WHERE playthrough_id = #{@playthrough.id}")
       connection.execute("DELETE FROM playthroughs WHERE id = #{@playthrough.id}")
     end
+    # The registry row this test made, too: one left behind is the only row in
+    # `ruby_llm_models` on this worker, so the next test that resolves a model
+    # the gem ships finds a registry without it.
+    RubyLLM::ActiveRecord::Model.where.not(id: @models).delete_all if @models
     if story_ids.any?
       list = story_ids.join(",")
       # Each factory story brought its own universe, and a universe left behind
