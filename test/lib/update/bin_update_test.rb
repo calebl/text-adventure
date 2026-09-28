@@ -27,12 +27,13 @@ class Update::BinUpdateTest < ActiveSupport::TestCase
   SCRIPT = Rails.root.join("bin/update")
 
   # EVERY GIT SUBCOMMAND IT IS ALLOWED TO RUN, and the list is short because
-  # the promise is strong: eight of these nine only ask questions, and the
-  # ninth is a fast-forward. Anything that could move or discard a working tree
-  # -- stash, reset, checkout, switch, clean, rebase, merge, push -- is absent
-  # by intent, not by oversight, so a later edit that reaches for one to "get
-  # past" a dirty tree fails here.
-  ALLOWED_GIT = %w[rev-parse symbolic-ref status fetch merge-base log diff pull].freeze
+  # the promise is strong: all but `pull` only ask questions, and `pull` is a
+  # fast-forward. (`show` reads the committed schema file that the column-order
+  # restore writes back -- see `Update::SchemaOrder`.) Anything that could move
+  # or discard a working tree -- stash, reset, checkout, switch, clean, rebase,
+  # merge, push -- is absent by intent, not by oversight, so a later edit that
+  # reaches for one to "get past" a dirty tree fails here.
+  ALLOWED_GIT = %w[rev-parse symbolic-ref status fetch merge-base log diff show pull].freeze
 
   def source = @source ||= SCRIPT.read
 
@@ -72,6 +73,13 @@ class Update::BinUpdateTest < ActiveSupport::TestCase
 
     assert_predicate pulls, :any?, "bin/update does not pull at all"
     pulls.each { |pull| assert_match(/--ff-only/, pull, "a pull without --ff-only can merge") }
+  end
+
+  # `capture` strips its output by default, and a stripped porcelain listing
+  # loses the leading space of " M db/schema.rb" -- which misreads the first
+  # path and let a rehearsal overwrite a file that was already edited.
+  test "the schema files' clean-before listing is read unstripped" do
+    assert_match(/git\("status", "--porcelain", "--", \*schema_files, strip: false\)/, source)
   end
 
   test "--help says what the flags are and touches nothing" do
