@@ -37,4 +37,34 @@ class Eval::Dialogue::ResultTest < ActiveSupport::TestCase
     assert_raises(ArgumentError) { left.compare(Eval::Dialogue::Result.new(data.merge("corpus_digest" => "different"))) }
     assert_raises(ArgumentError) { left.compare(left) }
   end
+
+  # The owner's ruling: `none` changes nothing, so a follower asked to stay who
+  # picks it has refused and keeps following. Only `stop_following` is staying.
+  def stay(status, following:, npc_room:)
+    { "id" => "stay-behind", "rep" => 1, "effect" => { "status" => status },
+      "expected" => Eval::Dialogue.cases.find { |k| k.fetch("id") == "stay-behind" }.fetch("expected"),
+      "facts" => { "carries_key" => false, "following" => following, "foe" => false,
+        "npc_room" => npc_room, "player_room" => "Courtyard" },
+      "narration" => "Maren shakes her head.", "calls" => [] }
+  end
+
+  def state_failure(*rows) = Eval::Dialogue::Result.new({ "rows" => rows }).passes.first["state_failure"]
+
+  test "a follower asked to stay who chooses none still follows, and only an explicit stay stays" do
+    assert_equal 0.0, state_failure(stay("none", following: true, npc_room: "Courtyard"))
+    assert_equal 0.0, state_failure(stay("applied", following: false, npc_room: "Market"))
+    assert_equal 1.0, state_failure(stay("none", following: false, npc_room: "Market"))
+    assert_equal 1.0, state_failure(stay("applied", following: true, npc_room: "Courtyard"))
+  end
+
+  test "none is a refusal only of what the case asked, not a pass for every case" do
+    assert_equal 1.0, state_failure(row.merge("effect" => { "status" => "none" }))
+  end
+
+  test "the kept sets' stay-behind refusals are no longer state failures" do
+    kept = Eval::Dialogue::Result.load(Eval.kept_root.join(Eval::Dialogue::BASELINE))
+    rows = kept.rows.select { |r| r.fetch("id") == "stay-behind" }
+    assert rows.any? && rows.all? { |r| r.dig("effect", "status") == "none" && r.dig("facts", "following") }
+    assert(rows.all? { |r| kept.checks(r).values.all? })
+  end
 end
