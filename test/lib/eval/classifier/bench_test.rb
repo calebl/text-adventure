@@ -268,6 +268,31 @@ class Eval::Classifier::BenchTest < ActiveSupport::TestCase
     assert_match(/answered\s+5 of 5/, out.string, "every line still answered -- by one reader or the other")
   end
 
+  # TWO ARMS, TWO MATRICES. One pooled matrix could not say which model made a
+  # confusion, which is the question a two-arm board is read to answer.
+  test "the confusion matrix is printed per arm and never pooled across arms" do
+    right = bench(perfect).passes.sole
+    wrong = bench(perfect.merge("a-take" => { "intent" => "examine", "target" => "nothing" })).passes.sole
+    result = Eval::Classifier::Result.new(
+      corpus_size: right.readings.size, arms: [ "right/model", "wrong/model" ], reps: 1, warmups: {},
+      passes: [ Eval::Classifier::Bench::Pass.new(arm: "right/model", rep: 1, readings: right.readings),
+                Eval::Classifier::Bench::Pass.new(arm: "wrong/model", rep: 1, readings: wrong.readings) ]
+    )
+    out = StringIO.new
+    Eval::Classifier::Report.new(result, io: out).print
+
+    matrices = out.string.split(/^CONFUSION  /).drop(1)
+    assert_equal 2, matrices.size
+    assert matrices[0].start_with?("right/model")
+    assert matrices[1].start_with?("wrong/model")
+    take_row = ->(matrix) { matrix.lines.find { |line| line =~ /^    take\s/ } }
+    examine_column = Eval::Classifier::INTENTS.index(:examine)
+    cells = ->(matrix) { take_row.(matrix).split.drop(1) }
+    assert_equal ".", cells.(matrices[0])[examine_column], "the right arm made no take-as-examine confusion"
+    assert_equal "1", cells.(matrices[1])[examine_column], "the wrong arm's confusion is its own"
+    assert_no_match(/Every arm and/, out.string)
+  end
+
   test "a run with the reader pinned off prices every reading, as it always has" do
     out = StringIO.new
     Eval::Classifier::Report.new(bench(perfect), io: out).print
