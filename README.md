@@ -214,68 +214,31 @@ another. [docs/protocol/relay.md](docs/protocol/relay.md) is the contract.
 
 ## Play the mechanics on their own
 
-`rake game:mechanics` walks a world with **the narration switched off and
-nothing else switched off with it**. The classifier still reads what you type,
-the world still generates itself as you walk into it, and what you do not get is
-prose.
+`rake game:mechanics` walks a world with **the narration switched off**, on the
+engine the game plays: every line is one turn of the Rust engine's own no-model
+turn (`EngineSweep::RustMechanics`, the same one the offline sweep walks), and
+what it left is read back off the records.
 
 ```bash
 rake 'game:mechanics[The Unrecorded Hour]'   # or by id: rake 'game:mechanics[2]'
 ```
 
 ```
-> pick up the stamp
+> take stamp
   understood: take -> ward stamp
+  read by:    grammar
   changed:    took: ward stamp (was lying in Ward Office 12, now carried by Odile Vance)
-Ward Office 12 [#8, realized]
+Ward Office 12 [#11, realized]
   exits       The Supply Closet [realized], The Long Hallway [stub]
-  lying here  nothing to pick up
-  carrying    Ward Office 12 daybook [#1], ward stamp [#2]
+  lying here  blank closure writ [#13], filing press [#14]
+  carrying    Ward Office 12 daybook [#12], ward stamp [#15]
   present     Halkett Rowe
-
-> go out into the long hallway
-  understood: move -> The Long Hallway
-  changed:    moved: Ward Office 12 -> The Long Hallway (written for the first time, arrival scene #5; its prose is not shown)
-The Long Hallway [#10, realized]
-  exits       Ward Office 12 [realized], The Supply Closet [realized], the stairhead [stub]
-  lying here  nothing to pick up
-  carrying    nothing
-  present     nobody else
 ```
 
 **Why it exists.** A turn that goes wrong could have gone wrong in the
 classifier, in the prose, or in the engine underneath, and all three arrive
-together. This takes exactly one of them away.
-
-What is **kept**:
-
-- **The classifier**, so free text still resolves against the exits, the cast,
-  what is lying here and what you are carrying — and the `understood:` line says
-  what it resolved to, so how your typing was read is visible rather than
-  inferred from what happened next. One model call per command, so this path
-  needs `OPENROUTER_API_KEY` or a local ollama.
-- **The world generating itself.** A move is `Playthrough::Turn#move_to` whole:
-  `Location::Generator` writes the room, its exits and the connection rows, and
-  `Scene::Generator` writes the arrival that stamps the visit and records who is
-  standing there. The hallway above went from `stub` to `realized` and grew a
-  new way out, which is exactly what the browser would have done.
-- **Drift counting.** A reach that resolved to nothing still writes a
-  `Playthrough::Drift` row, and the refusal says so.
-
-What is **dropped** is `Scene::Narrator` and `InteractionAgent` — no narration,
-no character prose, nothing prose-shaped printed. `talk` and `examine` are
-answered by saying they are prose and changing nothing.
-
-The arrival `Scene` is still written, because it *is* world state — the cast,
-the visit stamp and the story clock all hang off it — and its prose is simply
-not shown. That is the one place this mode pays for words nobody reads, and it
-is the price of the world moving the way it really does.
-
-### With no model at all
-
-```bash
-NO_MODEL=1 rake 'game:mechanics[2]'
-```
+together. This takes the first two away: there is no model at all, so nothing
+is generated, no key is needed, and nothing reaches the network.
 
 A fixed grammar replaces the classifier and nothing is generated: `go <exit>`,
 `take <item>`, `drop <item>`, `talk <person>` (also `speak`, `ask`),
@@ -300,9 +263,9 @@ exit name typed on its own is a move, so a world whose exits are called `north`
 can be walked that way. A move stands the player in a stub without writing it,
 and says so.
 
-This is the fallback for a machine with no key, and the mode the engine-direct
-tests run in. It is not the default: a mode that cannot read what you typed is
-testing a smaller thing than the one that can.
+A turn with the models -- the classifier reading free text, a room written as
+you walk into it, the prose -- is the browser's (`bin/dev`), which plays
+through the same engine.
 
 ### Walking a whole fight
 
@@ -567,9 +530,19 @@ pin. They were written by the Ruby turn loop until the engine took them over;
 the commit tagged `ruby-reference-final` is where every turn moved to Rust, and
 every golden it holds was unchanged when the engine took them over. `Playthrough::Turn` is still in the
 code: the test suite plays it by default, because its tests run inside a
-transaction the engine, on its own connection, could not see into, and the
-benches and the mechanics console play it. No setting turns it on for a player,
-and no gate judges the engine against it.
+transaction the engine, on its own connection, could not see into. Every request
+it sends is the engine's (`Playthrough::Requests`). The benches and the
+mechanics console play on the engine. No setting turns the Ruby loop on for a
+player, and no gate judges the engine against it.
+
+**The benches measure what the game sends.** Every request a bench measures
+is built by the engine through the extension: `rake eval:prompt` plays each
+case as a whole engine turn with the reading fixed, on a scratch copy of the
+database, and sends the calls that turn makes; the classifier bench reads each
+line through the engine's own classifier and cascade; the dialogue, arrival
+and volition benches build their requests from the staged rows. The words
+those requests carry have one home, the engine's `data/`, which this app reads
+from the extension (`EngineData`) and keeps no copy of.
 
 **The judges stay Ruby.** The sweep's expectations and invariants, the doctor
 and the audit read the rows the engine wrote; none of them asks the engine what
@@ -633,15 +606,14 @@ that reads it go on seeing ordinary English; the browser's box writes it
 
 **The key is the switch, and there is no feature flag.** Where either
 `TYPESAFE_API_KEY` or `OPENROUTER_API_KEY` is in this environment, a line that
-reaches the classifier is read first by `Playthrough::Classifier::Cascade` —
+reaches the classifier is read first by the engine's System One cascade —
 one System One request, composed into an `Intent` by the engine and never
 trusted as one. TypeSafe direct is preferred when its key is present; otherwise
 OpenRouter Decisions answers. Where neither key is present there is no cascade
 at all: the classifier is byte for byte what it has always been, which is what
 every test run and every keyless checkout exercises. See
-`Playthrough::Classifier::PATHS`, the header of
-`Playthrough::Classifier::Cascade` for the two thresholds and their
-provenance, and `EVALUATION.md` -> The classifier bench -> Measuring the
+`Playthrough::Classifier::PATHS`, the engine's `src/cascade.rs` for the two
+thresholds, and `EVALUATION.md` -> The classifier bench -> Measuring the
 cascade for the failure policy and the kept set.
 
 ```mermaid
@@ -668,7 +640,7 @@ flowchart TD
         CK{"SystemOneAgent.configured?<br/>is TYPESAFE_API_KEY or OPENROUTER_API_KEY in this environment?"}
         C1 --> CK
         CK -->|"no: resolved_by = model, byte for byte today's path"| C2
-        CK -->|"yes"| CS["MODEL CALL, typed questions, not a chat<br/>Playthrough::Classifier::Cascade -- one System One<br/>request, 6-11 Choice/Noul questions built from<br/>THIS position's own #offered_for sets"]
+        CK -->|"yes"| CS["MODEL CALL, typed questions, not a chat<br/>the System One cascade -- one System One<br/>request, 6-11 Choice/Noul questions built from<br/>THIS position's own #offered_for sets"]
         CS --> CG{"named_more_than_one &gt;= 0.5,<br/>or target_present &lt; 0.15,<br/>or the request could not be believed?"}
         CG -->|"no: resolved_by = typed_model<br/>ENGINE COMPOSES the Intent -- no second model call"| C3
         CG -->|"yes: resolved_by = typed_model_escalated<br/>(a flag fired) or typed_model_unavailable<br/>(missing key, timeout, bad body, out-of-list choice)"| C2
@@ -706,7 +678,7 @@ flowchart TD
         M7 --> M8["playthrough.update! location AND scene<br/>only now, so a failed arrival leaves<br/>the player where they were"]
     end
 
-    subgraph TK["talk: InteractionAgent, two passes"]
+    subgraph TK["talk: the exchange, two passes"]
         T1["MODEL CALL, schema'd<br/>Interaction::Schema, the character answers<br/>from bounded personal experience and chooses<br/>one immediate action from an engine-built set"]
         T1 --> TE["Playthrough::NpcAction, NO MODEL CALL<br/>rebuilds the set, applies or rejects the choice,<br/>and returns the authoritative receipt"]
         TE --> T2["MODEL CALL, unschema'd, buffered<br/>a second pass turns the reaction and receipt into prose<br/>failure keeps a factual engine fallback"]
@@ -728,7 +700,7 @@ flowchart TD
         I2 --> I3["Scene persisted with the exact engine fact it received<br/>A narration that forgets the item, or invents one,<br/>cannot change who holds what"]
     end
 
-    subgraph NR["everything else: Scene::Narrator answers the raw command"]
+    subgraph NR["everything else: the narrator answers the raw command"]
         N1["Reached by other, and by a look at something with<br/>nothing written on it -- lines that ask for no record<br/>or for one the app does not answer from. A move that<br/>did not resolve, a talk with nobody here and a take or<br/>drop of what the records lack are REFUSED instead"]
         N1 --> N2["MODEL CALL, unschema'd, STREAMS<br/>the one documented streaming exception"]
         N2 --> N3["Persists the completed response and sets the scene itself<br/>Nobody has to be watching: the job outlives the tab<br/>Never touches the location: moving is not its job"]
@@ -874,7 +846,7 @@ engine's, so no exits call is made — the diagram's `M4`.)
 Those were the obvious two ways to do it and both make the record depend on a
 model complying with a prompt; the standing constraint here is the other way
 round — *gate the state, inform the prose.* So the engine decides what exists
-and `Playthrough::Moment` then **tells** the narrator what is lying here, out of
+and the moment then **tells** the narrator what is lying here, out of
 the records, the same way it already tells it the exits and the inventory.
 
 The model proposes and the registry disposes. It refuses, without failing the

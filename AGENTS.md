@@ -71,10 +71,10 @@ Generated prose is model output, and two identical runs disagree by more than
 most claimed improvements — [EVALUATION.md](EVALUATION.md) opens with the
 current spread and keeps it current; do not quote a spread from memory. So "it
 reads better" is not evidence, and neither is a single run either side of an
-edit. Before touching `Scene::Narrator::INSTRUCTIONS`,
-`Character#interaction_instructions`, `Playthrough::Classifier::INSTRUCTIONS`,
-`Location::Generator`'s people, items, naming and exits instructions, or anything
-else a model is handed:
+edit. Before touching the narrator's instructions (the engine's
+`data/scene/narrator.yml`), a character's instructions, the classifier's
+instructions, `Location::Generator`'s people, items, naming and exits
+instructions, or anything else a model is handed:
 
 1. **Have a stored baseline the change can be measured against.**
    `rake eval:prompt` (fixed single-turn cases, cents a run) is the cheap first
@@ -93,16 +93,16 @@ rather than rewriting a snapshot and falsifying what ran.
 [EVALUATION.md](EVALUATION.md) is the protocol, in full. A prompt change shipped
 without a baseline is a change nobody can defend — and a plausible-sounding
 prompt fix has more than once been measured moving the wrong number, which is the
-whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
+whole reason this rule is a rule (the engine's `data/scene/narrator.yml` and
 `Playthrough::Turn#taken_fact` carry one such finding between them).
 
 ## The rules that apply wherever you are working
 
 - **Every chat call goes through `BaseAgent`** (`app/agents/BaseAgent.rb`). Do
   not build a bare `RubyLLM::Chat`. Every call uses a structured output with
-  `RubyLLM::Schema` — `Scene::Narrator` is the one documented exception, because
-  a schema and token streaming are mutually exclusive; its header says so and
-  says not to "fix" it.
+  `RubyLLM::Schema` — the narration is the one documented exception, because
+  a schema and token streaming are mutually exclusive; the engine's
+  `data/scene/narrator.yml` says so and says not to "fix" it.
 - **A System One request is the one thing that is not a chat, and it goes
   through `SystemOneAgent`** (`app/agents/SystemOneAgent.rb`). It sends a state
   object and typed questions rather than messages, so it is `BaseAgent`'s
@@ -183,9 +183,9 @@ Read the header of the file named, not a summary of it.
 | What the engine says when it will not play a line | `app/models/playthrough/refusal.rb` |
 | Why a playthrough ended, and what the player is told | `app/models/playthrough/end_notice.rb` |
 | Which reader answered a line, and the offline grammar | `app/models/playthrough/grammar.rb` |
-| What a typed line is asked, which reader answers it, and why a sentence there is not edited | `app/models/playthrough/classifier/request.rb`, `classifier/cascade.rb` |
+| What a typed line is asked, which reader answers it, and why a sentence there is not edited | the engine's `src/classifier.rs`, `src/cascade.rs` and `data/playthrough/classifier/request.yml` |
 | What request shape the classifier bench can measure, and how a tool-call arm is built without touching the live classifier | `lib/eval/classifier/arm.rb` (the shape axis), `lib/eval/classifier/tool_shapes.rb`, `lib/eval/classifier/tool_agent.rb` |
-| What the narrator and an NPC are told about the moment | `app/models/playthrough/moment.rb` |
+| What the narrator and an NPC are told about the moment | the engine's `src/moment.rs`, `src/narration.rs`, `src/dialogue.rs` |
 | The game with the prose taken out | `app/models/playthrough/mechanics.rb` |
 | A body, its abilities, and the one check kernel | `app/models/character.rb`, `character/stat_block.rb` |
 | How many people a room is born with, and who picks | `app/models/location/population.rb` |
@@ -193,7 +193,7 @@ Read the header of the file named, not a summary of it.
 | A fight, a round, and who strikes back | `app/models/playthrough/fight.rb`, `riposte.rb`, `blow.rb` |
 | What somebody who is not fighting you does while you do something else | `app/models/playthrough/volition.rb`, `volition/weights.rb` |
 | What a person is after, and which part of it the engine may read | `app/models/character.rb`, `character/desires.rb` |
-| What one character has seen happen in one game | `app/models/playthrough/ledger.rb`, `playthrough/memory.rb` |
+| What one character has seen happen in one game | the engine's `src/ledger.rs`, `src/memory.rs` |
 | A place or a doorway that costs hit points | `app/models/playthrough/hazards.rb`, `toll.rb` |
 | Where a room is, how big it is, and what a storey is | `app/models/location/box.rb` |
 | How the inside of a place is laid out, and by what roll | `app/models/location/interior.rb` |
