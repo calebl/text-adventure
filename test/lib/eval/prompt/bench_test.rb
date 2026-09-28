@@ -112,14 +112,25 @@ class Eval::Prompt::BenchTest < ActiveSupport::TestCase
 
     # The take put the stamp in the party's hands...
     assert_includes row(pass, "a-take").dig("facts", "carried"), "ward stamp"
-    # ...and the drop, played in its own staged copy, still found the daybook
-    # to put down -- which is only true if the take was rolled back. A pursuing
-    # cast may claim the stamp on that same measured turn; isolation is the
-    # savepoint, not a still world.
-    assert_includes row(pass, "a-drop").dig("facts", "floor"), "Ward Office 12 daybook"
+    # ...and the drop, played in its own staged copy, still had the daybook to
+    # put down and no stamp beside it -- which is only true if the take was
+    # rolled back.
+    assert_dropped_in_isolation row(pass, "a-drop")
     # ...and the move, played after both, walked out of the room the position
     # names rather than the one the move before it would have left.
     assert_equal "Ward Office 12", row(pass, "a-move").dig("facts", "from")
+  end
+
+  # WHERE THE DAYBOOK LANDS IS NOT THE CASE'S TO SAY. Halkett Rowe draws an act
+  # after the drop, seeded off his id, and one of the acts on offer is picking
+  # the daybook up. The staged copy takes its ids from whatever this database
+  # has committed, so which draw he gets moved with the tests that ran before
+  # this one in the same worker. Shifting his id by this much is one draw that
+  # takes the daybook straight back off the floor.
+  test "a case leaves nothing behind whichever act the cast draws after it" do
+    pass = with_character_ids_shifted_by(26) { bench.passes.sole }
+
+    assert_dropped_in_isolation row(pass, "a-drop")
   end
 
   test "the world outside the run is untouched" do
@@ -185,6 +196,30 @@ class Eval::Prompt::BenchTest < ActiveSupport::TestCase
   private
 
   def row(pass, id) = pass.rows.find { |row| row["id"] == id }
+
+  # The drop acted on the daybook and left the party's hands empty of it and of
+  # the stamp the case before it took. Not where the daybook ended up: the cast
+  # acts after the player on the same turn and may pick it up.
+  def assert_dropped_in_isolation(drop)
+    assert_equal "narration", drop["pass"]
+    assert_equal "Ward Office 12 daybook", drop.dig("facts", "item")
+    assert_empty drop.dig("facts", "carried") & [ "Ward Office 12 daybook", "ward stamp" ]
+  end
+
+  # Every staged copy, with its next character ids moved on by `offset`, as
+  # rows another test committed earlier in the process would move them.
+  def with_character_ids_shifted_by(offset, &)
+    copy = EngineSweep::Parity.method(:copy_database!)
+    shifted = lambda do |file|
+      copy.call(file)
+      SQLite3::Database.new(file).tap do |db|
+        db.execute("UPDATE sqlite_sequence SET seq = seq + ? WHERE name = 'characters'", [ offset ])
+      ensure
+        db.close
+      end
+    end
+    EngineSweep::Parity.stub(:copy_database!, shifted, &)
+  end
 
   # The same run with the arrival answering something the schema asked it not
   # to: one field at its cap and the other absent.
