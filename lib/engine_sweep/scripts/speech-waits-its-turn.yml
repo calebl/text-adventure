@@ -1,0 +1,79 @@
+# TWO PEOPLE WHO BOTH HAVE SOMETHING TO SAY DO NOT TALK OVER EACH OTHER.
+#
+# The speech die is bounded by rules no model decides: at most one person
+# speaks on an ordinary turn (`max_speakers`, taken in id order), and
+# somebody who spoke stays quiet for `cooldown_turns` scenes of the game's
+# chain after the scene that told it. This walk stands four lines in a room
+# with two people whose pursuits both speak, and asserts both bounds in the
+# narration prompts, which are where a second voice would show.
+#
+# WHAT EACH STEP IS FOR:
+#
+#   1  Both dice come up words -- Tamsin's an ask, Rowe's a demand -- and only
+#      Tamsin, the first in id order, is heard. Rowe takes an act instead.
+#   2  Tamsin's die comes up a demand, and she is still quiet: the scene that
+#      told her ask is one scene back. Rowe, who did not speak on line 1,
+#      tells Ansel to leave.
+#   3  Both are cooling now, and neither is heard.
+#   4  Nor on the next line: the cooldown is three scenes.
+#
+# Every line has one volition per person in the room: whoever spoke took no
+# act on it.
+story: Two Clerks at One Counter
+steps:
+- id: one-voice-on-a-turn
+  type: /examine pawn ticket
+  why: two dice came up words and one person speaks, the first in id order
+  browser:
+    token: first
+    replies:
+    - purpose: narration
+      content: Tamsin leans over the counter to ask for your ticket.
+      prompt_includes:
+      - 'What else happened here, recorded by the game: Tamsin Gale spoke up unasked and asked Ansel Mott for pawn ticket. Nothing changed hands.'
+      prompt_excludes:
+      - Rowe Harker spoke up unasked
+  expect:
+    present: [Rowe Harker, Tamsin Gale]
+    volitions: 2
+- id: the-one-who-spoke-waits
+  type: /examine pawn ticket
+  why: Tamsin's die comes up words inside her cooldown, and only Rowe, who has not spoken, is heard
+  browser:
+    token: second
+    replies:
+    - purpose: narration
+      content: Rowe jerks his head at the door.
+      prompt_includes:
+      - Rowe Harker spoke up unasked and told Ansel Mott to leave The Pawn Counter. Nobody moved.
+      prompt_excludes:
+      - Tamsin Gale spoke up unasked
+  expect:
+    present: [Rowe Harker, Tamsin Gale]
+    volitions: 2
+- id: both-wait
+  type: /examine pawn ticket
+  why: both have spoken inside the cooldown, so neither is heard
+  browser:
+    token: third
+    replies:
+    - purpose: narration
+      content: The shop is quiet.
+      prompt_excludes:
+      - spoke up unasked
+  expect:
+    present: [Rowe Harker, Tamsin Gale]
+    volitions: 2
+- id: both-wait-still
+  type: /examine pawn ticket
+  why: the cooldown is three scenes, so neither is heard yet
+  browser:
+    token: fourth
+    replies:
+    - purpose: narration
+      content: The till ticks over.
+      prompt_excludes:
+      - spoke up unasked
+  expect:
+    present: [Rowe Harker, Tamsin Gale]
+    volitions: 2

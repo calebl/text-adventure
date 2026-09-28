@@ -1,0 +1,33 @@
+# WHAT SOMEBODY SAID WAITS OUT A PARAGRAPH IN THE ENGINE'S OWN WORDS.
+#
+# The paragraph that tells what was said is the one whose prompt stated it.
+# When the narrator fails, the turn still finishes in the engine's own words
+# ("You pick up the brass tally."), which state nobody's speech, so that
+# scene claims none of it (`Told.volitions` names the ids a prompt stated,
+# and a fallback's is empty). The next paragraph that is written is told it.
+story: Two Clerks at One Counter
+steps:
+- id: the-engine-answers-in-its-own-words
+  type: /take brass tally
+  why: Tamsin asks for the ticket on a line whose paragraph is the engine's own sentence
+  browser:
+    token: take
+    replies:
+    - purpose: narration
+      unavailable: true
+  expect:
+    changed: true
+    carrying: [brass tally, pawn ticket]
+    volitions: 2
+- id: the-next-paragraph-tells-it
+  type: /examine pawn ticket
+  why: nothing told what she said, so this line's prompt states it
+  browser:
+    token: look
+    replies:
+    - purpose: narration
+      content: Tamsin is still holding out her hand for your ticket.
+      prompt_includes:
+      - 'What else happened here, recorded by the game: Tamsin Gale spoke up unasked and asked Ansel Mott for pawn ticket. Nothing changed hands.'
+  expect:
+    carrying: [brass tally, pawn ticket]

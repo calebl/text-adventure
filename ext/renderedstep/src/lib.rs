@@ -434,6 +434,17 @@ fn built(kind: &str, records: &Records, args: &Value) -> Result<Value, String> {
             let location = row("locations", "location")?;
             volition::request(&game, &characters, location, text("line"))
         }
+        "speech_choices" => {
+            let game = game()?;
+            let character = row("characters", "character")?;
+            let location = row("locations", "location")?;
+            Value::Array(
+                volition::speech_choices(&game, character, location)
+                    .into_iter()
+                    .map(|(token, fact)| json!({ "token": token, "fact": fact }))
+                    .collect(),
+            )
+        }
         "arrival" => {
             let location = row("locations", "location")?;
             let game = args["playthrough"]

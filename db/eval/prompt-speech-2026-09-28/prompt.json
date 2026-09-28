@@ -1,0 +1,2859 @@
+{
+  "name": "prompt-speech-2026-09-28",
+  "recorded_at": "2026-09-28T12:13:09Z",
+  "ending_requests": null,
+  "corpus_size": 7,
+  "corpus_digest": "49d49c3629a6245a",
+  "request_identity": {
+    "version": 1,
+    "digest": "db3738cb48b47a41"
+  },
+  "prompt_digest": "5e980aaef84ffe6a",
+  "prompt_shapes": {
+    "ask": "98d595d25ac44848",
+    "beside_an_act": "78f5944e10173ec6",
+    "demand": "dede7b00bca79301",
+    "dismiss": "ae2e9cac60916bcb",
+    "greet": "d2c45afc3f36cb88",
+    "warn_here": "b74d0b52f5ed2755",
+    "warn_way": "f52f11313d3cfaa0"
+  },
+  "prompt_stable": true,
+  "instructions_digest": "b7473fa259e8f5cf",
+  "instruction_passes": {
+    "narration": "c5f18981f77aa01f"
+  },
+  "arms": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "reps": 4,
+  "answered_by": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "warmups": [
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "seconds": 2.1637488229898736,
+      "error": null,
+      "input_tokens": 843,
+      "output_tokens": 142,
+      "reading": {
+        "id": "speech-greet",
+        "shape": "greet",
+        "act": "other",
+        "position": "office",
+        "story": "The Unrecorded Hour",
+        "held_out": false,
+        "typed": "look up from the daybook",
+        "target": null,
+        "pass": "narration",
+        "text": "You lift your eyes from the daybook, the gap between four and five o'clock still a dark line under your fingertips. Sub-Inspector Rowe remains in the doorway, his grey coat damp at the shoulders from the rain outside. His gaze lingers on the empty desk across from yours, the squared chair, the bare wood—then flicks back to you, to the stamp, to the open page. The gas mantle hisses, casting long shadows across the floor. The supply closet door behind you stays ajar, its darkness unremarked but present. Rowe does not speak, but his silence feels deliberate, as if he is waiting for you to notice something you have not yet seen.",
+        "facts": {
+          "room": "Ward Office 12",
+          "from": "Ward Office 12",
+          "moved": false,
+          "protagonist": [
+            "Odile Vance",
+            "Vance",
+            "Odile"
+          ],
+          "places": {
+            "Ward Office 12": "Ward Office 12",
+            "Office": "Ward Office 12",
+            "The Supply Closet": "The Supply Closet",
+            "Closet": "The Supply Closet",
+            "The Long Hallway": "The Long Hallway",
+            "Hallway": "The Long Hallway"
+          },
+          "exits": [
+            "The Supply Closet",
+            "The Long Hallway"
+          ],
+          "present": [
+            "Halkett Rowe"
+          ],
+          "floor": [
+            "blank closure writ",
+            "filing press",
+            "ward stamp"
+          ],
+          "carried": [
+            "Ward Office 12 daybook"
+          ],
+          "elsewhere": [
+            {
+              "name": "blank closure writ",
+              "whereabouts": "lying in Ward Office 12 (the world's own)",
+              "here": true
+            },
+            {
+              "name": "filing press",
+              "whereabouts": "lying in Ward Office 12 (the world's own)",
+              "here": true
+            },
+            {
+              "name": "ward stamp",
+              "whereabouts": "lying in Ward Office 12 (the world's own)",
+              "here": true
+            },
+            {
+              "name": "Perrin's private index",
+              "whereabouts": "lying in The Supply Closet (the world's own)",
+              "here": false
+            },
+            {
+              "name": "copy-room apron",
+              "whereabouts": "lying in The Supply Closet (the world's own)",
+              "here": false
+            }
+          ],
+          "action": "other",
+          "item": null,
+          "inscription": null,
+          "speech": {
+            "speaker": "Halkett Rowe",
+            "nickname": "Sub-Inspector Rowe",
+            "token": "speak:greet",
+            "fact": "Halkett Rowe spoke up unasked and greeted Odile Vance."
+          },
+          "acts": [
+            "Halkett Rowe spoke up unasked and greeted Odile Vance."
+          ]
+        },
+        "seconds": 2.1637,
+        "input_tokens": 843,
+        "output_tokens": 142,
+        "calls": 1,
+        "answered_by": "mistralai/mistral-medium-3.1",
+        "instructions_digest": "c5f18981f77aa01f",
+        "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe spoke up unasked and greeted Odile Vance.\n\nLying here, and takeable: blank closure writ, filing press, ward stamp.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: look up from the daybook\n\nNarrate what happens.\n",
+        "missing_fields": [],
+        "cap_hits": [],
+        "error": null,
+        "ending_request": null
+      }
+    }
+  ],
+  "passes": [
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 1,
+      "scanned": 7,
+      "cases": 7,
+      "failures": 0,
+      "refusals": 0,
+      "crises": 0,
+      "rotations": 0,
+      "extra_calls": 0,
+      "omitted_fields": 0,
+      "cap_hits": 0,
+      "input_tokens": 5057,
+      "output_tokens": 891,
+      "latency_median": 1.5838,
+      "latency_p95": 2.093,
+      "words": 93,
+      "commitments": 3.714,
+      "coverage": 0.6029,
+      "chars": 503,
+      "rates": {
+        "unrecorded_departure": 0.0,
+        "unrecorded_arrival": 0.0,
+        "item_not_held": 0.1429,
+        "take_denied": 0.0,
+        "pickup_invented": 0.0,
+        "inscription_misquoted": 0.0,
+        "truncated_prose": 0.0,
+        "third_person_protagonist": 0.0,
+        "blow_contradicted": 0.0,
+        "toll_contradicted": 0.0,
+        "throw_contradicted": 0.0,
+        "body_contradicted": 0.0,
+        "beat_contradicted": 0.0
+      },
+      "flagged": {
+        "unrecorded_departure": 0,
+        "unrecorded_arrival": 0,
+        "item_not_held": 1,
+        "take_denied": 0,
+        "pickup_invented": 0,
+        "inscription_misquoted": 0,
+        "truncated_prose": 0,
+        "third_person_protagonist": 0,
+        "blow_contradicted": 0,
+        "toll_contradicted": 0,
+        "throw_contradicted": 0,
+        "body_contradicted": 0,
+        "beat_contradicted": 0
+      },
+      "judgeable": {
+        "unrecorded_departure": 7,
+        "unrecorded_arrival": 7,
+        "item_not_held": 7,
+        "take_denied": 0,
+        "pickup_invented": 0,
+        "inscription_misquoted": 0,
+        "truncated_prose": 7,
+        "third_person_protagonist": 7,
+        "blow_contradicted": 0,
+        "toll_contradicted": 0,
+        "throw_contradicted": 0,
+        "body_contradicted": 0,
+        "beat_contradicted": 0
+      },
+      "by_story": {
+        "The Unrecorded Hour": 4,
+        "The Salt Assizes": 3
+      },
+      "readings": [
+        {
+          "id": "speech-greet",
+          "shape": "greet",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "look up from the daybook",
+          "target": null,
+          "pass": "narration",
+          "text": "You lift your eyes from the ruled gap in the daybook, the stamp cool under your fingers. Sub-Inspector Rowe remains in the doorway, his grey coat damp at the shoulders from the rain outside. His gaze lingers on the empty desk opposite yours, the squared chair, the bare wood—then flicks back to you, assessing. The gas mantle flickers, casting long shadows across the room. The supply closet door behind you stays ajar, its darkness unbroken. Rowe’s expression doesn’t shift, but his presence fills the space like a half-finished audit. The rain streaks the window, and the silence stretches just long enough to feel deliberate.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press",
+              "ward stamp"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:greet",
+              "fact": "Halkett Rowe spoke up unasked and greeted Odile Vance."
+            },
+            "acts": [
+              "Halkett Rowe spoke up unasked and greeted Odile Vance."
+            ]
+          },
+          "seconds": 1.6054,
+          "input_tokens": 843,
+          "output_tokens": 137,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe spoke up unasked and greeted Odile Vance.\n\nLying here, and takeable: blank closure writ, filing press, ward stamp.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: look up from the daybook\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-warn-here",
+          "shape": "warn_here",
+          "act": "other",
+          "position": "tide",
+          "story": "The Salt Assizes",
+          "held_out": true,
+          "typed": "look at the water on the floor",
+          "target": null,
+          "pass": "narration",
+          "text": "You glance down at the court floor, but the stone is dry—no puddles, no damp. The only water is the rising tide beyond the low wall, creeping closer with every breath. The chalked figure on the slate still glares up at you, false and familiar, and the bell at your shoulder sways slightly as the wind shifts. Neb Halloran’s voice carries again from the tide post, urgent but distant, and the surf hisses against the rock like a whisper of time slipping away.",
+          "facts": {
+            "room": "The Tide Post",
+            "from": "The Tide Post",
+            "moved": false,
+            "protagonist": [
+              "Coraith Vell",
+              "Vell",
+              "Coraith"
+            ],
+            "places": {
+              "The Causeway Court": "The Causeway Court",
+              "Court": "The Causeway Court",
+              "The Tide Post": "The Tide Post",
+              "Post": "The Tide Post",
+              "The Vestry Hulk": "The Vestry Hulk",
+              "Hulk": "The Vestry Hulk"
+            },
+            "exits": [
+              "The Causeway Court"
+            ],
+            "present": [
+              "Neb Halloran"
+            ],
+            "floor": [],
+            "carried": [
+              "Assize tide-slate"
+            ],
+            "elsewhere": [
+              {
+                "name": "Assize hand-bell",
+                "whereabouts": "lying in The Causeway Court (the world's own)",
+                "here": false
+              },
+              {
+                "name": "Neb's knotted cord",
+                "whereabouts": "held by Neb Halloran (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Neb Halloran",
+              "nickname": "Neb",
+              "token": "speak:warn:here",
+              "fact": "Neb Halloran spoke up unasked and warned Coraith Vell that The Tide Post is flooded."
+            },
+            "acts": [
+              "Neb Halloran spoke up unasked and warned Coraith Vell that The Tide Post is flooded."
+            ]
+          },
+          "seconds": 1.5838,
+          "input_tokens": 781,
+          "output_tokens": 106,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Salt Assizes (tidal legal mystery)\n\nPremise: The player is Coraith Vell, Bell-Keeper of the Assize causeway, who finds the day's high water altered by seventy minutes in a hand that is almost her own. The chained man at the tide post has a hearing in an hour the false chalk has erased, so working out who changed it means reading the court's own papers against the water: the Justicar who needs a verdict, the wreck that serves as the vestry, and the question of who benefits from a drowning the record will call a delay. The tone is cold, procedural and out of doors, and the clock is the sea.\n\nThe player is in The Tide Post: The seaward end of Gallows Rock is a shelf of granite about twelve feet across, sloping, worn smooth, with the post set into it: an iron column the thickness of a mast, sunk four hundred years and stained to the colour of the rock in a band that tells you exactly where the water gets to. Neb Halloran is chained to it by the left wrist with about six feet of play, standing where the shelf is highest, and he has arranged himself so as not to be sitting when you arrive.\n\nThere is nothing else out here. No shelter, no rail, no second way off -- the shelf runs back to the court and that is all. The surf is working at the low side of the rock in a way it was not doing an hour ago, and the stain band on the post is a hand and a half above the wet.\n\nWays out of here: The Causeway Court. There are no others.\n\nThe player is Coraith Vell.\n\nCoraith Vell is unhurt.\n\nThe story is asking for: Go out to the tide post and read the stain band against the water yourself.\n\nAlso here: Neb Halloran (Neb). Nobody else is present.\n\nWhat else happened here, recorded by the game: Neb Halloran spoke up unasked and warned Coraith Vell that The Tide Post is flooded.\n\nLying here, and takeable: nothing.\n\nThe player is carrying: Assize tide-slate.\n\nWhat just happened: The chalk is still under your thumb and it is still not your handwriting. You are standing at the slate in the open court on Gallows Rock with the mile of causeway behind you already darkening at its edges, and Justicar Brace is on the bench in his gown with his hands folded, waiting to be told how long he has. Out past the low wall the flats are silvering over the way they do an hour before they stop being flats. The bell hangs on its hook at your shoulder, cold, and the figure chalked above the day's cases says ten minutes past eight in a hand that has your slant and none of your pressure. From the post at the seaward end of the rock, faint over the surf, somebody is calling a name, and it is not yours.\n\n\nThe player types: look at the water on the floor\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-warn-way",
+          "shape": "warn_way",
+          "act": "other",
+          "position": "court",
+          "story": "The Salt Assizes",
+          "held_out": true,
+          "typed": "look toward the Vestry Hulk",
+          "target": null,
+          "pass": "narration",
+          "text": "You turn your head toward the *Vestry* Hulk, its ribs groaning as the tide nudges it higher. The hatch, propped open with a boat hook, gapes like a half-remembered mouth. The court’s papers are stowed inside, but the angle of the wreck makes the entrance a steep, slick climb—Justicar Brace’s warning about the drop still hums in your ears. The bell at your shoulder sways slightly, as if sensing the imbalance of the moment. The name being called from the tide post fades, swallowed by the wind.",
+          "facts": {
+            "room": "The Causeway Court",
+            "from": "The Causeway Court",
+            "moved": false,
+            "protagonist": [
+              "Coraith Vell",
+              "Vell",
+              "Coraith"
+            ],
+            "places": {
+              "The Causeway Court": "The Causeway Court",
+              "Court": "The Causeway Court",
+              "The Tide Post": "The Tide Post",
+              "Post": "The Tide Post",
+              "The Vestry Hulk": "The Vestry Hulk",
+              "Hulk": "The Vestry Hulk"
+            },
+            "exits": [
+              "The Tide Post",
+              "The Vestry Hulk"
+            ],
+            "present": [
+              "Ammon Brace"
+            ],
+            "floor": [
+              "Assize hand-bell"
+            ],
+            "carried": [
+              "Assize tide-slate"
+            ],
+            "elsewhere": [
+              {
+                "name": "Assize hand-bell",
+                "whereabouts": "lying in The Causeway Court (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Neb's knotted cord",
+                "whereabouts": "held by Neb Halloran (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Ammon Brace",
+              "nickname": "Justicar Brace",
+              "token": "speak:warn:way:16",
+              "fact": "Ammon Brace spoke up unasked and warned Coraith Vell about the drop on the way to The Vestry Hulk."
+            },
+            "acts": [
+              "Ammon Brace spoke up unasked and warned Coraith Vell about the drop on the way to The Vestry Hulk."
+            ]
+          },
+          "seconds": 1.5131,
+          "input_tokens": 840,
+          "output_tokens": 121,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Salt Assizes (tidal legal mystery)\n\nPremise: The player is Coraith Vell, Bell-Keeper of the Assize causeway, who finds the day's high water altered by seventy minutes in a hand that is almost her own. The chained man at the tide post has a hearing in an hour the false chalk has erased, so working out who changed it means reading the court's own papers against the water: the Justicar who needs a verdict, the wreck that serves as the vestry, and the question of who benefits from a drowning the record will call a delay. The tone is cold, procedural and out of doors, and the clock is the sea.\n\nThe player is in The Causeway Court: You are standing in the open court on Gallows Rock, which is four walls of dressed stone about waist high, a flagged floor, a bench, and no roof at all -- roofs, on this coast, are what the sea takes first. The Justicar's bench faces seaward so that whoever is being tried has the water behind them. The day's cases are chalked on the tide-slate propped against the wall at your left hand, with the high-water figure above them in somebody else's writing.\n\nBehind you the causeway runs a mile back to the shore and its edges have already stopped being edges. Seaward, the rock narrows to the tide post, and you can see the chain from here. The beached hulk of the *Vestry* lies canted across the northern side of the court with its hatch propped open on a boat hook, close enough that the court's own papers are kept in it. The bell hangs on its hook at your shoulder. Nobody in this court but you can tell how long any of it has.\n\nWays out of here: The Tide Post, The Vestry Hulk. There are no others.\n\nThe player is Coraith Vell.\n\nCoraith Vell is unhurt.\n\nThe story is asking for: Go out to the tide post and read the stain band against the water yourself.\n\nAlso here: Ammon Brace (Justicar Brace). Nobody else is present.\n\nWhat else happened here, recorded by the game: Ammon Brace spoke up unasked and warned Coraith Vell about the drop on the way to The Vestry Hulk.\n\nLying here, and takeable: Assize hand-bell.\n\nThe player is carrying: Assize tide-slate.\n\nWhat just happened: The chalk is still under your thumb and it is still not your handwriting. You are standing at the slate in the open court on Gallows Rock with the mile of causeway behind you already darkening at its edges, and Justicar Brace is on the bench in his gown with his hands folded, waiting to be told how long he has. Out past the low wall the flats are silvering over the way they do an hour before they stop being flats. The bell hangs on its hook at your shoulder, cold, and the figure chalked above the day's cases says ten minutes past eight in a hand that has your slant and none of your pressure. From the post at the seaward end of the rock, faint over the surf, somebody is calling a name, and it is not yours.\n\n\nThe player types: look toward the Vestry Hulk\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-ask",
+          "shape": "ask",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "turn a page of the daybook",
+          "target": null,
+          "pass": "narration",
+          "text": "You turn a page of the daybook. The paper is thin, the kind that bleeds if you press too hard, and the ink on the other side shows through just enough to make the words look like they’re trying to escape. The gap between four and five is still there, of course—turning the page doesn’t fill it, doesn’t explain it. The stamp lies beside the book, cold and heavy, as if it already knows it won’t be needed for whatever’s missing. Sub-Inspector Rowe watches, his expression unchanged, though his gaze flicks once to the empty desk across from yours, as if he’s counting the absences. The supply closet door remains ajar, dark and unremarked. The rain keeps at the window.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press",
+              "ward stamp"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:ask:18",
+              "fact": "Halkett Rowe spoke up unasked and asked Odile Vance for Ward Office 12 daybook. Nothing changed hands."
+            },
+            "acts": [
+              "Halkett Rowe spoke up unasked and asked Odile Vance for Ward Office 12 daybook. Nothing changed hands."
+            ]
+          },
+          "seconds": 1.6804,
+          "input_tokens": 856,
+          "output_tokens": 157,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe spoke up unasked and asked Odile Vance for Ward Office 12 daybook. Nothing changed hands.\n\nLying here, and takeable: blank closure writ, filing press, ward stamp.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: turn a page of the daybook\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-demand",
+          "shape": "demand",
+          "act": "other",
+          "position": "tide",
+          "story": "The Salt Assizes",
+          "held_out": true,
+          "typed": "hold the tide-slate up to the lamp",
+          "target": null,
+          "pass": "narration",
+          "text": "You lift the tide-slate to the lamp, and the chalked figures catch the light like fresh scars. The numbers are yours in shape but not in hand—someone has pressed too hard, too fast, as if the sea itself had gripped the chalk. The stain band on the post is still a hand and a half above the water, but the slate claims the tide should be higher. Neb Halloran’s voice carries again, sharp over the surf, but the numbers don’t shift. The lamp flickers, and the discrepancy stays, stubborn as the iron post.",
+          "facts": {
+            "room": "The Tide Post",
+            "from": "The Tide Post",
+            "moved": false,
+            "protagonist": [
+              "Coraith Vell",
+              "Vell",
+              "Coraith"
+            ],
+            "places": {
+              "The Causeway Court": "The Causeway Court",
+              "Court": "The Causeway Court",
+              "The Tide Post": "The Tide Post",
+              "Post": "The Tide Post",
+              "The Vestry Hulk": "The Vestry Hulk",
+              "Hulk": "The Vestry Hulk"
+            },
+            "exits": [
+              "The Causeway Court"
+            ],
+            "present": [
+              "Neb Halloran"
+            ],
+            "floor": [],
+            "carried": [
+              "Assize tide-slate"
+            ],
+            "elsewhere": [
+              {
+                "name": "Assize hand-bell",
+                "whereabouts": "lying in The Causeway Court (the world's own)",
+                "here": false
+              },
+              {
+                "name": "Neb's knotted cord",
+                "whereabouts": "held by Neb Halloran (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Neb Halloran",
+              "nickname": "Neb",
+              "token": "speak:demand:15",
+              "fact": "Neb Halloran spoke up unasked and demanded Assize tide-slate from Coraith Vell. Nothing changed hands."
+            },
+            "acts": [
+              "Neb Halloran spoke up unasked and demanded Assize tide-slate from Coraith Vell. Nothing changed hands."
+            ]
+          },
+          "seconds": 1.3865,
+          "input_tokens": 530,
+          "output_tokens": 117,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Salt Assizes (tidal legal mystery)\n\nPremise: The player is Coraith Vell, Bell-Keeper of the Assize causeway, who finds the day's high water altered by seventy minutes in a hand that is almost her own. The chained man at the tide post has a hearing in an hour the false chalk has erased, so working out who changed it means reading the court's own papers against the water: the Justicar who needs a verdict, the wreck that serves as the vestry, and the question of who benefits from a drowning the record will call a delay. The tone is cold, procedural and out of doors, and the clock is the sea.\n\nThe player is in The Tide Post: The seaward end of Gallows Rock is a shelf of granite about twelve feet across, sloping, worn smooth, with the post set into it: an iron column the thickness of a mast, sunk four hundred years and stained to the colour of the rock in a band that tells you exactly where the water gets to. Neb Halloran is chained to it by the left wrist with about six feet of play, standing where the shelf is highest, and he has arranged himself so as not to be sitting when you arrive.\n\nThere is nothing else out here. No shelter, no rail, no second way off -- the shelf runs back to the court and that is all. The surf is working at the low side of the rock in a way it was not doing an hour ago, and the stain band on the post is a hand and a half above the wet.\n\nWays out of here: The Causeway Court. There are no others.\n\nThe player is Coraith Vell.\n\nCoraith Vell is unhurt.\n\nThe story is asking for: Go out to the tide post and read the stain band against the water yourself.\n\nAlso here: Neb Halloran (Neb). Nobody else is present.\n\nWhat else happened here, recorded by the game: Neb Halloran spoke up unasked and demanded Assize tide-slate from Coraith Vell. Nothing changed hands.\n\nLying here, and takeable: nothing.\n\nThe player is carrying: Assize tide-slate.\n\nWhat just happened: The chalk is still under your thumb and it is still not your handwriting. You are standing at the slate in the open court on Gallows Rock with the mile of causeway behind you already darkening at its edges, and Justicar Brace is on the bench in his gown with his hands folded, waiting to be told how long he has. Out past the low wall the flats are silvering over the way they do an hour before they stop being flats. The bell hangs on its hook at your shoulder, cold, and the figure chalked above the day's cases says ten minutes past eight in a hand that has your slant and none of your pressure. From the post at the seaward end of the rock, faint over the surf, somebody is calling a name, and it is not yours.\n\n\nThe player types: hold the tide-slate up to the lamp\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-dismiss",
+          "shape": "dismiss",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "stand at the desk",
+          "target": null,
+          "pass": "narration",
+          "text": "You remain at your desk, the daybook still open beneath your hand, the stamp beside it catching the dim light of the hissing gas mantle. Sub-Inspector Rowe does not move from the doorway, his gaze lingering on the empty desk across from yours, then flicking back to you. The rain streaks the cold window, and the supply closet door behind you stays just as it has been—unlocked, unremarked, waiting. The silence stretches, thick with the weight of unasked questions.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press",
+              "ward stamp"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:dismiss",
+              "fact": "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            },
+            "acts": [
+              "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            ]
+          },
+          "seconds": 1.1592,
+          "input_tokens": 339,
+          "output_tokens": 105,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved.\n\nLying here, and takeable: blank closure writ, filing press, ward stamp.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: stand at the desk\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-beside-an-act",
+          "shape": "beside_an_act",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "watch Sub-Inspector Rowe",
+          "target": null,
+          "pass": "narration",
+          "text": "You keep your eyes on Sub-Inspector Rowe, and he lets you. He steps fully into the room, the door swinging wider behind him, and his gaze lingers on the empty desk opposite yours—long enough that you wonder if he, too, is searching for something missing. His fingers adjust the chain of his seal, the metal glinting dully under the low gaslight. The rain streaks the window, and the hissing of the mantle fills the silence between you. He doesn’t speak, doesn’t move toward the supply closet or the filing press, just stands there as if waiting for you to do something first. The stamp he took from your desk is nowhere visible, but his coat pockets are deep.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:dismiss",
+              "fact": "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            },
+            "acts": [
+              "Halkett Rowe picked up ward stamp in Ward Office 12 and now holds it.",
+              "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            ]
+          },
+          "seconds": 2.093,
+          "input_tokens": 868,
+          "output_tokens": 148,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe picked up ward stamp in Ward Office 12 and now holds it. Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved.\n\nLying here, and takeable: blank closure writ, filing press.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: watch Sub-Inspector Rowe\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        }
+      ]
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 2,
+      "scanned": 7,
+      "cases": 7,
+      "failures": 0,
+      "refusals": 0,
+      "crises": 0,
+      "rotations": 0,
+      "extra_calls": 0,
+      "omitted_fields": 0,
+      "cap_hits": 0,
+      "input_tokens": 5825,
+      "output_tokens": 987,
+      "latency_median": 1.7287,
+      "latency_p95": 3.0415,
+      "words": 96,
+      "commitments": 3.857,
+      "coverage": 0.6199,
+      "chars": 529,
+      "rates": {
+        "unrecorded_departure": 0.0,
+        "unrecorded_arrival": 0.0,
+        "item_not_held": 0.1429,
+        "take_denied": 0.0,
+        "pickup_invented": 0.0,
+        "inscription_misquoted": 0.0,
+        "truncated_prose": 0.0,
+        "third_person_protagonist": 0.0,
+        "blow_contradicted": 0.0,
+        "toll_contradicted": 0.0,
+        "throw_contradicted": 0.0,
+        "body_contradicted": 0.0,
+        "beat_contradicted": 0.0
+      },
+      "flagged": {
+        "unrecorded_departure": 0,
+        "unrecorded_arrival": 0,
+        "item_not_held": 1,
+        "take_denied": 0,
+        "pickup_invented": 0,
+        "inscription_misquoted": 0,
+        "truncated_prose": 0,
+        "third_person_protagonist": 0,
+        "blow_contradicted": 0,
+        "toll_contradicted": 0,
+        "throw_contradicted": 0,
+        "body_contradicted": 0,
+        "beat_contradicted": 0
+      },
+      "judgeable": {
+        "unrecorded_departure": 7,
+        "unrecorded_arrival": 7,
+        "item_not_held": 7,
+        "take_denied": 0,
+        "pickup_invented": 0,
+        "inscription_misquoted": 0,
+        "truncated_prose": 7,
+        "third_person_protagonist": 7,
+        "blow_contradicted": 0,
+        "toll_contradicted": 0,
+        "throw_contradicted": 0,
+        "body_contradicted": 0,
+        "beat_contradicted": 0
+      },
+      "by_story": {
+        "The Unrecorded Hour": 4,
+        "The Salt Assizes": 3
+      },
+      "readings": [
+        {
+          "id": "speech-greet",
+          "shape": "greet",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "look up from the daybook",
+          "target": null,
+          "pass": "narration",
+          "text": "You lift your eyes from the daybook, the gap between four and five o'clock still burning a quiet absence into the page beneath your fingers. Sub-Inspector Rowe remains in the doorway, his grey coat damp at the shoulders from the rain outside, the Inspectorate seal glinting dully in the low gaslight. His gaze lingers on the empty desk opposite yours, the chair squared to it like a rebuke, before shifting back to you. The mantle hisses, the rain streaks the cold window, and the supply closet door behind you stays ajar, dark and unremarked. Rowe doesn’t speak, but his presence fills the room like a half-signed requisition—weighty, incomplete, waiting for the next step.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press",
+              "ward stamp"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:greet",
+              "fact": "Halkett Rowe spoke up unasked and greeted Odile Vance."
+            },
+            "acts": [
+              "Halkett Rowe spoke up unasked and greeted Odile Vance."
+            ]
+          },
+          "seconds": 1.7287,
+          "input_tokens": 843,
+          "output_tokens": 154,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe spoke up unasked and greeted Odile Vance.\n\nLying here, and takeable: blank closure writ, filing press, ward stamp.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: look up from the daybook\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-warn-here",
+          "shape": "warn_here",
+          "act": "other",
+          "position": "tide",
+          "story": "The Salt Assizes",
+          "held_out": true,
+          "typed": "look at the water on the floor",
+          "target": null,
+          "pass": "narration",
+          "text": "You glance down at the floor of the court, but the granite here is dry—only the causeway beyond is beginning to darken as the tide creeps in. The water hasn’t reached this far yet. The only moisture is the faint dampness of the air, clinging to your skin like a second layer. The tide-slate in your hand feels heavier for the deception etched into it. Out on the shelf, Neb Halloran’s voice carries again, urgent but indistinct, swallowed by the wind. The sea is the only clock here, and it’s running ahead of the court’s record.",
+          "facts": {
+            "room": "The Tide Post",
+            "from": "The Tide Post",
+            "moved": false,
+            "protagonist": [
+              "Coraith Vell",
+              "Vell",
+              "Coraith"
+            ],
+            "places": {
+              "The Causeway Court": "The Causeway Court",
+              "Court": "The Causeway Court",
+              "The Tide Post": "The Tide Post",
+              "Post": "The Tide Post",
+              "The Vestry Hulk": "The Vestry Hulk",
+              "Hulk": "The Vestry Hulk"
+            },
+            "exits": [
+              "The Causeway Court"
+            ],
+            "present": [
+              "Neb Halloran"
+            ],
+            "floor": [],
+            "carried": [
+              "Assize tide-slate"
+            ],
+            "elsewhere": [
+              {
+                "name": "Assize hand-bell",
+                "whereabouts": "lying in The Causeway Court (the world's own)",
+                "here": false
+              },
+              {
+                "name": "Neb's knotted cord",
+                "whereabouts": "held by Neb Halloran (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Neb Halloran",
+              "nickname": "Neb",
+              "token": "speak:warn:here",
+              "fact": "Neb Halloran spoke up unasked and warned Coraith Vell that The Tide Post is flooded."
+            },
+            "acts": [
+              "Neb Halloran spoke up unasked and warned Coraith Vell that The Tide Post is flooded."
+            ]
+          },
+          "seconds": 2.049,
+          "input_tokens": 781,
+          "output_tokens": 124,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Salt Assizes (tidal legal mystery)\n\nPremise: The player is Coraith Vell, Bell-Keeper of the Assize causeway, who finds the day's high water altered by seventy minutes in a hand that is almost her own. The chained man at the tide post has a hearing in an hour the false chalk has erased, so working out who changed it means reading the court's own papers against the water: the Justicar who needs a verdict, the wreck that serves as the vestry, and the question of who benefits from a drowning the record will call a delay. The tone is cold, procedural and out of doors, and the clock is the sea.\n\nThe player is in The Tide Post: The seaward end of Gallows Rock is a shelf of granite about twelve feet across, sloping, worn smooth, with the post set into it: an iron column the thickness of a mast, sunk four hundred years and stained to the colour of the rock in a band that tells you exactly where the water gets to. Neb Halloran is chained to it by the left wrist with about six feet of play, standing where the shelf is highest, and he has arranged himself so as not to be sitting when you arrive.\n\nThere is nothing else out here. No shelter, no rail, no second way off -- the shelf runs back to the court and that is all. The surf is working at the low side of the rock in a way it was not doing an hour ago, and the stain band on the post is a hand and a half above the wet.\n\nWays out of here: The Causeway Court. There are no others.\n\nThe player is Coraith Vell.\n\nCoraith Vell is unhurt.\n\nThe story is asking for: Go out to the tide post and read the stain band against the water yourself.\n\nAlso here: Neb Halloran (Neb). Nobody else is present.\n\nWhat else happened here, recorded by the game: Neb Halloran spoke up unasked and warned Coraith Vell that The Tide Post is flooded.\n\nLying here, and takeable: nothing.\n\nThe player is carrying: Assize tide-slate.\n\nWhat just happened: The chalk is still under your thumb and it is still not your handwriting. You are standing at the slate in the open court on Gallows Rock with the mile of causeway behind you already darkening at its edges, and Justicar Brace is on the bench in his gown with his hands folded, waiting to be told how long he has. Out past the low wall the flats are silvering over the way they do an hour before they stop being flats. The bell hangs on its hook at your shoulder, cold, and the figure chalked above the day's cases says ten minutes past eight in a hand that has your slant and none of your pressure. From the post at the seaward end of the rock, faint over the surf, somebody is calling a name, and it is not yours.\n\n\nThe player types: look at the water on the floor\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-warn-way",
+          "shape": "warn_way",
+          "act": "other",
+          "position": "court",
+          "story": "The Salt Assizes",
+          "held_out": true,
+          "typed": "look toward the Vestry Hulk",
+          "target": null,
+          "pass": "narration",
+          "text": "You turn your head toward the *Vestry* Hulk, its ribs groaning as the tide nudges it higher. The hatch yawns open, propped by the boat hook, and the court’s papers shift inside like restless birds. The Justicar’s gown rustles as he leans forward slightly, his gaze following yours, but he says nothing. The name from the tide post comes again, clearer now—*Coraith*—but the voice is thin, as if it’s been dragged through salt and time. The causeway behind you darkens further, the water creeping in.",
+          "facts": {
+            "room": "The Causeway Court",
+            "from": "The Causeway Court",
+            "moved": false,
+            "protagonist": [
+              "Coraith Vell",
+              "Vell",
+              "Coraith"
+            ],
+            "places": {
+              "The Causeway Court": "The Causeway Court",
+              "Court": "The Causeway Court",
+              "The Tide Post": "The Tide Post",
+              "Post": "The Tide Post",
+              "The Vestry Hulk": "The Vestry Hulk",
+              "Hulk": "The Vestry Hulk"
+            },
+            "exits": [
+              "The Tide Post",
+              "The Vestry Hulk"
+            ],
+            "present": [
+              "Ammon Brace"
+            ],
+            "floor": [
+              "Assize hand-bell"
+            ],
+            "carried": [
+              "Assize tide-slate"
+            ],
+            "elsewhere": [
+              {
+                "name": "Assize hand-bell",
+                "whereabouts": "lying in The Causeway Court (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Neb's knotted cord",
+                "whereabouts": "held by Neb Halloran (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Ammon Brace",
+              "nickname": "Justicar Brace",
+              "token": "speak:warn:way:16",
+              "fact": "Ammon Brace spoke up unasked and warned Coraith Vell about the drop on the way to The Vestry Hulk."
+            },
+            "acts": [
+              "Ammon Brace spoke up unasked and warned Coraith Vell about the drop on the way to The Vestry Hulk."
+            ]
+          },
+          "seconds": 2.1801,
+          "input_tokens": 840,
+          "output_tokens": 123,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Salt Assizes (tidal legal mystery)\n\nPremise: The player is Coraith Vell, Bell-Keeper of the Assize causeway, who finds the day's high water altered by seventy minutes in a hand that is almost her own. The chained man at the tide post has a hearing in an hour the false chalk has erased, so working out who changed it means reading the court's own papers against the water: the Justicar who needs a verdict, the wreck that serves as the vestry, and the question of who benefits from a drowning the record will call a delay. The tone is cold, procedural and out of doors, and the clock is the sea.\n\nThe player is in The Causeway Court: You are standing in the open court on Gallows Rock, which is four walls of dressed stone about waist high, a flagged floor, a bench, and no roof at all -- roofs, on this coast, are what the sea takes first. The Justicar's bench faces seaward so that whoever is being tried has the water behind them. The day's cases are chalked on the tide-slate propped against the wall at your left hand, with the high-water figure above them in somebody else's writing.\n\nBehind you the causeway runs a mile back to the shore and its edges have already stopped being edges. Seaward, the rock narrows to the tide post, and you can see the chain from here. The beached hulk of the *Vestry* lies canted across the northern side of the court with its hatch propped open on a boat hook, close enough that the court's own papers are kept in it. The bell hangs on its hook at your shoulder. Nobody in this court but you can tell how long any of it has.\n\nWays out of here: The Tide Post, The Vestry Hulk. There are no others.\n\nThe player is Coraith Vell.\n\nCoraith Vell is unhurt.\n\nThe story is asking for: Go out to the tide post and read the stain band against the water yourself.\n\nAlso here: Ammon Brace (Justicar Brace). Nobody else is present.\n\nWhat else happened here, recorded by the game: Ammon Brace spoke up unasked and warned Coraith Vell about the drop on the way to The Vestry Hulk.\n\nLying here, and takeable: Assize hand-bell.\n\nThe player is carrying: Assize tide-slate.\n\nWhat just happened: The chalk is still under your thumb and it is still not your handwriting. You are standing at the slate in the open court on Gallows Rock with the mile of causeway behind you already darkening at its edges, and Justicar Brace is on the bench in his gown with his hands folded, waiting to be told how long he has. Out past the low wall the flats are silvering over the way they do an hour before they stop being flats. The bell hangs on its hook at your shoulder, cold, and the figure chalked above the day's cases says ten minutes past eight in a hand that has your slant and none of your pressure. From the post at the seaward end of the rock, faint over the surf, somebody is calling a name, and it is not yours.\n\n\nThe player types: look toward the Vestry Hulk\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-ask",
+          "shape": "ask",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "turn a page of the daybook",
+          "target": null,
+          "pass": "narration",
+          "text": "You turn a page of the daybook. The paper is thin, the kind that bleeds if you press too hard, and the ink on the other side shows through just enough to make the words look like they’re trembling. The gap between four and five is still there on the new page, of course—it’s not as if flipping the paper would fill it. The stamp lies beside the book, its weight familiar in your palm. Sub-Inspector Rowe watches, his gaze steady, as if he’s waiting for you to notice something you haven’t yet. The supply closet door remains ajar, its darkness unbroken. The rain keeps sliding down the glass.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press",
+              "ward stamp"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:ask:18",
+              "fact": "Halkett Rowe spoke up unasked and asked Odile Vance for Ward Office 12 daybook. Nothing changed hands."
+            },
+            "acts": [
+              "Halkett Rowe spoke up unasked and asked Odile Vance for Ward Office 12 daybook. Nothing changed hands."
+            ]
+          },
+          "seconds": 1.4514,
+          "input_tokens": 856,
+          "output_tokens": 137,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe spoke up unasked and asked Odile Vance for Ward Office 12 daybook. Nothing changed hands.\n\nLying here, and takeable: blank closure writ, filing press, ward stamp.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: turn a page of the daybook\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-demand",
+          "shape": "demand",
+          "act": "other",
+          "position": "tide",
+          "story": "The Salt Assizes",
+          "held_out": true,
+          "typed": "hold the tide-slate up to the lamp",
+          "target": null,
+          "pass": "narration",
+          "text": "You lift the Assize tide-slate to the lamp, tilting it so the chalk catches the light. The numbers are sharp, precise—*ten minutes past eight*—but the strokes are too deliberate, too heavy. Your own hand would have been quicker, looser. The lamp’s glow picks out the faintest smudge where a finger, not yours, has brushed the surface. Neb Halloran’s voice carries again from the post, insistent, but the slate offers no answers, only the proof of tampering. The bell at your shoulder stays silent, cold. The sea keeps rising.",
+          "facts": {
+            "room": "The Tide Post",
+            "from": "The Tide Post",
+            "moved": false,
+            "protagonist": [
+              "Coraith Vell",
+              "Vell",
+              "Coraith"
+            ],
+            "places": {
+              "The Causeway Court": "The Causeway Court",
+              "Court": "The Causeway Court",
+              "The Tide Post": "The Tide Post",
+              "Post": "The Tide Post",
+              "The Vestry Hulk": "The Vestry Hulk",
+              "Hulk": "The Vestry Hulk"
+            },
+            "exits": [
+              "The Causeway Court"
+            ],
+            "present": [
+              "Neb Halloran"
+            ],
+            "floor": [],
+            "carried": [
+              "Assize tide-slate"
+            ],
+            "elsewhere": [
+              {
+                "name": "Assize hand-bell",
+                "whereabouts": "lying in The Causeway Court (the world's own)",
+                "here": false
+              },
+              {
+                "name": "Neb's knotted cord",
+                "whereabouts": "held by Neb Halloran (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Neb Halloran",
+              "nickname": "Neb",
+              "token": "speak:demand:15",
+              "fact": "Neb Halloran spoke up unasked and demanded Assize tide-slate from Coraith Vell. Nothing changed hands."
+            },
+            "acts": [
+              "Neb Halloran spoke up unasked and demanded Assize tide-slate from Coraith Vell. Nothing changed hands."
+            ]
+          },
+          "seconds": 1.4317,
+          "input_tokens": 786,
+          "output_tokens": 124,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Salt Assizes (tidal legal mystery)\n\nPremise: The player is Coraith Vell, Bell-Keeper of the Assize causeway, who finds the day's high water altered by seventy minutes in a hand that is almost her own. The chained man at the tide post has a hearing in an hour the false chalk has erased, so working out who changed it means reading the court's own papers against the water: the Justicar who needs a verdict, the wreck that serves as the vestry, and the question of who benefits from a drowning the record will call a delay. The tone is cold, procedural and out of doors, and the clock is the sea.\n\nThe player is in The Tide Post: The seaward end of Gallows Rock is a shelf of granite about twelve feet across, sloping, worn smooth, with the post set into it: an iron column the thickness of a mast, sunk four hundred years and stained to the colour of the rock in a band that tells you exactly where the water gets to. Neb Halloran is chained to it by the left wrist with about six feet of play, standing where the shelf is highest, and he has arranged himself so as not to be sitting when you arrive.\n\nThere is nothing else out here. No shelter, no rail, no second way off -- the shelf runs back to the court and that is all. The surf is working at the low side of the rock in a way it was not doing an hour ago, and the stain band on the post is a hand and a half above the wet.\n\nWays out of here: The Causeway Court. There are no others.\n\nThe player is Coraith Vell.\n\nCoraith Vell is unhurt.\n\nThe story is asking for: Go out to the tide post and read the stain band against the water yourself.\n\nAlso here: Neb Halloran (Neb). Nobody else is present.\n\nWhat else happened here, recorded by the game: Neb Halloran spoke up unasked and demanded Assize tide-slate from Coraith Vell. Nothing changed hands.\n\nLying here, and takeable: nothing.\n\nThe player is carrying: Assize tide-slate.\n\nWhat just happened: The chalk is still under your thumb and it is still not your handwriting. You are standing at the slate in the open court on Gallows Rock with the mile of causeway behind you already darkening at its edges, and Justicar Brace is on the bench in his gown with his hands folded, waiting to be told how long he has. Out past the low wall the flats are silvering over the way they do an hour before they stop being flats. The bell hangs on its hook at your shoulder, cold, and the figure chalked above the day's cases says ten minutes past eight in a hand that has your slant and none of your pressure. From the post at the seaward end of the rock, faint over the surf, somebody is calling a name, and it is not yours.\n\n\nThe player types: hold the tide-slate up to the lamp\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-dismiss",
+          "shape": "dismiss",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "stand at the desk",
+          "target": null,
+          "pass": "narration",
+          "text": "You remain at your desk, the daybook still open beneath your hand, the stamp cold beside it. The ruled gap between four and five o'clock stares up at you, unyielding. Sub-Inspector Rowe does not move from the doorway, his grey coat blending with the dim corridor behind him. The gas mantle hisses, the rain streaks the window, and the supply closet door lingers just behind you, its silence heavier than the Inspectorate’s. Nothing shifts. The moment stretches, taut as a blank writ.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press",
+              "ward stamp"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:dismiss",
+              "fact": "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            },
+            "acts": [
+              "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            ]
+          },
+          "seconds": 1.4123,
+          "input_tokens": 851,
+          "output_tokens": 108,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved.\n\nLying here, and takeable: blank closure writ, filing press, ward stamp.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: stand at the desk\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-beside-an-act",
+          "shape": "beside_an_act",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "watch Sub-Inspector Rowe",
+          "target": null,
+          "pass": "narration",
+          "text": "You keep your eyes on Sub-Inspector Rowe, and he lets you. He steps fully into the office, the door swinging wider behind him, and his gaze lingers on the empty desk opposite yours—long enough that you wonder if he, too, is trying to recall a name that no longer fits the space. His fingers adjust the chain of his Inspectorate seal, the metal clicking softly against the fabric of his coat. The gas mantle flickers, casting the shadow of his silhouette across the cleared wood of the desk, as if someone had just stood up from it and walked out. He doesn’t speak, doesn’t move toward you or the stamp or the daybook. The silence stretches, thick as the damp air pressing against the window. Behind you, the supply closet door remains ajar, its darkness unremarked, unexamined. Rowe’s jaw tightens almost imperceptibly, and then—just as the next distant door shuts somewhere down the hallway—he exhales through his nose, a sound like a man bracing for paperwork.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:dismiss",
+              "fact": "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            },
+            "acts": [
+              "Halkett Rowe picked up ward stamp in Ward Office 12 and now holds it.",
+              "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            ]
+          },
+          "seconds": 3.0415,
+          "input_tokens": 868,
+          "output_tokens": 217,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe picked up ward stamp in Ward Office 12 and now holds it. Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved.\n\nLying here, and takeable: blank closure writ, filing press.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: watch Sub-Inspector Rowe\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        }
+      ]
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 3,
+      "scanned": 7,
+      "cases": 7,
+      "failures": 0,
+      "refusals": 0,
+      "crises": 0,
+      "rotations": 0,
+      "extra_calls": 0,
+      "omitted_fields": 0,
+      "cap_hits": 0,
+      "input_tokens": 4801,
+      "output_tokens": 943,
+      "latency_median": 1.7424,
+      "latency_p95": 1.9184,
+      "words": 93,
+      "commitments": 3.143,
+      "coverage": 0.5077,
+      "chars": 532,
+      "rates": {
+        "unrecorded_departure": 0.0,
+        "unrecorded_arrival": 0.0,
+        "item_not_held": 0.0,
+        "take_denied": 0.0,
+        "pickup_invented": 0.0,
+        "inscription_misquoted": 0.0,
+        "truncated_prose": 0.0,
+        "third_person_protagonist": 0.0,
+        "blow_contradicted": 0.0,
+        "toll_contradicted": 0.0,
+        "throw_contradicted": 0.0,
+        "body_contradicted": 0.0,
+        "beat_contradicted": 0.0
+      },
+      "flagged": {
+        "unrecorded_departure": 0,
+        "unrecorded_arrival": 0,
+        "item_not_held": 0,
+        "take_denied": 0,
+        "pickup_invented": 0,
+        "inscription_misquoted": 0,
+        "truncated_prose": 0,
+        "third_person_protagonist": 0,
+        "blow_contradicted": 0,
+        "toll_contradicted": 0,
+        "throw_contradicted": 0,
+        "body_contradicted": 0,
+        "beat_contradicted": 0
+      },
+      "judgeable": {
+        "unrecorded_departure": 7,
+        "unrecorded_arrival": 7,
+        "item_not_held": 7,
+        "take_denied": 0,
+        "pickup_invented": 0,
+        "inscription_misquoted": 0,
+        "truncated_prose": 7,
+        "third_person_protagonist": 7,
+        "blow_contradicted": 0,
+        "toll_contradicted": 0,
+        "throw_contradicted": 0,
+        "body_contradicted": 0,
+        "beat_contradicted": 0
+      },
+      "by_story": {
+        "The Unrecorded Hour": 4,
+        "The Salt Assizes": 3
+      },
+      "readings": [
+        {
+          "id": "speech-greet",
+          "shape": "greet",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "look up from the daybook",
+          "target": null,
+          "pass": "narration",
+          "text": "You lift your eyes from the daybook, the gap between four and five o'clock still burning faintly at the edges of your vision. Sub-Inspector Rowe remains in the doorway, his grey coat damp at the shoulders from the rain outside. His gaze lingers on the empty desk opposite yours, the squared chair, the bare wood—then shifts back to you, the stamp, the open page. The gas mantle flickers, casting long shadows across the floor. Behind you, the supply closet door stays ajar, its darkness unbroken. The silence stretches, thick as the rain-streaked glass between you and the levee.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press",
+              "ward stamp"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:greet",
+              "fact": "Halkett Rowe spoke up unasked and greeted Odile Vance."
+            },
+            "acts": [
+              "Halkett Rowe spoke up unasked and greeted Odile Vance."
+            ]
+          },
+          "seconds": 1.6933,
+          "input_tokens": 843,
+          "output_tokens": 130,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe spoke up unasked and greeted Odile Vance.\n\nLying here, and takeable: blank closure writ, filing press, ward stamp.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: look up from the daybook\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-warn-here",
+          "shape": "warn_here",
+          "act": "other",
+          "position": "tide",
+          "story": "The Salt Assizes",
+          "held_out": true,
+          "typed": "look at the water on the floor",
+          "target": null,
+          "pass": "narration",
+          "text": "You glance down at the court’s stone floor, but the water isn’t here—it’s beyond the low wall, creeping over the causeway’s edge in a thin, restless sheet. The slate in your hand bears the false mark, but the floor itself is dry, save for the damp that always lingers in the cracks of Gallows Rock. The surf’s murmur is louder now, and the voice from the tide post carries again, sharper this time: *\"Vell.\"* The stain band on the iron column out there is still too high, and the sea is still rising.",
+          "facts": {
+            "room": "The Tide Post",
+            "from": "The Tide Post",
+            "moved": false,
+            "protagonist": [
+              "Coraith Vell",
+              "Vell",
+              "Coraith"
+            ],
+            "places": {
+              "The Causeway Court": "The Causeway Court",
+              "Court": "The Causeway Court",
+              "The Tide Post": "The Tide Post",
+              "Post": "The Tide Post",
+              "The Vestry Hulk": "The Vestry Hulk",
+              "Hulk": "The Vestry Hulk"
+            },
+            "exits": [
+              "The Causeway Court"
+            ],
+            "present": [
+              "Neb Halloran"
+            ],
+            "floor": [],
+            "carried": [
+              "Assize tide-slate"
+            ],
+            "elsewhere": [
+              {
+                "name": "Assize hand-bell",
+                "whereabouts": "lying in The Causeway Court (the world's own)",
+                "here": false
+              },
+              {
+                "name": "Neb's knotted cord",
+                "whereabouts": "held by Neb Halloran (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Neb Halloran",
+              "nickname": "Neb",
+              "token": "speak:warn:here",
+              "fact": "Neb Halloran spoke up unasked and warned Coraith Vell that The Tide Post is flooded."
+            },
+            "acts": [
+              "Neb Halloran spoke up unasked and warned Coraith Vell that The Tide Post is flooded."
+            ]
+          },
+          "seconds": 1.6621,
+          "input_tokens": 653,
+          "output_tokens": 121,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Salt Assizes (tidal legal mystery)\n\nPremise: The player is Coraith Vell, Bell-Keeper of the Assize causeway, who finds the day's high water altered by seventy minutes in a hand that is almost her own. The chained man at the tide post has a hearing in an hour the false chalk has erased, so working out who changed it means reading the court's own papers against the water: the Justicar who needs a verdict, the wreck that serves as the vestry, and the question of who benefits from a drowning the record will call a delay. The tone is cold, procedural and out of doors, and the clock is the sea.\n\nThe player is in The Tide Post: The seaward end of Gallows Rock is a shelf of granite about twelve feet across, sloping, worn smooth, with the post set into it: an iron column the thickness of a mast, sunk four hundred years and stained to the colour of the rock in a band that tells you exactly where the water gets to. Neb Halloran is chained to it by the left wrist with about six feet of play, standing where the shelf is highest, and he has arranged himself so as not to be sitting when you arrive.\n\nThere is nothing else out here. No shelter, no rail, no second way off -- the shelf runs back to the court and that is all. The surf is working at the low side of the rock in a way it was not doing an hour ago, and the stain band on the post is a hand and a half above the wet.\n\nWays out of here: The Causeway Court. There are no others.\n\nThe player is Coraith Vell.\n\nCoraith Vell is unhurt.\n\nThe story is asking for: Go out to the tide post and read the stain band against the water yourself.\n\nAlso here: Neb Halloran (Neb). Nobody else is present.\n\nWhat else happened here, recorded by the game: Neb Halloran spoke up unasked and warned Coraith Vell that The Tide Post is flooded.\n\nLying here, and takeable: nothing.\n\nThe player is carrying: Assize tide-slate.\n\nWhat just happened: The chalk is still under your thumb and it is still not your handwriting. You are standing at the slate in the open court on Gallows Rock with the mile of causeway behind you already darkening at its edges, and Justicar Brace is on the bench in his gown with his hands folded, waiting to be told how long he has. Out past the low wall the flats are silvering over the way they do an hour before they stop being flats. The bell hangs on its hook at your shoulder, cold, and the figure chalked above the day's cases says ten minutes past eight in a hand that has your slant and none of your pressure. From the post at the seaward end of the rock, faint over the surf, somebody is calling a name, and it is not yours.\n\n\nThe player types: look at the water on the floor\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-warn-way",
+          "shape": "warn_way",
+          "act": "other",
+          "position": "court",
+          "story": "The Salt Assizes",
+          "held_out": true,
+          "typed": "look toward the Vestry Hulk",
+          "target": null,
+          "pass": "narration",
+          "text": "You turn your head toward the *Vestry* Hulk, its timbers groaning as the tide laps higher against its side. The hatch yawns open, propped by the boat hook, and the papers inside shift slightly in the damp air. Justicar Brace does not move, his gaze fixed on the slate in your hand. The name being called from the tide post fades into the wind, leaving only the sound of the water and the creak of the hull. The bell at your shoulder sways, though there is no breeze to stir it.",
+          "facts": {
+            "room": "The Causeway Court",
+            "from": "The Causeway Court",
+            "moved": false,
+            "protagonist": [
+              "Coraith Vell",
+              "Vell",
+              "Coraith"
+            ],
+            "places": {
+              "The Causeway Court": "The Causeway Court",
+              "Court": "The Causeway Court",
+              "The Tide Post": "The Tide Post",
+              "Post": "The Tide Post",
+              "The Vestry Hulk": "The Vestry Hulk",
+              "Hulk": "The Vestry Hulk"
+            },
+            "exits": [
+              "The Tide Post",
+              "The Vestry Hulk"
+            ],
+            "present": [
+              "Ammon Brace"
+            ],
+            "floor": [
+              "Assize hand-bell"
+            ],
+            "carried": [
+              "Assize tide-slate"
+            ],
+            "elsewhere": [
+              {
+                "name": "Assize hand-bell",
+                "whereabouts": "lying in The Causeway Court (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Neb's knotted cord",
+                "whereabouts": "held by Neb Halloran (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Ammon Brace",
+              "nickname": "Justicar Brace",
+              "token": "speak:warn:way:16",
+              "fact": "Ammon Brace spoke up unasked and warned Coraith Vell about the drop on the way to The Vestry Hulk."
+            },
+            "acts": [
+              "Ammon Brace spoke up unasked and warned Coraith Vell about the drop on the way to The Vestry Hulk."
+            ]
+          },
+          "seconds": 1.3552,
+          "input_tokens": 72,
+          "output_tokens": 117,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Salt Assizes (tidal legal mystery)\n\nPremise: The player is Coraith Vell, Bell-Keeper of the Assize causeway, who finds the day's high water altered by seventy minutes in a hand that is almost her own. The chained man at the tide post has a hearing in an hour the false chalk has erased, so working out who changed it means reading the court's own papers against the water: the Justicar who needs a verdict, the wreck that serves as the vestry, and the question of who benefits from a drowning the record will call a delay. The tone is cold, procedural and out of doors, and the clock is the sea.\n\nThe player is in The Causeway Court: You are standing in the open court on Gallows Rock, which is four walls of dressed stone about waist high, a flagged floor, a bench, and no roof at all -- roofs, on this coast, are what the sea takes first. The Justicar's bench faces seaward so that whoever is being tried has the water behind them. The day's cases are chalked on the tide-slate propped against the wall at your left hand, with the high-water figure above them in somebody else's writing.\n\nBehind you the causeway runs a mile back to the shore and its edges have already stopped being edges. Seaward, the rock narrows to the tide post, and you can see the chain from here. The beached hulk of the *Vestry* lies canted across the northern side of the court with its hatch propped open on a boat hook, close enough that the court's own papers are kept in it. The bell hangs on its hook at your shoulder. Nobody in this court but you can tell how long any of it has.\n\nWays out of here: The Tide Post, The Vestry Hulk. There are no others.\n\nThe player is Coraith Vell.\n\nCoraith Vell is unhurt.\n\nThe story is asking for: Go out to the tide post and read the stain band against the water yourself.\n\nAlso here: Ammon Brace (Justicar Brace). Nobody else is present.\n\nWhat else happened here, recorded by the game: Ammon Brace spoke up unasked and warned Coraith Vell about the drop on the way to The Vestry Hulk.\n\nLying here, and takeable: Assize hand-bell.\n\nThe player is carrying: Assize tide-slate.\n\nWhat just happened: The chalk is still under your thumb and it is still not your handwriting. You are standing at the slate in the open court on Gallows Rock with the mile of causeway behind you already darkening at its edges, and Justicar Brace is on the bench in his gown with his hands folded, waiting to be told how long he has. Out past the low wall the flats are silvering over the way they do an hour before they stop being flats. The bell hangs on its hook at your shoulder, cold, and the figure chalked above the day's cases says ten minutes past eight in a hand that has your slant and none of your pressure. From the post at the seaward end of the rock, faint over the surf, somebody is calling a name, and it is not yours.\n\n\nThe player types: look toward the Vestry Hulk\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-ask",
+          "shape": "ask",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "turn a page of the daybook",
+          "target": null,
+          "pass": "narration",
+          "text": "You turn a page of the daybook. The paper is thin, the kind that takes ink without bleeding only if you're careful. The next sheet is blank, waiting for tomorrow's entries. The gap between four and five remains on the previous page, stubborn and precise. The hissing of the gas mantle seems to grow a little louder, or perhaps it's just the silence pressing in. Sub-Inspector Rowe watches you, his expression unreadable, as your fingers linger on the empty page. The supply closet door remains ajar, dark and uninviting, behind you.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press",
+              "ward stamp"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:ask:18",
+              "fact": "Halkett Rowe spoke up unasked and asked Odile Vance for Ward Office 12 daybook. Nothing changed hands."
+            },
+            "acts": [
+              "Halkett Rowe spoke up unasked and asked Odile Vance for Ward Office 12 daybook. Nothing changed hands."
+            ]
+          },
+          "seconds": 1.8323,
+          "input_tokens": 856,
+          "output_tokens": 119,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe spoke up unasked and asked Odile Vance for Ward Office 12 daybook. Nothing changed hands.\n\nLying here, and takeable: blank closure writ, filing press, ward stamp.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: turn a page of the daybook\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-demand",
+          "shape": "demand",
+          "act": "other",
+          "position": "tide",
+          "story": "The Salt Assizes",
+          "held_out": true,
+          "typed": "hold the tide-slate up to the lamp",
+          "target": null,
+          "pass": "narration",
+          "text": "You lift the tide-slate to the lamp, and the chalked numbers glow faintly in the dimming light. The handwriting is unmistakably yours—yet the strokes are too deliberate, too precise, as if someone mimicked your script with a steady, foreign hand. The time marked is ten minutes past eight, but the tide outside tells a different story: the water is already lapping higher than it should, the stain band on the post a stark, accusing line above the current. The slate feels heavier than it should, as if the discrepancy itself has weight. Neb Halloran’s voice carries again from the post, sharp with urgency, but the words are lost to the rising wind. The Justicar’s gaze remains fixed on you, waiting. The bell at your shoulder stays silent, cold.",
+          "facts": {
+            "room": "The Tide Post",
+            "from": "The Tide Post",
+            "moved": false,
+            "protagonist": [
+              "Coraith Vell",
+              "Vell",
+              "Coraith"
+            ],
+            "places": {
+              "The Causeway Court": "The Causeway Court",
+              "Court": "The Causeway Court",
+              "The Tide Post": "The Tide Post",
+              "Post": "The Tide Post",
+              "The Vestry Hulk": "The Vestry Hulk",
+              "Hulk": "The Vestry Hulk"
+            },
+            "exits": [
+              "The Causeway Court"
+            ],
+            "present": [
+              "Neb Halloran"
+            ],
+            "floor": [],
+            "carried": [
+              "Assize tide-slate"
+            ],
+            "elsewhere": [
+              {
+                "name": "Assize hand-bell",
+                "whereabouts": "lying in The Causeway Court (the world's own)",
+                "here": false
+              },
+              {
+                "name": "Neb's knotted cord",
+                "whereabouts": "held by Neb Halloran (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Neb Halloran",
+              "nickname": "Neb",
+              "token": "speak:demand:15",
+              "fact": "Neb Halloran spoke up unasked and demanded Assize tide-slate from Coraith Vell. Nothing changed hands."
+            },
+            "acts": [
+              "Neb Halloran spoke up unasked and demanded Assize tide-slate from Coraith Vell. Nothing changed hands."
+            ]
+          },
+          "seconds": 1.9184,
+          "input_tokens": 658,
+          "output_tokens": 167,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Salt Assizes (tidal legal mystery)\n\nPremise: The player is Coraith Vell, Bell-Keeper of the Assize causeway, who finds the day's high water altered by seventy minutes in a hand that is almost her own. The chained man at the tide post has a hearing in an hour the false chalk has erased, so working out who changed it means reading the court's own papers against the water: the Justicar who needs a verdict, the wreck that serves as the vestry, and the question of who benefits from a drowning the record will call a delay. The tone is cold, procedural and out of doors, and the clock is the sea.\n\nThe player is in The Tide Post: The seaward end of Gallows Rock is a shelf of granite about twelve feet across, sloping, worn smooth, with the post set into it: an iron column the thickness of a mast, sunk four hundred years and stained to the colour of the rock in a band that tells you exactly where the water gets to. Neb Halloran is chained to it by the left wrist with about six feet of play, standing where the shelf is highest, and he has arranged himself so as not to be sitting when you arrive.\n\nThere is nothing else out here. No shelter, no rail, no second way off -- the shelf runs back to the court and that is all. The surf is working at the low side of the rock in a way it was not doing an hour ago, and the stain band on the post is a hand and a half above the wet.\n\nWays out of here: The Causeway Court. There are no others.\n\nThe player is Coraith Vell.\n\nCoraith Vell is unhurt.\n\nThe story is asking for: Go out to the tide post and read the stain band against the water yourself.\n\nAlso here: Neb Halloran (Neb). Nobody else is present.\n\nWhat else happened here, recorded by the game: Neb Halloran spoke up unasked and demanded Assize tide-slate from Coraith Vell. Nothing changed hands.\n\nLying here, and takeable: nothing.\n\nThe player is carrying: Assize tide-slate.\n\nWhat just happened: The chalk is still under your thumb and it is still not your handwriting. You are standing at the slate in the open court on Gallows Rock with the mile of causeway behind you already darkening at its edges, and Justicar Brace is on the bench in his gown with his hands folded, waiting to be told how long he has. Out past the low wall the flats are silvering over the way they do an hour before they stop being flats. The bell hangs on its hook at your shoulder, cold, and the figure chalked above the day's cases says ten minutes past eight in a hand that has your slant and none of your pressure. From the post at the seaward end of the rock, faint over the surf, somebody is calling a name, and it is not yours.\n\n\nThe player types: hold the tide-slate up to the lamp\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-dismiss",
+          "shape": "dismiss",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "stand at the desk",
+          "target": null,
+          "pass": "narration",
+          "text": "You remain at your desk, the daybook still open beneath your hand, the stamp beside it. The ruled gap between four and five o'clock stares up at you, unyielding. Sub-Inspector Rowe does not move from the doorway, his gaze lingering on the empty desk opposite yours. The gas mantle continues to hiss, casting long shadows across the room. The supply closet door remains ajar, its contents—if any—still a mystery. The rain streaks the cold window, and the silence between you and Rowe stretches, heavy with unspoken questions.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press",
+              "ward stamp"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:dismiss",
+              "fact": "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            },
+            "acts": [
+              "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            ]
+          },
+          "seconds": 1.7424,
+          "input_tokens": 851,
+          "output_tokens": 115,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved.\n\nLying here, and takeable: blank closure writ, filing press, ward stamp.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: stand at the desk\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-beside-an-act",
+          "shape": "beside_an_act",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "watch Sub-Inspector Rowe",
+          "target": null,
+          "pass": "narration",
+          "text": "You watch Sub-Inspector Rowe, and he watches the empty desk. His gaze lingers there, unblinking, as if expecting something to materialize—an explanation, a clerk, a ghost of ink and paper. The gas mantle flickers, casting long shadows across the cleared wood, but nothing stirs. His fingers twitch once, as though reaching for the Inspectorate seal at his chest, but he doesn’t move. The silence stretches, thick as the rain-streaked glass between you and the levee. Then, without a word, he shifts his weight slightly, and the floorboard under him creaks. His eyes flick to the supply closet door behind you, just for a breath, before returning to the empty desk. The air feels heavier. The stamp beside your daybook gleams dully under the low light, untouched.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:dismiss",
+              "fact": "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            },
+            "acts": [
+              "Halkett Rowe picked up ward stamp in Ward Office 12 and now holds it.",
+              "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            ]
+          },
+          "seconds": 1.8358,
+          "input_tokens": 868,
+          "output_tokens": 174,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe picked up ward stamp in Ward Office 12 and now holds it. Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved.\n\nLying here, and takeable: blank closure writ, filing press.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: watch Sub-Inspector Rowe\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        }
+      ]
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 4,
+      "scanned": 7,
+      "cases": 7,
+      "failures": 0,
+      "refusals": 0,
+      "crises": 0,
+      "rotations": 0,
+      "extra_calls": 0,
+      "omitted_fields": 0,
+      "cap_hits": 0,
+      "input_tokens": 4033,
+      "output_tokens": 890,
+      "latency_median": 1.5998,
+      "latency_p95": 1.8484,
+      "words": 97,
+      "commitments": 3.429,
+      "coverage": 0.5612,
+      "chars": 550,
+      "rates": {
+        "unrecorded_departure": 0.0,
+        "unrecorded_arrival": 0.0,
+        "item_not_held": 0.0,
+        "take_denied": 0.0,
+        "pickup_invented": 0.0,
+        "inscription_misquoted": 0.0,
+        "truncated_prose": 0.0,
+        "third_person_protagonist": 0.0,
+        "blow_contradicted": 0.0,
+        "toll_contradicted": 0.0,
+        "throw_contradicted": 0.0,
+        "body_contradicted": 0.0,
+        "beat_contradicted": 0.0
+      },
+      "flagged": {
+        "unrecorded_departure": 0,
+        "unrecorded_arrival": 0,
+        "item_not_held": 0,
+        "take_denied": 0,
+        "pickup_invented": 0,
+        "inscription_misquoted": 0,
+        "truncated_prose": 0,
+        "third_person_protagonist": 0,
+        "blow_contradicted": 0,
+        "toll_contradicted": 0,
+        "throw_contradicted": 0,
+        "body_contradicted": 0,
+        "beat_contradicted": 0
+      },
+      "judgeable": {
+        "unrecorded_departure": 7,
+        "unrecorded_arrival": 7,
+        "item_not_held": 7,
+        "take_denied": 0,
+        "pickup_invented": 0,
+        "inscription_misquoted": 0,
+        "truncated_prose": 7,
+        "third_person_protagonist": 7,
+        "blow_contradicted": 0,
+        "toll_contradicted": 0,
+        "throw_contradicted": 0,
+        "body_contradicted": 0,
+        "beat_contradicted": 0
+      },
+      "by_story": {
+        "The Unrecorded Hour": 4,
+        "The Salt Assizes": 3
+      },
+      "readings": [
+        {
+          "id": "speech-greet",
+          "shape": "greet",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "look up from the daybook",
+          "target": null,
+          "pass": "narration",
+          "text": "You lift your eyes from the daybook, the gap between four and five still a dark line under your fingers. Sub-Inspector Rowe remains in the doorway, his grey coat damp at the shoulders from the rain outside. His gaze lingers on the empty desk opposite yours, then shifts to you, steady and unreadable. The gas mantle flickers, casting long shadows across the wood of the cleared desk. The supply closet door behind you stays slightly ajar, its darkness unbroken. The only sound is the hiss of the gas and the distant patter of rain against the window.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press",
+              "ward stamp"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:greet",
+              "fact": "Halkett Rowe spoke up unasked and greeted Odile Vance."
+            },
+            "acts": [
+              "Halkett Rowe spoke up unasked and greeted Odile Vance."
+            ]
+          },
+          "seconds": 1.5998,
+          "input_tokens": 843,
+          "output_tokens": 120,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe spoke up unasked and greeted Odile Vance.\n\nLying here, and takeable: blank closure writ, filing press, ward stamp.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: look up from the daybook\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-warn-here",
+          "shape": "warn_here",
+          "act": "other",
+          "position": "tide",
+          "story": "The Salt Assizes",
+          "held_out": true,
+          "typed": "look at the water on the floor",
+          "target": null,
+          "pass": "narration",
+          "text": "You glance down at the court’s stone floor, but the water isn’t there—it’s beyond the low wall, creeping across the tidal flats in a sheet that catches the last of the light like a blade. The slate in your hand is dry, the chalk mark still accusing. The voice from the post calls again, sharper this time, and the surf hisses against the rock as if answering. The stain band on the iron post is still too high, and the sea is still too low.",
+          "facts": {
+            "room": "The Tide Post",
+            "from": "The Tide Post",
+            "moved": false,
+            "protagonist": [
+              "Coraith Vell",
+              "Vell",
+              "Coraith"
+            ],
+            "places": {
+              "The Causeway Court": "The Causeway Court",
+              "Court": "The Causeway Court",
+              "The Tide Post": "The Tide Post",
+              "Post": "The Tide Post",
+              "The Vestry Hulk": "The Vestry Hulk",
+              "Hulk": "The Vestry Hulk"
+            },
+            "exits": [
+              "The Causeway Court"
+            ],
+            "present": [
+              "Neb Halloran"
+            ],
+            "floor": [],
+            "carried": [
+              "Assize tide-slate"
+            ],
+            "elsewhere": [
+              {
+                "name": "Assize hand-bell",
+                "whereabouts": "lying in The Causeway Court (the world's own)",
+                "here": false
+              },
+              {
+                "name": "Neb's knotted cord",
+                "whereabouts": "held by Neb Halloran (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Neb Halloran",
+              "nickname": "Neb",
+              "token": "speak:warn:here",
+              "fact": "Neb Halloran spoke up unasked and warned Coraith Vell that The Tide Post is flooded."
+            },
+            "acts": [
+              "Neb Halloran spoke up unasked and warned Coraith Vell that The Tide Post is flooded."
+            ]
+          },
+          "seconds": 1.3685,
+          "input_tokens": 269,
+          "output_tokens": 105,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Salt Assizes (tidal legal mystery)\n\nPremise: The player is Coraith Vell, Bell-Keeper of the Assize causeway, who finds the day's high water altered by seventy minutes in a hand that is almost her own. The chained man at the tide post has a hearing in an hour the false chalk has erased, so working out who changed it means reading the court's own papers against the water: the Justicar who needs a verdict, the wreck that serves as the vestry, and the question of who benefits from a drowning the record will call a delay. The tone is cold, procedural and out of doors, and the clock is the sea.\n\nThe player is in The Tide Post: The seaward end of Gallows Rock is a shelf of granite about twelve feet across, sloping, worn smooth, with the post set into it: an iron column the thickness of a mast, sunk four hundred years and stained to the colour of the rock in a band that tells you exactly where the water gets to. Neb Halloran is chained to it by the left wrist with about six feet of play, standing where the shelf is highest, and he has arranged himself so as not to be sitting when you arrive.\n\nThere is nothing else out here. No shelter, no rail, no second way off -- the shelf runs back to the court and that is all. The surf is working at the low side of the rock in a way it was not doing an hour ago, and the stain band on the post is a hand and a half above the wet.\n\nWays out of here: The Causeway Court. There are no others.\n\nThe player is Coraith Vell.\n\nCoraith Vell is unhurt.\n\nThe story is asking for: Go out to the tide post and read the stain band against the water yourself.\n\nAlso here: Neb Halloran (Neb). Nobody else is present.\n\nWhat else happened here, recorded by the game: Neb Halloran spoke up unasked and warned Coraith Vell that The Tide Post is flooded.\n\nLying here, and takeable: nothing.\n\nThe player is carrying: Assize tide-slate.\n\nWhat just happened: The chalk is still under your thumb and it is still not your handwriting. You are standing at the slate in the open court on Gallows Rock with the mile of causeway behind you already darkening at its edges, and Justicar Brace is on the bench in his gown with his hands folded, waiting to be told how long he has. Out past the low wall the flats are silvering over the way they do an hour before they stop being flats. The bell hangs on its hook at your shoulder, cold, and the figure chalked above the day's cases says ten minutes past eight in a hand that has your slant and none of your pressure. From the post at the seaward end of the rock, faint over the surf, somebody is calling a name, and it is not yours.\n\n\nThe player types: look at the water on the floor\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-warn-way",
+          "shape": "warn_way",
+          "act": "other",
+          "position": "court",
+          "story": "The Salt Assizes",
+          "held_out": true,
+          "typed": "look toward the Vestry Hulk",
+          "target": null,
+          "pass": "narration",
+          "text": "You turn your head toward the *Vestry* Hulk, its ribs groaning as the tide nudges its hull. The hatch, propped open with a boat hook, yawns dark against the pale wood, and the scent of salt and damp paper drifts from within. Ammon Brace’s warning about the drop lingers in your mind—the planks leading to the hulk are slick, the gap between rock and deck treacherous. The bell at your shoulder sways slightly, as if sensing the pull of the sea beyond. The name being called from the tide post fades, swallowed by the wind.",
+          "facts": {
+            "room": "The Causeway Court",
+            "from": "The Causeway Court",
+            "moved": false,
+            "protagonist": [
+              "Coraith Vell",
+              "Vell",
+              "Coraith"
+            ],
+            "places": {
+              "The Causeway Court": "The Causeway Court",
+              "Court": "The Causeway Court",
+              "The Tide Post": "The Tide Post",
+              "Post": "The Tide Post",
+              "The Vestry Hulk": "The Vestry Hulk",
+              "Hulk": "The Vestry Hulk"
+            },
+            "exits": [
+              "The Tide Post",
+              "The Vestry Hulk"
+            ],
+            "present": [
+              "Ammon Brace"
+            ],
+            "floor": [
+              "Assize hand-bell"
+            ],
+            "carried": [
+              "Assize tide-slate"
+            ],
+            "elsewhere": [
+              {
+                "name": "Assize hand-bell",
+                "whereabouts": "lying in The Causeway Court (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Neb's knotted cord",
+                "whereabouts": "held by Neb Halloran (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Ammon Brace",
+              "nickname": "Justicar Brace",
+              "token": "speak:warn:way:16",
+              "fact": "Ammon Brace spoke up unasked and warned Coraith Vell about the drop on the way to The Vestry Hulk."
+            },
+            "acts": [
+              "Ammon Brace spoke up unasked and warned Coraith Vell about the drop on the way to The Vestry Hulk."
+            ]
+          },
+          "seconds": 1.5511,
+          "input_tokens": 840,
+          "output_tokens": 129,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Salt Assizes (tidal legal mystery)\n\nPremise: The player is Coraith Vell, Bell-Keeper of the Assize causeway, who finds the day's high water altered by seventy minutes in a hand that is almost her own. The chained man at the tide post has a hearing in an hour the false chalk has erased, so working out who changed it means reading the court's own papers against the water: the Justicar who needs a verdict, the wreck that serves as the vestry, and the question of who benefits from a drowning the record will call a delay. The tone is cold, procedural and out of doors, and the clock is the sea.\n\nThe player is in The Causeway Court: You are standing in the open court on Gallows Rock, which is four walls of dressed stone about waist high, a flagged floor, a bench, and no roof at all -- roofs, on this coast, are what the sea takes first. The Justicar's bench faces seaward so that whoever is being tried has the water behind them. The day's cases are chalked on the tide-slate propped against the wall at your left hand, with the high-water figure above them in somebody else's writing.\n\nBehind you the causeway runs a mile back to the shore and its edges have already stopped being edges. Seaward, the rock narrows to the tide post, and you can see the chain from here. The beached hulk of the *Vestry* lies canted across the northern side of the court with its hatch propped open on a boat hook, close enough that the court's own papers are kept in it. The bell hangs on its hook at your shoulder. Nobody in this court but you can tell how long any of it has.\n\nWays out of here: The Tide Post, The Vestry Hulk. There are no others.\n\nThe player is Coraith Vell.\n\nCoraith Vell is unhurt.\n\nThe story is asking for: Go out to the tide post and read the stain band against the water yourself.\n\nAlso here: Ammon Brace (Justicar Brace). Nobody else is present.\n\nWhat else happened here, recorded by the game: Ammon Brace spoke up unasked and warned Coraith Vell about the drop on the way to The Vestry Hulk.\n\nLying here, and takeable: Assize hand-bell.\n\nThe player is carrying: Assize tide-slate.\n\nWhat just happened: The chalk is still under your thumb and it is still not your handwriting. You are standing at the slate in the open court on Gallows Rock with the mile of causeway behind you already darkening at its edges, and Justicar Brace is on the bench in his gown with his hands folded, waiting to be told how long he has. Out past the low wall the flats are silvering over the way they do an hour before they stop being flats. The bell hangs on its hook at your shoulder, cold, and the figure chalked above the day's cases says ten minutes past eight in a hand that has your slant and none of your pressure. From the post at the seaward end of the rock, faint over the surf, somebody is calling a name, and it is not yours.\n\n\nThe player types: look toward the Vestry Hulk\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-ask",
+          "shape": "ask",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "turn a page of the daybook",
+          "target": null,
+          "pass": "narration",
+          "text": "You turn a page of the daybook. The paper is thin, the kind that bleeds ink if you press too hard, and the ruled lines are as precise as ever. The gap between four and five remains where it was, stubborn and unremarkable. The stamp beside it gleams dully under the low gaslight, its weight familiar in your palm. Sub-Inspector Rowe watches, his expression unreadable, as the page flutters and settles. The rain streaks the window, and the supply closet door stays ajar, its darkness unbroken. The daybook offers no answers, only the same absence, the same silence.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press",
+              "ward stamp"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:ask:18",
+              "fact": "Halkett Rowe spoke up unasked and asked Odile Vance for Ward Office 12 daybook. Nothing changed hands."
+            },
+            "acts": [
+              "Halkett Rowe spoke up unasked and asked Odile Vance for Ward Office 12 daybook. Nothing changed hands."
+            ]
+          },
+          "seconds": 1.6281,
+          "input_tokens": 856,
+          "output_tokens": 134,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe spoke up unasked and asked Odile Vance for Ward Office 12 daybook. Nothing changed hands.\n\nLying here, and takeable: blank closure writ, filing press, ward stamp.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: turn a page of the daybook\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-demand",
+          "shape": "demand",
+          "act": "other",
+          "position": "tide",
+          "story": "The Salt Assizes",
+          "held_out": true,
+          "typed": "hold the tide-slate up to the lamp",
+          "target": null,
+          "pass": "narration",
+          "text": "You lift the tide-slate to the lamp, and the chalked figures catch the light like a wound. The numbers are yours in shape but not in hand—too deliberate, too slow. The lamp’s glow sharpens the discrepancy, the strokes too heavy, the angles just slightly wrong, as if someone had traced your writing with a trembling grip. The bell at your shoulder stays cold, indifferent. Beyond the court’s low wall, the flats gleam, the tide creeping in with a patience that feels like mockery. From the post, Neb Halloran’s voice carries again, insistent but distant, still calling a name that isn’t yours. The slate offers no answers, only the same silent accusation.",
+          "facts": {
+            "room": "The Tide Post",
+            "from": "The Tide Post",
+            "moved": false,
+            "protagonist": [
+              "Coraith Vell",
+              "Vell",
+              "Coraith"
+            ],
+            "places": {
+              "The Causeway Court": "The Causeway Court",
+              "Court": "The Causeway Court",
+              "The Tide Post": "The Tide Post",
+              "Post": "The Tide Post",
+              "The Vestry Hulk": "The Vestry Hulk",
+              "Hulk": "The Vestry Hulk"
+            },
+            "exits": [
+              "The Causeway Court"
+            ],
+            "present": [
+              "Neb Halloran"
+            ],
+            "floor": [],
+            "carried": [
+              "Assize tide-slate"
+            ],
+            "elsewhere": [
+              {
+                "name": "Assize hand-bell",
+                "whereabouts": "lying in The Causeway Court (the world's own)",
+                "here": false
+              },
+              {
+                "name": "Neb's knotted cord",
+                "whereabouts": "held by Neb Halloran (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Neb Halloran",
+              "nickname": "Neb",
+              "token": "speak:demand:15",
+              "fact": "Neb Halloran spoke up unasked and demanded Assize tide-slate from Coraith Vell. Nothing changed hands."
+            },
+            "acts": [
+              "Neb Halloran spoke up unasked and demanded Assize tide-slate from Coraith Vell. Nothing changed hands."
+            ]
+          },
+          "seconds": 1.7664,
+          "input_tokens": 18,
+          "output_tokens": 146,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Salt Assizes (tidal legal mystery)\n\nPremise: The player is Coraith Vell, Bell-Keeper of the Assize causeway, who finds the day's high water altered by seventy minutes in a hand that is almost her own. The chained man at the tide post has a hearing in an hour the false chalk has erased, so working out who changed it means reading the court's own papers against the water: the Justicar who needs a verdict, the wreck that serves as the vestry, and the question of who benefits from a drowning the record will call a delay. The tone is cold, procedural and out of doors, and the clock is the sea.\n\nThe player is in The Tide Post: The seaward end of Gallows Rock is a shelf of granite about twelve feet across, sloping, worn smooth, with the post set into it: an iron column the thickness of a mast, sunk four hundred years and stained to the colour of the rock in a band that tells you exactly where the water gets to. Neb Halloran is chained to it by the left wrist with about six feet of play, standing where the shelf is highest, and he has arranged himself so as not to be sitting when you arrive.\n\nThere is nothing else out here. No shelter, no rail, no second way off -- the shelf runs back to the court and that is all. The surf is working at the low side of the rock in a way it was not doing an hour ago, and the stain band on the post is a hand and a half above the wet.\n\nWays out of here: The Causeway Court. There are no others.\n\nThe player is Coraith Vell.\n\nCoraith Vell is unhurt.\n\nThe story is asking for: Go out to the tide post and read the stain band against the water yourself.\n\nAlso here: Neb Halloran (Neb). Nobody else is present.\n\nWhat else happened here, recorded by the game: Neb Halloran spoke up unasked and demanded Assize tide-slate from Coraith Vell. Nothing changed hands.\n\nLying here, and takeable: nothing.\n\nThe player is carrying: Assize tide-slate.\n\nWhat just happened: The chalk is still under your thumb and it is still not your handwriting. You are standing at the slate in the open court on Gallows Rock with the mile of causeway behind you already darkening at its edges, and Justicar Brace is on the bench in his gown with his hands folded, waiting to be told how long he has. Out past the low wall the flats are silvering over the way they do an hour before they stop being flats. The bell hangs on its hook at your shoulder, cold, and the figure chalked above the day's cases says ten minutes past eight in a hand that has your slant and none of your pressure. From the post at the seaward end of the rock, faint over the surf, somebody is calling a name, and it is not yours.\n\n\nThe player types: hold the tide-slate up to the lamp\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-dismiss",
+          "shape": "dismiss",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "stand at the desk",
+          "target": null,
+          "pass": "narration",
+          "text": "You remain at your desk, the daybook still open beneath your hand, the stamp cold beside it. Sub-Inspector Rowe does not move from the doorway, his gaze lingering on the empty desk opposite yours as if waiting for it to explain itself. The gas mantle flickers, casting long shadows across the cleared wood, and the rain streaks the window like something trying to get in—or out. The supply closet door stays ajar, silent, unremarked. The air smells of damp wool and ink.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press",
+              "ward stamp"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:dismiss",
+              "fact": "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            },
+            "acts": [
+              "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            ]
+          },
+          "seconds": 1.2071,
+          "input_tokens": 339,
+          "output_tokens": 104,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved.\n\nLying here, and takeable: blank closure writ, filing press, ward stamp.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: stand at the desk\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        },
+        {
+          "id": "speech-beside-an-act",
+          "shape": "beside_an_act",
+          "act": "other",
+          "position": "office",
+          "story": "The Unrecorded Hour",
+          "held_out": false,
+          "typed": "watch Sub-Inspector Rowe",
+          "target": null,
+          "pass": "narration",
+          "text": "You watch Sub-Inspector Rowe, and he watches the empty desk. His gaze lingers there, as if expecting something to materialize—an explanation, a clerk, a reason. The Inspectorate seal on its chain glints dully in the low gaslight, but his expression remains carefully blank, the kind of stillness that comes from years of practice in not reacting. The rain streaks the window behind you, and the hissing of the mantle fills the silence between you. Rowe’s fingers twitch once, almost imperceptibly, toward the ward stamp he holds, but he doesn’t speak. The supply closet door remains ajar, its darkness unremarked, unacknowledged. The moment stretches, taut as a suspended writ.",
+          "facts": {
+            "room": "Ward Office 12",
+            "from": "Ward Office 12",
+            "moved": false,
+            "protagonist": [
+              "Odile Vance",
+              "Vance",
+              "Odile"
+            ],
+            "places": {
+              "Ward Office 12": "Ward Office 12",
+              "Office": "Ward Office 12",
+              "The Supply Closet": "The Supply Closet",
+              "Closet": "The Supply Closet",
+              "The Long Hallway": "The Long Hallway",
+              "Hallway": "The Long Hallway"
+            },
+            "exits": [
+              "The Supply Closet",
+              "The Long Hallway"
+            ],
+            "present": [
+              "Halkett Rowe"
+            ],
+            "floor": [
+              "blank closure writ",
+              "filing press"
+            ],
+            "carried": [
+              "Ward Office 12 daybook"
+            ],
+            "elsewhere": [
+              {
+                "name": "blank closure writ",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "filing press",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "ward stamp",
+                "whereabouts": "lying in Ward Office 12 (the world's own)",
+                "here": true
+              },
+              {
+                "name": "Perrin's private index",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              },
+              {
+                "name": "copy-room apron",
+                "whereabouts": "lying in The Supply Closet (the world's own)",
+                "here": false
+              }
+            ],
+            "action": "other",
+            "item": null,
+            "inscription": null,
+            "speech": {
+              "speaker": "Halkett Rowe",
+              "nickname": "Sub-Inspector Rowe",
+              "token": "speak:dismiss",
+              "fact": "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            },
+            "acts": [
+              "Halkett Rowe picked up ward stamp in Ward Office 12 and now holds it.",
+              "Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved."
+            ]
+          },
+          "seconds": 1.8484,
+          "input_tokens": 868,
+          "output_tokens": 152,
+          "calls": 1,
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "instructions_digest": "c5f18981f77aa01f",
+          "prompt": "Story: The Unrecorded Hour (bureaucratic mystery)\n\nPremise: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\nThe player is in Ward Office 12: You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nWays out of here: The Supply Closet, The Long Hallway. There are no others.\n\nThe player is Odile Vance.\n\nOdile Vance is unhurt.\n\nThe story is asking for: Open the one door in this office nobody has audited in eleven years.\n\nAlso here: Halkett Rowe (Sub-Inspector Rowe). Nobody else is present.\n\nWhat else happened here, recorded by the game: Halkett Rowe picked up ward stamp in Ward Office 12 and now holds it. Halkett Rowe spoke up unasked and told Odile Vance to leave Ward Office 12. Nobody moved.\n\nLying here, and takeable: blank closure writ, filing press.\n\nThe player is carrying: Ward Office 12 daybook.\n\nWhat just happened: The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.\n\n\nThe player types: watch Sub-Inspector Rowe\n\nNarrate what happens.\n",
+          "missing_fields": [],
+          "cap_hits": [],
+          "error": null,
+          "ending_request": null
+        }
+      ]
+    }
+  ]
+}

@@ -267,6 +267,20 @@
 #                        a take that a later give of the same item superseded,
 #                        and for a move that a later `follow` superseded: from
 #                        then on they go where the player goes.
+#                        WHAT SOMEBODY SAID UNASKED IS IN IT TOO (a `speak:`
+#                        row, the engine's speech die), and it names a record
+#                        without moving one: `speak:ask:77` names item 77 and
+#                        `speak:warn:way:412` the room that doorway leads to.
+#                        Such a row is checked by the record it names being a
+#                        row of this story's, applied or rejected, and it is
+#                        never a token that moves a row.
+#   speech_moved_nothing what somebody asked for or demanded unasked is in
+#                        their hands only where a receipt that MOVES things put
+#                        it there -- a `take:` of theirs, or an offer of the
+#                        player's they accepted. A speech row's fact says
+#                        "Nothing changed hands", and this is the assertion
+#                        that the records agree: the engine never hands a thing
+#                        over because somebody asked for it.
 #   nothing_was_written  no room changed detail level. This is the offline
 #                        mode's own premise: with no model there is nothing to
 #                        write a room WITH, so a stub walked into stays a stub.
@@ -295,6 +309,10 @@
 # the moment anything in a walk starts writing edges -- which is precisely the
 # change that would need watching.
 class EngineSweep::Invariants
+  # WHAT SOMEBODY SAID UNASKED, as the engine writes its token: the act, and
+  # the one record it names where it names one.
+  SPOKEN = /\Aspeak:(?:greet|dismiss|warn:here|warn:way:(?<way>\d+)|warn:foe:(?<foe>\d+)|(?:ask|demand):(?<item>\d+))\z/
+
   attr_reader :story, :seed
 
   def initialize(story, seed:)
@@ -306,7 +324,7 @@ class EngineSweep::Invariants
     [ doors_unchanged, exit_cap, items_accounted, world_items_unmoved, cast_unmoved, stat_blocks_unmoved,
       hostility_unmoved, hazards_unmoved, geometry_unmoved, positions_in_bounds, room_names_unique,
       place_names_unique,
-      desires_unmoved, volitions_moved_what_they_named,
+      desires_unmoved, volitions_moved_what_they_named, speech_moved_nothing,
       quest_unmoved, nothing_was_written ].flatten.compact
   end
 
@@ -953,6 +971,10 @@ def volition_fault(game, row)
   in [ "applied", "follow" | "stop_following" ]
     state = game.npc_states.find_by(character: who)
     "#{claim} and there is no travel agreement on record" if state.nil?
+  in [ "applied" | "rejected", String ] if row.chosen.start_with?("speak:")
+    # A THING SAID NAMES WITHOUT MOVING. What it names has to be a record of
+    # this story's; that it moved nothing is `speech_moved_nothing`'s.
+    spoken_fault(claim, row)
   in [ "none" | "rejected", _ ]
     # A CHOICE THAT MOVED NOTHING IS CHECKED BY NAMING NOTHING. The fact is
     # the whole of what these rows claim, so the only way one can be wrong is
@@ -962,6 +984,50 @@ def volition_fault(game, row)
   else
     nil
   end
+end
+
+def spoken_fault(claim, row)
+  said = SPOKEN.match(row.chosen)
+  return "#{claim} and it is not a thing the engine says" if said.nil?
+
+  named = if said[:way] then story.locations.find_by(id: said[:way])
+  elsif said[:foe] then story.characters.find_by(id: said[:foe])
+  elsif said[:item] then Item.in_story(story).find_by(id: said[:item])
+  else true
+  end
+  "#{claim} and names #{row.chosen.inspect}, which is no record of this story's" unless named
+end
+
+# NOTHING CHANGED HANDS BECAUSE SOMEBODY ASKED. Over every playthrough, as
+# the receipts above are: each applied ask or demand whose thing is now in
+# the speaker's hands needs a receipt that moves things to say how it got
+# there -- a take of theirs, or an offer of the player's they accepted.
+def speech_moved_nothing
+  moved = Playthrough.where(story: story).flat_map { |game| speech_faults(game) }
+  return nil if moved.empty?
+
+  broken("speech_moved_nothing", moved.join("; "))
+end
+
+def speech_faults(game)
+  rows = game.volitions.includes(:character).order(:id).to_a
+  rows.filter_map do |row|
+    item_id = SPOKEN.match(row.chosen)&.[](:item) if row.status == "applied"
+    next if item_id.nil?
+
+    item = Item.find_by(id: item_id)
+    next unless item && item.character_id == row.character_id
+    next if moved_by_a_receipt?(rows, row.character_id, item_id)
+
+    "#{row.character.fullname}'s #{row.chosen.inspect} receipt says nothing changed hands, " \
+      "and #{item.name} is in their hands with no receipt that put it there"
+  end
+end
+
+# An item id is one game's copy, so the receipts need no game to be read in.
+def moved_by_a_receipt?(rows, character_id, item_id)
+  rows.any? { |other| other.character_id == character_id && other.status == "applied" && other.chosen == "take:#{item_id}" } ||
+    Interaction.exists?(character_id: character_id, engine_action: "accept:#{item_id}", action_status: "applied")
 end
 
   def quest_unmoved

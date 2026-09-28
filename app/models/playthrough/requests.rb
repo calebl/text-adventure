@@ -33,7 +33,7 @@ module Playthrough::Requests
 
   # One request, by the engine builder's name for it: `narration`,
   # `framing`, `handled_note`, `character`, `interaction_narration`,
-  # `classifier`, `cascade`, `volition`, `arrival` or `room`. `rows` is a
+  # `classifier`, `cascade`, `volition`, `speech_choices`, `arrival` or `room`. `rows` is a
   # `.rows` document, for a caller building several from one moment.
   def self.build(kind, rows: self.rows, **arguments)
     answered(extension.request(kind.to_s, rows, JSON.generate(arguments)))
@@ -45,6 +45,12 @@ module Playthrough::Requests
   def self.narration(playthrough, command:, fact: nil, doing: nil, handled: nil)
     build(:narration, playthrough: playthrough.id, command: command.to_s, fact: fact, doing: doing&.to_s,
                       handled: handled && { item: handled.fetch(:item).id, direction: handled.fetch(:direction).to_s })
+  end
+
+  # What `character` may say unasked in `location`, in the order the engine
+  # offers it: `[{token, fact}]`, the fact the narrator would be told.
+  def self.speech_choices(playthrough, character, location:)
+    build(:speech_choices, playthrough: playthrough.id, character: character.id, location: location.id)
   end
 
   # A line read the way a turn reads it, over the rows the connection sees:

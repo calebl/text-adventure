@@ -694,6 +694,69 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_match(/"move:#{hallway.id}" receipt says applied/, broken.to_s)
   end
 
+  # --- what somebody said unasked --------------------------------------------
+  #
+  # The engine's speech die writes these rows, and no Ruby does; they are
+  # written here by hand as the engine writes them, so the invariants are
+  # held to the rows rather than to a die.
+  def said!(game, who, chosen, status: "applied")
+    Playthrough::Volition::Record.create!(
+      playthrough: game, character: who, location: game.current_location, chosen: chosen, status: status,
+      fact: "#{who.fullname} spoke up unasked.", serves: "none", round: 1, decided_by: "die"
+    )
+  end
+
+  def grenn_asks(story)
+    room, = the_way_up_the_tower(story)
+    game = create(:playthrough, story: story, character: story.protagonist, current_location: room)
+    grenn = story.characters.find_by!(fullname: "Grenn Ollivar")
+    ticket = create(:item, :carried, playthrough: game, name: "pawn ticket")
+    [ game, grenn, ticket ]
+  end
+
+  test "what somebody asked for unasked names a record and moves nothing" do
+    seed, story = seeded_copy("the-lunar-cartographer")
+    game, grenn, ticket = grenn_asks(story)
+    said!(game, grenn, "speak:ask:#{ticket.id}")
+    said!(game, grenn, "speak:demand:#{ticket.id}", status: "rejected")
+    said!(game, grenn, "speak:greet")
+
+    assert_empty EngineSweep::Invariants.new(story, seed: seed).check
+  end
+
+  test "a thing asked for that reached the speaker's hands with no receipt is caught" do
+    seed, story = seeded_copy("the-lunar-cartographer")
+    game, grenn, ticket = grenn_asks(story)
+    said!(game, grenn, "speak:ask:#{ticket.id}")
+    ticket.update_columns(playthrough_id: game.id, character_id: grenn.id)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "speech_moved_nothing", broken.invariant
+    assert_match(/Grenn Ollivar's "speak:ask:#{ticket.id}" receipt says nothing changed hands/, broken.to_s)
+  end
+
+  test "a thing asked for and then taken is where its take put it" do
+    seed, story = seeded_copy("the-lunar-cartographer")
+    game, grenn, ticket = grenn_asks(story)
+    said!(game, grenn, "speak:ask:#{ticket.id}")
+    ticket.update_columns(character_id: grenn.id)
+    said!(game, grenn, "take:#{ticket.id}")
+
+    assert_empty EngineSweep::Invariants.new(story, seed: seed).check
+  end
+
+  test "something said about a record this story does not hold is caught" do
+    seed, story = seeded_copy("the-lunar-cartographer")
+    game, grenn, = grenn_asks(story)
+    said!(game, grenn, "speak:warn:foe:999999999", status: "rejected")
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "volitions_moved_what_they_named", broken.invariant
+    assert_match(/names "speak:warn:foe:999999999", which is no record of this story's/, broken.to_s)
+  end
+
   # `present` is the closed set `talk` resolves against, read back with no
   # model -- which is what it took to make presence sweepable at all.
   test "a present expectation reads who the records place in the room" do

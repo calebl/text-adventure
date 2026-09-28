@@ -152,9 +152,11 @@ class EngineSweep::Walk
   def play_step(step)
     mechanics = engine_for(game_of(step.player))
     realization = before_realization(mechanics.playthrough.story, step) if @loaded
+    lines = lines_before(mechanics.playthrough)
     report, counts = measure(mechanics, step)
     record_realization!(realization) if realization
-    @unmet&.concat(failures(step, report, **counts), arrival_cast_failures(mechanics.playthrough, step, report))
+    @unmet&.concat(failures(step, report, **counts), arrival_cast_failures(mechanics.playthrough, step, report),
+                   line_failures(mechanics.playthrough, step, report, lines))
     EngineSweep::Dump.new(report, **counts)
   end
 
@@ -192,11 +194,13 @@ class EngineSweep::Walk
 
   def walk(mechanics, step)
     realization = before_realization(mechanics.playthrough.story, step)
+    lines = lines_before(mechanics.playthrough)
     report, counts = measure(mechanics, step)
     record_realization!(realization) if realization
 
     observe(step, report, **counts)
-    failures(step, report, **counts) + arrival_cast_failures(mechanics.playthrough, step, report)
+    failures(step, report, **counts) + arrival_cast_failures(mechanics.playthrough, step, report) +
+      line_failures(mechanics.playthrough, step, report, lines)
   end
 
   # One typed step, played, with what it added counted around it.
@@ -313,6 +317,32 @@ class EngineSweep::Walk
       key: "arrival cast", expected: expected.map(&:fullname), actual: actual.map(&:fullname)
     )
     [ EngineSweep::Result::Failure.new(script: script, step: step, unmet: unmet, state: state.to_s) ]
+  end
+
+  # ONE ROW PER PERSON PER PLAYED LINE (`Playthrough::Volition::Record`'s
+  # header), checked after each step rather than among the invariants over the
+  # file: a volition row does not name the line it was written on, so only the
+  # step that wrote it can say which line that was. Somebody who speaks up
+  # unasked has made their one choice for the line, and a second row for them
+  # would be the engine giving them an act as well. A browser step that also
+  # finished a line accepted before it wrote two lines' rows, and one stopped
+  # part way wrote part of one, so only a step that completed exactly one
+  # line -- or a typed step, which is always one -- is asked.
+  def lines_before(game)
+    { volition: game.volitions.maximum(:id).to_i, completed: game.commands.where(status: "completed").count }
+  end
+
+  def line_failures(game, step, report, before)
+    return [] if step.browser && game.commands.where(status: "completed").count - before.fetch(:completed) != 1
+
+    twice = game.volitions.where("id > ?", before.fetch(:volition)).group(:character_id).having("COUNT(*) > 1").count.keys
+    return [] if twice.empty?
+
+    unmet = EngineSweep::Expectation::Unmet.new(
+      key: "one row per person per line", expected: "one volition each",
+      actual: "#{Character.where(id: twice).order(:id).pluck(:fullname).to_sentence} had more than one"
+    )
+    [ EngineSweep::Result::Failure.new(script: script, step: step, unmet: unmet, state: report.state.to_s) ]
   end
 
   # THE RECORDS AFTER A RE-SEED, WITH NOTHING ELSE HAVING HAPPENED.

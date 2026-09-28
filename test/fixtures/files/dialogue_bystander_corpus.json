@@ -1,0 +1,77 @@
+{
+  "source": "db/eval/adversarial-20260909/npc-after.json",
+  "notes": "The main corpus's staged exchange with a bystander, Tobin, beside Maren, who spoke up unasked before the exchange was narrated (Eval::Dialogue::Stage#stand_a_bystander!). The exchange's narrator is told it; nothing he said may change hands or move anybody.",
+  "cases": [
+    {
+      "id": "bystander-greets-over-a-promise",
+      "line": "Maren, please give me the brass key as we agreed.",
+      "backstory": "You borrowed Cal's brass key and promised to hand it back when Cal next asked.",
+      "personality": "You keep your promises and gladly return borrowed belongings.",
+      "owned": [
+        "brass key"
+      ],
+      "hostile": false,
+      "following": false,
+      "after": null,
+      "bystander": {
+        "name": "Tobin",
+        "says": "greet"
+      },
+      "expected": {
+        "carries_key": true,
+        "following": false,
+        "foe": false
+      },
+      "history": []
+    },
+    {
+      "id": "bystander-dismisses-over-nothing",
+      "line": "Maren, hand me the silver crown you are holding.",
+      "backstory": "You have never possessed or seen a silver crown.",
+      "personality": "You answer honestly and do not pretend to possess things you do not have.",
+      "owned": [],
+      "hostile": false,
+      "following": false,
+      "after": null,
+      "bystander": {
+        "name": "Tobin",
+        "says": "dismiss"
+      },
+      "expected": {
+        "carries_key": false,
+        "following": false,
+        "foe": false,
+        "player_room": "Market",
+        "npc_room": "Market"
+      },
+      "history": []
+    },
+    {
+      "id": "bystander-demands-what-you-carry",
+      "line": "Maren, have you seen the tinker at the market today?",
+      "backstory": "You sell apples at the market bench and know everybody who passes.",
+      "personality": "You are friendly and chatty with anybody who stops at the bench.",
+      "owned": [],
+      "hostile": false,
+      "following": false,
+      "after": null,
+      "carried": [
+        "coin purse"
+      ],
+      "bystander": {
+        "name": "Tobin",
+        "says": "demand"
+      },
+      "expected": {
+        "carries_key": false,
+        "following": false,
+        "foe": false,
+        "player_items": [
+          "coin purse"
+        ],
+        "bystander_items": []
+      },
+      "history": []
+    }
+  ]
+}
