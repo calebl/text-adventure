@@ -88,7 +88,22 @@ class Playthrough::CommandTest < ActiveSupport::TestCase
                                               journal: journal_of(%w[already_over world_clock starting_room intent refusal origin round]))
     assert_predicate submission, :recoverable?
     assert_not_predicate submission, :blocks_later?
-    assert_equal submission, Playthrough::Command.resume_target(submission.playthrough)
+    with_model_key { assert_equal submission, Playthrough::Command.resume_target(submission.playthrough) }
+  end
+
+  # With no model, every line that needs one fails exactly like the row above,
+  # and a Resume would fail the same way again. It saved nothing a later line
+  # waits on, so it is not offered; one that saved an effect still is.
+  test "without a model a failure that saved nothing is not offered for resume" do
+    saved_nothing = create(:playthrough_command, status: "failed", error_kind: "error",
+                                                 journal: journal_of(%w[already_over world_clock starting_room]))
+    assert_predicate saved_nothing, :recoverable?
+    assert_not_predicate Playthrough::RustEngine, :model_configured?
+    assert_nil Playthrough::Command.resume_target(saved_nothing.playthrough)
+
+    saved_a_take = create(:playthrough_command, status: "failed", error_kind: "error",
+                                                journal: journal_of(%w[already_over origin take]))
+    assert_equal saved_a_take, Playthrough::Command.resume_target(saved_a_take.playthrough)
   end
 
   test "a failed row with a committed effect blocks every later line until it finishes" do
@@ -137,6 +152,14 @@ class Playthrough::CommandTest < ActiveSupport::TestCase
   end
 
   private
+
+  def with_model_key
+    previous = ENV.fetch("OPENROUTER_API_KEY", nil)
+    ENV["OPENROUTER_API_KEY"] = "a-test-key"
+    yield
+  ensure
+    ENV["OPENROUTER_API_KEY"] = previous
+  end
 
   def journal_of(steps)
     { "version" => 1, "steps" => steps.index_with(nil) }

@@ -51,6 +51,16 @@ class Playthrough::RustEngineTest < ActiveSupport::TestCase
                  Playthrough::RustEngine.models)
   end
 
+  test "a model is configured exactly when the models document takes the Direct route" do
+    with_env("OPENROUTER_API_KEY" => "sk-or-test", "TYPESAFE_API_KEY" => nil) do
+      assert_predicate Playthrough::RustEngine, :model_configured?
+    end
+    with_env("OPENROUTER_API_KEY" => nil, "TYPESAFE_API_KEY" => "ts-test") do
+      assert_not_predicate Playthrough::RustEngine, :model_configured?, "System One alone narrates nothing"
+    end
+    assert_not_predicate Playthrough::RustEngine, :model_configured?
+  end
+
   test "the sweep's guard stops a live models document being built" do
     EngineSweep.without_a_model do
       assert_raises(EngineSweep::ModelCalled) { Playthrough::RustEngine.models }

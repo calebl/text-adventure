@@ -338,6 +338,26 @@ class NarrationJobTest < ActiveJob::TestCase
     assert_nil playthrough.reload.current_scene
   end
 
+  # AND NOTHING BESIDE THAT SENTENCE OFFERS TO FINISH IT. The line failed after
+  # the turn's bookkeeping receipts and before any effect, which makes the row
+  # recoverable -- but a Resume would stop at the same call, and the setup
+  # notice has just said a key is what is missing. Nothing was saved that a
+  # later line waits on, so the player types it again once there is a key.
+  test "a turn that stopped at its first call for want of a model offers no resume that cannot finish" do
+    playthrough = create(:playthrough, :started)
+
+    page = Nokogiri::HTML.fragment(play(playthrough, "open the ledger", BaseAgent::NoModelConfiguredError).last.to_html)
+
+    submission = playthrough.commands.sole
+    assert_equal "failed", submission.status
+    assert_predicate submission, :recoverable?, "the bookkeeping receipts make it replayable in principle"
+    assert_not_predicate submission, :blocks_later?, "and nothing of the player's was saved"
+    assert_equal Playthrough::SetupNotice::UNFINISHED, page.at_css("p.alert").text
+    assert_nil page.at_css("[data-saved-turn]")
+    assert_empty page.css("button").select { |button| button.text.match?(/resume/i) }
+    assert_match "what do you do?", page.to_html, "the input is back for the next line"
+  end
+
   # A rejected key is the other failure another model cannot fix, and it reads
   # the same -- without quoting what the provider said back.
   test "a rejected key is named as configuration rather than logged and hidden" do
