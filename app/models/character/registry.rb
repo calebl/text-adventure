@@ -591,15 +591,15 @@ class Character::Registry
   # the same rule said before the row is built so the refusal reads as a refusal
   # rather than as a validation error.
   def person_named?(name)
-    story.characters.where("LOWER(fullname) = ? OR LOWER(nickname) = ?", name.downcase, name.downcase).exists?
+    SameName.any?(story.characters, name, :fullname, :nickname)
   end
 
   def place_named?(name)
-    story.locations.where("LOWER(name) = ?", name.downcase).exists?
+    SameName.any?(story.locations, name, :name)
   end
 
   def thing_named?(name)
-    Item.in_story(story).where("LOWER(name) = ?", name.downcase).exists?
+    SameName.any?(Item.in_story(story), name, :name)
   end
 
   # The one place that says no, and it says which no. The whereabouts check is
@@ -638,7 +638,7 @@ class Character::Registry
     name = candidate.is_a?(Character) ? candidate.fullname : candidate.to_s
     return nil if name.blank?
 
-    story.characters.where("LOWER(fullname) = ? OR LOWER(nickname) = ?", name.downcase, name.downcase).first
+    SameName.first(story.characters, name, :fullname, :nickname)
   end
 
   def label(candidate)

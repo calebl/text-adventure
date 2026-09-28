@@ -131,7 +131,7 @@ module WorldSeed
     # read `story.locations` afterwards -- `EngineSweep::Invariants` does --
     # would get the loader's half-written snapshot instead of the records.
     rows = Location.where(story_id: story.id)
-    exact = rows.where("LOWER(name) = ?", name.to_s.downcase).first
+    exact = SameName.first(rows, name, :name)
     return exact if exact
 
     key = natural_key(name)

@@ -267,8 +267,8 @@ class Item::Registry
     return "it has no description" if description.blank?
     return "the room is already holding #{MAX_PER_ROOM}" if room_for_items.zero?
     return "the world is already holding #{MAX_PER_STORY}" if world_for_items.zero?
-    return "this call already named it" if created.any? { |item| item.name.casecmp?(name) }
-    return "the story already has one" if story_items.where("LOWER(name) = ?", name.downcase).exists?
+    return "this call already named it" if created.any? { |item| SameName.same?(item.name, name) }
+    return "the story already has one" if SameName.any?(story_items, name, :name)
     return "a person in this story is called that" if person_named?(name)
     return "a place in this story is called that" if place_named?(name)
 
@@ -290,10 +290,10 @@ class Item::Registry
   # predict. Checked against the whole story rather than the room, because the
   # player carries what they take into the room where the collision bites.
   def person_named?(name)
-    story.characters.where("LOWER(fullname) = ? OR LOWER(nickname) = ?", name.downcase, name.downcase).exists?
+    SameName.any?(story.characters, name, :fullname, :nickname)
   end
 
   def place_named?(name)
-    story.locations.where("LOWER(name) = ?", name.downcase).exists?
+    SameName.any?(story.locations, name, :name)
   end
 end

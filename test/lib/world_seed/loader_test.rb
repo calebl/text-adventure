@@ -46,6 +46,22 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_equal "A revised office.", story.opening_location.description
   end
 
+  # A NAME OUTSIDE ASCII FINDS ITS OWN ROW. SQLite's `LOWER()` folds ASCII
+  # only, so a lookup that compared it with a Ruby-downcased name missed a
+  # person whose name opens on "É", built a second one, and the uniqueness
+  # validation refused it -- re-seeding the world raised. See `SameName`.
+  test "loading twice finds a person whose name opens outside ASCII" do
+    accented = JSON.parse(document.to_json.gsub("Vesper Aal", "Émile Aal"))
+    WorldSeed::Loader.new(accented).load!
+
+    assert_no_difference [ "Character.count", "Scene.count" ] do
+      WorldSeed::Loader.new(accented).load!
+    end
+    story = Story.find_by(title: "A Seeded World")
+    assert_equal 1, story.characters.where(fullname: "Émile Aal").count
+    assert_includes story.scenes.flat_map(&:characters).map(&:fullname), "Émile Aal"
+  end
+
   test "matches on natural keys, not ids" do
     first = WorldSeed::Loader.new(document).load!
     # A different world in between, so a second load cannot land on the same ids.

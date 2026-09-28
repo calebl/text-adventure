@@ -908,7 +908,7 @@ class Story::Doctor
   # the record agreeing, which is the whole point of the marker.
   def characters_the_seed_placed_elsewhere
     placed = seeded_whereabouts.filter_map do |fullname, room|
-      character = story.characters.find_by("LOWER(fullname) = ?", fullname.downcase)
+      character = SameName.first(story.characters, fullname, :fullname)
       next if character.nil?
       # THE ROW AND NOT THE NAME (`#seeded_room`). A room of a laid-out place is
       # named by `Location::RoomName` when somebody walks in, so a party
@@ -927,7 +927,7 @@ class Story::Doctor
     end
 
     absent = seeded_absences.filter_map do |fullname|
-      character = story.characters.find_by("LOWER(fullname) = ?", fullname.downcase)
+      character = SameName.first(story.characters, fullname, :fullname)
       next if character.nil? || character.nowhere?
       # Already reported by `#characters_absent_but_somewhere`, which reads the
       # record rather than the file; one row, one finding.
@@ -966,7 +966,7 @@ class Story::Doctor
   # document.
   def characters_the_seed_seats_outside_the_room
     seeded_positions.filter_map do |fullname, seat|
-      character = story.characters.find_by("LOWER(fullname) = ?", fullname.downcase)
+      character = SameName.first(story.characters, fullname, :fullname)
       next if character.nil?
 
       room = seeded_room(seeded_whereabouts[fullname])

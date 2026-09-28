@@ -254,6 +254,6 @@ class Character::Generator
   def name_taken?(fullname)
     return false if fullname.blank? || story.id.nil?
 
-    Character.where(story_id: story.id).where("LOWER(fullname) = ?", fullname.downcase).exists?
+    SameName.any?(Character.where(story_id: story.id), fullname, :fullname)
   end
 end

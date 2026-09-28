@@ -238,6 +238,31 @@ class Item::RegistryTest < ActiveSupport::TestCase
     assert_empty admit(candidate("Ward Stamp"), candidate("brass key"))
   end
 
+  # ONE FOLDING RULE, and it is Ruby's `String#downcase` on both sides, which is
+  # the rule the engine's own admission applies. SQLite's `LOWER()` folds ASCII
+  # only, so a stored name that opens on a capital outside ASCII did not even
+  # match itself, and the same answer admitted twice wrote two rows of one name.
+  test "a name outside ASCII collides with itself and with its own lower case" do
+    elsewhere = create(:location, story: @story, name: "The Supply Closet")
+    create(:item, :lying, location: elsewhere, name: "Écu of the ward")
+
+    assert_empty admit(candidate("Écu of the ward"), candidate("écu of the ward"))
+  end
+
+  test "one answer naming a thing twice outside ASCII keeps the first" do
+    created = admit(candidate("Straße token"), candidate("STRASSE TOKEN"), candidate("straße token"))
+
+    assert_equal [ "Straße token", "STRASSE TOKEN" ], created.map(&:name),
+                 "the in-call check folds the way the story check does, so a sharp s is not two s's"
+  end
+
+  test "a person or a place whose name opens outside ASCII is a collision" do
+    create(:character, story: @story, fullname: "Ödön Vaile", nickname: "Åke")
+    create(:location, :stub, story: @story, name: "Église Row")
+
+    assert_empty admit(candidate("ödön vaile"), candidate("åke"), candidate("église row"))
+  end
+
   # An item and a person, or an item and an exit, answering to one word makes
   # two of the classifier's closed sets collide.
   test "refuses a name a person in this story is called" do

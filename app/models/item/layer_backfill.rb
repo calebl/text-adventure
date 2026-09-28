@@ -284,7 +284,7 @@ class Item::LayerBackfill
   # has, and `WorldSeed::Loader` refuses a file with two of one name -- so this
   # is one row or none.
   def world_row_named(name)
-    Item.in_story(story).templates.where("LOWER(name) = ?", name.to_s.downcase).order(:id).first
+    SameName.first(Item.in_story(story).templates, name, :name)
   end
 
   # WHERE THE WORLD'S OWN ROW BELONGS: the room the EARLIEST take of this row
@@ -306,7 +306,7 @@ class Item::LayerBackfill
     return nil if seed_document.nil?
 
     row = Array(seed_document["locations"]).find do |location|
-      Array(location["items"]).any? { |item| item["name"].to_s.casecmp?(name.to_s) }
+      Array(location["items"]).any? { |item| SameName.same?(item["name"], name) }
     end
     return nil if row.nil?
 

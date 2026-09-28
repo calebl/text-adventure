@@ -591,14 +591,14 @@ class Playthrough::Classifier
   end
 
   def find_exit(exits, name)
-    exits.find { |location| location.name.to_s.casecmp?(name) }
+    exits.find { |location| SameName.same?(location.name, name) }
   end
 
   # Either name resolves, because both are in the enum: a player types "talk to
   # Maren" as readily as they type the full name, and forcing the model to
   # translate one into the other is a step it can get wrong for no reason.
   def find_character(cast, name)
-    cast.find { |character| character.fullname.to_s.casecmp?(name) || character.nickname.to_s.casecmp?(name) }
+    cast.find { |character| SameName.same?(character.fullname, name) || SameName.same?(character.nickname, name) }
   end
 
   # By name, out of the list that was offered. Two items in one room with the
@@ -606,7 +606,7 @@ class Playthrough::Classifier
   # is as right an answer as there is -- and `find` on the ordered list makes
   # which one it is stable rather than whatever the database felt like.
   def find_item(items, name)
-    items.find { |item| item.name.to_s.casecmp?(name) }
+    items.find { |item| SameName.same?(item.name, name) }
   end
 
   def exit_names(exits)
