@@ -63,6 +63,9 @@ class Location < ApplicationRecord
   # line up: `playthrough_tolls.location_id` is NOT NULL -- a toll was paid
   # SOMEWHERE -- and a room's own history goes with the room.
   has_many :tolls, class_name: "Playthrough::Toll", dependent: :destroy, inverse_of: :location
+  # And every game's record of having stood here (`Playthrough::Visit`), for
+  # the same reason.
+  has_many :visits, class_name: "Playthrough::Visit", dependent: :destroy, inverse_of: :location
   has_and_belongs_to_many :connected_locations,
                           class_name: "Location",
                           join_table: "location_connections",

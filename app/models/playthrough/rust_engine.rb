@@ -150,8 +150,10 @@ module Playthrough::RustEngine
   # the engine's document, parsed; the block receives prose as it streams.
   def self.submit(playthrough, line, request_token, &block)
     document = replay_document || models
-    answer = extension.submit(database, playthrough.id, line, request_token, document.to_json, &block)
-    JSON.parse(answer).tap { |parsed| replayed!(parsed["replay"]) if parsed.key?("replay") }
+    answer = JSON.parse(extension.submit(database, playthrough.id, line, request_token, document.to_json, &block))
+    replayed!(answer["replay"]) if answer.key?("replay")
+    stood!(playthrough)
+    answer
   ensure
     # The engine wrote on another connection: nothing this one cached is true.
     ActiveRecord::Base.connection.clear_query_cache
@@ -161,9 +163,23 @@ module Playthrough::RustEngine
   # standing in for what a person answers when it is a conversation. The
   # engine sweep's typed steps; no front end plays this way.
   def self.play(playthrough, line, decision: nil)
-    JSON.parse(extension.play(database, playthrough.id, line, decision))
+    answer = JSON.parse(extension.play(database, playthrough.id, line, decision))
+    stood!(playthrough)
+    answer
   ensure
     ActiveRecord::Base.connection.clear_query_cache
+  end
+
+  # THE ROOM THE ENGINE LEFT THE PARTY IN IS A ROOM THIS GAME HAS STOOD IN.
+  # The engine snapshots a room it stands the party in and knows nothing of
+  # `Playthrough::Visit`, so the visit is taken here, after every line it is
+  # handed -- read fresh, because the engine wrote the move on a connection of
+  # its own. A line moves the party one room at most, and the room it started
+  # in was taken when the party arrived there.
+  def self.stood!(playthrough)
+    ActiveRecord::Base.connection.clear_query_cache
+    game = Playthrough.find_by(id: playthrough.id)
+    Playthrough::Visit.record!(game, game&.current_location)
   end
 
   # WHERE THE ENGINE'S MODEL CALLS GO, read off the environment exactly as the

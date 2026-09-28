@@ -57,6 +57,7 @@ class Location::OneRoomFold
     [ Playthrough::Drift, :location_id ],
     [ Playthrough::Overreach, :location_id ],
     [ Playthrough::Toll, :location_id ],
+    [ Playthrough::Visit, :location_id ],
     [ Playthrough::Volition::Record, :location_id ],
     [ LocationConnection, :location_id ],
     [ LocationConnection, :connected_location_id ]
@@ -72,6 +73,7 @@ class Location::OneRoomFold
     [ Playthrough::NpcState, :location_id ],
     [ Playthrough::Blow, :location_id ],
     [ Playthrough::Toll, :location_id ],
+    [ Playthrough::Visit, :location_id ],
     [ Playthrough::Volition::Record, :location_id ]
   ].freeze
 

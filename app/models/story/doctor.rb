@@ -194,7 +194,9 @@ class Story::Doctor
   end
 
   # WHETHER ANYBODY HAS EVER BEEN IN THIS ROOM: a scene that happened here, a
-  # party standing here, or a stamped visit. The line between world and
+  # party standing here, a stamped visit, or a game's record of having stood
+  # here (`Playthrough::Visit`, which an offline walk leaves where it writes no
+  # scene). The line between world and
   # progress, drawn where `WorldSeed::Exporter` draws it, and the one a fold of
   # two rows that are one room stops at -- `Story::Repair` reads it here rather
   # than deciding for itself, so the two cannot disagree about which of the pair
@@ -205,6 +207,7 @@ class Story::Doctor
   def stood_in?(room)
     room.last_protagonist_visit.present? ||
       room.scenes.exists? ||
+      room.visits.exists? ||
       Playthrough.where(current_location: room).exists?
   end
 
@@ -2859,14 +2862,21 @@ class Story::Doctor
     end
   end
 
-  # EVERY ROOM ONE GAME HAS STOOD IN, by id: where it is now, and where every
-  # turn in its chain happened. Memoized per playthrough because
-  # `#vitals_for_an_unmet_character` asks it once per row and a game has one
-  # answer.
+  # EVERY ROOM ONE GAME HAS STOOD IN, by id: where it is now, every room it
+  # recorded a visit to, and where every turn in its chain happened. Memoized
+  # per playthrough because `#vitals_for_an_unmet_character` asks it once per
+  # row and a game has one answer.
+  #
+  # THE VISITS ARE WHAT AN OFFLINE WALK LEAVES. A move with no model writes no
+  # `Scene`, so the chain alone missed every room `rake game:mechanics
+  # NO_MODEL=1` or a sweep stood in, and every condition row written at first
+  # contact there read as a stranger's. The chain stays for the games that
+  # walked before `Playthrough::Visit` existed; every narrated move is on it.
   def rooms_walked(playthrough)
     @rooms_walked ||= {}
     @rooms_walked[playthrough.id] ||=
-      ([ playthrough.current_location_id ] + playthrough.scene_chain.map(&:location_id)).compact.to_set
+      ([ playthrough.current_location_id ] + playthrough.visits.pluck(:location_id) +
+        playthrough.scene_chain.map(&:location_id)).compact.to_set
   end
 
   # Every row in this story, both layers, on whichever of the three legs it sits

@@ -15,6 +15,11 @@
 # failure it would produce is silent: a room whose things this game has copied
 # and whose people it has not.
 #
+# AND IT SAYS THE GAME STOOD THERE. A room snapshotted is a room this game has
+# stood in, so the same call writes the `Playthrough::Visit` -- the record
+# `Story::Doctor` reads, because a move with no model writes no `Scene` and the
+# scene chain alone does not say where an offline walk has been.
+#
 # It holds no state of its own and makes no model call. Both halves are
 # idempotent, so calling it twice on one room is the second one doing nothing.
 class Playthrough::Snapshot
@@ -27,8 +32,9 @@ class Playthrough::Snapshot
   end
 
   # A room and the people standing in it: what is lying here, what is in their
-  # hands, and how much is left of them.
+  # hands, and how much is left of them -- and that this game stood there.
   def of_the_room!(location)
+    Playthrough::Visit.record!(playthrough, location)
     { items: @items.of_the_room!(location), vitals: @vitals.of_the_room!(location) }
   end
 

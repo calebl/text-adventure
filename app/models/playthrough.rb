@@ -83,6 +83,12 @@ class Playthrough < ApplicationRecord
   # states the untold ones to the prose) and by `rake game:mechanics`.
   has_many :tolls, class_name: "Playthrough::Toll", dependent: :destroy,
                    inverse_of: :playthrough
+  # EVERY ROOM THIS GAME HAS STOOD IN, one row per room. Destroyed with the
+  # playthrough: where somebody has been is this player's progress. Written by
+  # `Playthrough::Snapshot#of_the_room!` and after every line the Rust engine
+  # plays, and read by `Story::Doctor`; see `Playthrough::Visit`.
+  has_many :visits, class_name: "Playthrough::Visit", dependent: :destroy,
+                    inverse_of: :playthrough
   # WHAT EVERYBODY ELSE IN THE ROOM DECIDED TO DO, one row per present
   # character per played line. Destroyed with the playthrough on the tolls' and
   # the vitals' reasoning: what somebody is AFTER is the world's

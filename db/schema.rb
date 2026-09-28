@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_020741) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_025950) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -460,6 +460,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_020741) do
     t.datetime "updated_at", null: false
     t.index ["playthrough_command_id", "sequence"], name: "index_playthrough_turn_events_on_command_and_sequence", unique: true
     t.index ["playthrough_command_id"], name: "index_playthrough_turn_events_on_playthrough_command_id"
+  end
+
+  create_table "playthrough_visits", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "location_id", null: false
+    t.integer "playthrough_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_id"], name: "index_playthrough_visits_on_location_id"
+    t.index ["playthrough_id", "location_id"], name: "index_playthrough_visits_on_playthrough_and_location", unique: true
+    t.index ["playthrough_id"], name: "index_playthrough_visits_on_playthrough_id"
   end
 
   create_table "playthrough_vitals", force: :cascade do |t|

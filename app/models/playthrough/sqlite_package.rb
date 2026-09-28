@@ -35,6 +35,7 @@ class Playthrough::SqlitePackage
     playthrough_overreaches
     playthrough_passages
     playthrough_tolls
+    playthrough_visits
     playthrough_vitals
     playthrough_volitions
   ].freeze
