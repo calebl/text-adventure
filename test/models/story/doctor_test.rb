@@ -502,6 +502,54 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_not_includes codes(story), :room_over_item_cap
   end
 
+  # A KIT'S ROWS ARE NOT THE CAPS' BUSINESS: a furnished study is past three
+  # things and past one desk in the world, and neither is a finding.
+  test "a room furnished from its kit is over no cap and duplicates nothing" do
+    story = healthy_story
+    [ "The Reading Room", "The Map Room" ].each do |name|
+      Item::Kit.new(create(:location, :stub, story: story, name: name, kind: "study", density: "cluttered")).furnish!
+    end
+
+    assert_empty codes(story) & %i[room_over_item_cap story_over_item_cap duplicate_items duplicate_items_in_a_room
+                                    room_over_visible_cap fixture_not_fixed thing_on_no_fixture]
+  end
+
+  test "reports two things of one name in one room when either is a kit's" do
+    story = healthy_story
+    room = story.locations.first
+    create(:item, :lying, location: room, name: "coin", kit_key: "study/loose/coin")
+    create(:item, :lying, location: room, name: "Coin")
+
+    assert_includes codes(story), :duplicate_items_in_a_room
+  end
+
+  test "reports a fixture that could move or holds a word the engine lacks" do
+    story = healthy_story
+    desk = create(:item, :fixture, location: story.locations.first)
+    desk.update_columns(bulk: "heavy")
+
+    assert_match(/has bulk "heavy"/, finding(story, :fixture_not_fixed).message)
+  end
+
+  test "reports a thing that says it lies on a fixture and does not" do
+    story = healthy_story
+    room = story.locations.first
+    lamp = create(:item, :lying, location: room, name: "lamp")
+    stamp = create(:item, :lying, location: room, name: "ward stamp")
+    stamp.update_columns(within_id: lamp.id, how: "on")
+
+    assert_match(/names "lamp", which is not a fixture/, finding(story, :thing_on_no_fixture).message)
+  end
+
+  test "reports a room showing more than one room may show" do
+    story = healthy_story
+    room = story.locations.first
+    (Item::Kit::MAX_VISIBLE_PER_ROOM + 1).times { |n| create(:item, :lying, location: room, name: "thing #{n}", kit_key: "study/loose/thing #{n}") }
+
+    assert_match(/shows #{Item::Kit::MAX_VISIBLE_PER_ROOM + 1} things in the world's own rows/,
+                 finding(story, :room_over_visible_cap).message)
+  end
+
   test "reports a world past the ontology it was meant to be bounded by" do
     story = healthy_story
     holder = story.characters.first

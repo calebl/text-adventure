@@ -41,7 +41,13 @@
 #                                        is written on every load, in both
 #                                        directions, and an absent key is
 #                                        Item::HANDY; `fragility` likewise, and
-#                                        an absent key is Item::STURDY
+#                                        an absent key is Item::STURDY. A
+#                                        FIXTURE (`holds:`) and a row a kit
+#                                        wrote (`kit_key:`) are matched in
+#                                        their own ROOM instead: a fixture
+#                                        never moves and a kit's names repeat
+#                                        from room to room by design, so every
+#                                        study may have its desk
 #   Scene      (story, is_opening)       the story's one opening arrival, which
 #                                        is the only Scene that is world rather
 #                                        than progress -- see WorldSeed::Exporter
@@ -657,10 +663,19 @@ class WorldSeed::Loader
   # in, not find it, and seed a second one. Keying on the story finds the one
   # that exists and puts it back where the file says it belongs -- the same rule
   # the connections already follow.
+  #
+  # A FIXTURE AND WHAT LIES ON IT. `holds:` makes a row a fixture -- `Item`'s
+  # header -- fixed in place and `immovable` whatever else the file says, and
+  # `within:` names the fixture in the same room a thing lies on or in, with
+  # `how` read off what that fixture holds (in a `hollow` one, on anything
+  # else). Fixtures are written first so a thing can name one. Both are written
+  # in both directions on every load, `bulk`'s rule: a row the file no longer
+  # marks goes back to being a portable thing on the floor.
   def load_items!(story, documents, **place)
-    Array(documents).each do |attributes|
+    fixtures, things = Array(documents).partition { |attributes| attributes["holds"].present? }
+    (fixtures + things).each do |attributes|
       name = attributes.fetch("name")
-      item = find_item(story, name) || Item.new(name: name)
+      item = find_item(story, name, attributes, place[:location]) || Item.new(name: name)
       note_rename("item", item, name)
       note_creation("item", name) unless item.persisted?
       # HOW HARD THE FILE SAYS THIS THING IS TO SHIFT, written in both
@@ -676,8 +691,17 @@ class WorldSeed::Loader
       # thing in a corner its author had moved it out of, with no way to undo it
       # from the file. An absent pair is UNPLACED, which is what every row in
       # every checked-in world is (`Location::Spot`).
+      fixture = attributes["holds"].present?
+      within = attributes["within"].presence && room_item(place[:location], attributes["within"])
       item.assign_attributes(
-        attributes.merge("name" => name, "bulk" => attributes["bulk"].presence || Item::HANDY,
+        attributes.except("within")
+                  .merge("name" => name,
+                         "bulk" => fixture ? Item::IMMOVABLE : attributes["bulk"].presence || Item::HANDY,
+                         "tier" => fixture ? Item::FIXTURE : Item::PORTABLE,
+                         "holds" => attributes["holds"].presence,
+                         "kit_key" => attributes["kit_key"].presence,
+                         "within" => within,
+                         "how" => within && (within.holds == "hollow" ? "in" : "on"),
                          "fragility" => attributes["fragility"].presence || Item::STURDY,
                          "use_kind" => attributes["use_kind"].presence || "ordinary",
                          "combustible" => attributes["combustible"] == true,
@@ -702,7 +726,9 @@ class WorldSeed::Loader
   #
   # `#find_renamed_item` is the last resort and it is the same statement one
   # step wider: a row the file has renamed is still that row.
-  def find_item(story, name)
+  def find_item(story, name, attributes = {}, location = nil)
+    return room_item(location, name) if location && (attributes["holds"].present? || attributes["kit_key"].present?)
+
     by_name = Item.where(name: name).templates
 
     by_name.where(character_id: story.characters.select(:id))
@@ -735,6 +761,15 @@ class WorldSeed::Loader
     key = WorldSeed.natural_key(name)
 
     Item.in_story(story).templates.detect { |item| WorldSeed.natural_key(item.name) == key }
+  end
+
+  # ONE OF THE WORLD'S OWN ROWS LYING IN THIS ROOM, by the natural key: how a
+  # fixture and a kit's row are found, and how `within:` names a fixture.
+  def room_item(location, name)
+    return nil if location.nil? || !location.persisted?
+
+    key = WorldSeed.natural_key(name)
+    location.items.templates.order(:id).detect { |item| WorldSeed.natural_key(item.name) == key }
   end
 
   # A world's own laws: which fixed Ruby operation runs on which cadence, and the
@@ -972,16 +1007,31 @@ class WorldSeed::Loader
                           "#{duplicates.map { |group| group.join(" / ") }.join("; ")}"
     end
 
-    item_names = (character_documents + location_documents).flat_map { |attributes| Array(attributes["items"]).map { |item| item.fetch("name") } }
+    in_rooms = location_documents.map { |attributes| Array(attributes["items"]) }
+    matched_in_room = ->(item) { item["holds"].present? || item["kit_key"].present? }
+    item_names = (character_documents.flat_map { |attributes| Array(attributes["items"]) } + in_rooms.flatten)
+                 .reject(&matched_in_room).map { |item| item.fetch("name") }
     duplicates = item_names.group_by { |name| WorldSeed.natural_key(name) }.select { |_, group| group.size > 1 }.values
     if duplicates.any?
       raise InvalidWorld, "#{where}: these item names are one name to a re-seed (WorldSeed.natural_key): " \
                           "#{duplicates.map { |group| group.join(" / ") }.join("; ")} -- an item is matched on " \
                           "(story, name), so two of a name are one item"
     end
+    # A FIXTURE OR A KIT'S ROW IS MATCHED IN ITS ROOM, so one of a name is all
+    # a room may hold -- and one of a name there is what the closed sets need.
+    in_rooms.each do |items|
+      duplicates = items.map { |item| item.fetch("name") }.group_by { |name| WorldSeed.natural_key(name) }
+                        .select { |_, group| group.size > 1 }.values
+      next if duplicates.none? { |group| items.any? { |item| matched_in_room.call(item) && group.include?(item.fetch("name")) } }
+
+      raise InvalidWorld, "#{where}: these item names are one name in one room (WorldSeed.natural_key): " \
+                          "#{duplicates.map { |group| group.join(" / ") }.join("; ")} -- a fixture and a kit's row " \
+                          "are matched on (room, name)"
+    end
 
     validate_inscriptions!
     validate_bulks!
+    validate_fixtures!
     validate_fragilities!
     validate_surfaces!
     validate_gravity!
@@ -1720,6 +1770,53 @@ class WorldSeed::Loader
 
         raise InvalidWorld, "#{where}: item #{item.fetch("name").inspect} has `bulk: #{bulk.inspect}`; " \
                             "there is: #{Item::BULK.keys.join(", ")}"
+      end
+    end
+  end
+
+  # A FIXTURE IS FIXED AND A THING LIES ON ONE THAT IS HERE. `holds:` is one of
+  # `Item::HOLDS`, on an item lying in a room, and a fixture may carry no bulk
+  # but `immovable`, no position of its own beyond the room's and no `within:`.
+  # `within:` names a fixture in the same room that holds things, and a thing
+  # lying on one carries no position: its place in the room is the fixture's.
+  # `Item`'s own validations say the same of the rows; this says it of the file,
+  # before anything is written.
+  def validate_fixtures!
+    character_documents.each do |owner|
+      Array(owner["items"]).each do |item|
+        next if item["holds"].blank? && item["within"].blank?
+
+        raise InvalidWorld, "#{where}: item #{item.fetch("name").inspect} is in #{owner.fetch("fullname").inspect}'s " \
+                            "hands and carries `holds:` or `within:`; a fixture stands in a room, and so does what lies on one"
+      end
+    end
+
+    location_documents.each do |room|
+      items = Array(room["items"])
+      fixtures = items.select { |item| item["holds"].present? }.index_by { |item| WorldSeed.natural_key(item.fetch("name")) }
+      items.each do |item|
+        name = item.fetch("name").inspect
+        if item["holds"].present?
+          raise InvalidWorld, "#{where}: item #{name} has `holds: #{item["holds"].inspect}`; there is: #{Item::HOLDS.join(", ")}" unless Item::HOLDS.include?(item["holds"])
+          if item["bulk"].present? && item["bulk"] != Item::IMMOVABLE
+            raise InvalidWorld, "#{where}: item #{name} is a fixture (`holds:`) with `bulk: #{item["bulk"]}`; a fixture is #{Item::IMMOVABLE}"
+          end
+          raise InvalidWorld, "#{where}: item #{name} is a fixture (`holds:`) and lies `within:` another; a fixture stands on the floor" if item["within"].present?
+        end
+        next if item["within"].blank?
+
+        fixture = fixtures[WorldSeed.natural_key(item["within"])]
+        if fixture.nil?
+          raise InvalidWorld, "#{where}: item #{name} lies `within: #{item["within"].inspect}`, which is no fixture " \
+                              "(`holds:`) in #{room.fetch("name").inspect}"
+        end
+        if fixture["holds"] == "nothing"
+          raise InvalidWorld, "#{where}: item #{name} lies within #{item["within"].inspect}, which holds nothing"
+        end
+        next if Location::Spot.shape(item) == :none
+
+        raise InvalidWorld, "#{where}: item #{name} lies within #{item["within"].inspect} and carries " \
+                            "#{Location::Spot::COLUMNS.join(", ")}; its place in the room is the fixture's"
       end
     end
   end

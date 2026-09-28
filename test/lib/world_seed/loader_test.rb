@@ -360,6 +360,62 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     end
   end
 
+  # --- what stands in a room, and what lies on it -------------------------
+
+  def furnished(world = document)
+    world["locations"].find { |room| room["name"] == "The Office" }["items"] = [
+      { "name" => "desk", "description" => "A clerk's desk.", "properties" => "{}", "holds" => "closed" },
+      { "name" => "ward stamp", "description" => "A brass stamp.", "properties" => "{}", "within" => "desk" }
+    ]
+    world["locations"].find { |room| room["name"] == "The Closet" }["items"] <<
+      { "name" => "Desk", "description" => "The closet's own desk.", "properties" => "{}", "holds" => "top" }
+    world
+  end
+
+  test "loads a fixture and what lies on it, and a fixture in each of two rooms under one name" do
+    story = WorldSeed::Loader.new(furnished).load!
+    office = story.locations.find_by(name: "The Office")
+    desk = office.items.find_by(name: "desk")
+    stamp = office.items.find_by(name: "ward stamp")
+
+    assert_equal [ Item::FIXTURE, "closed", Item::IMMOVABLE ], [ desk.tier, desk.holds, desk.bulk ]
+    assert_equal [ desk, "on" ], [ stamp.within, stamp.how ]
+    assert_equal "top", story.locations.find_by(name: "The Closet").items.find_by(name: "Desk").holds
+
+    WorldSeed::Loader.new(furnished).load!
+    assert_equal 2, Item.in_story(story).templates.where(tier: Item::FIXTURE).count, "a re-seed finds each desk in its room"
+
+    world = furnished
+    world["locations"].find { |room| room["name"] == "The Office" }["items"].last.delete("within")
+    WorldSeed::Loader.new(world).load!
+    assert_equal [ nil, nil ], [ stamp.reload.within_id, stamp.how ], "a file that stops laying it on the desk puts it on the floor"
+  end
+
+  test "rejects a fixture that is not fixed, and a thing on a fixture that is not here" do
+    [
+      [ ->(items) { items.first["holds"] = "drawers" }, /`holds: "drawers"`; there is: nothing, top, hollow, closed/ ],
+      [ ->(items) { items.first["bulk"] = "heavy" }, /is a fixture \(`holds:`\) with `bulk: heavy`/ ],
+      [ ->(items) { items.last["within"] = "bookcase" }, /lies `within: "bookcase"`, which is no fixture/ ],
+      [ ->(items) { items.first["holds"] = "nothing" }, /lies within "desk", which holds nothing/ ],
+      [ ->(items) { items.last.merge!("x" => 1, "y" => 1) }, /its place in the room is the fixture's/ ]
+    ].each do |change, message|
+      world = furnished
+      change.call(world["locations"].find { |room| room["name"] == "The Office" }["items"])
+
+      error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+      assert_match message, error.message
+    end
+  end
+
+  test "rejects two things of one name in one room when either is a fixture" do
+    world = furnished
+    world["locations"].find { |room| room["name"] == "The Office" }["items"] <<
+      { "name" => "Desk", "description" => "A second desk.", "properties" => "{}" }
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+    assert_match(/one name in one room/, error.message)
+  end
+
   test "rejects a danger the engine has no table for" do
     world = document
     world["locations"].first["danger"] = "a bit worrying"

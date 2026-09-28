@@ -46,7 +46,7 @@ One file is one universe and one story. Keys are written in this order:
 | `story`         | title, genre, `start_time`, preface, summary                            |
 | `opening_scene` | the narrated moment the story starts in — see below                     |
 | `characters`    | one entry each, `race` by name, optional `location` (or `absent`) + a position in it (`x`, `y`), optional `hostile`, optional `stats`, optional `conscious_desire` / `unconscious_desire` / `recognized_need` / `unrecognized_need` / `desire_pursuit` / `need_pursuit`, and `items` |
-| `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; optional `population`; optional `kind` + `density`; optional `hazard` + `hazard_die`; optional `parent` + a box (`x`, `y`, `z`, `width`, `depth`); `items`, each with an optional position (`x`, `y`) |
+| `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; optional `population`; optional `kind` + `density`; optional `hazard` + `hazard_die`; optional `parent` + a box (`x`, `y`, `z`, `width`, `depth`); `items`, each with an optional position (`x`, `y`), and optionally a fixture (`holds`) or lying on one (`within`) |
 | `connections`   | one entry per edge, as an unordered `between: [a, b]` pair; optional `barrier` (`key_template` for `keyed`); optional `hazard` + `hazard_die` + `hazard_from` |
 | `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
 
@@ -346,6 +346,42 @@ game finds it whole. Only a game copy the player put down or threw ever
 breaks. Both keys are exported only when they differ from what an absent key
 loads as, and both are written in both directions on every load, so a file that
 stops naming one takes it off.
+
+#### `holds` and `within`: what stands in a room, and what lies on it
+
+A desk, a hearth, a counter, an old tree: **a fixture** is an item that stands
+in its room fixed in place. `holds` makes an item one, and `within` lays a
+thing on or in a fixture of the same room:
+
+```yaml
+  items:
+  - name: desk
+    description: A clerk's desk with two shut drawers.
+    properties: '{}'
+    holds: closed
+  - name: ward stamp
+    description: A brass stamp on a wooden handle.
+    properties: '{}'
+    within: desk
+```
+
+| key | values | absent means |
+| --- | --- | --- |
+| `items[].holds` | `top` (things lie on it), `hollow` (things lie in it, in plain view), `closed` (a shut inside, and a top), `nothing` | a portable thing, not a fixture |
+| `items[].within` | the name of a fixture (`holds:`) in the same room, holding things | lying on the floor |
+
+- **A fixture is `immovable`** whatever `bulk` says, and the loader refuses any
+  other bulk on one; a take of it is refused as a filing press's is. It stands
+  only in a room, and never lies within another.
+- **A thing within a fixture lies `on` it, or `in` a `hollow` one**, carries no
+  position of its own (its place is the fixture's), and is still lying in the
+  room: it is takeable, and a take lifts it off the fixture.
+- **A fixture is matched on its room and its name, not the story's**, so every
+  room may have its own desk, and so is a row a kit wrote, which an exported
+  generated world carries as `kit_key`. Two items of one name in one room are
+  refused when either is one of them.
+- All three are exported only when set, and written in both directions on every
+  load, so a file that stops naming one puts the thing back on the floor.
 
 #### `readable` and `inscription`: what is written on a thing
 
@@ -684,9 +720,12 @@ locations:
   `Location::Kind::DENSITIES`, in the engine's `data/location/kind.yml`). A model
   picks both for a place it names as a way out, and a room of a building is
   dealt its `kind` from what sort of building it is.
-- **Nothing reads either yet.** They are kept on the room so the engine can
-  furnish rooms from them later; a file that writes them today plays exactly as
-  one that does not.
+- **They furnish a room the engine writes, and nothing else.** When a stub is
+  realized, the engine rolls what stands in it and what lies about in it from
+  its `kind` and `density` (`Item::Kit`, the engine's `data/item/kits.yml`)
+  and tells the room writer before it describes the room. A room the file
+  writes itself (`detail_level: realized`) is never furnished: what stands in
+  it is what the file says (fixtures, below).
 - **An absent key means nobody picked a word**, and nothing is rolled in its
   place. Like `population`, both are omitted on export when blank and
   re-asserted in both directions on load, and the loader refuses a word the list
