@@ -65,7 +65,8 @@ class ProtocolV1Test < ActionDispatch::IntegrationTest
 
   test "the spec's closed lists are the engine's" do
     schemas = ProtocolV1.document.dig("components", "schemas")
-    assert_equal Playthrough::Availability::VERBS.map(&:to_s), schemas.dig("Verb", "properties", "name", "enum")
+    verbs = Playthrough::Availability.new(create(:playthrough)).verbs.map { |verb| verb.name.to_s }
+    assert_equal verbs, schemas.dig("Verb", "properties", "name", "enum")
     assert_equal Playthrough::Refusal::KINDS.map(&:to_s),
                  schemas.dig("FinishedEvent", "properties", "refusal", "oneOf", 1, "properties", "kind", "enum")
     assert_equal Protocol::V1::OUTCOMES.sort, schemas.dig("FinishedEvent", "properties", "outcome", "properties", "kind", "enum").sort

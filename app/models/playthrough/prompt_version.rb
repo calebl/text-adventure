@@ -16,16 +16,16 @@
 # `Scene::Generator#system_prompt` for an arrival), read back off `messages`
 # rather than recomputed from a constant, so a digest describes what was sent on
 # the day rather than what the file says now -- AND, FOR A NARRATED TURN, THE
-# PER-TURN SCAFFOLD AROUND THE FACTS: `Scene::Narrator#prompt_for`'s framing of
-# a `fact:`, its `DOING` line, and `Playthrough::Turn#taken_fact` and its
-# siblings.
+# PER-TURN SCAFFOLD AROUND THE FACTS: the narration frame around a `fact:`, its
+# `DOING` line, and the take, drop, read and throw fact sentences -- the
+# engine's, since the engine plays and tells every turn.
 #
 # THE SCAFFOLD HALF IS RENDERED, NOT READ BACK, and that is the one seam in
 # this class worth understanding. Those sentences arrive interleaved with the
 # facts, so no reader of one stored user message can tell them apart -- which is
 # why they went uncovered, and why the answer is not to read them back at all.
-# They are CODE, and `Playthrough::PromptVersion::Scaffold` renders every branch
-# of them against fixed placeholders and hands the text here. So the instruction
+# They are CODE, and the engine renders every branch of them against fixed
+# placeholders; `Playthrough::PromptVersion::Scaffold` hands the text here. So the instruction
 # half says what was sent on the day and the scaffold half says what the code
 # says NOW. Read `#for_chat` for what that means for a verdict.
 #

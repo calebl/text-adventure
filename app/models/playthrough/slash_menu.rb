@@ -8,11 +8,13 @@
 # commands"*, it is the whole surface of the offline path: what the box completes
 # to is exactly what the grammar reads.
 #
-# IT INVENTS NOTHING. Core verbs come from `Playthrough::Grammar::RESOLVING`,
-# and physical verbs from the current `Playthrough::PhysicalAction` choices.
-# Their names and compound arguments are the same closed sets the classifier
-# is offered and the grammar resolves. The menu cannot invent an item, tool,
-# recipient or doorway that either reader would be unable to bind.
+# IT INVENTS NOTHING, AND THE ENGINE BUILDS IT. The Rust engine reads every
+# typed line, so it is the one that says what the box completes to: its
+# resolving words, each physical attempt's own word, and after each the names
+# the same closed sets hold that the classifier is offered and the grammar
+# resolves (`Playthrough::RustEngine.glance`'s `slash_menu`). The menu cannot
+# invent an item, tool, recipient or doorway that either reader would be unable
+# to bind, and this holds the engine's answer without a word of its own.
 #
 # AND SINCE THE CAPTAIN'S RULING OF 2026-09-05 -- *"I think we should only auto
 # accept the slash commands"* -- THIS MENU IS THE WHOLE OF THE OFFLINE PATH'S
@@ -33,70 +35,20 @@
 # `check`): those are `rake game:mechanics`'s instruments and the browser has no
 # engine view.
 class Playthrough::SlashMenu
-  # Compound physical attempts have one completion containing both names. The
-  # app built that pair; the browser does not infer tools or recipients.
-  PHYSICAL_HINTS = {
-    "consume" => "eat or drink something you carry",
-    "offer" => "offer something; its recipient may refuse",
-    "burn" => "burn a combustible thing with a firestarter",
-    "unlock" => "open a locked passage with its key",
-    "pick" => "try a lock with lockpicks",
-    "pry" => "try a jammed passage with a lever",
-    "force" => "try to force a jammed passage"
-  }.freeze
-  # ONE LINE ABOUT EACH VERB, for the menu row. Short enough to sit beside the
-  # word; the closed set underneath it is the real explanation.
-  HINTS = {
-    "go" => "a way out of here",
-    "talk" => "somebody standing here",
-    "take" => "something lying here",
-    "drop" => "something you are carrying",
-    "inspect" => "something here or in your hands",
-    # ANYBODY STANDING HERE, and not a narrower list of who may be hit: the
-    # captain's sixth ruling of 2026-09-05, *"anyone can be attacked"*. The box
-    # offers the same names `talk` offers, because the closed set is the same
-    # one (`Playthrough::Classifier#offered_for`).
-    #
-    # AND THE HINT SAYS IT IS A BLOW AND NOT A DOOR INTO A FIGHT. The captain
-    # picked `/attack Grenn Ollivar` off this menu on 2026-09-05 expecting it to
-    # ENTER a battle, and it was round 1: his blow landed and Grenn answered in
-    # the same turn. His ruling was to keep attack as a blow, so this line is
-    # where the expectation is set -- *now* and *this turn*, in the words of the
-    # menu, before the line is ever sent.
-    "attack" => "strike somebody standing here -- your first blow lands now, and they answer"
-  }.freeze
-
   attr_reader :playthrough
 
-  def initialize(playthrough, classifier: nil)
+  def initialize(playthrough, document = Playthrough::RustEngine.glance(playthrough))
     @playthrough = playthrough
-    @classifier = classifier
+    @menu = document.fetch("slash_menu")
   end
-
-  def classifier = @classifier ||= Playthrough::Classifier.new(playthrough)
 
   # The whole menu, ready to be a data attribute. Keyed by the WORD the player
   # types rather than by the action it resolves to, because the word is what the
   # box completes and what the grammar reads back.
   def to_h
-    physical = classifier.physical_actions.group_by(&:kind)
-    {
-      verbs: Playthrough::Grammar::RESOLVING.keys.map { |word| { word: word, hint: HINTS[word] } } +
-        physical.keys.map { |word| { word: word, hint: PHYSICAL_HINTS.fetch(word) } },
-      targets: Playthrough::Grammar::RESOLVING.to_h { |word, action| [ word, names_for(action) ] }.merge(
-        physical.transform_values { |choices| choices.map(&:argument).uniq })
-    }
+    { verbs: @menu["verbs"].map { |verb| { word: verb["word"], hint: verb["hint"] } },
+      targets: @menu["targets"] }
   end
 
   def to_json(*args) = to_h.to_json(*args)
-
-  private
-
-  # As the player would type them, out of the one place that names a record --
-  # `fullname` for a person, `name` for a place or a thing. Duplicates are
-  # dropped: two things of one name in one room are one thing to somebody typing
-  # the name, which is exactly what both resolvers already do with them.
-  def names_for(action)
-    classifier.offered_for(action).map { |record| Playthrough::Classifier.label_for(record) }.compact_blank.uniq
-  end
 end

@@ -261,9 +261,9 @@ class Playthrough::Session
   end
 
   # WHAT THE SIDE PANELS SHOW NOW, and which verbs are open from here: a fresh
-  # read of the records every call, so a front end asks again after a turn.
-  # Reads only; see `Playthrough::Glance`.
-  def glance = Playthrough::Glance.new(playthrough.reload)
+  # read of the records every call, by the engine that plays the turns, so a
+  # front end asks again after a turn. Reads only; see `Playthrough::Glance`.
+  def glance = Playthrough::Glance.new(playthrough)
 
   private
 

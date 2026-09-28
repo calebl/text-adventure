@@ -17,9 +17,10 @@
 # runs any more but the Ruby turn loop, which no player plays. Their files
 # are the engine's, blessed there as a reviewed diff and vendored here byte
 # for byte at the pinned commit (`EngineSweep::Vendored`), so this module
-# neither writes nor regenerates them; their builders stay, so the Ruby
-# reference loop can still be asked what it would have answered. A portion
-# joins the list only once nothing but that loop runs its Ruby code:
+# neither writes nor regenerates them; a builder stays where the Ruby
+# reference loop still runs its rule, so that loop can still be asked what it
+# would have answered. A portion joins the list only once nothing but that
+# loop runs its Ruby code:
 # `world_mechanic` is not on it, because the debug view reads a mechanic's
 # boundaries (`Playthrough::Debug`).
 #
@@ -70,9 +71,7 @@ module EngineVectors
     "world_mechanic" => "EngineVectors::Boundaries",
     "deadline" => "EngineVectors::Deadline",
     "cast" => "EngineVectors::Cast",
-    "grammar" => "EngineVectors::Grammar",
     "grammar_corpus" => "EngineVectors::GrammarCorpus",
-    "slash_menu" => "EngineVectors::SlashMenu",
     "classifier_intent" => "EngineVectors::ClassifierIntent",
     "cascade" => "EngineVectors::Cascade",
     "refusal" => "EngineVectors::Refusal",
@@ -88,7 +87,10 @@ module EngineVectors
 
   # The portions whose files are the engine's (its `vectors/ENGINE_OWNED`).
   # `physics` never had a Ruby builder: falls were written in the engine.
-  ENGINE_OWNED = %w[shuffle_connections physics].freeze
+  # `grammar` and `slash_menu` have none any more: the play box's menu and the
+  # grammar's slash words and use lines are read off the engine now
+  # (`Playthrough::RustEngine.glance`).
+  ENGINE_OWNED = %w[shuffle_connections physics grammar grammar_corpus slash_menu classifier_intent refusal].freeze
 
   # EVERY PORTION'S FILE CONTENTS that this module writes, keyed by file
   # name: all but the engine's own. Needs a database with the current schema
