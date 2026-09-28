@@ -465,7 +465,7 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 [[package]]
 name = "renderedstep-engine"
 version = "0.1.0"
-source = "git+https://github.com/renderedstep/engine?rev=c0038e1fc0d23a56d34088a1368d6d5549f9643b#c0038e1fc0d23a56d34088a1368d6d5549f9643b"
+source = "git+https://github.com/renderedstep/engine?rev=c53e82431259e8e84dda523cf9acb0cb09f87e4d#c53e82431259e8e84dda523cf9acb0cb09f87e4d"
 dependencies = [
  "regex",
  "rusqlite",

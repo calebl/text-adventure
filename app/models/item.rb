@@ -131,7 +131,19 @@ class Item < ApplicationRecord
   # A spent copy stays linked to its template. Deleting it would let Snapshot
   # manufacture a fresh copy on the next visit. Only a playthrough instance may
   # leave the intact state; templates always describe the world's initial item.
-  DISPOSITIONS = %w[intact consumed burned].freeze
+  # `broken` is written by the Rust engine alone, when a fragile thing comes
+  # down on a floor and its break die comes up (its `physics` module): the
+  # broken copy is in no place, exactly as a consumed one is.
+  DISPOSITIONS = %w[intact consumed burned broken].freeze
+
+  # WHETHER A THING BREAKS WHEN IT COMES DOWN ON A FLOOR, as the Rust engine
+  # rolls it: the rows of `fragility` in its `data/physics.yml`, each a share of
+  # one die, added to by how the thing came down (dropped, thrown, or thrown
+  # through a doorway that is a fall) and by the floor it landed on
+  # (`Location::SURFACES`). `sturdy` throws no die at all, and it is every row
+  # already written, so the column is inert until a world names another.
+  STURDY = "sturdy"
+  FRAGILITIES = [ STURDY, "fragile", "brittle" ].freeze
 
   # HOW MANY CHARACTERS A THING CAN HAVE WRITTEN ON IT. What a player reads off
   # an object in one turn -- a note, a docket line, a sign, a page of an index --
@@ -207,6 +219,7 @@ class Item < ApplicationRecord
   # already carries (`item_with_an_unknown_bulk`, clamped back to `HANDY`)
   # rather than this guessing which of the four was meant.
   validates :bulk, presence: true, inclusion: { in: BULK.keys }
+  validates :fragility, presence: true, inclusion: { in: FRAGILITIES }
   validates :use_kind, inclusion: { in: USE_KINDS }
   validates :disposition, inclusion: { in: DISPOSITIONS }
   validate :only_a_game_can_spend_an_item
@@ -341,6 +354,7 @@ class Item < ApplicationRecord
   # and the safe reading of it is that the thing does not move. `rake
   # game:doctor` names the row.
   def intact? = disposition == "intact"
+  def broken? = disposition == "broken"
   def consumable? = CONSUMABLES.include?(use_kind)
   def healing_points = use_kind == "healing" ? HEALING_POINTS : 0
 

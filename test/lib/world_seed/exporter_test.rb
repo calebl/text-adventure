@@ -288,6 +288,28 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_equal "dangerous", locations.last["danger"]
   end
 
+  # WHAT BREAKS AND WHAT IT LANDS ON, quiet about a sturdy thing and a floor
+  # that adds nothing, and back again whole.
+  test "exports a thing's fragility and a room's surface, and a world with them round-trips" do
+    create(:character, :protagonist, story: @story, fullname: "Isbet Marrow")
+    create(:item, character: nil, location: @opening, name: "A Clay Jar", fragility: "brittle")
+    create(:item, character: nil, location: @opening, name: "A Pewter Mug")
+    @opening.update!(surface: "hard")
+
+    document = WorldSeed::Exporter.new(@story).document
+    opening = document["locations"].first
+    assert_equal "hard", opening["surface"]
+    assert_not document["locations"].last.key?("surface"), "a floor that adds nothing should not say so"
+    items = opening["items"].index_by { |item| item["name"] }
+    assert_equal "brittle", items["A Clay Jar"]["fragility"]
+    assert_not items["A Pewter Mug"].key?("fragility"), "a sturdy thing should not have to say so"
+
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load!
+    assert_equal "hard", reloaded.locations.find_by(name: "The Opening Room").surface
+    assert_equal "brittle", Item.in_story(reloaded).templates.find_by(name: "A Clay Jar").fragility
+    assert_equal Item::STURDY, Item.in_story(reloaded).templates.find_by(name: "A Pewter Mug").fragility
+  end
+
   # AND HOW POPULATED IT IS, WHEN SOMEBODY PICKED A WORD. Quiet about a room
   # nobody picked for, which is not `danger`'s omission one test up: there the
   # absent key means the column's default, here it means *nobody picked*, and

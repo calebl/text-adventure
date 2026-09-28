@@ -1,0 +1,123 @@
+# A THING PUT DOWN MAY BREAK, AND WHETHER IT CAN IS THE THING AND THE FLOOR.
+#
+# The player comes in off the lane with one thing of each fragility and puts
+# them down one at a time: a sturdy pewter mug and two brittle things on the
+# workshop's flagstones (`surface: hard`), and a fragile glass float on the
+# showroom's rush matting (`surface: soft`). A thing that comes down on a
+# floor throws one d6 against a share of it: its fragility's base, plus what
+# the way it came down adds (nothing, for a drop), plus what the floor adds.
+# It breaks when the die comes up at or under the share, and then it is in no
+# place at all: gone from the floor and from every closed set, as a consumed
+# thing is.
+#
+# WHY IT ASSERTS WHAT IT ASSERTS: the golden holds what each die came up on
+# the pinned ids, and the script asserts only what is true whatever it came
+# up. The sturdy mug throws no die at all, so it is always lying there
+# afterwards. The fragile float on the matting has a share of 2 - 2 = 0, so it
+# can never break and it is always lying there too. A brittle thing on the
+# flagstones has a share of 4 + 1 = 5 of 6, so it may break or not, and what
+# is certain is that the die was thrown and it is no longer in the player's
+# hands. On this walk's ids both brittle things break, so the last steps show
+# a broken jar cannot be taken up again and does not come back when the
+# player leaves the room and returns: the copy stays as a broken row, so the
+# world's jar is never copied into this game a second time.
+story: The Pottery on Mill Lane
+why: a thing put down may break on the floor it lands on, a sturdy one never does, and one that broke is gone
+steps:
+- id: in-from-the-lane
+  type: go to the workshop
+  why: into the workshop, whose flagstones are a hard floor
+  expect:
+    changed: true
+    location: The Workshop (realized)
+    storey: 0
+
+- id: in-the-workshop
+  type: look
+  why: one thing of each fragility in her hands, and nothing on the floor
+  expect:
+    location: The Workshop (realized)
+    carrying: [clay jar, glass float, pewter mug, stoneware crock]
+    here: []
+    changed: false
+    refused: false
+
+- id: a-sturdy-mug-on-the-flagstones
+  type: drop the pewter mug
+  why: a sturdy thing throws no die, so it is lying on the flagstones whatever the floor
+  expect:
+    changed: true
+    change: now lying in The Workshop
+    here: [pewter mug]
+    carrying: [clay jar, glass float, stoneware crock]
+
+- id: into-the-showroom
+  type: go to the showroom
+  why: the showroom's rush matting is a soft floor, and the world's own glazed bowl is lying on it
+  expect:
+    changed: true
+    location: The Showroom (realized)
+    here: [glazed bowl]
+
+- id: a-fragile-float-on-the-matting
+  type: drop the glass float
+  why: a fragile thing dropped on a soft floor has a share of nothing, so the die is thrown and it always holds
+  expect:
+    changed: true
+    change: now lying in The Showroom
+    note:
+    - 'break: glass float -- fragile, dropped on a soft floor'
+    - HELD
+    here: [glass float, glazed bowl]
+    carrying: [clay jar, stoneware crock]
+
+- id: back-into-the-workshop
+  type: go to the workshop
+  why: back to the flagstones, where the mug is still lying
+  expect:
+    changed: true
+    location: The Workshop (realized)
+    here: [pewter mug]
+
+- id: a-brittle-jar-on-the-flagstones
+  type: drop the clay jar
+  why: a brittle thing dropped on a hard floor breaks five times in six, and the die is thrown either way
+  expect:
+    changed: true
+    note: 'break: clay jar -- brittle, dropped on a hard floor'
+    carrying: [stoneware crock]
+
+- id: a-brittle-crock-on-the-flagstones
+  type: drop the stoneware crock
+  why: the same share for a heavier brittle thing, because bulk is not what breaks it
+  expect:
+    changed: true
+    note: 'break: stoneware crock -- brittle, dropped on a hard floor'
+    carrying: []
+
+- id: what-is-lying-here
+  type: look
+  why: what is on the flagstones now, which the golden holds
+  expect:
+    location: The Workshop (realized)
+    changed: false
+
+- id: the-jar-is-not-there-to-take
+  type: take the clay jar
+  why: a broken thing is in no closed set, so there is nothing called that to take
+  expect:
+    location: The Workshop (realized)
+
+- id: out-to-the-yard
+  type: go to the kiln yard
+  why: leaving the room
+  expect:
+    changed: true
+    location: The Kiln Yard (realized)
+
+- id: and-back-again
+  type: go to the workshop
+  why: and coming back, which copies nothing that this game already has a copy of, broken or not
+  expect:
+    changed: true
+    location: The Workshop (realized)

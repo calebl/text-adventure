@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_031026) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_035434) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -117,6 +117,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_031026) do
     t.string "use_kind", default: "ordinary", null: false
     t.integer "x"
     t.integer "y"
+    t.string "fragility", default: "sturdy", null: false
     t.index ["character_id"], name: "index_items_on_character_id"
     t.index ["location_id", "character_id"], name: "index_items_on_location_id_and_character_id"
     t.index ["location_id"], name: "index_items_on_location_id"
@@ -235,6 +236,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_031026) do
     t.integer "x"
     t.integer "y"
     t.integer "z"
+    t.string "surface"
     t.index "story_id, lower(name)", name: "index_locations_on_story_id_and_lower_name", unique: true
     t.index ["parent_location_id"], name: "index_locations_on_parent_location_id"
     t.index ["story_id", "detail_level"], name: "index_locations_on_story_id_and_detail_level"

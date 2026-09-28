@@ -1,0 +1,89 @@
+# A THING THROWN MAY BREAK WHERE IT LANDS, AND ONE THROWN OUT OF A WINDOW FALLS.
+#
+# The player climbs the stair to the drying loft and throws things out of it:
+# two through the window over the kiln yard, and one down the stair into the
+# workshop. Then, back in the workshop, she throws a brittle crock through the
+# door into the showroom. A throw is a lift first (a strength check less the
+# thing's bulk), and a thing that leaves her hands comes down on the floor of
+# the room it was thrown into, where it throws the break die as a dropped
+# thing does. How it came down adds to the share: a throw adds 1, and a throw
+# through the window adds 2, because the window is a doorway whose hazard is
+# `fall` in a world with a gravity (`universe.gravity: ordinary`), so a thing
+# thrown through it fell a storey. The stair is not a fall, so a thing thrown
+# down it was only thrown.
+#
+# WHY IT ASSERTS WHAT IT ASSERTS: the golden holds every die on the pinned
+# ids, and the script asserts only what is true whatever they came up. Every
+# throw writes its lift to the note, and a thing that left her hands is not in
+# them afterwards. The sturdy mug throws no break die, so once it went through
+# the window it is lying in the yard. The brittle jar thrown through the window
+# has a share of 4 + 2 + 1, held to the die's 6, so if it leaves her hands it
+# always breaks, and it is never lying in the yard either way. On this walk's
+# ids the glass float's lift fails, so nothing is thrown and no break die is
+# either; the crock thrown onto the showroom's matting (4 + 1 - 2 = 3 of 6)
+# breaks.
+story: The Pottery on Mill Lane
+why: a thing thrown may break where it lands, and one thrown out of the loft window falls
+steps:
+- id: in-from-the-lane
+  type: go to the workshop
+  why: into the workshop, with one thing of each fragility in her hands
+  expect:
+    changed: true
+    location: The Workshop (realized)
+    carrying: [clay jar, glass float, pewter mug, stoneware crock]
+
+- id: up-the-stair
+  type: go to the drying loft
+  why: up to the loft, whose window is over the kiln yard
+  expect:
+    changed: true
+    location: The Drying Loft (realized)
+    storey: 1
+    hazards: 0
+
+- id: the-mug-out-of-the-window
+  type: throw the pewter mug at the kiln yard
+  why: a sturdy thing thrown out of the window throws no break die
+  expect:
+    refused: false
+    note: 'threw: pewter mug at The Kiln Yard'
+    here: []
+
+- id: the-jar-out-of-the-window
+  type: throw the clay jar at the kiln yard
+  why: a brittle thing that falls onto the cobbles breaks every time it leaves her hands
+  expect:
+    refused: false
+    note: 'threw: clay jar at The Kiln Yard'
+    here: []
+
+- id: the-float-down-the-stair
+  type: throw the glass float at the workshop
+  why: the stair is not a fall, so a thing thrown down it lands as a thing thrown
+  expect:
+    refused: false
+    note: 'threw: glass float at The Workshop'
+    here: []
+
+- id: down-the-stair
+  type: go to the workshop
+  why: back down, by the stair and not the window, so nothing is taken off her
+  expect:
+    changed: true
+    location: The Workshop (realized)
+    hazards: 0
+
+- id: the-crock-into-the-showroom
+  type: throw the stoneware crock at the showroom
+  why: a brittle thing thrown onto a soft floor breaks three times in six
+  expect:
+    refused: false
+    note: 'threw: stoneware crock at The Showroom'
+
+- id: out-into-the-yard
+  type: go to the kiln yard
+  why: what is lying on the cobbles, which the golden holds -- the mug if its lift passed, and never the jar
+  expect:
+    changed: true
+    location: The Kiln Yard (realized)

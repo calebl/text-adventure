@@ -312,6 +312,41 @@ linked to its template as a tombstone, so a later snapshot cannot respawn it.
 Seed templates stay `intact`; the loader refuses spent dispositions in a world
 file, and reseeding or metadata refresh does not restore a spent game copy.
 
+#### `fragility`, and a room's `surface`: what breaks when it comes down
+
+A thing may break when it comes down on a floor: dropped, thrown at somebody or
+through a way out, or thrown through a doorway that is a `fall` (see Hazards
+below). Whether it can is `fragility`, a closed value from `Item::FRAGILITIES`,
+and what the floor does is the room's `surface`, from `Location::SURFACES`:
+
+```yaml
+locations:
+- name: The Workshop
+  surface: hard
+  items:
+  - name: clay jar
+    description: A glazed jar with a chipped lip.
+    properties: '{}'
+    fragility: brittle
+```
+
+| key | values | absent means |
+| --- | --- | --- |
+| `items[].fragility` | `sturdy`, `fragile`, `brittle` | `sturdy`, which never breaks |
+| `locations[].surface` | `hard`, `soft` | a floor that adds nothing |
+
+The numbers behind the words are the Rust engine's, in its `data/physics.yml`:
+each fragility is a share of one die, how the thing came down adds to it (a
+thing thrown through a fall adds the most), and the surface adds to it or takes
+from it. A `sturdy` thing throws no die at all, so both keys are inert until a
+file names a fragility. A thing that breaks takes the `broken` disposition: like
+a consumed one it is in no place and remains only so the template cannot be
+copied into that game again, and the world's own row is untouched, so the next
+game finds it whole. Only a game copy the player put down or threw ever
+breaks. Both keys are exported only when they differ from what an absent key
+loads as, and both are written in both directions on every load, so a file that
+stops naming one takes it off.
+
 #### `readable` and `inscription`: what is written on a thing
 
 A note, a letter, a sign, a docket, a label. **What is written on it is a
@@ -967,6 +1002,9 @@ locations:
   The one exception is a doorway's `fall`, which takes no die at all.
 - A `universe.gravity`, when the file gives one, is one of `light`,
   `ordinary`, `heavy` (`Universe::GRAVITIES`); an absent key is no gravity.
+- An item's `fragility`, when the file gives one, is one of `sturdy`,
+  `fragile`, `brittle` (`Item::FRAGILITIES`), and a location's `surface` one of
+  `hard`, `soft` (`Location::SURFACES`).
 - A connection with a `hazard` carries a `hazard_from`, and that name is one of
   the edge's **own two ends**. Without it there is no way to say which direction
   costs something; with the wrong name the edge would load with no hazard at all
@@ -1196,7 +1234,8 @@ written before they existed still loads and still means exactly what it meant.
 optional, all of them default to a world that does nothing to anybody for
 walking around it, and the columns are nullable so no existing database needs a
 backfill either. `universe.gravity` and the `fall` doorway hazard joined them
-on the same rule.
+on the same rule, and so did `items[].fragility` and `locations[].surface`:
+`fragility` is not nullable, but its default is `sturdy`, which never breaks.
 
 The optional `mechanics` key and `locations[].mobile` were added to format 2
 rather than bumping it to 3, which is the rule `WorldSeed::FORMAT` states:

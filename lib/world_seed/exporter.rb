@@ -526,6 +526,9 @@ class WorldSeed::Exporter
         document["hazard"] = location.hazard
         document["hazard_die"] = location.hazard_die
       end
+      # WHAT ITS FLOOR DOES TO A THING THAT LANDS ON IT, omitted when nil, which
+      # is a floor that adds nothing and what an absent key loads back as.
+      document["surface"] = location.surface if location.surface.present?
       # WHAT IS INSIDE WHAT, and WHERE IN IT. Both omitted rather than written
       # null when there is none, which is the rule every key above follows -- and
       # here it is also what the loader reads back as "this place has no
@@ -593,6 +596,8 @@ class WorldSeed::Exporter
       # back as -- the same "omitted rather than written out" rule
       # `locations.danger` and the flags above it follow.
       document["bulk"] = item.bulk unless item.bulk == Item::HANDY
+      # AND WHETHER IT BREAKS, omitted when it is `Item::STURDY` on the same rule.
+      document["fragility"] = item.fragility unless item.fragility == Item::STURDY
       document["use_kind"] = item.use_kind unless item.use_kind == "ordinary"
       document["combustible"] = true if item.combustible?
       # WHERE IN THE ROOM IT IS LYING, on the same terms as a character's pair

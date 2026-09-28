@@ -505,6 +505,47 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(bad).load! }
   end
 
+  # WHETHER A THING BREAKS, on bulk's terms: absent is `sturdy`, which never
+  # breaks, and a file that stops naming a fragility takes it off.
+  test "loads an item's fragility and a room's surface, and defaults them to sturdy and nothing" do
+    world = document
+    closet = world["locations"].find { |place| place["name"] == "The Closet" }
+    closet["items"].first["fragility"] = "brittle"
+    closet["surface"] = "hard"
+
+    story = WorldSeed::Loader.new(world).load!
+
+    assert_equal "brittle", Item.in_story(story).templates.find_by(name: "A Private Index").fragility
+    assert_equal Item::STURDY, Item.in_story(story).templates.find_by(name: "A Daybook").fragility
+    assert_equal "hard", story.locations.find_by(name: "The Closet").surface
+    assert_nil story.locations.find_by(name: "The Office").surface
+  end
+
+  test "re-seeding takes a fragility and a surface back off when the file drops them" do
+    breaking = document
+    closet = breaking["locations"].find { |place| place["name"] == "The Closet" }
+    closet["items"].first["fragility"] = "fragile"
+    closet["surface"] = "soft"
+    WorldSeed::Loader.new(breaking).load!
+
+    story = WorldSeed::Loader.new(document).load!
+
+    assert_equal Item::STURDY, Item.in_story(story).templates.find_by(name: "A Private Index").fragility
+    assert_nil story.locations.find_by(name: "The Closet").surface
+  end
+
+  test "rejects a fragility or a surface the engine has no table for" do
+    bad = document
+    bad["characters"].first["items"].first["fragility"] = "porcelain"
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(bad).load! }
+    assert_match(/fragility: "porcelain".*there is: sturdy, fragile, brittle/, error.message)
+
+    bad = document
+    bad["locations"].first["surface"] = "mud"
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(bad).load! }
+    assert_match(/surface: "mud".*there is: hard, soft/, error.message)
+  end
+
   test "rejects a file with the same item name twice" do
     twice = document
     twice["locations"].last["items"] = [ { "name" => "A Daybook", "description" => "The wrong one.", "properties" => "{}" } ]
