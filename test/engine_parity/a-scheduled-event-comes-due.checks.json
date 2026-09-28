@@ -1,15 +1,8 @@
 {
   "script": "a-scheduled-event-comes-due",
   "doctor": {
-    "headline": "playable, 1 warning",
-    "findings": [
-      [
-        "provoked_without_a_meeting",
-        "warning",
-        "playthrough #1000000001 records a fight with Marek Sollen, who is in The Bell of Saint Aravel -- a room that game has never stood in, so no blow in the app can have been thrown at them",
-        "manual"
-      ]
-    ]
+    "headline": "healthy",
+    "findings": []
   },
   "audit": {
     "headline": "1 scenes, nothing to report",

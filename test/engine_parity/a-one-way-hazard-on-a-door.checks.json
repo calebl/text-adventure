@@ -1,15 +1,8 @@
 {
   "script": "a-one-way-hazard-on-a-door",
   "doctor": {
-    "headline": "playable, 1 warning",
-    "findings": [
-      [
-        "vitals_for_an_unmet_character",
-        "warning",
-        "playthrough #1000000001 holds a condition for Neb Halloran, who is in The Tide Post -- a room that game has never stood in, so nothing in the app can have written it",
-        "safe"
-      ]
-    ]
+    "headline": "healthy",
+    "findings": []
   },
   "audit": {
     "headline": "1 scenes, nothing to report",

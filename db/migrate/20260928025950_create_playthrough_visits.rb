@@ -11,9 +11,15 @@
 # this table, so every narrated move is covered either way.
 class CreatePlaythroughVisits < ActiveRecord::Migration[8.1]
   def change
+    # NO FOREIGN KEYS, and deliberately. The Rust engine opens a database whose
+    # schema is newer than it knows only when every table it touches is as it
+    # was, and a foreign key onto `playthroughs` or `locations` from a table it
+    # does not know counts as a change to those tables: it refuses every turn.
+    # `dependent: :destroy` on both models is what takes a visit with its game
+    # or its room.
     create_table :playthrough_visits do |t|
-      t.references :playthrough, null: false, foreign_key: true
-      t.references :location, null: false, foreign_key: true
+      t.references :playthrough, null: false, foreign_key: false
+      t.references :location, null: false, foreign_key: false
       t.timestamps
     end
 

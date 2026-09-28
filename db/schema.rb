@@ -850,8 +850,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_025950) do
   add_foreign_key "playthrough_tolls", "playthroughs"
   add_foreign_key "playthrough_tolls", "scenes"
   add_foreign_key "playthrough_turn_events", "playthrough_commands"
-  add_foreign_key "playthrough_visits", "locations"
-  add_foreign_key "playthrough_visits", "playthroughs"
   add_foreign_key "playthrough_vitals", "characters"
   add_foreign_key "playthrough_vitals", "playthroughs"
   add_foreign_key "playthrough_volitions", "characters"
