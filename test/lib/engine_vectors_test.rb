@@ -16,7 +16,7 @@ class EngineVectorsTest < ActiveSupport::TestCase
   end
 
   test "every file in the directory is a portion that is generated" do
-    expected = EngineVectors::PORTIONS.keys.map { |portion| "#{portion}.json" }.sort
+    expected = (EngineVectors::PORTIONS.keys | EngineVectors::ENGINE_OWNED).map { |portion| "#{portion}.json" }.sort
 
     assert_equal expected, DIRECTORY.children.map { |path| path.basename.to_s }.sort
   end

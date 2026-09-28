@@ -87,7 +87,8 @@ module EngineVectors
   }.freeze
 
   # The portions whose files are the engine's (its `vectors/ENGINE_OWNED`).
-  ENGINE_OWNED = %w[shuffle_connections].freeze
+  # `physics` never had a Ruby builder: falls were written in the engine.
+  ENGINE_OWNED = %w[shuffle_connections physics].freeze
 
   # EVERY PORTION'S FILE CONTENTS that this module writes, keyed by file
   # name: all but the engine's own. Needs a database with the current schema
