@@ -98,12 +98,28 @@ class Playthrough::EndNoticeTest < ActiveSupport::TestCase
     assert_match(/Odile Vance is dead/, notice.sentence)
   end
 
-  # NO THIRD SET OF WORDS. A game the records cannot explain shows the death
-  # copy and is reported by `Story::Doctor`; see this class's header.
-  test "an unrecorded ending shows the death copy" do
+  # THE THIRD SET OF WORDS. A game the records cannot explain used to be shown
+  # the death copy -- "You are dead." over a protagonist the records have alive
+  # -- and is told only what is on record now; see this class's header.
+  test "an unrecorded ending is told the game stopped and never that it is dead or concluded" do
     @game.end!
 
-    assert_equal Playthrough::DeathNotice::HEADING, Playthrough::EndNotice.for(@game).heading
+    notice = Playthrough::EndNotice.for(@game)
+
+    assert_equal Playthrough::StoppedNotice::HEADING, notice.heading
+    assert_equal Playthrough::StoppedNotice::PARAGRAPHS, notice.paragraphs
+    assert_equal Playthrough::StoppedNotice.sentence(@vance), notice.sentence
+    assert_equal :stopped, notice.refusal_kind
+    assert_no_match(/dead|is over/i, [ notice.heading, *notice.paragraphs, notice.sentence ].join(" "))
+    assert_match(/new playthrough/, notice.paragraphs.join(" "))
+    assert_nil notice.closing_words
+  end
+
+  test "a game with no protagonist is told the game stopped, addressed to the player" do
+    castless = create(:playthrough, story: @story, character: nil, current_location: @room)
+    castless.end!
+
+    assert_match(/\AYour story stopped/, Playthrough::EndNotice.for(castless).sentence)
   end
 
   test "the refusal and the standing notice come out of the same author" do

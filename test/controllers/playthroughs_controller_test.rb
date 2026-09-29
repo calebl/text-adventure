@@ -812,6 +812,22 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, response.body.scan(Regexp.new(Regexp.escape(words))).size
   end
 
+  # A GAME MARKED OVER WITH NEITHER AN ENDING NOR A BODY AT ZERO. It used to be
+  # shown "You are dead." over a protagonist the records have alive.
+  test "a playthrough that stopped for no recorded reason says so and never that the player is dead" do
+    playthrough = dead_playthrough
+    playthrough.vitals.update_all(hp_current: 1)
+
+    get playthrough_path(playthrough)
+
+    assert_response :success
+    assert_select "input[name=command]", 0
+    assert_select "div.notice", text: /#{Regexp.escape(Playthrough::StoppedNotice::HEADING)}/
+    assert_select "div.notice", text: /#{Regexp.escape(Playthrough::DeathNotice::HEADING)}/, count: 0
+    assert_select "div.notice", text: /#{Regexp.escape(Playthrough::StoryOverNotice::HEADING)}/, count: 0
+    assert_select "form[action=?]", playthroughs_path
+  end
+
   test "a playthrough that is still running keeps its input" do
     playthrough = dead_playthrough
     playthrough.update!(ended_at: nil)
