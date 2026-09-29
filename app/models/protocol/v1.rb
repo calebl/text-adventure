@@ -28,6 +28,11 @@ module Protocol::V1
   }.freeze
   OUTCOMES = (OUTCOME_KINDS.values.uniq + %w[narrated refused safety failed]).freeze
 
+  # EVERY KIND OF DIE A TURN REPORTS, in the order `rolls` lists them. `break`
+  # and `fall` came with the engine's physics: a world with no fragile thing
+  # never throws a break, and one with no gravity never a fall.
+  ROLLS = %w[check break blow toll fall].freeze
+
   module_function
 
   def id(record) = record.id.to_s
@@ -155,32 +160,51 @@ module Protocol::V1
 
   # EVERY DIE THE TURN THREW, off the records that kept it: each ability check
   # the turn's journal saved (`kind: "check"`, a d20 against its target), then
-  # each blow and each hazard toll written against the turn's scene, whose
-  # rows keep the damage dealt but not the die that dealt it (`die` and
-  # `target` null). In that order, and within each in the order written. A
-  # round fought with no Scene reports its own blows.
+  # each break die it saved for a thing that came down on a floor (`kind:
+  # "break"`, the die's face against the share it breaks on), then each blow
+  # and each hazard toll written against the turn's scene, whose rows keep the
+  # damage dealt but not the die that dealt it (`die` and `target` null). A
+  # toll whose hazard is a fall is `kind: "fall"`. In that order, and within
+  # each in the order written. A round fought with no Scene reports its own
+  # blows.
   def rolls(command, outcome, round: nil)
-    checks = checks_in(command.journal.fetch("steps", {})).map do |fields|
+    steps = command.journal.fetch("steps", {})
+    checks = receipts_in(steps, "Character::Check").filter_map { |receipt| receipt["fields"] if receipt.dig("fields", "die") }.map do |fields|
       { kind: "check", die: Character::CHECK_DIE, result: fields["die"], target: fields["score"].to_i - fields["penalty"].to_i }
     end
-    return checks + round.blows.sort_by(&:id).map { |blow| { kind: "blow", die: nil, result: blow.damage, target: nil } } if round
-    return checks unless outcome.is_a?(Scene)
+    breaks = receipts_in(steps, "Physics::Break").map do |receipt|
+      fields = fields_of(receipt)
+      { kind: "break", die: fields["sides"], result: fields["die"], target: fields["share"] }
+    end
+    kept = checks + breaks
+    return kept + round.blows.sort_by(&:id).map { |blow| { kind: "blow", die: nil, result: blow.damage, target: nil } } if round
+    return kept unless outcome.is_a?(Scene)
 
     playthrough = command.playthrough
     blows = playthrough.blows.where(scene: outcome).order(:id).map { |blow| { kind: "blow", die: nil, result: blow.damage, target: nil } }
-    tolls = playthrough.tolls.where(scene: outcome).order(:id).map { |toll| { kind: "toll", die: nil, result: toll.damage, target: nil } }
-    checks + blows + tolls
+    tolls = playthrough.tolls.where(scene: outcome).order(:id).map do |toll|
+      { kind: toll.fall? ? "fall" : "toll", die: nil, result: toll.damage, target: nil }
+    end
+    kept + blows + tolls
   end
 
-  def checks_in(value)
+  # Every receipt of the named value type in a journal's steps, in the order
+  # they were saved.
+  def receipts_in(value, type)
     case value
     when Hash
-      return [ value["fields"] ] if value["data"] == "Character::Check" && value.dig("fields", "die")
+      return [ value ] if value["data"] == type
 
-      value.values.flat_map { |entry| checks_in(entry) }
-    when Array then value.flat_map { |entry| checks_in(entry) }
+      value.values.flat_map { |entry| receipts_in(entry, type) }
+    when Array then value.flat_map { |entry| receipts_in(entry, type) }
     else []
     end
+  end
+
+  # A receipt's fields as the journal keeps them: a hash of symbol keys,
+  # written as `[key, value]` pairs (`Playthrough::Command::Journal#encode`).
+  def fields_of(receipt)
+    receipt.dig("fields", "hash").to_h { |key, entry| [ key.is_a?(Hash) ? key["symbol"] : key, entry ] }
   end
 
   def engine_version = ENV["TA_ENGINE_VERSION"].presence || "dev"
