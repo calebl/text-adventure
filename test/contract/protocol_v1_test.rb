@@ -70,6 +70,7 @@ class ProtocolV1Test < ActionDispatch::IntegrationTest
     assert_equal Playthrough::Refusal::KINDS.map(&:to_s),
                  schemas.dig("FinishedEvent", "properties", "refusal", "oneOf", 1, "properties", "kind", "enum")
     assert_equal Protocol::V1::OUTCOMES.sort, schemas.dig("FinishedEvent", "properties", "outcome", "properties", "kind", "enum").sort
+    assert_equal Protocol::V1::ROLLS, schemas.dig("FinishedEvent", "properties", "rolls", "items", "properties", "kind", "enum")
     assert_equal Protocol::V1::CAPABILITIES, %w[worlds games turns turn_events interruptions spend_limit]
   end
 

@@ -1,0 +1,35 @@
+# A THROW ON OPEN GROUND IS ONLY TOLD HOW FAR IT CARRIES.
+#
+# The player stands on the green, which has no box, and throws the tar pot at
+# the ropewalk and the cork float at Wat Coyle. A world with a gravity gives
+# every throw a range, but where the room has no floor plan there is nothing
+# to hold it against: the throw resolves exactly as a throw with no range does,
+# and the range is only told, in the note and in the fact the narrator is
+# handed.
+#
+# WHY IT ASSERTS WHAT IT ASSERTS: the golden holds every die on the pinned ids,
+# and the script asserts only what is true whatever they came up. Every throw
+# writes its lift and its range, and a range with nothing to hold it against
+# says so rather than naming a distance. On this walk's ids the tar pot goes
+# through into the ropewalk and breaks there, and the float hits Wat, who hits
+# back; the golden holds each.
+story: The Ropewalk at Saltmarsh
+why: a throw where nothing is laid out is told its range and holds nothing back
+steps:
+- id: the-pot-into-the-ropewalk
+  type: throw the tar pot at the ropewalk
+  why: a throw at a way out from open ground goes through as it always did
+  expect:
+    refused: false
+    note:
+    - 'threw: tar pot at The Ropewalk'
+    - 'range: tar pot -- light, 16 paces at ordinary gravity; no floor plan to hold it against'
+
+- id: the-float-at-wat
+  type: throw the cork float at wat coyle
+  why: a throw at a person on open ground is not held against any paces
+  expect:
+    refused: false
+    note:
+    - 'threw: cork float at Wat Coyle'
+    - 'range: cork float -- light, 16 paces at ordinary gravity; no floor plan to hold it against'

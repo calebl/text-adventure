@@ -1,0 +1,387 @@
+{
+  "script": "a-throw-can-fall-short",
+  "story": "The Ropewalk at Saltmarsh",
+  "steps": [
+    {
+      "step": "step 1 into-the-ropewalk",
+      "player": "first",
+      "typed": "go to the ropewalk",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Ropewalk",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Saltmarsh Green",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Tarring Shed",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "cork float"
+          },
+          {
+            "id": 1000000006,
+            "name": "hank of twine"
+          },
+          {
+            "id": 1000000005,
+            "name": "lead sinker"
+          },
+          {
+            "id": 1000000008,
+            "name": "tar pot"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Hester Vane"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 13,
+        "hp_of": {
+          "Hester Vane": 6
+        },
+        "abilities": {
+          "strength": 18,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Saltmarsh Green -> The Ropewalk",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Ropewalk",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 the-sinker-at-hester",
+      "player": "first",
+      "typed": "throw the lead sinker at hester vane",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Ropewalk",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Saltmarsh Green",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Tarring Shed",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000005,
+            "name": "lead sinker"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "cork float"
+          },
+          {
+            "id": 1000000006,
+            "name": "hank of twine"
+          },
+          {
+            "id": 1000000008,
+            "name": "tar pot"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Hester Vane"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 13,
+        "hp_of": {
+          "Hester Vane": 6
+        },
+        "abilities": {
+          "strength": 18,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "it fell short, carrying 7 paces of the 11 paces to Hester Vane, hit nobody and is lying in The Ropewalk",
+        "refused": false,
+        "offers": null,
+        "understood": "throw -> lead sinker at Hester Vane",
+        "resolved_by": "grammar",
+        "note": "threw: lead sinker at Hester Vane -- strength -> d20(12) <= 13 PASS\nrange: lead sinker -- heavy, 7 paces at ordinary gravity; 11 paces to Hester Vane, SHORT",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 the-pot-at-the-shed",
+      "player": "first",
+      "typed": "throw the tar pot at the tarring shed",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Ropewalk",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Saltmarsh Green",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Tarring Shed",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000005,
+            "name": "lead sinker"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "cork float"
+          },
+          {
+            "id": 1000000006,
+            "name": "hank of twine"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Hester Vane"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 13,
+        "hp_of": {
+          "Hester Vane": 6
+        },
+        "abilities": {
+          "strength": 18,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "it fell short, carrying 16 paces of the 24 paces to the way out, hit nobody and broke",
+        "refused": false,
+        "offers": null,
+        "understood": "throw -> tar pot at The Tarring Shed",
+        "resolved_by": "grammar",
+        "note": "threw: tar pot at The Tarring Shed -- strength -> d20(17) <= 18 PASS\nrange: tar pot -- light, 16 paces at ordinary gravity; 24 paces to The Tarring Shed, SHORT\nbreak: tar pot -- brittle, thrown on the floor: d6(1) <= 5 BROKE",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 the-float-at-hester",
+      "player": "first",
+      "typed": "throw the cork float at hester vane",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Ropewalk",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "Saltmarsh Green",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Tarring Shed",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "cork float"
+          },
+          {
+            "id": 1000000005,
+            "name": "lead sinker"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000006,
+            "name": "hank of twine"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000003,
+            "name": "Hester Vane"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000003,
+            "name": "Hester Vane"
+          }
+        ],
+        "inscription": [],
+        "hp": 9,
+        "hp_of": {
+          "Hester Vane": 3
+        },
+        "abilities": {
+          "strength": 18,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "it hit Hester Vane for 3 and is lying at their feet; Hester Vane is badly hurt (3 of 6)",
+        "refused": false,
+        "offers": null,
+        "understood": "throw -> cork float at Hester Vane",
+        "resolved_by": "grammar",
+        "note": "threw: cork float at Hester Vane -- strength -> d20(14) <= 18 PASS\nrange: cork float -- light, 16 paces at ordinary gravity; 11 paces to Hester Vane, REACHED\nanswered: Hester Vane hit Jory Pask for 4 (round 1); Jory Pask is hurt (9 of 13)",
+        "drifts": 0,
+        "blows": 2,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 into-the-shed",
+      "player": "first",
+      "typed": "go to the tarring shed",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "The Tarring Shed",
+          "detail": "realized"
+        },
+        "storey": 0,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Ropewalk",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000006,
+            "name": "hank of twine"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 7,
+        "hp_of": {},
+        "abilities": {
+          "strength": 18,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Ropewalk -> The Tarring Shed",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Tarring Shed",
+        "resolved_by": "grammar",
+        "note": "answered: Hester Vane hit Jory Pask for 2 (round 2); Jory Pask is hurt (7 of 13)\nthe fight is over: The fight in The Ropewalk is over after 2 rounds. Nobody was killed: the party is no longer standing in it. 3 blows landed: Jory Pask hit Hester Vane for 3 (round 1); Hester Vane is badly hurt (3 of 6); Hester Vane hit Jory Pask for 4 (round 1); Jory Pask is hurt (9 of 13); Hester Vane hit Jory Pask for 2 (round 2); Jory Pask is hurt (7 of 13).",
+        "drifts": 0,
+        "blows": 1,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 10.0,
+        "shown": null
+      }
+    }
+  ]
+}

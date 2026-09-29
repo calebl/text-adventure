@@ -96,8 +96,9 @@ portions `grammar`, `grammar_corpus`, `slash_menu`, `classifier_intent` and
 `refusal` once the panels, the verbs a player may use and the slash menu were
 read off the engine (`Playthrough::RustEngine.glance`). Two of those have no
 Ruby builder left: the menu and the grammar's slash words and use lines were
-only ever read for the panels. `physics` (falls) and `breakage` were written in
-the engine and never had a Ruby builder, so they are the engine's from the start. Nor do the
+only ever read for the panels. `physics` (falls), `breakage`, `speech_choices`
+and `range` (a throw's range) were written in the engine and never had a Ruby
+builder, so they are the engine's from the start. Nor do the
 request builders (`cascade`, `classifier_request`, `volition_request`,
 `moment`, `ledger`, `memory`, `dialogue_requests`) have one: every request the
 benches and the Ruby loop send is the engine's own, asked for through the

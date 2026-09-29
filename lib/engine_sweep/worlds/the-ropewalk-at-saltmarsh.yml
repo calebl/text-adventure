@@ -1,0 +1,197 @@
+# THE ROPEWALK AT SALTMARSH: the one world a throw can fall short in.
+#
+# A village green, and a ropewalk off it with two rooms laid out in one box on
+# storey 0, west to east: the tarring shed (6 paces wide) and the ropewalk
+# itself (24 paces long and 4 deep). The green opens onto the ropewalk, and the
+# ropewalk's west wall is the shed's east wall, with a door through it. The
+# green is open ground with no box, so nothing thrown on it is held against a
+# floor plan.
+#
+# A THROW'S RANGE IS ITS BULK'S PACES AT THE WORLD'S GRAVITY, plus the
+# thrower's reach for strength over 10 (the Rust engine's `data/physics.yml`).
+# `universe.gravity: ordinary` is what gives a throw a range at all; a world
+# with no gravity throws exactly as it did before ranges.
+#
+# Jory Pask comes in with one thing of each bulk a script needs:
+#
+#   lead sinker     heavy, and it carries the shortest way
+#   hank of twine   handy
+#   cork float      light, and sturdy
+#   tar pot         light, and brittle, so where it lands it may break
+#
+# Hester Vane keeps a spot of her own at the far end of the ropewalk (x 18,
+# y 1), so a throw at her is held against the paces between her and wherever
+# Jory stands. Jory has no spot: a player never keeps one, and stands where the
+# placement roll puts them for this game at this moment. Wat Coyle is on the
+# green, where there is nothing to measure.
+#
+# Every room is written, so moving between them asks nobody to write one. The
+# green is the opening, and the first room in the file, because a walk starts
+# in the lowest-id written room.
+#
+# Loaded offline by the sweep. No model call, no API key, no network.
+---
+format: 2
+universe:
+  physics: Ordinary physics. What is thrown comes down, and the heavier it is the sooner.
+  technology: Hemp, tar, a spinning wheel and a long shed to lay the rope in.
+  weapons: A marlinspike, at a pinch.
+  geographies: A salt marsh on a tidal river, with the village on the only dry ground.
+  civilizations: A fishing village that makes its own rope and sells the rest.
+  history: The Coyles have laid the village's rope since the harbour was dug.
+  economics: Rope by the fathom to the boats, and nets by the dozen to the market.
+  politics: The harbour master, who buys the rope and sets its price.
+  religion: A blessing of the boats at midsummer.
+  races:
+  - name: Marshfolk
+    description: |-
+      Born on the marsh, and never quite dry.
+  gravity: ordinary
+story:
+  title: The Ropewalk at Saltmarsh
+  genre: village mystery
+  start_time: '2026-09-21T07:00:00Z'
+  preface: |-
+    A new cable parted on its first day in harbour, and the ropewalk laid it.
+  summary: |-
+    Jory Pask crosses the green to the ropewalk with an armful of the walk's gear.
+opening_scene:
+  location: Saltmarsh Green
+  characters: [Jory Pask]
+  description: |-
+    The green runs down to the ropewalk, and Wat Coyle is mending a net on it.
+  summary: |-
+    The story opens on Saltmarsh Green, outside the ropewalk.
+characters:
+- fullname: Jory Pask
+  race: Marshfolk
+  stats:
+    level: 2
+    hit_die: 8
+    strength: 18
+    dexterity: 11
+    will: 10
+  nickname: Jory
+  age: 27
+  sex: male
+  is_protagonist: true
+  is_companion: false
+  backstory: |-
+    Walks the ropewalk twice a day, and can tell a bad strand by the feel of it.
+  personality: Steady, and slow to say what he has noticed.
+  appearance: Tar to the wrists, and a rope burn across one palm.
+  likes: A cable laid without a kink
+  dislikes: Being hurried on a long lay
+  fears: The walk closing for good
+  items:
+  - name: lead sinker
+    description: |-
+      A lead net sinker the size of a fist, heavier than anything that size should be.
+    bulk: heavy
+    properties: '{}'
+  - name: hank of twine
+    description: |-
+      A hank of tarred twine for whipping rope ends.
+    properties: '{}'
+  - name: cork float
+    description: |-
+      A cork net float, grey with salt.
+    bulk: light
+    properties: '{}'
+  - name: tar pot
+    description: |-
+      A small earthenware pot of tar, with a brush through the lid.
+    bulk: light
+    fragility: brittle
+    properties: '{}'
+- fullname: Wat Coyle
+  race: Marshfolk
+  location: Saltmarsh Green
+  stats:
+    level: 1
+    hit_die: 6
+    strength: 11
+    dexterity: 12
+    will: 10
+  nickname: Wat
+  age: 61
+  sex: male
+  is_protagonist: false
+  is_companion: false
+  backstory: |-
+    Laid rope on the walk for forty years, and mends nets on the green now.
+  personality: Talkative, and certain the old ways were better.
+  appearance: Bent at the shoulders, with a net across his knees.
+  likes: A fine day for mending
+  dislikes: New rope
+  fears: Being asked to walk the ropewalk again
+- fullname: Hester Vane
+  race: Marshfolk
+  location: The Ropewalk
+  x: 18
+  y: 1
+  stats:
+    level: 1
+    hit_die: 6
+    strength: 10
+    dexterity: 13
+    will: 12
+  nickname: Hester
+  age: 38
+  sex: female
+  is_protagonist: false
+  is_companion: false
+  backstory: |-
+    Keeps the ropewalk's book, and signs for every fathom that leaves it.
+  personality: Exact, and short with anybody who is not.
+  appearance: Ink on one cuff, tar on the other.
+  likes: A book that balances
+  dislikes: Rope sold off the book
+  fears: The parted cable being traced to her signature
+locations:
+- name: Saltmarsh Green
+  detail_level: realized
+  opening: true
+  teaser: The village green, down to the ropewalk.
+  description: |-
+    Rough grass between the cottages and the ropewalk, with nets spread to dry.
+  lore: |-
+    The green is the only ground in the village the tide has never covered.
+- name: The Ropewalk
+  detail_level: realized
+  parent: Coyle's Ropewalk
+  x: 6
+  y: 0
+  z: 0
+  width: 24
+  depth: 4
+  teaser: The long shed where the rope is laid.
+  description: |-
+    A shed a rope's length long, with the tarring shed door at the west end and the spinning wheel at the east.
+  lore: |-
+    The shed was built to the length of the longest cable the harbour ever ordered.
+- name: Coyle's Ropewalk
+  detail_level: stub
+  width: 30
+  depth: 4
+  teaser: A ropewalk at the edge of the green.
+- name: The Tarring Shed
+  detail_level: realized
+  parent: Coyle's Ropewalk
+  x: 0
+  y: 0
+  z: 0
+  width: 6
+  depth: 4
+  teaser: The shed where the rope is tarred.
+  description: |-
+    A tar copper over a banked fire, and the smell of it in everything.
+  lore: |-
+    The shed stands apart from the walk because the copper once caught.
+connections:
+- between: [Saltmarsh Green, The Ropewalk]
+  distance: adjacent
+  travel_method: walking
+- between: [The Ropewalk, The Tarring Shed]
+  distance: adjacent
+  travel_method: walking

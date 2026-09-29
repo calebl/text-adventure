@@ -921,7 +921,7 @@
           },
           "rolls": {
             "type": "array",
-            "description": "Every die the turn threw: checks first, then blows, then tolls, each in the order the engine recorded them.",
+            "description": "Every die the turn threw: checks first, then breaks, then blows, then tolls and falls, each in the order the engine recorded them.",
             "items": {
               "type": "object",
               "required": [
@@ -935,8 +935,10 @@
                   "type": "string",
                   "enum": [
                     "check",
+                    "break",
                     "blow",
-                    "toll"
+                    "toll",
+                    "fall"
                   ]
                 },
                 "die": {

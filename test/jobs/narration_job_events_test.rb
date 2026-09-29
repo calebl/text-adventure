@@ -105,6 +105,16 @@ class NarrationJobEventsTest < ActiveJob::TestCase
     assert_equal [ { kind: "check", die: 20, result: 7, target: 10 } ], Protocol::V1.rolls(command, nil)
   end
 
+  test "a toll a fall took is a fall, and any other hazard's a toll" do
+    scene = create(:scene, story: @game.story, location: @game.current_location)
+    command = create(:playthrough_command, playthrough: @game, status: "completed")
+    create(:playthrough_toll, playthrough: @game, scene: scene, hazard: "fall", damage: 4)
+    create(:playthrough_toll, playthrough: @game, scene: scene, damage: 2, sequence: -2)
+
+    assert_equal [ { kind: "fall", die: nil, result: 4, target: nil }, { kind: "toll", die: nil, result: 2, target: nil } ],
+                 Protocol::V1.rolls(command, scene)
+  end
+
   private
 
   # A GAME STANDING IN FRONT OF A MONSTER, as `NarrationJobTest`'s is, and
