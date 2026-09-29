@@ -107,4 +107,27 @@ class ProtocolV1Test < ActionDispatch::IntegrationTest
     assert_equal ProtocolV1.document.dig("components", "schemas", "Verb", "properties", "name", "enum"),
                  glance["verbs"].map { |verb| verb["name"] }
   end
+
+  test "a story that concluded says which goal ended it and why, in the standing" do
+    player, token = Player.invite!("Ada")
+    story = create(:story)
+    here = create(:location, story: story, name: "Office")
+    create(:character, story: story, fullname: "Zed Player", is_protagonist: true)
+    game = Playthrough::Session.begin!(story, player: player).playthrough
+    quest = create(:quest, story: story, title: "Query 1188")
+    step = create(:quest_step, :reach_location, quest: quest, position: 1, summary: "Open the closet.")
+    outcome = create(:quest_outcome, :default, quest: quest)
+    create(:playthrough_beat, playthrough: game, quest_step: step, reached_at: game.story_now)
+    create(:playthrough_ending, playthrough: game, quest_outcome: outcome)
+    game.update!(current_location: here)
+    game.end!
+
+    get api_v1_game_path(game.token), headers: { "Authorization" => "Bearer #{token}" }
+    standing = JSON.parse(response.body)["standing"]
+    assert_protocol "Standing", standing
+
+    assert_equal({ "quest" => "Query 1188", "goals" => [ "Open the closet." ], "last_goal" => 1,
+                   "reason" => "Goal 1 was the last you met, and it finished the story. This is the ending the story was built toward." },
+                 standing["finished"])
+  end
 end

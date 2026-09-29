@@ -87,7 +87,16 @@ class Quest::Outcome < ApplicationRecord
     # off `playthrough_beats.reached_at`, which is the record of the order this
     # player actually did it in. It takes no number, which is the whole reason
     # it is in the table: a condition is a RULE and not a threshold.
-    "out_of_order" => "reached a later beat of the arc before an earlier one"
+    "out_of_order" => "reached a later beat of the arc before an earlier one",
+    # A LIFE. This game reached the beat at `step_position` while `character`
+    # was still alive in it -- read off this game's own `playthrough_blows` and
+    # `playthrough_tolls`, the records of the blow or the toll that took their
+    # last hit point, against `playthrough_beats.reached_at`. It is what an
+    # ending that says *"while he was still standing"* means, and `out_of_order`
+    # is not that: The Lunar Cartographer said it with `out_of_order` for its
+    # first month, and a player who killed the Ringer, took the book and then
+    # the tally was told the Ringer had been standing over them.
+    "while_alive" => "reached the beat at `step_position` while `character` was still alive"
   }.freeze
 
   # THE ONE RULE THAT TAKES A NUMBER. Named here rather than tested against the
@@ -95,7 +104,14 @@ class Quest::Outcome < ApplicationRecord
   # kind may carry is one table and not three `if`s.
   NEEDS_MINUTES = %w[slower_than].freeze
 
+  # AND THE ONE THAT TAKES A BEAT AND A PERSON, `NEEDS_MINUTES`' reason again:
+  # both columns go with the rule that reads them and with no other.
+  NEEDS_A_LIFE = %w[while_alive].freeze
+
   belongs_to :quest
+  # THE WORLD'S ROW, never one game's: whether they are alive is asked of a
+  # playthrough (`Playthrough::Arc#satisfies?`), and this only says who.
+  belongs_to :character, optional: true
 
   validates :name, presence: true, uniqueness: { scope: :quest_id }
   validates :summary, presence: true
@@ -107,6 +123,10 @@ class Quest::Outcome < ApplicationRecord
   validates :minutes, presence: true, numericality: { only_integer: true, greater_than: 0 },
                       if: :needs_minutes?
   validates :minutes, absence: true, unless: :needs_minutes?
+  validates :step_position, presence: true, numericality: { only_integer: true, greater_than: 0 },
+                            if: :needs_a_life?
+  validates :character, presence: true, if: :needs_a_life?
+  validates :step_position, :character_id, absence: true, unless: :needs_a_life?
   validates :ramification_minutes, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validate :default_carries_no_condition
   validate :a_ramification_is_an_hour_and_a_sentence
@@ -123,6 +143,11 @@ class Quest::Outcome < ApplicationRecord
   def slower_than? = condition == "slower_than"
 
   def out_of_order? = condition == "out_of_order"
+
+  def needs_a_life? = NEEDS_A_LIFE.include?(condition)
+
+  # THE STEP A `while_alive` ENDING IS ABOUT, or nil for every other rule.
+  def step = (quest.steps.detect { |step| step.position == step_position } if needs_a_life?)
 
   # WHETHER THIS ENDING PUTS A ROW ON THE STREAM. Both columns or neither, so
   # there is no half-written ramification for a caller to have to guess about.

@@ -855,6 +855,11 @@ class WorldSeed::Loader
         # closed table of them is called everywhere else in this app.
         condition: attributes["when"],
         minutes: attributes["minutes"],
+        # `while_alive`'s two: the beat, by its place in the `steps:` list --
+        # the same number `#load_quest_steps!` gives it -- and the person, by
+        # `fullname`, looked up in the story this file just loaded.
+        step_position: attributes["beat"],
+        character: (quest.story.characters.find_by(fullname: attributes["alive"]) if attributes["alive"].present?),
         ramification_summary: ramification["summary"],
         ramification_minutes: ramification["after_minutes"]
       )
@@ -1078,7 +1083,7 @@ class WorldSeed::Loader
       raise InvalidWorld, "#{where}: quest #{title} has no steps; an arc with no beats is one nobody can start" if steps.empty?
 
       steps.each_with_index { |step, index| validate_one_quest_step!(title, step, index + 1) }
-      validate_quest_outcomes!(title, Array(attributes["outcomes"]))
+      validate_quest_outcomes!(title, Array(attributes["outcomes"]), steps: steps.size)
     end
   end
 
@@ -1107,7 +1112,7 @@ class WorldSeed::Loader
   # the captain's five properties. Refused in the FILE rather than only reported
   # by the doctor, because a hand-authored world is a decision: nobody writes
   # three beats and means for them to lead nowhere.
-  def validate_quest_outcomes!(title, documents)
+  def validate_quest_outcomes!(title, documents, steps:)
     raise InvalidWorld, "#{where}: quest #{title} has no outcomes; reaching its last step would end nothing" if documents.empty?
 
     names = documents.map { |attributes| attributes.fetch("name") }
@@ -1117,7 +1122,7 @@ class WorldSeed::Loader
     documents.each do |attributes|
       raise InvalidWorld, "#{where}: quest #{title} outcome #{attributes.fetch("name").inspect} has no `summary`" if attributes["summary"].blank?
 
-      validate_one_quest_outcome!(title, attributes)
+      validate_one_quest_outcome!(title, attributes, steps: steps)
     end
 
     defaults = documents.count { |attributes| attributes["default"] == true }
@@ -1136,7 +1141,7 @@ class WorldSeed::Loader
   # non-default outcome it is a world with an ending nothing selects -- legal,
   # reported by `rake game:doctor` (`outcome_nothing_can_reach`), and the state
   # every world with a second ending was in before conditions existed.
-  def validate_one_quest_outcome!(title, attributes)
+  def validate_one_quest_outcome!(title, attributes, steps:)
     name = attributes.fetch("name").inspect
     where_it_is = "quest #{title} outcome #{name}"
     condition = attributes["when"]
@@ -1159,7 +1164,34 @@ class WorldSeed::Loader
       raise InvalidWorld, "#{where}: #{where_it_is} carries `minutes:` and `when: #{condition.inspect}` takes no number"
     end
 
+    validate_one_life!(where_it_is, condition, attributes, steps: steps)
     validate_one_ramification!(where_it_is, attributes["ramification"])
+  end
+
+  # `while_alive`'S BEAT AND PERSON, both or neither, and both things this file
+  # says: a beat is a place in its own `steps:` list and a person one of its own
+  # `characters:`. A name that matched nobody would load as an ending no game
+  # could reach, which is the misspelt `when:` again.
+  def validate_one_life!(where_it_is, condition, attributes, steps:)
+    unless Quest::Outcome::NEEDS_A_LIFE.include?(condition)
+      if attributes.key?("beat") || attributes.key?("alive")
+        raise InvalidWorld, "#{where}: #{where_it_is} carries `beat:` or `alive:` and `when: #{condition.inspect}` takes neither"
+      end
+
+      return
+    end
+
+    beat = attributes["beat"]
+    unless beat.is_a?(Integer) && beat.between?(1, steps)
+      raise InvalidWorld, "#{where}: #{where_it_is} is `when: #{condition}` and needs `beat:` as the number of one of its " \
+                          "#{steps} steps, got #{beat.inspect}"
+    end
+
+    alive = attributes["alive"]
+    return if character_documents.any? { |character| character["fullname"] == alive }
+
+    raise InvalidWorld, "#{where}: #{where_it_is} is `when: #{condition}` and needs `alive:` as the fullname of one of this " \
+                        "file's characters, got #{alive.inspect}"
   end
 
   # ONE SCHEDULED ROW AN ENDING PUTS ON THE STREAM: an hour and a sentence, both

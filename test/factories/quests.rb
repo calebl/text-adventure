@@ -78,7 +78,7 @@ FactoryBot.define do
       is_default { true }
     end
 
-    # THE TWO RULES A NON-DEFAULT ENDING CAN BE SELECTED BY
+    # THE RULES A NON-DEFAULT ENDING CAN BE SELECTED BY
     # (`Quest::Outcome::CONDITIONS`). `minutes` is fixed for
     # `test/factories/location_connections.rb`' reason -- a budget a die picked
     # would make every test that walks a clock a lottery.
@@ -89,6 +89,14 @@ FactoryBot.define do
 
     trait :out_of_order do
       condition { "out_of_order" }
+    end
+
+    # The first beat, and somebody of the quest's own story. A test that means
+    # another beat or a particular person says so.
+    trait :while_alive do
+      condition { "while_alive" }
+      step_position { 1 }
+      character { association :character, story: quest.story }
     end
 
     # AND WHAT THE WORLD DOES ABOUT IT AFTERWARDS: one scheduled `WorldEvent`,

@@ -61,6 +61,25 @@ class Quest::OutcomeTest < ActiveSupport::TestCase
     assert_not build(:quest_outcome, quest: @quest, condition: nil, minutes: 30).valid?
   end
 
+  test "the rule about a life needs a beat and a person, and no other rule takes either" do
+    ringer = create(:character, story: @quest.story)
+
+    assert build(:quest_outcome, :while_alive, quest: @quest).valid?
+    assert_not build(:quest_outcome, :while_alive, quest: @quest, step_position: nil).valid?
+    assert_not build(:quest_outcome, :while_alive, quest: @quest, step_position: 0).valid?
+    assert_not build(:quest_outcome, :while_alive, quest: @quest, character: nil).valid?
+    assert_not build(:quest_outcome, :out_of_order, quest: @quest, step_position: 2).valid?
+    assert_not build(:quest_outcome, :out_of_order, quest: @quest, character: ringer).valid?
+  end
+
+  test "the rule about a life names the step at its position" do
+    step = create(:quest_step, :reach_location, quest: @quest, position: 2)
+    create(:quest_step, :reach_location, quest: @quest, position: 1)
+
+    assert_equal step, build(:quest_outcome, :while_alive, quest: @quest.reload, step_position: 2).step
+    assert_nil build(:quest_outcome, :out_of_order, quest: @quest).step
+  end
+
   # --- AND WHAT THE WORLD DOES ABOUT IT AFTERWARDS ---------------------------
 
   test "a ramification is an hour and a sentence, and half of one is refused" do
