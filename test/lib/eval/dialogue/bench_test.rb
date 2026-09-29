@@ -27,6 +27,23 @@ class Eval::Dialogue::BenchTest < ActiveSupport::TestCase
     assert_equal [ "brass key" ], a["facts"]["world_items"]
   end
 
+  test "the exchange's narrator is asked by name to tell what the bystander said, and a case without one is not" do
+    kase = Eval::Dialogue.cases("bystander").first
+    asked = 'Tobin also spoke up unasked, as "What else happened here" above records. ' \
+            "Narrate that too, as part of this exchange, in a sentence or two of its own. " \
+            "Nothing Tobin said changes what is recorded above."
+    narrator = replay(kase, "none").fetch("requests").last.fetch("user")
+    assert_includes narrator, asked
+    assert_not_includes replay(Eval::Dialogue.cases.first, "none").fetch("requests").last.fetch("user"), "also spoke up unasked"
+  end
+
+  test "a trial is one repetition and a full run is at least the noise floor's" do
+    bench = Eval::Dialogue::Bench.new(corpus: "bystander")
+    assert_raises(ArgumentError) { bench.run(Rails.root.join("tmp/never"), reps: 2, trial: true) }
+    assert_raises(ArgumentError) { bench.run(Rails.root.join("tmp/never"), reps: 1) }
+    assert_not Rails.root.join("tmp/never").exist?
+  end
+
   test "all declared states are reachable through the production action gate" do
     actions = %w[give:910002 follow ceasefire none none stop_following give:910002 follow ceasefire]
     Eval::Dialogue.cases.zip(actions).each do |kase, action|

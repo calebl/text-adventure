@@ -51,8 +51,11 @@ class Eval::Dialogue::Bench
     end
   end
 
-  def run(directory, reps: Eval::Noise::MIN_RUNS)
-    raise ArgumentError, "reps must reach Eval::Noise::MIN_RUNS" if reps < Eval::Noise::MIN_RUNS
+  # A TRIAL is one repetition, bought to be read by hand before the full run
+  # and kept beside it; it is marked so, and no comparison takes it.
+  def run(directory, reps: Eval::Noise::MIN_RUNS, trial: false)
+    raise ArgumentError, "a trial is one repetition" if trial && reps != 1
+    raise ArgumentError, "reps must reach Eval::Noise::MIN_RUNS" if !trial && reps < Eval::Noise::MIN_RUNS
     Eval::Dialogue::Budget.assert_isolated_database!
     estimate = Eval::Dialogue.estimate(reps: reps, corpus: corpus)
     raise ArgumentError, "estimate exceeds budget" if estimate.fetch(:estimated_usd) > Eval::Dialogue::Budget::LIMIT_MICROS / 1_000_000.0
@@ -62,6 +65,7 @@ class Eval::Dialogue::Bench
     data = { "model" => Eval::Dialogue.model, "reps" => reps, "corpus_digest" => Eval::Dialogue.digest(corpus),
       "recorded_at" => Time.now.utc.iso8601, "estimate" => estimate, "rows" => [] }
     data["corpus"] = corpus unless corpus == "main"
+    data["trial"] = true if trial
     File.write(file, JSON.pretty_generate(data))
     Eval::Dialogue::Budget.install!
     (1..reps).each do |rep|

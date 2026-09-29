@@ -10,8 +10,15 @@
 # goes: staying behind is only ever the explicit `stop_following`. That is
 # scored here, from the staged case, rather than written into the corpus,
 # whose bytes are the kept sets' `corpus_digest`.
+#
+# A bystander case adds one figure, `bystander_named`: the share of its
+# narrations that name the bystander who spoke up unasked, the exchange
+# narrator's instructions asking for it to be told. It is a name found in the
+# prose, not a judgment of how it was told, and a set with no bystander case
+# neither has nor compares it.
 class Eval::Dialogue::Result
   METRICS = %w[state_failure exchange_failure contradiction reaction_words narration_words].freeze
+  BYSTANDER_METRICS = %w[bystander_named].freeze
   attr_reader :data, :annotations
 
   def self.load(directory, annotations: nil)
@@ -37,9 +44,11 @@ class Eval::Dialogue::Result
         "contradiction" => judged.size == group.size ? judged.count { |j| j.fetch("contradiction") }.fdiv(group.size) : nil,
         "reaction_words" => group.sum { |r| words((r["reaction"] || {}).values.join(" ")) }.fdiv(group.size),
         "narration_words" => group.sum { |r| words(r["narration"]) }.fdiv(group.size),
-        "judged" => judged.size, "cases" => group.size }
+        "judged" => judged.size, "cases" => group.size }.merge(bystander_named(group))
     end
   end
+
+  def metrics = rows.any? { |row| bystander(row) } ? METRICS + BYSTANDER_METRICS : METRICS
 
   def board
     { model: data.fetch("model"), corpus_digest: data.fetch("corpus_digest"), passes: passes,
@@ -52,7 +61,7 @@ class Eval::Dialogue::Result
   def compare(other)
     raise ArgumentError, "different corpus or model" unless data.values_at("corpus_digest", "model") == other.data.values_at("corpus_digest", "model")
     [ self, other ].each(&:validate_complete!)
-    METRICS.to_h do |metric|
+    metrics.to_h do |metric|
       left = passes.map { |p| p[metric] }
       right = other.passes.map { |p| p[metric] }
       [ metric, left.include?(nil) || right.include?(nil) ? { outcome: "unavailable" } : Eval::Noise.compare(metric, left, right).to_h ]
@@ -60,6 +69,7 @@ class Eval::Dialogue::Result
   end
 
   def validate_complete!
+    raise ArgumentError, "a trial set is read by hand, never compared" if data["trial"]
     expected_ids = Eval::Dialogue.cases(data.fetch("corpus", "main")).map { |k| k.fetch("id") }.sort
     raise ArgumentError, "incomplete repetitions" unless rows.map { |r| r.fetch("rep") }.uniq.sort == (1..data.fetch("reps")).to_a
     rows.group_by { |r| r.fetch("rep") }.each_value do |group|
@@ -77,6 +87,18 @@ class Eval::Dialogue::Result
   private
 
   def staged(row) = Eval::Dialogue.cases.find { |kase| kase.fetch("id") == row.fetch("id") }
+
+  def bystander(row)
+    Eval::Dialogue.cases(data.fetch("corpus", "main")).find { |kase| kase.fetch("id") == row.fetch("id") }&.dig("bystander", "name")
+  end
+
+  def bystander_named(group)
+    stood = group.select { |row| bystander(row) }
+    return {} if stood.empty?
+
+    named = stood.count { |row| row["narration"].to_s.match?(/\b#{Regexp.escape(bystander(row))}\b/) }
+    { "bystander_named" => named.fdiv(stood.size) }
+  end
 
   def words(text) = text.to_s.scan(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/u).size
 
