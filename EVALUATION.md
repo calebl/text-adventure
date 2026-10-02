@@ -1234,6 +1234,14 @@ also has why the classifier readings were scored twice. Every set's README has
 its verdict against the set it replaced; the receipts, the credit readings and
 the scripts are under `doc/evidence/seed-world-arcs-rebuy/`.
 
+`inscription-2026-10-02` and `prompt-ending-after-2026-10-02` replace
+`inscription-2026-09-26` and `prompt-ending-2026-09-10` in turn. The Lunar
+Cartographer's world file gained the `while_alive` ending rule, which moves
+the inscription corpus digest while its requests stay byte-identical; and
+the ending corpus gained a sixth case, somebody dead in the room, for the
+ending's `Dead here:` line. Each set's README has its verdict and the credit
+readings; the line's pair is under *The ending's own corpus* below.
+
 `prompt-2026-09-10`, `classifier-throw-after-20260926` and
 `prompt-ending-2026-09-10` were the before sides until then.
 The classifier set is the judged R02 prompt with two later amendments. The
@@ -1433,6 +1441,28 @@ after side's `item_not_held` is what the check read before this fix — history,
 like the 2026-09-08 pair's 0.200. The verdict it feeds was already NOISE, so
 nothing is re-bought for it. Every corpus that carries its passages re-scored
 unchanged.
+
+### The sixth case, and the pair of 2026-10-02
+
+The ending is told who lies dead in its room (`Dead here: <name> (<nickname>).
+They cannot speak or act.`), on the ending's pass alone, because a game of The
+Lunar Cartographer closed on a dead man "standing motionless over the rope":
+the room's own description still had him standing. No case had anybody dead,
+so the line rendered nowhere and the bench was blind to it. The corpus gained
+`ending-take-the-writ-over-the-dead` in The Unrecorded Hour (Halkett Rowe dead
+in Ward Office 12; the bench does not play The Lunar Cartographer, see
+`Eval::Prompt::STORIES`), and both sides were bought on the six cases:
+
+```bash
+rake eval:prompt_compare BEFORE=prompt-ending-before-2026-10-02 AFTER=prompt-ending-after-2026-10-02
+```
+
+**NOISE on every figure.** The five Iron Gate cases sent byte-identical
+requests both sides, so their spread is the run-to-run spread. No check reads a
+dead person written as standing in a single turn, so the line's own case was
+read by hand: without the line none of the four endings mentions Rowe, with it
+two of four name him and none has him standing. `prompt-ending-after-2026-10-02`
+is the ending's current baseline; its README has the readings.
 
 ### Serial, for now
 

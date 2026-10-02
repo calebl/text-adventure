@@ -1203,10 +1203,9 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_not_includes codes(story), :playthrough_dead_but_not_ended
   end
 
-  # A GAME THAT IS OVER AND NOTHING SAYS WHY. `Playthrough::EndNotice` shows the
-  # death copy for one of these, because there is no third set of words -- so
-  # the guess is reported to whoever can look at the database rather than left
-  # standing on the play page alone.
+  # A GAME THAT IS OVER AND NOTHING SAYS WHY. `Playthrough::EndNotice` can only
+  # tell the player it stopped -- so the missing reason is reported to whoever
+  # can look at the database rather than left standing on the play page alone.
   test "a game marked ended with no ending reached and nobody at zero is reported" do
     story = create(:story)
     room = create(:location, story: story)

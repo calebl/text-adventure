@@ -1,0 +1,156 @@
+{
+  "script": "a-throw-on-open-ground-is-only-told",
+  "story": "The Ropewalk at Saltmarsh",
+  "steps": [
+    {
+      "step": "step 1 the-pot-into-the-ropewalk",
+      "player": "first",
+      "typed": "throw the tar pot at the ropewalk",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Saltmarsh Green",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Ropewalk",
+            "detail": "realized"
+          }
+        ],
+        "here": [],
+        "carrying": [
+          {
+            "id": 1000000007,
+            "name": "cork float"
+          },
+          {
+            "id": 1000000006,
+            "name": "hank of twine"
+          },
+          {
+            "id": 1000000005,
+            "name": "lead sinker"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Wat Coyle"
+          }
+        ],
+        "foes": [],
+        "inscription": [],
+        "hp": 13,
+        "hp_of": {
+          "Wat Coyle": 6
+        },
+        "abilities": {
+          "strength": 18,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "it went through into The Ropewalk and broke",
+        "refused": false,
+        "offers": null,
+        "understood": "throw -> tar pot at The Ropewalk",
+        "resolved_by": "grammar",
+        "note": "threw: tar pot at The Ropewalk -- strength -> d20(17) <= 18 PASS\nrange: tar pot -- light, 16 paces at ordinary gravity; no floor plan to hold it against\nbreak: tar pot -- brittle, thrown on the floor: d6(1) <= 5 BROKE",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 the-float-at-wat",
+      "player": "first",
+      "typed": "throw the cork float at wat coyle",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "Saltmarsh Green",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000002,
+            "name": "The Ropewalk",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000007,
+            "name": "cork float"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000006,
+            "name": "hank of twine"
+          },
+          {
+            "id": 1000000005,
+            "name": "lead sinker"
+          }
+        ],
+        "present": [
+          {
+            "id": 1000000002,
+            "name": "Wat Coyle"
+          }
+        ],
+        "foes": [
+          {
+            "id": 1000000002,
+            "name": "Wat Coyle"
+          }
+        ],
+        "inscription": [],
+        "hp": 9,
+        "hp_of": {
+          "Wat Coyle": 3
+        },
+        "abilities": {
+          "strength": 18,
+          "dexterity": 11,
+          "will": 10
+        },
+        "dead": false,
+        "changed": true,
+        "change": "it hit Wat Coyle for 3 and is lying at their feet; Wat Coyle is badly hurt (3 of 6)",
+        "refused": false,
+        "offers": null,
+        "understood": "throw -> cork float at Wat Coyle",
+        "resolved_by": "grammar",
+        "note": "threw: cork float at Wat Coyle -- strength -> d20(14) <= 18 PASS\nrange: cork float -- light, 16 paces at ordinary gravity; no floor plan to hold it against\nanswered: Wat Coyle hit Jory Pask for 4 (round 1); Jory Pask is hurt (9 of 13)",
+        "drifts": 0,
+        "blows": 2,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

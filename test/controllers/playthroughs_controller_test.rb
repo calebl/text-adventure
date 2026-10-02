@@ -801,6 +801,21 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # WHICH GOAL ENDED IT AND WHY THIS ENDING, under the heading and off the rows
+  # (`Playthrough::EndNotice#finished`).
+  test "a concluded playthrough names its goals and why this ending" do
+    playthrough = concluded_playthrough
+    quest = playthrough.endings.sole.quest_outcome.quest
+    step = create(:quest_step, :reach_location, quest: quest, position: 1, summary: "Open the iron gate.")
+    create(:playthrough_beat, playthrough: playthrough, quest_step: step, reached_at: playthrough.story_now)
+
+    get playthrough_path(playthrough)
+
+    assert_select "div.notice", text: /You finished #{Regexp.escape(quest.title)}/
+    assert_select "div.notice ol li", text: "Open the iron gate."
+    assert_select "div.notice", text: /Goal 1 was the last you met, and it finished the story\. This is the ending the story was built toward\./
+  end
+
   # THE ENDING'S OWN PARAGRAPH IS THE LAST ENTRY OF THE LOG, so the notice under
   # it must not print it a second time.
   test "a concluded playthrough prints its last paragraph once" do
@@ -810,6 +825,22 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     get playthrough_path(playthrough)
 
     assert_equal 1, response.body.scan(Regexp.new(Regexp.escape(words))).size
+  end
+
+  # A GAME MARKED OVER WITH NEITHER AN ENDING NOR A BODY AT ZERO. It used to be
+  # shown "You are dead." over a protagonist the records have alive.
+  test "a playthrough that stopped for no recorded reason says so and never that the player is dead" do
+    playthrough = dead_playthrough
+    playthrough.vitals.update_all(hp_current: 1)
+
+    get playthrough_path(playthrough)
+
+    assert_response :success
+    assert_select "input[name=command]", 0
+    assert_select "div.notice", text: /#{Regexp.escape(Playthrough::StoppedNotice::HEADING)}/
+    assert_select "div.notice", text: /#{Regexp.escape(Playthrough::DeathNotice::HEADING)}/, count: 0
+    assert_select "div.notice", text: /#{Regexp.escape(Playthrough::StoryOverNotice::HEADING)}/, count: 0
+    assert_select "form[action=?]", playthroughs_path
   end
 
   test "a playthrough that is still running keeps its input" do
@@ -1061,7 +1092,10 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   test "a line the next turn answered leaves nothing standing on reload" do
     game = create(:playthrough, :started)
     create(:playthrough_command, playthrough: game, status: "failed", error_kind: "error")
-    create(:playthrough_command, playthrough: game, status: "completed", result_scene: game.current_scene)
+    # The answer is a Scene: a completed turn with nothing to show is itself
+    # told as a failure (`Playthrough::Session#unexplained`).
+    answer = create(:scene, story: game.story, location: game.current_location)
+    create(:playthrough_command, playthrough: game, status: "completed", result_scene: answer)
 
     get playthrough_path(game)
 

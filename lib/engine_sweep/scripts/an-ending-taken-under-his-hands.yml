@@ -1,0 +1,165 @@
+# THE LUNAR CARTOGRAPHER'S SECOND ENDING, REACHED THE ONLY WAY IT IS ABOUT.
+#
+# `taken-under-his-hands` says *"You took the bearing while the Ringer was still
+# standing over the rope"*, and its rule is `while_alive`: beat 3, the climbers'
+# bearing book, reached while Marek Sollen was alive in this game
+# (`Quest::Outcome::CONDITIONS`). So the book comes off the boards with him
+# standing by the rope -- he answers the take with a blow, because a foe answers
+# a turn -- and only then the fight, and the tally off his body last.
+#
+# WHAT IT PINS AGAINST ITS SIBLING. `an-ending-the-ringer-did-not-stand-for.yml`
+# takes the same three beats in the same order, and differs in one thing: the
+# fight comes before the book. That one difference is the whole of what the rule
+# reads, so the two walks between them are the rule.
+story: The Lunar Cartographer
+why: the bearing book taken while the Ringer is alive reaches the ending that says he was standing over the rope
+steps:
+- id: up-the-stairs
+  type: go to the hallway
+  expect:
+    changed: true
+    location: Grenn's Boarding House hallway (stub)
+
+- id: the-one-fixed-point
+  type: go to the bell
+  why: beat 1 -- arriving is free, because a riposte runs in the room the turn began in
+  expect:
+    changed: true
+    location: The Bell of Saint Aravel (realized)
+    foes: [Marek Sollen]
+    quest:
+      1: reached
+    ending: none
+
+- id: the-book-under-his-hands
+  type: take the bearing book
+  why: beat 3, with the Ringer alive and standing by the rope -- and he answers the take with a blow
+  expect:
+    changed: true
+    carrying: [climbers' bearing book]
+    foes: [Marek Sollen]
+    blows: 1
+    quest:
+      1: reached
+      2: bound
+      3: reached
+    ending: none
+
+- id: patched-up-0
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-1
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-1
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-2
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-2
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-3
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-3
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-4
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-4
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-5
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-5
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-6
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-6
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-7
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-7
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-8
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-8
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-9
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-9
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-10
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-10
+  type: mend 20
+  expect:
+    dead: false
+
+- id: the-tally-off-his-body
+  type: take the tally
+  why: the last beat -- and the book was taken while he was alive, so the second ending and its own words
+  expect:
+    changed: true
+    carrying: [climbers' bearing book, bell-rope tally]
+    quest:
+      1: reached
+      2: reached
+      3: reached
+    ending: taken-under-his-hands
+    ending_words: ["while the Ringer was still standing over the rope"]
+    dead: true

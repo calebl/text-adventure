@@ -67,6 +67,37 @@ class RustEngineExtensionTest < ActiveSupport::TestCase
     assert_equal before + 1, Playthrough::RustEngine.failures["schema_changed"]
   end
 
+  # A BREAK DIE IS A ROLL, read off the receipt the engine keeps in the turn's
+  # journal: the brittle tar pot thrown at the shed's door comes down on a
+  # floor, short of the door or through it, and throws the break die, and the
+  # finish reports its face against the share it breaks on, broken at or
+  # under it.
+  test "a break die the engine threw is one of the turn's rolls" do
+    script = EngineSweep.scripts.find { |candidate| candidate.name == "a-throw-can-fall-short" }
+    walked = script.steps.select { |step| step.id == "into-the-ropewalk" }
+
+    Dir.mktmpdir do |directory|
+      file = File.join(directory, "rolls.sqlite3")
+      EngineSweep::Parity.copy_database!(file)
+      EngineSweep::Parity::InProcess.new(:rust).on_file(file) do
+        walk = EngineSweep::Walk.new(script)
+        walk.prepare!
+        walked.each { |step| walk.play_step(step) }
+        game = walk.game_of(walked.sole.player)
+        Playthrough::RustEngine.replaying([]) do
+          Playthrough::Session.new(game).play("/throw tar pot at The Tarring Shed", request_token: "rolls")
+        end
+        command = game.commands.find_by!(request_token: "rolls")
+
+        rolled = Protocol::V1.rolls(command, command.result_scene).select { |roll| roll[:kind] == "break" }
+        assert_equal 1, rolled.size, command.journal.inspect
+        assert_equal 6, rolled.sole[:die]
+        pot = game.items.find_by!(name: "tar pot")
+        assert_equal rolled.sole[:result] <= rolled.sole[:target], pot.disposition == "broken"
+      end
+    end
+  end
+
   # TWO COPIES OF SQLITE IN ONE PROCESS, the `sqlite3` gem's and the
   # extension's, on one file in write-ahead-log mode. The engine's connection
   # closing must leave the log to this process's own connection: a checkpoint

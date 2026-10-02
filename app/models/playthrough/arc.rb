@@ -61,10 +61,11 @@
 # predicate, and it is public for `#reached?`'s reason -- a read-out and a sweep
 # have to be able to state a rule's state without writing one.
 #
-# NOTHING ASKS A MODEL WHICH ENDING HAPPENED. Both rules are arithmetic over
-# rows this game already wrote -- how long it took (`slower_than`) and in what
-# order it got there (`out_of_order`) -- which is what lets an offline walk
-# reach a NON-default ending and assert it.
+# NOTHING ASKS A MODEL WHICH ENDING HAPPENED. Every rule is arithmetic over
+# rows this game already wrote -- how long it took (`slower_than`), in what
+# order it got there (`out_of_order`) and whether somebody was still alive when
+# it did (`while_alive`) -- which is what lets an offline walk reach a
+# NON-default ending and assert it.
 #
 # --- what it may write, and what it must never -----------------------------
 #
@@ -222,6 +223,7 @@ class Playthrough::Arc
     case outcome.condition
     when "slower_than" then slower_than?(outcome.minutes)
     when "out_of_order" then out_of_order?(outcome.quest)
+    when "while_alive" then alive_at_beat?(outcome.step, outcome.character)
     else false
     end
   end
@@ -468,5 +470,33 @@ class Playthrough::Arc
                                  .in_story_order.includes(:quest_step).map { |beat| beat.quest_step.position }
 
     positions != positions.sort
+  end
+
+  # WHETHER `character` WAS STILL ALIVE WHEN THIS GAME REACHED `step`, read off
+  # the blow or the toll that took their last hit point in this game -- the one
+  # record of WHEN somebody died -- against the beat's `reached_at`.
+  #
+  # STRICTLY BEFORE, AND THAT IS THE WHOLE JUDGEMENT. A blow is stamped with the
+  # story time its turn began and a beat with the time its turn ended, so a beat
+  # reached on the turn that killed them is after the death, and a beat reached
+  # on the turn before a fight that opened at the same minute is not.
+  #
+  # A BEAT NOT REACHED IS NOT REACHED WHILE ANYBODY WAS ALIVE, and a body at
+  # zero with no blow or toll on record -- a repaired database -- died at a
+  # moment nobody can read, so the rule does not hold. Either way the default is
+  # what this game falls through to, and it is the ending that claims least.
+  def alive_at_beat?(step, character)
+    return false if step.nil? || character.nil?
+
+    beat = Playthrough::Beat.find_by(playthrough: playthrough, quest_step: step)
+    return false if beat.nil?
+
+    died = [
+      Playthrough::Blow.where(playthrough: playthrough, target: character, hp_after: 0).minimum(:story_timestamp),
+      Playthrough::Toll.where(playthrough: playthrough, character: character, hp_after: 0).minimum(:story_timestamp)
+    ].compact.min
+    return !playthrough.vitals_for(character)&.dead? if died.nil?
+
+    died >= beat.reached_at
   end
 end

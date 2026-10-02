@@ -5,7 +5,7 @@
 module Eval::Inscription
   CORPUS = Rails.root.join("test/fixtures/files/inscription_corpus.yml")
   RESULTS = "inscription.json".freeze
-  BASELINE = "inscription-2026-09-26".freeze
+  BASELINE = "inscription-2026-10-02".freeze
 
   def self.cases
     document = YAML.safe_load_file(CORPUS)

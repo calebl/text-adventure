@@ -34,6 +34,11 @@
 # A dev server caches the schema it started with, so it TELLS you to restart
 # yours and leaves it alone.
 #
+# THE ONE TRACKED FILE IT WRITES is a schema file a migration just dumped, and
+# only back to its own committed bytes, only when the dump differs from them in
+# column order alone, and never when that file was already edited before this
+# ran. See `Update::SchemaOrder`.
+#
 # RUBY RATHER THAN SHELL, following `bin/setup` -- which is the script this most
 # resembles, an idempotent bring-your-environment-up-to-date runner. It also
 # reads git's output and branches on it a dozen times, which is the point where
@@ -47,6 +52,9 @@ Dir.chdir APP_ROOT
 # The one decision in here that is worth asserting without a checkout, a network
 # or a database. Plain Ruby, no Rails -- see its header.
 require_relative "../lib/update/seed_files"
+# The same for whether the built engine extension is the pinned one.
+require_relative "../lib/update/engine_stamp"
+require_relative "../lib/update/schema_order"
 
 # So an `abort` (stderr) cannot print above the stdout it is about.
 $stdout.sync = true
@@ -90,12 +98,12 @@ end
 # Git's answer to a question, and whether it could answer at all. Everything
 # this script decides is decided on one of these, so the failure comes back as
 # a value rather than as an exception to be caught somewhere else.
-def capture(*args)
+def capture(*args, strip: true)
   out, status = Open3.capture2e(*args)
-  [ out.strip, status.success? ]
+  [ strip ? out.strip : out, status.success? ]
 end
 
-def git(*args) = capture("git", *args)
+def git(*args, **opts) = capture("git", *args, **opts)
 
 # A command whose output the captain should see, run for real. Returns whether
 # it worked; nothing here decides to carry on past a failure without saying so.
@@ -126,6 +134,13 @@ head, ok = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD")
 DEFAULT_BRANCH = ok && head.start_with?("origin/") ? head.delete_prefix("origin/") : "main"
 
 branch, = git("rev-parse", "--abbrev-ref", "HEAD")
+
+# Which schema files had an uncommitted change BEFORE anything ran, so the
+# column-order restore after migrating never overwrites an edit that was already
+# there. See `Update::SchemaOrder`.
+schema_files = Update::SchemaOrder::FILES.select { |path| File.exist?(path) }
+schema_dirty, = git("status", "--porcelain", "--", *schema_files, strip: false)
+SCHEMA_DIRTY_BEFORE = Update::SchemaOrder.dirty_paths(schema_dirty)
 
 puts "BRINGING THIS CHECKOUT UP TO DATE#{" -- DRY RUN, nothing will be written" if DRY_RUN}"
 say "#{APP_ROOT} on #{branch}, default branch #{DEFAULT_BRANCH}"
@@ -227,8 +242,9 @@ end
 
 # ----------------------------------------------------------------------------
 # The Rust engine's extension, which plays every turn. Rebuilt when its crate
-# moved in the range (a new engine pin is a change there) or when there is no
-# built one to play with; silent otherwise.
+# moved in the range, or when its build stamp does not say it was built from
+# the pinned engine and crate -- whatever the range, so a hand pull is caught
+# too (`Update::EngineStamp`); silent otherwise.
 # ----------------------------------------------------------------------------
 
 section "THE RUST ENGINE"
@@ -240,10 +256,10 @@ engine_moved =
     changed, = git("diff", "--name-only", OLD, TARGET, "--", "ext/renderedstep")
     !changed.empty?
   end
-engine_built = Dir[File.join(APP_ROOT, "ext/renderedstep/build/renderedstep_native.*")].any?
+engine_stamp = Update::EngineStamp.check
 
-if engine_moved || !engine_built
-  say engine_moved ? "the extension's crate moved in that range." : "the extension is not built yet."
+if engine_moved || engine_stamp.stale?
+  say engine_moved ? "the extension's crate moved in that range." : engine_stamp.reason
   if DRY_RUN
     say "would run: bin/rails engine:build"
   else
@@ -284,6 +300,32 @@ else
     abort "\nbin/update: `bin/rails db:migrate` failed. The post-update steps read the columns it " \
           "adds, so nothing further has run." unless loud("bin/rails", "db:migrate")
     migrated = true
+  end
+end
+
+# ----------------------------------------------------------------------------
+# The schema files the migration just dumped. A database built migration by
+# migration dumps its columns in the order they were added, not the committed
+# alphabetical order, so a file whose ONLY difference is that order gets its
+# committed bytes back. Any other difference, and any file that was already
+# edited before this ran, is left alone and said. `Update::SchemaOrder` decides.
+# ----------------------------------------------------------------------------
+
+section "THE SCHEMA FILES"
+
+schema_files.each do |path|
+  clean_before = !SCHEMA_DIRTY_BEFORE.include?(path)
+
+  if DRY_RUN
+    say Update::SchemaOrder.dry_line(path:, clean_before:, migrating: pending.any?)
+  elsif migrated
+    committed, tracked = git("show", "HEAD:#{path}", strip: false)
+    outcome = Update::SchemaOrder.decide(path:, clean_before:, committed: (committed if tracked),
+                                         dumped: File.exist?(path) ? File.read(path) : nil)
+    File.write(path, committed) if outcome.restore?
+    say outcome.line
+  else
+    say "#{path}: no migration ran, so nothing was dumped."
   end
 end
 

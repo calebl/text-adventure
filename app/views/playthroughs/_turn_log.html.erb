@@ -137,16 +137,19 @@
       A playthrough ends for one of two reasons and the copy says which. At zero
       hit points the character is dead (the captain's ruling of 2026-09-04); at
       the last step of the main arc the STORY is over and nobody died
-      (`Playthrough::Arc#conclude!`). Either way the form is not disabled and it
+      (`Playthrough::Arc#conclude!`). A game marked over with neither on record
+      says only that it stopped before the story reached an ending
+      (`Playthrough::StoppedNotice`). Either way the form is not disabled and it
       is not left there to be refused line after line -- it is GONE, and what
       stands in its place says why and offers the one thing that is left.
 
       `Playthrough::EndNotice` DECIDES WHICH, off the records -- an ending row
       or a protagonist at zero -- and this view asks no other question about it.
       It also builds the sentence `Playthrough::Refusal.over` answers a typed
-      line with, out of the same two authors (`Playthrough::DeathNotice`,
-      `Playthrough::StoryOverNotice`), so the standing statement and the refusal
-      cannot come to disagree about why the game is over. Read that class's
+      line with, out of the same three authors (`Playthrough::DeathNotice`,
+      `Playthrough::StoryOverNotice`, `Playthrough::StoppedNotice`), so the
+      standing statement and the refusal cannot come to disagree about why the
+      game is over. Read that class's
       header before changing any of this.
 
       `#closing_words` is nil on an ordinary finished game and that is the
@@ -161,6 +164,18 @@
     <% ended = Playthrough::EndNotice.for(playthrough) %>
     <div class="notice">
       <p><strong><%= ended.heading %></strong></p>
+      <%# WHICH GOAL ENDED IT AND WHY THIS ENDING, out of the records
+          (`Playthrough::EndNotice#finished`) -- so a player who has just read
+          the closing paragraph can see what the story counted. %>
+      <% if (finished = ended.finished) %>
+        <p>You finished <%= finished.quest %>. Its goals:</p>
+        <ol>
+          <% finished.goals.each do |goal| %>
+            <li><%= goal %></li>
+          <% end %>
+        </ol>
+        <p><%= finished.reason %></p>
+      <% end %>
       <% if ended.closing_words %>
         <p><%= ended.closing_words %></p>
       <% end %>

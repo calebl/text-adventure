@@ -66,6 +66,7 @@ namespace :engine do
   task :build do
     crate = File.expand_path("../../ext/renderedstep", __dir__)
     arguments = %w[cargo build --release --locked]
+    source = nil
     if ENV["ENGINE_SOURCE"].present?
       source = File.expand_path(ENV["ENGINE_SOURCE"])
       arguments = %w[cargo build --release] +
@@ -78,6 +79,10 @@ namespace :engine do
     FileUtils.mkdir_p(File.join(crate, "build"))
     built = File.join(crate, "build", "renderedstep_native.#{RbConfig::CONFIG.fetch("DLEXT")}")
     FileUtils.cp(library, built)
+    # What it was built from, so `bin/update` can tell a stale one whatever
+    # the git range (`Update::EngineStamp`).
+    require_relative "../update/engine_stamp" unless defined?(Update::EngineStamp)
+    Update::EngineStamp.write!(crate, source: source)
     puts "Built #{built}. Restart the app to play on it."
   end
 

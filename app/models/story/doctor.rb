@@ -2769,10 +2769,10 @@ class Story::Doctor
   # or a repair that ran against a schema older than `playthrough_endings` is
   # what leaves one.
   #
-  # IT IS REPORTED BECAUSE THE PLAYER IS SHOWN A GUESS. `Playthrough::EndNotice`
-  # falls back to the death copy for exactly this row -- read its header for
-  # why that is the right guess and why there is no third set of words -- and a
-  # guess on the play page is precisely the thing that should reach whoever can
+  # IT IS REPORTED BECAUSE THE PLAYER CANNOT BE TOLD WHY. `Playthrough::EndNotice`
+  # shows `Playthrough::StoppedNotice` for exactly this row -- the game stopped
+  # before the story reached an ending, and nothing more -- and the reason the
+  # play page cannot give is precisely the thing that should reach whoever can
   # look at the database instead.
   #
   # `manual`: nothing on record says which of the two it was, and both repairs
@@ -2787,7 +2787,7 @@ class Story::Doctor
       finding(:playthrough_ended_for_no_recorded_reason, :warning,
               "playthrough ##{playthrough.id} is marked ended at " \
               "#{playthrough.ended_at.utc.iso8601} with no ending reached and nobody at zero hit points, " \
-              "so the play page can only guess at why it stopped",
+              "so the play page cannot say why it stopped",
               :manual, subject: playthrough)
     end
   end

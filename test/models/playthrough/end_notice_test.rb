@@ -98,12 +98,28 @@ class Playthrough::EndNoticeTest < ActiveSupport::TestCase
     assert_match(/Odile Vance is dead/, notice.sentence)
   end
 
-  # NO THIRD SET OF WORDS. A game the records cannot explain shows the death
-  # copy and is reported by `Story::Doctor`; see this class's header.
-  test "an unrecorded ending shows the death copy" do
+  # THE THIRD SET OF WORDS. A game the records cannot explain used to be shown
+  # the death copy -- "You are dead." over a protagonist the records have alive
+  # -- and is told only what is on record now; see this class's header.
+  test "an unrecorded ending is told the game stopped and never that it is dead or concluded" do
     @game.end!
 
-    assert_equal Playthrough::DeathNotice::HEADING, Playthrough::EndNotice.for(@game).heading
+    notice = Playthrough::EndNotice.for(@game)
+
+    assert_equal Playthrough::StoppedNotice::HEADING, notice.heading
+    assert_equal Playthrough::StoppedNotice::PARAGRAPHS, notice.paragraphs
+    assert_equal Playthrough::StoppedNotice.sentence(@vance), notice.sentence
+    assert_equal :stopped, notice.refusal_kind
+    assert_no_match(/dead|is over/i, [ notice.heading, *notice.paragraphs, notice.sentence ].join(" "))
+    assert_match(/new playthrough/, notice.paragraphs.join(" "))
+    assert_nil notice.closing_words
+  end
+
+  test "a game with no protagonist is told the game stopped, addressed to the player" do
+    castless = create(:playthrough, story: @story, character: nil, current_location: @room)
+    castless.end!
+
+    assert_match(/\AYour story stopped/, Playthrough::EndNotice.for(castless).sentence)
   end
 
   test "the refusal and the standing notice come out of the same author" do
@@ -150,6 +166,73 @@ class Playthrough::EndNoticeTest < ActiveSupport::TestCase
   # THE ROWS `Playthrough::Arc#conclude!` WRITES, in the shape it writes them:
   # the ending, the closing `Scene` carrying the outcome's own sentence, the
   # chain head pointed at it, and `ended_at`.
+  # --- which goal, and why this ending ----------------------------------------
+  #
+  # The owner's game: The Lunar Cartographer closed on a paragraph about a dead
+  # man standing, and nothing on the screen said which goal had ended it or why
+  # that ending. These are what the notice says instead, off the rows.
+
+  test "a concluded story names its goals, the one met last and why the default" do
+    met!(1, 3, 2)
+    create(:quest_outcome, :out_of_order, quest: @quest, name: "the-wrong-way-round")
+    conclude!
+
+    finished = Playthrough::EndNotice.for(@game).finished
+
+    assert_equal @quest.title, finished.quest
+    assert_equal [ "Climb to the bell.", "Get the tally.", "Take the bearing book." ], finished.goals
+    assert_equal 2, finished.last_goal
+    assert_equal "Goal 2 was the last you met, and it finished the story. None of the story's other endings " \
+                 "applied, so this is the one it was built toward.", finished.reason
+  end
+
+  test "an ending reached out of order says which goal came first" do
+    @outcome = create(:quest_outcome, :out_of_order, quest: @quest, name: "the-wrong-way-round")
+    met!(1, 3, 2)
+    conclude!
+
+    assert_equal "Goal 2 was the last you met, and it finished the story. You met goal 3 before goal 2, " \
+                 "which is what this ending is for.", Playthrough::EndNotice.for(@game).finished.reason
+  end
+
+  test "an ending reached while somebody lived names them" do
+    ringer = create(:character, story: @story, fullname: "Marek Sollen")
+    @outcome = create(:quest_outcome, :while_alive, quest: @quest, name: "taken-under-his-hands",
+                                                    step_position: 3, character: ringer)
+    met!(1, 3, 2)
+    conclude!
+
+    assert_equal "Goal 2 was the last you met, and it finished the story. You met goal 3 while Marek Sollen was " \
+                 "still alive, which is what this ending is for.", Playthrough::EndNotice.for(@game).finished.reason
+  end
+
+  test "an ending reached late says by how much it was late" do
+    @outcome = create(:quest_outcome, :slower_than, quest: @quest, name: "too-late", minutes: 150)
+    met!(1, 2, 3)
+    conclude!
+
+    assert_match(/more than 2 hours and 30 minutes after the story began/, Playthrough::EndNotice.for(@game).finished.reason)
+  end
+
+  test "a game that did not conclude has nothing finished to say" do
+    met!(1, 2, 3)
+    kill!
+
+    assert_nil Playthrough::EndNotice.for(@game).finished
+  end
+
+  def met!(*positions)
+    summaries = [ "Climb to the bell.", "Get the tally.", "Take the bearing book." ]
+    steps = summaries.each_with_index.map do |summary, index|
+      create(:quest_step, :reach_location, quest: @quest, position: index + 1, summary: summary)
+    end
+    positions.each_with_index do |position, index|
+      create(:playthrough_beat, playthrough: @game, quest_step: steps[position - 1],
+                                reached_at: @story.start_time + (index * 10).minutes)
+    end
+    @quest.reload
+  end
+
   def conclude!
     scene = create(:scene, story: @story, location: @room, previous_scene: @game.current_scene,
                            description: @outcome.summary, summary: @outcome.summary,

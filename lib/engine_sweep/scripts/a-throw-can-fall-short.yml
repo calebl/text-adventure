@@ -1,0 +1,67 @@
+# A THROW CAN FALL SHORT, IN A ROOM WITH A FLOOR PLAN.
+#
+# The player walks into the ropewalk, 24 paces long, and throws three things
+# from wherever the placement roll stands him: the lead sinker at Hester Vane,
+# who keeps a spot at the far end, the tar pot at the door into the tarring
+# shed, and the cork float at Hester again. A throw is a lift first (a strength
+# check less the thing's bulk), and a thing that leaves his hands carries its
+# range: its bulk's paces at the world's gravity, plus his reach for strength
+# 18. No die is thrown for the range. It is held against the paces, along the
+# axes, from where he stands to Hester, or to the cell beside the shed's
+# doorway and one more through it. A throw that carries far enough resolves as
+# it always did; one that does not hits nobody, goes through no door, and lands
+# in this room the range's paces along the line of the throw, where it throws
+# the break die as a thrown thing does.
+#
+# WHY IT ASSERTS WHAT IT ASSERTS: the golden holds every die and every pace on
+# the pinned ids, and the script asserts only what is true whatever they came
+# up. Every throw writes its lift and its range to the note, and the range is
+# the tables' own number: 7 paces for a heavy thing and 16 for a light one, at
+# ordinary gravity with strength 18. On this walk's ids Hester is 11 paces off
+# and the shed's doorway 24, so the sinker falls short of her and lies on the
+# floor, the tar pot falls short of the door and breaks where it lands, and the
+# float reaches her and starts a fight; the golden holds each.
+story: The Ropewalk at Saltmarsh
+why: a throw carries its range, and one thrown further than that falls short and hits nobody
+steps:
+- id: into-the-ropewalk
+  type: go to the ropewalk
+  why: into the ropewalk, with one thing of each bulk in his hands
+  expect:
+    changed: true
+    location: The Ropewalk (realized)
+    carrying: [cork float, hank of twine, lead sinker, tar pot]
+
+- id: the-sinker-at-hester
+  type: throw the lead sinker at hester vane
+  why: a heavy thing carries the fewest paces, held against the paces to a person with a spot
+  expect:
+    refused: false
+    note:
+    - 'threw: lead sinker at Hester Vane'
+    - 'range: lead sinker -- heavy, 7 paces at ordinary gravity;'
+
+- id: the-pot-at-the-shed
+  type: throw the tar pot at the tarring shed
+  why: a way out with a shared wall is measured to its doorway and one pace through
+  expect:
+    refused: false
+    note:
+    - 'threw: tar pot at The Tarring Shed'
+    - 'range: tar pot -- light, 16 paces at ordinary gravity;'
+
+- id: the-float-at-hester
+  type: throw the cork float at hester vane
+  why: a light thing carries further than a heavy one, at the same person from the same spot
+  expect:
+    refused: false
+    note:
+    - 'threw: cork float at Hester Vane'
+    - 'range: cork float -- light, 16 paces at ordinary gravity;'
+
+- id: into-the-shed
+  type: go to the tarring shed
+  why: whatever fell short stayed in the ropewalk, and nothing reached the shed
+  expect:
+    changed: true
+    location: The Tarring Shed (realized)

@@ -46,8 +46,18 @@ class Playthrough::Session
   # `Playthrough::Command`, and `saved_action`, `:resume` or `:acknowledge`
   # or `:none` -- the same three states the play page draws). `running_turn`
   # is the command still in hand while `busy`, oldest first, so a front end
-  # that reconnects mid-turn can find the turn it is waiting on.
-  Standing = Data.define(:over, :ended, :busy, :saved_turn, :saved_action, :running_turn)
+  # that reconnects mid-turn can find the turn it is waiting on. `finished` is
+  # `Playthrough::EndNotice#finished` -- which goal ended a concluded story and
+  # why this ending -- and nil for every other game.
+  Standing = Data.define(:over, :ended, :finished, :busy, :saved_turn, :saved_action, :running_turn)
+
+  # A ROUND OF A FIGHT THAT DID NOT END IT, which is the one completed turn
+  # that writes no Scene and no refusal on purpose: the blows are the record,
+  # and the one Scene comes when the fight closes (`Playthrough::Fight`).
+  # `blows` are the round's, the party's first; `sentence` is the battle
+  # panel's own line about them (`Playthrough::Battle#lead`). The browser draws
+  # the panel off the same rows; a front end without one is told this.
+  Round = Data.define(:blows, :sentence)
 
   # STARTING A GAME, which is the protagonist's arrival in the story's first
   # realized room. A story that has neither cannot be played, and the answer is
@@ -193,11 +203,30 @@ class Playthrough::Session
     else
       Playthrough::Turn.new(playthrough)
     end
+    finish = lambda do |outcome|
+      command = playthrough.commands.find_by(request_token: request_token, command: line) if request_token
+      on_finish&.call(ending(outcome, turn, command))
+    end
     # Every call this turn makes is spent on the game's player; see `Current`.
     Current.set(player: playthrough.player, playthrough: playthrough) do
       turn.play(line, request_token: request_token, on_start: on_start,
-                on_finish: ->(outcome) { on_finish&.call(ending(outcome, turn)) }, on_error: failure, &block)
+                on_finish: finish, on_error: failure, &block)
     end
+  end
+
+  # THE ROUND A TURN FOUGHT, when it fought one and the fight is still on; see
+  # `Round`. The turn's own round is the one its journal saved, so a finish
+  # read after a later round still reports its own; a turn with no submission
+  # (the Ruby loop's untokened lines) reads the newest round there is. Nil when
+  # the round has no blows, which is every turn that is not a fight's. Reads
+  # only, on a fresh hold: it is asked mid-turn, when the one the turn is
+  # playing must not be reloaded under it.
+  def round_fought(command = nil)
+    battle = Playthrough::Battle.new(Playthrough.find(playthrough.id))
+    number = command&.journal&.dig("steps", "round")
+    number = battle.last_round unless number.is_a?(Integer)
+    blows = battle.exchange(number)
+    Round.new(blows: blows, sentence: battle.lead(blows)) if blows.any?
   end
 
   # WHERE THE GAME STANDS NOW; see `Standing`. Reads only.
@@ -211,8 +240,9 @@ class Playthrough::Session
         saved.journal.blank? ? :acknowledge : :none
       else :resume
       end
+    ended = Playthrough::EndNotice.for(playthrough) if playthrough.over?
     Standing.new(over: playthrough.over?,
-                 ended: (Playthrough::EndNotice.for(playthrough).sentence if playthrough.over?),
+                 ended: ended&.sentence, finished: ended&.finished,
                  busy: !running.nil?, running_turn: running,
                  saved_turn: saved, saved_action: action)
   end
@@ -253,7 +283,7 @@ class Playthrough::Session
     else
       outcome = latest.outcome
       Ending.new(
-        error: (Playthrough::SetupNotice.for(outcome.rendering_error) if outcome.is_a?(Scene)),
+        error: (Playthrough::SetupNotice.for(outcome.rendering_error) if outcome.is_a?(Scene)) || unexplained(outcome, latest),
         safety_notice: outcome.is_a?(Scene) && outcome.safety_notice.present?,
         refusal: (outcome if outcome.is_a?(Playthrough::Refusal))
       )
@@ -271,12 +301,24 @@ class Playthrough::Session
   # app has no narrator to ask. The turn is finished and its effects stand, so
   # this is not a `TurnFailureNotice` -- but it must not read as a working game
   # either. `Scene#rendering_error` is the receipt the fallback left behind.
-  def ending(outcome, turn)
+  def ending(outcome, turn, command)
     Ending.new(
-      error: (Playthrough::SetupNotice.for(outcome.rendering_error) if outcome.is_a?(Scene)),
+      error: (Playthrough::SetupNotice.for(outcome.rendering_error) if outcome.is_a?(Scene)) || unexplained(outcome, command),
       safety_notice: turn.safety_notice,
       refusal: (outcome if outcome.is_a?(Playthrough::Refusal))
     )
+  end
+
+  # A TURN THAT ENDED WITH NOTHING TO SHOW IS NEVER SILENT. A finished turn
+  # answers a Scene, a refusal, or -- a round of a fight that did not end it --
+  # the blows of `#round_fought`, which the panel and the protocol report. Any
+  # other empty answer is a turn the player would otherwise read as nothing at
+  # all, so it gets the app's failure copy and the maintainer gets a log line.
+  def unexplained(outcome, command)
+    return nil if outcome.is_a?(Scene) || outcome.is_a?(Playthrough::Refusal) || round_fought(command)
+
+    Rails.logger.warn { "Turn finished with nothing to show: playthrough #{playthrough.id}, submission #{command&.id.inspect}" }
+    Playthrough::TurnFailureNotice::MESSAGE
   end
 
   # `game:new` generates the opening location and realizes it, so it is the

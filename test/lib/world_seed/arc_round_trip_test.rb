@@ -2,7 +2,7 @@ require "test_helper"
 
 # THE TWO BLOCKS `ta-quest-outcomes` ADDED TO THE FILE FORMAT, THERE AND BACK.
 #
-#   an outcome's `when:` / `minutes:` / `ramification:` -- which of several
+#   an outcome's `when:` / `minutes:` / `beat:` / `alive:` / `ramification:` -- which of several
 #   endings a game reaches, and what the world does about it afterwards
 #   the story's `schedule:` -- a thing this world has already decided will
 #   happen, which is the captain's Call 8 of 2026-09-06
@@ -45,6 +45,26 @@ class WorldSeed::ArcRoundTripTest < ActiveSupport::TestCase
     assert_equal 180, outcome.ramification_minutes
     assert_equal iron_gate.main_quest.outcomes.find_by(name: "too-late").ramification_summary,
                  outcome.ramification_summary
+  end
+
+  # THE ENDING THAT SAYS *"while the Ringer was still standing"*, with the rule
+  # that means it: the book (beat 3) taken while Marek Sollen was alive.
+  test "the Lunar Cartographer's second ending loads with its beat and its person" do
+    story = lunar_cartographer
+    outcome = story.main_quest.outcomes.find_by(name: "taken-under-his-hands")
+
+    assert_equal "while_alive", outcome.condition
+    assert_equal story.characters.find_by(fullname: "Marek Sollen"), outcome.character
+    assert_equal "climbers' bearing book", outcome.step.target_name
+  end
+
+  test "an exported life reloads naming the same beat and the same person" do
+    reloaded = reload_through_the_exporter(lunar_cartographer, "The Lunar Cartographer (round trip)")
+    outcome = reloaded.main_quest.outcomes.find_by(name: "taken-under-his-hands")
+
+    assert_equal "while_alive", outcome.condition
+    assert_equal 3, outcome.step_position
+    assert_equal reloaded.characters.find_by(fullname: "Marek Sollen"), outcome.character
   end
 
   # --- the schedule ----------------------------------------------------------
@@ -136,6 +156,25 @@ class WorldSeed::ArcRoundTripTest < ActiveSupport::TestCase
     extra["quests"].first["outcomes"].last["minutes"] = 90
 
     assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(extra).load! }
+  end
+
+  test "a rule about a life is refused without a beat of the arc or a person of the file" do
+    no_beat = lunar_document
+    no_beat["quests"].first["outcomes"].last["beat"] = 4
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(no_beat).load! }
+    assert_match(/beat:/, error.message)
+
+    nobody = lunar_document
+    nobody["quests"].first["outcomes"].last["alive"] = "Marek Solen"
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(nobody).load! }
+    assert_match(/Marek Solen/, error.message)
+
+    stray = iron_gate_document
+    stray["quests"].first["outcomes"].last["beat"] = 2
+
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(stray).load! }
   end
 
   test "half a ramification is refused" do
