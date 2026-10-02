@@ -801,6 +801,21 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # WHICH GOAL ENDED IT AND WHY THIS ENDING, under the heading and off the rows
+  # (`Playthrough::EndNotice#finished`).
+  test "a concluded playthrough names its goals and why this ending" do
+    playthrough = concluded_playthrough
+    quest = playthrough.endings.sole.quest_outcome.quest
+    step = create(:quest_step, :reach_location, quest: quest, position: 1, summary: "Open the iron gate.")
+    create(:playthrough_beat, playthrough: playthrough, quest_step: step, reached_at: playthrough.story_now)
+
+    get playthrough_path(playthrough)
+
+    assert_select "div.notice", text: /You finished #{Regexp.escape(quest.title)}/
+    assert_select "div.notice ol li", text: "Open the iron gate."
+    assert_select "div.notice", text: /Goal 1 was the last you met, and it finished the story\. This is the ending the story was built toward\./
+  end
+
   # THE ENDING'S OWN PARAGRAPH IS THE LAST ENTRY OF THE LOG, so the notice under
   # it must not print it a second time.
   test "a concluded playthrough prints its last paragraph once" do

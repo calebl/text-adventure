@@ -692,6 +692,8 @@ class WorldSeed::Exporter
       "default" => outcome.is_default?,
       "when" => outcome.condition,
       "minutes" => outcome.minutes,
+      "beat" => outcome.step_position,
+      "alive" => outcome.character&.fullname,
       "ramification" => ramification_document(outcome)
     }.compact
   end

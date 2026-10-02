@@ -184,6 +184,29 @@ class Scene::EndingTest < ActiveSupport::TestCase
                     "The story has ended: #{@outcome.summary}"
   end
 
+  # WHO LIES DEAD HERE, on the ending's pass: the owner's Lunar Cartographer
+  # game closed on "the Ringer stands motionless over the rope" with Marek
+  # Sollen dead on the boards, because the room's own description still has
+  # him standing and nothing in the moment said otherwise. The nickname is in
+  # brackets because the world's prose calls him by it.
+  test "the ending is told who lies dead here, by the name the world's prose uses too" do
+    ringer = create(:character, story: @story, fullname: "Marek Sollen", nickname: "the Ringer", location: @cell)
+    create(:playthrough_vitals, :dead, playthrough: @game, character: ringer)
+    conclude!
+
+    assert_includes EngineMoment.new(@game.reload, ending: @outcome).narration_context,
+                    "Dead here: Marek Sollen (the Ringer). They cannot speak or act."
+    assert_not_includes EngineMoment.new(@game.reload).narration_context, "Dead here",
+                        "the narrator's own turns are told nothing new"
+  end
+
+  test "an ending with nobody dead in the room is told nothing about the dead" do
+    create(:character, story: @story, fullname: "Marek Sollen", nickname: "the Ringer", location: @cell)
+    conclude!
+
+    assert_not_includes EngineMoment.new(@game.reload, ending: @outcome).narration_context, "Dead here"
+  end
+
   private
 
   # The engine's half, run for real: the beat lands, the arc selects the

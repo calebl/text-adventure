@@ -297,7 +297,11 @@ schedule:
 # The tally is the measurement the Sovereigns cannot answer: twenty-nine years
 # of hours counted from a fixed point and then no more counting, which is a
 # Blighted ringer written in wood. Taking the bearing with him still standing
-# over the rope is the second ending.
+# over the rope is the second ending, and `while_alive` is the rule that says
+# so: the book (beat 3) taken while Marek Sollen was alive. The tally can only
+# be had off his body, so the order of beats 2 and 3 cannot tell the two apart
+# -- a player who killed him, took the book and then the tally was once told he
+# had been standing over them.
 quests:
 - title: The Fixed Bearing
   premise: Take one bearing in Nocturnis that will still be true tomorrow, and the proof of what standing on it costs.
@@ -321,4 +325,6 @@ quests:
   - name: taken-under-his-hands
     summary: You took the bearing while the Ringer was still standing over the rope, and it shows. The tally is proof of what he was, but the figures you carried home beside it are the figures of somebody writing with their back to something, and they are off by the width of a flinch.
     default: false
-    when: out_of_order
+    when: while_alive
+    beat: 3
+    alive: Marek Sollen

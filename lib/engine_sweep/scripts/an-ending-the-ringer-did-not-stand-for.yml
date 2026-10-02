@@ -1,0 +1,182 @@
+# THE GAME THE OWNER PLAYED, AND THE ENDING IT SHOULD HAVE HAD.
+#
+# The Lunar Cartographer's second ending, `taken-under-his-hands`, says *"You
+# took the bearing while the Ringer was still standing over the rope"*. For its
+# first month the world file selected it with `when: out_of_order`, and the
+# order of beats 2 and 3 cannot say that: the tally is only ever had off
+# Marek's body, so a player who killed him, took the bearing book and then the
+# tally reached beat 3 before beat 2 with the Ringer long dead -- and was told
+# he had been standing over them, in a closing paragraph that made no sense of
+# the game they had just played.
+#
+# THIS IS THAT GAME, line for line in what it did: up to the bell, the fight to
+# the death (walked the way `the-lunar-cartographer-to-an-ending.yml` walks it,
+# so the same on every roll), the book, and the tally last. The rule is
+# `while_alive` now -- the book taken while Marek Sollen was alive
+# (`Quest::Outcome::CONDITIONS`) -- so this falls through to the default, whose
+# words are the ones this game earned: the tally and the book in the satchel.
+#
+# `an-ending-taken-under-his-hands.yml` is the other half: the book taken with
+# him standing there, which is the only game the second ending is about.
+story: The Lunar Cartographer
+why: beats taken out of order after the Ringer is dead reach the default ending, because the second one is about him being alive
+steps:
+- id: nothing-reached-yet
+  type: look
+  expect:
+    location: Grenn's Boarding House, Room 3 (realized)
+    ending: none
+
+- id: up-the-stairs
+  type: go to the hallway
+  expect:
+    changed: true
+    location: Grenn's Boarding House hallway (stub)
+
+- id: the-one-fixed-point
+  type: go to the bell
+  why: beat 1
+  expect:
+    changed: true
+    location: The Bell of Saint Aravel (realized)
+    foes: [Marek Sollen]
+    here: [climbers' bearing book]
+    quest:
+      1: reached
+    ending: none
+
+- id: round-1
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-1
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-2
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-2
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-3
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-3
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-4
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-4
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-5
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-5
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-6
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-6
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-7
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-7
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-8
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-8
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-9
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-9
+  type: mend 20
+  expect:
+    dead: false
+
+- id: round-10
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-10
+  type: mend 20
+  expect:
+    dead: false
+
+- id: the-ringer-is-down
+  type: look
+  why: ten blows of at least one cannot leave his ten hit points standing, whatever the dice said
+  expect:
+    foes: []
+    present: []
+    here: [climbers' bearing book, bell-rope tally]
+
+- id: the-book-off-the-boards
+  type: take the bearing book
+  why: beat 3 BEFORE beat 2, with the Ringer dead on the boards -- the order the owner took them in
+  expect:
+    changed: true
+    carrying: [climbers' bearing book]
+    quest:
+      1: reached
+      2: bound
+      3: reached
+    ending: none
+
+- id: the-tally-last
+  type: take the tally
+  why: |-
+    THE REGRESSION. Out of order, and nobody was standing over the rope: the
+    default ending and its own words, and not `taken-under-his-hands`.
+  expect:
+    changed: true
+    carrying: [climbers' bearing book, bell-rope tally]
+    quest:
+      1: reached
+      2: reached
+      3: reached
+    ending: the-bearing-holds
+    ending_words: ["the survey has its fixed point at last"]
+    dead: true

@@ -54,7 +54,28 @@
 # true with nothing behind it. It does not: "you are dead" over a protagonist
 # the records have alive is presentation saying what did not happen. So there
 # are three sets of words, and each claims only what its records hold.
+#
+# --- and WHICH ENDING, and what earned it ----------------------------------
+#
+# *"that ending did not make any sense. I don't even understand how I
+# triggered it."* The owner, 2026-09-28, after a game of The Lunar
+# Cartographer closed on a paragraph about a man who was already dead. The
+# notice said the story was over and nothing about why this ending, so the
+# player had the prose and nothing to check it against.
+#
+# `#finished` is that check, and it is read off the same rows the engine
+# decided on: the arc's goals in its own order, the one that was met last, and
+# the reason this ending was the one reached -- the reached outcome's rule
+# (`Quest::Outcome::CONDITIONS`) stated as what this game actually did. It is
+# the app's words, never a model's, and it says what the records say even
+# where an ending's own sentence claims more than its rule can know.
 class Playthrough::EndNotice
+  # THE ARC THIS GAME FINISHED, AS THE PLAYER IS TOLD IT. `goals` are the
+  # step summaries in the arc's order, so goal N is the arc's step N;
+  # `last_goal` is the number of the one this game met last, which is the one
+  # that ended it; `reason` is one sentence of why this ending.
+  Finished = Data.define(:quest, :goals, :last_goal, :reason)
+
   def self.for(playthrough) = new(playthrough)
 
   def initialize(playthrough)
@@ -144,9 +165,65 @@ class Playthrough::EndNotice
   # the one that stopped the game.
   def ending = playthrough.endings.order(:reached_at, :id).first
 
+  # WHICH GOAL WAS MET AND WHY THIS ENDING, or nil for a game that did not
+  # conclude -- and for one whose beats are not on record, which only a
+  # repaired database holds, because a reason nobody can read is not given.
+  def finished
+    outcome = (ending&.quest_outcome if concluded?)
+    return nil if outcome.nil?
+
+    quest = outcome.quest
+    steps = quest.steps.to_a
+    met = playthrough.beats.where(quest_step: steps).in_story_order.includes(:quest_step).map { |beat| beat.quest_step.position }
+    return nil if met.empty?
+
+    Finished.new(quest: quest.title, goals: steps.map(&:summary), last_goal: met.last,
+                 reason: "Goal #{met.last} was the last you met, and it finished the story. #{why(outcome, met)}")
+  end
+
   private
 
   def notice = NOTICES.fetch(reason)
+
+  # THE REACHED OUTCOME'S RULE, SAID AS WHAT THIS GAME DID. One sentence per
+  # row of `Quest::Outcome::CONDITIONS`, and a rule this does not know says
+  # nothing rather than guessing.
+  def why(outcome, met)
+    case outcome.condition
+    when nil
+      if outcome.quest.outcomes.any?(&:conditional?)
+        "None of the story's other endings applied, so this is the one it was built toward."
+      else
+        "This is the ending the story was built toward."
+      end
+    when "out_of_order"
+      later, earlier = first_out_of_order(met)
+      "You met goal #{later} before goal #{earlier}, which is what this ending is for."
+    when "slower_than"
+      "You met it more than #{story_duration(outcome.minutes)} after the story began, which is what this ending is for."
+    when "while_alive"
+      "You met goal #{outcome.step_position} while #{outcome.character&.fullname} was still alive, " \
+        "which is what this ending is for."
+    end
+  end
+
+  # The first goal met ahead of one the arc lists before it, and that one:
+  # `Playthrough::Arc#out_of_order?`'s answer, named.
+  def first_out_of_order(met)
+    met.each_with_index do |later, index|
+      earlier = met.drop(index + 1).find { |position| position < later }
+      return [ later, earlier ] if earlier
+    end
+    met.last(2)
+  end
+
+  def story_duration(minutes)
+    hours, rest = minutes.to_i.divmod(60)
+    parts = []
+    parts << "#{hours} hour#{"s" unless hours == 1}" if hours.positive?
+    parts << "#{rest} minute#{"s" unless rest == 1}" if rest.positive? || hours.zero?
+    parts.join(" and ")
+  end
 
   def protagonist_dead?
     who = playthrough.character

@@ -97,6 +97,102 @@ class Playthrough::ArcOutcomeTest < ActiveSupport::TestCase
     assert_equal @rescued, arc.ending.quest_outcome
   end
 
+  # --- while_alive -----------------------------------------------------------
+  #
+  # THE LUNAR CARTOGRAPHER'S SECOND ENDING, and the game that found out it was
+  # written with the wrong rule: the player killed the Ringer, took the bearing
+  # book and then his tally, and was told he had been standing over them. The
+  # book is beat 1 here and the cell beat 2; the Ringer is whoever the rule names.
+
+  test "a beat reached while they were still alive reaches the ending that says so" do
+    ringer = create(:character, story: @story, fullname: "Marek Sollen")
+    under_his_hands = create(:quest_outcome, :while_alive, quest: @quest, name: "taken-under-his-hands", character: ringer)
+    two_beats!
+
+    reach_the_gate!(at: @story.start_time + 10.minutes)
+    create(:playthrough_blow, :killing, playthrough: @game, target: ringer, story_timestamp: @story.start_time + 20.minutes)
+    reach_the_far_cell!(at: @story.start_time + 30.minutes)
+
+    assert_equal under_his_hands, arc.ending.quest_outcome
+  end
+
+  test "a beat reached after they died falls through to the default" do
+    ringer = create(:character, story: @story, fullname: "Marek Sollen")
+    create(:quest_outcome, :while_alive, quest: @quest, name: "taken-under-his-hands", character: ringer)
+    two_beats!
+
+    create(:playthrough_blow, :killing, playthrough: @game, target: ringer, story_timestamp: @story.start_time)
+    reach_the_gate!(at: @story.start_time + 10.minutes)
+    reach_the_far_cell!(at: @story.start_time + 20.minutes)
+
+    assert_equal @rescued, arc.ending.quest_outcome
+  end
+
+  # A blow is stamped with the minute its turn BEGAN, a beat with the minute its
+  # turn ended: a fight that opened on the minute the beat was reached came after it.
+  test "a fight that opened on the minute the beat was reached came after it" do
+    ringer = create(:character, story: @story, fullname: "Marek Sollen")
+    under_his_hands = create(:quest_outcome, :while_alive, quest: @quest, name: "taken-under-his-hands", character: ringer)
+    two_beats!
+
+    reach_the_gate!(at: @story.start_time + 10.minutes)
+    create(:playthrough_blow, :killing, playthrough: @game, target: ringer, story_timestamp: @story.start_time + 10.minutes)
+    reach_the_far_cell!(at: @story.start_time + 20.minutes)
+
+    assert_equal under_his_hands, arc.ending.quest_outcome
+  end
+
+  test "a blow that did not kill them is not a death" do
+    ringer = create(:character, story: @story, fullname: "Marek Sollen")
+    under_his_hands = create(:quest_outcome, :while_alive, quest: @quest, name: "taken-under-his-hands", character: ringer)
+    two_beats!
+
+    create(:playthrough_blow, playthrough: @game, target: ringer, hp_after: 3, story_timestamp: @story.start_time)
+    reach_the_gate!(at: @story.start_time + 10.minutes)
+    reach_the_far_cell!(at: @story.start_time + 20.minutes)
+
+    assert_equal under_his_hands, arc.ending.quest_outcome
+  end
+
+  test "a toll that killed them is a death too" do
+    ringer = create(:character, story: @story, fullname: "Marek Sollen")
+    create(:quest_outcome, :while_alive, quest: @quest, name: "taken-under-his-hands", character: ringer)
+    two_beats!
+
+    create(:playthrough_toll, :killing, playthrough: @game, character: ringer, story_timestamp: @story.start_time)
+    reach_the_gate!(at: @story.start_time + 10.minutes)
+    reach_the_far_cell!(at: @story.start_time + 20.minutes)
+
+    assert_equal @rescued, arc.ending.quest_outcome
+  end
+
+  # A repaired database can hold a body at zero with nothing on record saying
+  # when it got there, and a moment nobody can read is not "while alive".
+  test "a body at zero with no record of dying does not count as alive" do
+    ringer = create(:character, story: @story, fullname: "Marek Sollen")
+    create(:quest_outcome, :while_alive, quest: @quest, name: "taken-under-his-hands", character: ringer)
+    create(:playthrough_vitals, :dead, playthrough: @game, character: ringer)
+    two_beats!
+
+    reach_the_gate!(at: @story.start_time + 10.minutes)
+    reach_the_far_cell!(at: @story.start_time + 20.minutes)
+
+    assert_equal @rescued, arc.ending.quest_outcome
+  end
+
+  test "somebody who is dead in another game is alive in this one" do
+    ringer = create(:character, story: @story, fullname: "Marek Sollen")
+    under_his_hands = create(:quest_outcome, :while_alive, quest: @quest, name: "taken-under-his-hands", character: ringer)
+    other = create(:playthrough, story: @story, character: @player, current_location: @gate)
+    create(:playthrough_blow, :killing, playthrough: other, target: ringer, story_timestamp: @story.start_time)
+    two_beats!
+
+    reach_the_gate!(at: @story.start_time + 10.minutes)
+    reach_the_far_cell!(at: @story.start_time + 20.minutes)
+
+    assert_equal under_his_hands, arc.ending.quest_outcome
+  end
+
   # --- which of two that both hold ------------------------------------------
 
   test "the first rule the world wrote wins" do
@@ -224,6 +320,22 @@ class Playthrough::ArcOutcomeTest < ActiveSupport::TestCase
     walking = arc
     walking.run!
     @concluded = walking.conclusion
+  end
+
+  # The gate is beat 1 and the cell beat 2, and each is reached at the minute given.
+  def two_beats!
+    bound_step(:reach_location, @gate, "Take the book at the gate.", position: 1)
+    bound_step(:reach_location, @cell, "Find the cell.", position: 2)
+  end
+
+  def reach_the_gate!(at:)
+    @game.update!(current_location: @gate, current_scene: scene_at(at))
+    arc.run!
+  end
+
+  def reach_the_far_cell!(at:)
+    @game.update!(current_location: @cell, current_scene: scene_at(at))
+    arc.run!
   end
 
   def bound_step(kind, record, summary, position: 1)

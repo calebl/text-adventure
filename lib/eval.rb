@@ -87,6 +87,8 @@ module Eval
     db/eval/inscription-2026-09-26/inscription.json
     db/eval/inscription-2026-09-26/receipts.json
     db/eval/inscription-2026-09-26/README.md
+    db/eval/inscription-2026-10-02/inscription.json
+    db/eval/inscription-2026-10-02/README.md
     lib/eval/arrival.rb
     lib/eval/arrival/bench.rb
     lib/eval/arrival/budget.rb
@@ -149,6 +151,9 @@ module Eval
     db/eval/classifier-2026-09-10/offline.json
     db/eval/prompt-ending-2026-09-10/prompt.json
     db/eval/prompt-ending-2026-09-10/receipts.json
+    db/eval/prompt-ending-before-2026-10-02/prompt.json
+    db/eval/prompt-ending-after-2026-10-02/prompt.json
+    db/eval/prompt-ending-after-2026-10-02/README.md
     lib/eval/prompt/ending_version.rb
     lib/eval/prompt/request_version.rb
     lib/eval/realization/request_version.rb

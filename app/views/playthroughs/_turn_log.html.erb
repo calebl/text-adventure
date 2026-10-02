@@ -164,6 +164,18 @@
     <% ended = Playthrough::EndNotice.for(playthrough) %>
     <div class="notice">
       <p><strong><%= ended.heading %></strong></p>
+      <%# WHICH GOAL ENDED IT AND WHY THIS ENDING, out of the records
+          (`Playthrough::EndNotice#finished`) -- so a player who has just read
+          the closing paragraph can see what the story counted. %>
+      <% if (finished = ended.finished) %>
+        <p>You finished <%= finished.quest %>. Its goals:</p>
+        <ol>
+          <% finished.goals.each do |goal| %>
+            <li><%= goal %></li>
+          <% end %>
+        </ol>
+        <p><%= finished.reason %></p>
+      <% end %>
       <% if ended.closing_words %>
         <p><%= ended.closing_words %></p>
       <% end %>

@@ -97,7 +97,7 @@ class Eval::Prompt::CorpusTest < ActiveSupport::TestCase
     assert_equal [ 2 ], corpus.cases.map(&:calls).uniq, "an ending case buys the turn's prose and the ending"
     assert_operator corpus.positions.size, :>=, 3,
                     "one position per shape of turn that can end a story: a take, an arrival, and a quiet line"
-    assert_equal [ "The Iron Gate Descends" ], corpus.positions.map(&:story).uniq
+    assert_equal [ "The Iron Gate Descends", "The Unrecorded Hour" ], corpus.positions.map(&:story).uniq.sort
   end
 
   # A CASE WHOSE POSITION IS NOT ONE BEAT FROM THE END, which is the one way to

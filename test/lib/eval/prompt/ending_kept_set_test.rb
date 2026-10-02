@@ -37,6 +37,16 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
 
   ARM = "mistralai/mistral-medium-3.1".freeze
 
+  # THE ENDING'S CURRENT BASELINE, and the pair that judged the one change since:
+  # the `Dead here:` line the ending is told when somebody lies dead in the room.
+  # The corpus gained its sixth case for it (The Unrecorded Hour, Halkett Rowe
+  # dead in Ward Office 12), so both sides were bought on the six-case corpus;
+  # the line renders in that case alone, so the other five sent byte-for-byte
+  # the same requests on both sides.
+  CURRENT_BEFORE = "prompt-ending-before-2026-10-02".freeze
+
+  CURRENT_AFTER = "prompt-ending-after-2026-10-02".freeze
+
   test "both sides load off disk with their provenance in the file" do
     [ BEFORE, AFTER ].each do |name|
       result = kept(name)
@@ -53,12 +63,14 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
   # THE DIGESTS ARE THE WHOLE POINT OF A KEPT PAIR. Same corpus both sides --
   # the cases did not move underneath the comparison -- and DIFFERENT prompts,
   # which is what makes it a before and an after rather than two runs.
-  test "the pair scored one corpus and two prompts, and the corpus is today's" do
-    assert_equal Eval::Prompt.digest(Eval::Prompt.corpus("ending")), kept(BEFORE).corpus_digest,
-                 "the ending corpus moved since the baseline was taken -- re-run it, or the comparison " \
-                 "is between two files"
+  #
+  # THE CORPUS HAS SINCE GROWN A SIXTH CASE (2026-10-02, somebody dead in the
+  # room), so this pair is read at the five-case corpus it scored and the
+  # current one is `CURRENT_BEFORE`/`CURRENT_AFTER` below.
+  test "the pair scored one corpus and two prompts" do
     assert_equal kept(BEFORE).corpus_digest, kept(AFTER).corpus_digest
     assert_not_equal kept(BEFORE).prompt_digest, kept(AFTER).prompt_digest
+    assert_equal 5, kept(BEFORE).corpus_size
   end
 
   # WHAT "BEFORE" MEANS HERE, and it is not a different wording of the same
@@ -275,8 +287,37 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
     end
   end
 
+  test "the dead-line pair scored today's corpus, the same instructions and two requests" do
+    assert_equal Eval::Prompt.digest(Eval::Prompt.corpus("ending")), kept(CURRENT_BEFORE).corpus_digest,
+                 "the ending corpus moved since the baseline was taken -- re-run it, or the comparison " \
+                 "is between two files"
+    assert_equal kept(CURRENT_BEFORE).corpus_digest, kept(CURRENT_AFTER).corpus_digest
+    assert_equal kept(CURRENT_BEFORE).instructions_digest, kept(CURRENT_AFTER).instructions_digest,
+                 "the ending's own instructions did not move; the line is in the moment"
+    assert_not_equal kept(CURRENT_BEFORE).request_identity, kept(CURRENT_AFTER).request_identity
+    [ CURRENT_BEFORE, CURRENT_AFTER ].each do |name|
+      assert_equal 6, kept(name).corpus_size
+      assert_equal Eval::Noise::MIN_RUNS, kept(name).reps
+      assert_equal [ ARM ], kept(name).answered_by
+    end
+  end
+
+  # THE VERDICT THE LINE SHIPPED ON, pinned: nothing moved. No check reads a
+  # dead person written as standing in a single turn (`dead_shown_alive` needs
+  # the scene's engine receipt), so the line's own case was read by hand -- the
+  # four before-side endings never mention Rowe, two of the four after-side ones
+  # name him and none has him standing -- and the checks say it cost nothing.
+  test "the dead line moved no check" do
+    verdicts = Eval::Prompt::Comparison.new(kept(CURRENT_BEFORE), kept(CURRENT_AFTER), io: nil).verdicts(ARM)
+
+    assert_predicate verdicts, :any?
+    assert_empty verdicts.select { |row| row.verdict.real? }.map(&:metric)
+    assert_equal 0, kept(CURRENT_AFTER).spread(:failures, arm: ARM).max
+    assert_equal 0.0, kept(CURRENT_AFTER).spread(:truncated_prose, arm: ARM).max
+  end
+
   test "the current ending baseline certifies its scaffold and retains variable preludes" do
-    result = kept("prompt-ending-2026-09-10")
+    result = kept(CURRENT_AFTER)
     corpus = Eval::Prompt.corpus("ending")
     current = Eval::Prompt::RequestVersion.offline(corpus)
     assert_equal Eval::Prompt.digest(corpus), result.corpus_digest
@@ -304,7 +345,10 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
       assert_includes row.fetch("prompt"), row.fetch("prelude").fetch("description")
       assert_equal %w[description summary], row.fetch("prelude").keys.sort
     end
-    assert_includes Eval::MEASUREMENT_FILES, "db/eval/prompt-ending-2026-09-10/prompt.json"
+    assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{CURRENT_AFTER}/prompt.json"
+    assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{CURRENT_BEFORE}/prompt.json"
+    assert_includes Eval::MEASUREMENT_FILES, "db/eval/prompt-ending-2026-09-10/prompt.json",
+                    "the five-case baseline stays on disk as history"
   end
 
   private

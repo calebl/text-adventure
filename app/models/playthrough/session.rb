@@ -46,8 +46,10 @@ class Playthrough::Session
   # `Playthrough::Command`, and `saved_action`, `:resume` or `:acknowledge`
   # or `:none` -- the same three states the play page draws). `running_turn`
   # is the command still in hand while `busy`, oldest first, so a front end
-  # that reconnects mid-turn can find the turn it is waiting on.
-  Standing = Data.define(:over, :ended, :busy, :saved_turn, :saved_action, :running_turn)
+  # that reconnects mid-turn can find the turn it is waiting on. `finished` is
+  # `Playthrough::EndNotice#finished` -- which goal ended a concluded story and
+  # why this ending -- and nil for every other game.
+  Standing = Data.define(:over, :ended, :finished, :busy, :saved_turn, :saved_action, :running_turn)
 
   # A ROUND OF A FIGHT THAT DID NOT END IT, which is the one completed turn
   # that writes no Scene and no refusal on purpose: the blows are the record,
@@ -238,8 +240,9 @@ class Playthrough::Session
         saved.journal.blank? ? :acknowledge : :none
       else :resume
       end
+    ended = Playthrough::EndNotice.for(playthrough) if playthrough.over?
     Standing.new(over: playthrough.over?,
-                 ended: (Playthrough::EndNotice.for(playthrough).sentence if playthrough.over?),
+                 ended: ended&.sentence, finished: ended&.finished,
                  busy: !running.nil?, running_turn: running,
                  saved_turn: saved, saved_action: action)
   end
