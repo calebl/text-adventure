@@ -328,7 +328,7 @@ class Scene::Generator
   end
 
   def arrival_context
-    @arrival_context ||= Scene::ArrivalContext.new(@playthrough, location: location) if @playthrough
+    @arrival_context ||= Scene::ArrivalContext.new(@playthrough, location: location, at: story_timestamp) if @playthrough
   end
 
   # The exact destination receipt handed to the arrival writer. A Location's

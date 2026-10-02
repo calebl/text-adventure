@@ -60,6 +60,12 @@ cases:
   act: other
   shape: dead_foe
   why: A lethal recorded blow leaves a dead foe; prose cannot spare or revive him.
+- id: branches-dead-body-later
+  position: gate
+  typed: inspect Gorva's body
+  act: other
+  shape: dead_body_later
+  why: The fight that killed him has closed and is one recap line by now; only the body's own line still says who killed him.
 - id: branches-plan
   position: cell
   typed: inspect the walls

@@ -27,6 +27,7 @@ class Eval::Arrival::StageTest < ActiveSupport::TestCase
             assert_includes prompt, "Maren Vosk is badly hurt" if kase["id"] == "wounded_resident"
             assert_includes prompt, "You are carrying: brass key." if %w[carried_key floor_and_carried].include?(kase["id"])
             assert_includes prompt, "Dead here: Maren Vosk." if kase["id"] == "dead_resident"
+            assert_includes prompt, "Dead here: Maren Vosk, killed by Iri Calder about 1 hour ago." if kase["id"] == "killed_resident"
             if %w[crossing_harm pending_toll].include?(kase["id"])
               stage.game.tolls.each do |toll|
                 source = toll.location_connection || toll.location

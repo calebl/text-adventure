@@ -1,0 +1,12 @@
+{
+  "script": "a-body-says-who-killed-it",
+  "doctor": {
+    "headline": "healthy",
+    "findings": []
+  },
+  "audit": {
+    "headline": "4 scenes, nothing to report",
+    "flags": [],
+    "unjudged": []
+  }
+}

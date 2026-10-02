@@ -65,11 +65,54 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
     assert_no_match(/The Sump is/, moment.narration_context)
   end
 
-  test "a body this game has killed is not in the room the narrator is told about" do
+  test "a body this game has killed is not among the people the narrator is told are here" do
     neb = create(:character, story: @story, location: @here, fullname: "Neb Halloran")
     Playthrough::Turn.new(@playthrough).harm!(neb, neb.max_hp)
 
-    assert_no_match(/Neb Halloran/, moment.narration_context)
+    context = moment.narration_context
+
+    assert_no_match(/Also here: Neb Halloran/, context)
+    assert_match(/Nobody else is alive here\./, context)
+  end
+
+  # --- what the prose is told about the dead ----------------------------------
+  #
+  # THE BODY STAYS IN THE ROOM AND SO DOES WHO MADE IT ONE. The blows are told
+  # on the turn they land and the fight's closing scene on the turn after;
+  # from then on the fight is one line of the recap, which names the dead and
+  # not the killer. So the body's own line carries the killing blow's record:
+  # who struck it, and how long ago by the story's clock.
+
+  test "a body killed in a fight that has closed still names who killed it, and when" do
+    neb = create(:character, story: @story, location: @here, fullname: "Neb Halloran", nickname: "Neb")
+    turn = Playthrough::Turn.new(@playthrough)
+    turn.harm!(neb, neb.max_hp - 1)
+    turn.strike!(@protagonist, neb, round: 1)
+    Playthrough::Fight.new(@playthrough).close!
+    later = @playthrough.reload.current_scene
+    @playthrough.update!(current_scene: create(:scene, story: @story, location: @here, previous_scene: later,
+                                                       story_timestamp: later.story_timestamp + 15.minutes))
+
+    context = moment.narration_context
+
+    assert_no_match(/Blows landed/, context)
+    assert_match(/Nobody else is alive here\./, context)
+    assert_match(/Dead here: Neb Halloran \(Neb\), killed by Iri Calder \d+ minutes ago\. They cannot speak or act\./, context)
+  end
+
+  test "a body with no killing blow on record is told dead and nothing more" do
+    neb = create(:character, story: @story, location: @here, fullname: "Neb Halloran", nickname: nil)
+    Playthrough::Turn.new(@playthrough).harm!(neb, neb.max_hp)
+
+    assert_match(/Dead here: Neb Halloran\. They cannot speak or act\./, moment.narration_context)
+  end
+
+  test "the living and the dead are told apart" do
+    create(:character, story: @story, location: @here, fullname: "Tamsin Gale", nickname: nil)
+    neb = create(:character, story: @story, location: @here, fullname: "Neb Halloran", nickname: nil)
+    Playthrough::Turn.new(@playthrough).harm!(neb, neb.max_hp)
+
+    assert_match(/Also here: Tamsin Gale\. Nobody else is alive here\.\n\nDead here: Neb Halloran\./, moment.narration_context)
   end
 
   # --- what the prose is told about the blows ---------------------------------
