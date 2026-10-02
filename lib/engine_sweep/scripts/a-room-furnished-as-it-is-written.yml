@@ -33,6 +33,7 @@ steps:
       - "On the bookcase: journal, atlas."
       - "Loose, and could be picked up: chair, lamp, letter opener."
       - "Nobody has searched the desk yet, so do not say what is in it."
+      - "List AT MOST 3 portable things a player could pick up and carry away, besides the ones Already Here above: those are written already, and a thing named again is not a new one."
       content:
         description: A quiet room of books, a desk under the window.
         lore: The clerk reads here when the ward is quiet.

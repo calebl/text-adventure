@@ -1245,15 +1245,16 @@ class Location::GeneratorTest < ActiveSupport::TestCase
       The game's own records of what is in this room, already decided and not yours
       to change, and it will tell the player so. Write the room around them, and do
       not add another piece of furniture or fixed thing a player could reach for.
-      Fixed in place: desk (unsearched), bookcase, windowsill.
-      On the desk: paperweight.
-      On the bookcase: bound volume, journal.
-      On the windowsill: candle stub, dead fly.
-      Loose, and could be picked up: chair, lamp, button, coin.
+      Fixed in place: desk (unsearched), bookcase.
+      On the desk: ledger.
+      On the bookcase: journal, atlas.
+      Loose, and could be picked up: chair, lamp, letter opener.
       Nobody has searched the desk yet, so do not say what is in it.
       Do not list any of them again as a thing lying here.
     BLOCK
-    assert_includes agent.prompts.first, "## What Is Lying Here\nList AT MOST 3 portable things"
+    assert_includes agent.prompts.first,
+                    "## What Is Lying Here\nList AT MOST 3 portable things a player could pick up and carry away, " \
+                    "besides the ones Already Here above: those are written already, and a thing named again is not a new one.\n"
   end
 
   test "a room with nothing already here is asked exactly what it was asked before" do
@@ -1263,6 +1264,7 @@ class Location::GeneratorTest < ActiveSupport::TestCase
 
     assert_equal "", generator.send(:already_here)
     assert_not_includes generator.detail_prompt, "Already Here"
+    assert_includes generator.detail_prompt, "a player could pick up and carry away.\n"
   end
 
   test "several shut fixtures are named together, a hollow one says in, and a seeded fixture reads like a kit's" do

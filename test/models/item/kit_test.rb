@@ -61,7 +61,7 @@ class Item::KitTest < ActiveSupport::TestCase
 
     assert_equal [ Item::FIXTURE, "closed", Item::IMMOVABLE ], things.fetch("desk").then { [ _1.tier, _1.holds, _1.bulk ] }
     assert_equal [ Item::PORTABLE, nil, "heavy" ], things.fetch("chair").then { [ _1.tier, _1.holds, _1.bulk ] }
-    assert_equal [ "on", 0 ], things.fetch("paperweight").then { [ _1.how, _1.within ] }
+    assert_equal [ "on", 0 ], things.fetch("ledger").then { [ _1.how, _1.within ] }
   end
 
   test "a thing in a hollow piece lies in it" do
@@ -83,8 +83,8 @@ class Item::KitTest < ActiveSupport::TestCase
     assert written.all?(&:template?)
     assert written.all? { |item| item.kit_key.present? }
     desk = written.find { |item| item.name == "desk" }
-    assert_equal desk, written.find { |item| item.name == "paperweight" }.within
-    assert_equal "The paperweight, on the desk.", written.find { |item| item.name == "paperweight" }.description
+    assert_equal desk, written.find { |item| item.name == "ledger" }.within
+    assert_equal "The ledger, on the desk.", written.find { |item| item.name == "ledger" }.description
 
     assert_empty Item::Kit.new(room.reload).furnish!
     assert_equal written.size, room.items.count
