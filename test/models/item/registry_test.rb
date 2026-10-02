@@ -47,8 +47,8 @@ class Item::RegistryTest < ActiveSupport::TestCase
     study = create(:location, :stub, story: @story, name: "The Reading Room", kind: "study", density: "lived-in")
     Item::Kit.new(study).furnish!
 
-    assert_empty admit(candidate("paperweight"), location: study)
-    assert_equal [ "paperweight" ], admit(candidate("paperweight")).map(&:name)
+    assert_empty admit(candidate("ledger"), location: study)
+    assert_equal [ "ledger" ], admit(candidate("ledger")).map(&:name)
     assert_not_includes Item::Registry.new(@room).named_things.pluck(:name), "desk"
   end
 

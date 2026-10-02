@@ -1212,7 +1212,16 @@ bin/rails runner 'Eval::Prompt::Result.load(Eval.root.join("my-set")) \
 
 ### Current kept sets and historical comparisons
 
-**`realization-2026-09-28` is the current realization baseline.** The exits
+**`realization-2026-10-02` is the current realization baseline.** Rooms are
+furnished from their kits (`Item::Kit`) before the writer is asked anything,
+and the detail prompt says what is there; each corpus case names the kind and
+density its room would have been dealt. Against a before side bought at the
+tree that added only those words, `things_furnished` rose to ten a room and the
+writer's own things fell to about 0.4, both REAL, and every check read NOISE
+(`db/eval/realization-2026-10-02/README.md`). `realization-2026-09-28` is
+history from then on.
+
+**`realization-2026-09-28` was the realization baseline before it.** The exits
 call gained `kind` and `density` and the place call `place_kind`
 (`Location::Kind`); no prompt message changed, and against a before side
 bought the same day every figure read NOISE

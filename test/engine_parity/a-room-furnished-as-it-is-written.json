@@ -22,56 +22,40 @@
         ],
         "here": [
           {
-            "id": 1000000033,
+            "id": 1000000034,
+            "name": "atlas"
+          },
+          {
+            "id": 1000000029,
             "name": "bookcase"
           },
           {
-            "id": 1000000038,
-            "name": "bound volume"
-          },
-          {
-            "id": 1000000044,
+            "id": 1000000036,
             "name": "brass letter knife"
           },
           {
-            "id": 1000000042,
-            "name": "button"
-          },
-          {
-            "id": 1000000040,
-            "name": "candle stub"
-          },
-          {
-            "id": 1000000035,
+            "id": 1000000030,
             "name": "chair"
           },
           {
-            "id": 1000000043,
-            "name": "coin"
-          },
-          {
-            "id": 1000000041,
-            "name": "dead fly"
-          },
-          {
-            "id": 1000000032,
+            "id": 1000000028,
             "name": "desk"
           },
           {
-            "id": 1000000039,
+            "id": 1000000033,
             "name": "journal"
           },
           {
-            "id": 1000000036,
+            "id": 1000000031,
             "name": "lamp"
           },
           {
-            "id": 1000000037,
-            "name": "paperweight"
+            "id": 1000000032,
+            "name": "ledger"
           },
           {
-            "id": 1000000034,
-            "name": "windowsill"
+            "id": 1000000035,
+            "name": "letter opener"
           }
         ],
         "carrying": [],
@@ -79,13 +63,18 @@
         "foes": [],
         "inscription": [
           {
-            "id": 1000000038,
-            "name": "bound volume",
+            "id": 1000000034,
+            "name": "atlas",
             "text": null
           },
           {
-            "id": 1000000039,
+            "id": 1000000033,
             "name": "journal",
+            "text": null
+          },
+          {
+            "id": 1000000032,
+            "name": "ledger",
             "text": null
           }
         ],
@@ -119,9 +108,9 @@
       }
     },
     {
-      "step": "step 2 a-paperweight-off-the-desk",
+      "step": "step 2 a-ledger-off-the-desk",
       "player": "first",
-      "typed": "take the paperweight",
+      "typed": "take the ledger",
       "dump": {
         "location": {
           "id": 1000000004,
@@ -138,71 +127,60 @@
         ],
         "here": [
           {
-            "id": 1000000033,
+            "id": 1000000034,
+            "name": "atlas"
+          },
+          {
+            "id": 1000000029,
             "name": "bookcase"
           },
           {
-            "id": 1000000038,
-            "name": "bound volume"
-          },
-          {
-            "id": 1000000044,
+            "id": 1000000036,
             "name": "brass letter knife"
           },
           {
-            "id": 1000000042,
-            "name": "button"
-          },
-          {
-            "id": 1000000040,
-            "name": "candle stub"
-          },
-          {
-            "id": 1000000035,
+            "id": 1000000030,
             "name": "chair"
           },
           {
-            "id": 1000000043,
-            "name": "coin"
-          },
-          {
-            "id": 1000000041,
-            "name": "dead fly"
-          },
-          {
-            "id": 1000000032,
+            "id": 1000000028,
             "name": "desk"
           },
           {
-            "id": 1000000039,
+            "id": 1000000033,
             "name": "journal"
           },
           {
-            "id": 1000000036,
+            "id": 1000000031,
             "name": "lamp"
           },
           {
-            "id": 1000000034,
-            "name": "windowsill"
+            "id": 1000000035,
+            "name": "letter opener"
           }
         ],
         "carrying": [
           {
-            "id": 1000000037,
-            "name": "paperweight"
+            "id": 1000000032,
+            "name": "ledger"
           }
         ],
         "present": [],
         "foes": [],
         "inscription": [
           {
-            "id": 1000000038,
-            "name": "bound volume",
+            "id": 1000000034,
+            "name": "atlas",
             "text": null
           },
           {
-            "id": 1000000039,
+            "id": 1000000033,
             "name": "journal",
+            "text": null
+          },
+          {
+            "id": 1000000032,
+            "name": "ledger",
             "text": null
           }
         ],
@@ -215,10 +193,10 @@
         },
         "dead": false,
         "changed": true,
-        "change": "took: paperweight (was lying in The Reading Room, now carried by Mira Vell)",
+        "change": "took: ledger (was lying in The Reading Room, now carried by Mira Vell)",
         "refused": false,
         "offers": null,
-        "understood": "take -> paperweight",
+        "understood": "take -> ledger",
         "resolved_by": "grammar",
         "note": null,
         "drifts": 0,
@@ -255,71 +233,60 @@
         ],
         "here": [
           {
-            "id": 1000000033,
+            "id": 1000000034,
+            "name": "atlas"
+          },
+          {
+            "id": 1000000029,
             "name": "bookcase"
           },
           {
-            "id": 1000000038,
-            "name": "bound volume"
-          },
-          {
-            "id": 1000000044,
+            "id": 1000000036,
             "name": "brass letter knife"
           },
           {
-            "id": 1000000042,
-            "name": "button"
-          },
-          {
-            "id": 1000000040,
-            "name": "candle stub"
-          },
-          {
-            "id": 1000000035,
+            "id": 1000000030,
             "name": "chair"
           },
           {
-            "id": 1000000043,
-            "name": "coin"
-          },
-          {
-            "id": 1000000041,
-            "name": "dead fly"
-          },
-          {
-            "id": 1000000032,
+            "id": 1000000028,
             "name": "desk"
           },
           {
-            "id": 1000000039,
+            "id": 1000000033,
             "name": "journal"
           },
           {
-            "id": 1000000036,
+            "id": 1000000031,
             "name": "lamp"
           },
           {
-            "id": 1000000034,
-            "name": "windowsill"
+            "id": 1000000035,
+            "name": "letter opener"
           }
         ],
         "carrying": [
           {
-            "id": 1000000037,
-            "name": "paperweight"
+            "id": 1000000032,
+            "name": "ledger"
           }
         ],
         "present": [],
         "foes": [],
         "inscription": [
           {
-            "id": 1000000038,
-            "name": "bound volume",
+            "id": 1000000034,
+            "name": "atlas",
             "text": null
           },
           {
-            "id": 1000000039,
+            "id": 1000000033,
             "name": "journal",
+            "text": null
+          },
+          {
+            "id": 1000000032,
+            "name": "ledger",
             "text": null
           }
         ],
@@ -408,13 +375,19 @@
         ],
         "carrying": [
           {
-            "id": 1000000037,
-            "name": "paperweight"
+            "id": 1000000032,
+            "name": "ledger"
           }
         ],
         "present": [],
         "foes": [],
-        "inscription": [],
+        "inscription": [
+          {
+            "id": 1000000032,
+            "name": "ledger",
+            "text": null
+          }
+        ],
         "hp": 18,
         "hp_of": {},
         "abilities": {
@@ -464,71 +437,60 @@
         ],
         "here": [
           {
-            "id": 1000000033,
+            "id": 1000000034,
+            "name": "atlas"
+          },
+          {
+            "id": 1000000029,
             "name": "bookcase"
           },
           {
-            "id": 1000000038,
-            "name": "bound volume"
-          },
-          {
-            "id": 1000000044,
+            "id": 1000000036,
             "name": "brass letter knife"
           },
           {
-            "id": 1000000042,
-            "name": "button"
-          },
-          {
-            "id": 1000000040,
-            "name": "candle stub"
-          },
-          {
-            "id": 1000000035,
+            "id": 1000000030,
             "name": "chair"
           },
           {
-            "id": 1000000043,
-            "name": "coin"
-          },
-          {
-            "id": 1000000041,
-            "name": "dead fly"
-          },
-          {
-            "id": 1000000032,
+            "id": 1000000028,
             "name": "desk"
           },
           {
-            "id": 1000000039,
+            "id": 1000000033,
             "name": "journal"
           },
           {
-            "id": 1000000036,
+            "id": 1000000031,
             "name": "lamp"
           },
           {
-            "id": 1000000034,
-            "name": "windowsill"
+            "id": 1000000035,
+            "name": "letter opener"
           }
         ],
         "carrying": [
           {
-            "id": 1000000037,
-            "name": "paperweight"
+            "id": 1000000032,
+            "name": "ledger"
           }
         ],
         "present": [],
         "foes": [],
         "inscription": [
           {
-            "id": 1000000038,
-            "name": "bound volume",
+            "id": 1000000034,
+            "name": "atlas",
             "text": null
           },
           {
-            "id": 1000000039,
+            "id": 1000000033,
             "name": "journal",
+            "text": null
+          },
+          {
+            "id": 1000000032,
+            "name": "ledger",
             "text": null
           }
         ],
