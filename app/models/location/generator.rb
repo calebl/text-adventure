@@ -751,6 +751,17 @@ class Location::Generator
     "\n#{lines.join("\n")}"
   end
 
+  # THE FLOOR LIST'S FIRST LINE IN A FURNISHED ROOM, and nothing in any other.
+  # Measured, not guessed: with only `#already_here`'s closing line, the room
+  # writer re-listed the kit's loose things as its own, 143 of 168 proposals on
+  # the realization bench, and its own new things fell from 1.65 a room to
+  # 0.22. The owner chose this sentence on that measurement (2026-10-02).
+  def besides_already_here
+    return "" if already_here.empty?
+
+    ", besides the ones Already Here above: those are written already, and a thing named again is not a new one"
+  end
+
   # WHAT THE MODEL IS TOLD WHEN THE ROOM STILL NEEDS A NAME, and it is one
   # bullet on the end of the instructions the room already has rather than a
   # block of its own.
@@ -884,7 +895,7 @@ class Location::Generator
 
     <<~PROMPT.rstrip
       ## What Is Lying Here
-      List AT MOST #{allowance} portable thing#{"s" unless allowance == 1} a player could pick up and carry away.
+      List AT MOST #{allowance} portable thing#{"s" unless allowance == 1} a player could pick up and carry away#{besides_already_here}.
       - Nothing is the right answer for most rooms. An empty list is a complete answer
       - Only loose, portable things. Not the door, not the floor, not the machinery
         bolted to it -- something a person could put in a pocket or under an arm
