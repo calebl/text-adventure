@@ -19,6 +19,7 @@ class Eval::Prompt::Branches::Stage
     when "recap" then history
     when "wounded" then @turn.harm!(game.character, 3)
     when "dead_foe" then dead_foe
+    when "dead_body_later" then dead_body_later
     when "next_beat", "plan" then nil
     else raise ArgumentError, "unknown narrator branch #{kase.shape.inspect}"
     end
@@ -71,6 +72,18 @@ class Eval::Prompt::Branches::Stage
   def dead_foe
     @turn.harm!(foe, foe.max_hp - 1)
     swing(game.character, foe, round: 1)
+  end
+
+  # The fight closed and a turn passed: its blows are told, its closing scene
+  # is a turn behind, and the body is all that is left in the room.
+  def dead_body_later
+    dead_foe
+    Playthrough::Fight.new(game).close!
+    closing = game.reload.current_scene
+    words = "You look round the chamber."
+    game.update!(current_scene: game.story.scenes.create!(location: game.current_location, previous_scene: closing,
+                                                          description: words, summary: words,
+                                                          story_timestamp: closing.story_timestamp + 5.minutes))
   end
 
   def toll

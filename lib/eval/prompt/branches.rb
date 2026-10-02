@@ -7,7 +7,11 @@
 # placed-fact contradictions only. Broader truthfulness, natural next-beat fit,
 # geometry semantics and prose quality remain human-only, nullable labels.
 module Eval::Prompt::Branches
-  BASELINE = "prompt-branches-2026-09-10".freeze
+  # Bought after the narrator's dead line learned who killed a body, and
+  # judged against `prompt-branches-body-before-2026-10-02` on the same
+  # corpus; `prompt-branches-2026-09-10` is the set before both, kept as
+  # history.
+  BASELINE = "prompt-branches-body-after-2026-10-02".freeze
 
   def self.capture(corpus = Eval::Prompt.corpus("branches"))
     corpus.cases.sort_by(&:id).group_by(&:shape).transform_values do |cases|

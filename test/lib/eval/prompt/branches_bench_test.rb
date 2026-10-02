@@ -28,7 +28,7 @@ class Eval::Prompt::BranchesBenchTest < ActiveSupport::TestCase
     end
     assert_includes Eval::Prompt::Board.new([ [ "fake", result ] ]).lines.join("\n"), "unlabelled (human-only)"
     result.passes.first.rows.first.fetch("human")["truthfulness"] = false
-    assert_includes Eval::Prompt::Board.new([ [ "fake", result ] ]).lines.join("\n"), "1/18 labelled; 1 contradicted"
+    assert_includes Eval::Prompt::Board.new([ [ "fake", result ] ]).lines.join("\n"), "1/20 labelled; 1 contradicted"
   end
 
   class Recorded < FakeAgent
