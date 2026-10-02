@@ -944,9 +944,9 @@ fn glance_json(glance: &Glance) -> Value {
                 "state": fixture.state, "searched": fixture.searched, "on": fixture.on,
             }))
             .collect::<Vec<_>>(),
-        "lying_here": glance.lying_here.iter().map(|thing| thing_json(thing)).collect::<Vec<_>>(),
+        "lying_here": glance.lying_here.iter().map(thing_json).collect::<Vec<_>>(),
         "counts": json!({ "visible": glance.counts.visible, "unsearched": glance.counts.unsearched }),
-        "carrying": glance.carrying.iter().map(|thing| thing_json(thing)).collect::<Vec<_>>(),
+        "carrying": glance.carrying.iter().map(thing_json).collect::<Vec<_>>(),
         "condition": glance.condition,
         "sheet": glance.sheet,
         "next_beat": glance.next_beat,
