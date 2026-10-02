@@ -10,11 +10,16 @@
 # its hazards first; the generator freezes the pending tolls here and records
 # only those IDs as presented after a complete arrival has been written.
 class Scene::ArrivalContext
-  attr_reader :playthrough, :location
+  include ActionView::Helpers::DateHelper
 
-  def initialize(playthrough, location:)
+  attr_reader :playthrough, :location, :at
+
+  # `at` is when the party walks in, which is what how long ago a body was
+  # killed is measured to.
+  def initialize(playthrough, location:, at: nil)
     @playthrough = playthrough
     @location = location
+    @at = at
   end
 
   def living
@@ -50,7 +55,7 @@ class Scene::ArrivalContext
       condition = playthrough.vitals_for(person)
       "#{person.fullname} is #{condition.in_words}." if condition && !condition.unhurt?
     end)
-    parts << "Dead here: #{names(dead)}. They cannot speak or act." if dead.any?
+    parts << "Dead here: #{dead_names}. They cannot speak or act." if dead.any?
     parts << "Lying here: #{item_names(floor)}."
     parts << "You are carrying: #{item_names(carried)}."
     parts.concat(tolls.map(&:fact))
@@ -58,6 +63,26 @@ class Scene::ArrivalContext
   end
 
   private
+
+  # The dead, each with the blow that killed them where one did: the room's
+  # durable description may still have them standing, and nothing else on the
+  # way in says how they came to lie there. The engine's `moment::killed_by`.
+  def dead_names
+    killed = dead.map { |body| killed_by(body) }
+    return names(dead) if killed.none?
+
+    dead.zip(killed).map { |body, clause| clause ? "#{body.fullname}, #{clause}" : body.fullname }.join("; ")
+  end
+
+  def killed_by(body)
+    blow = playthrough.blows.where(target: body, hp_after: 0).order(:sequence, :id).last
+    return unless blow
+
+    killer = blow.attacker.fullname
+    return "killed by #{killer}" unless at && blow.story_timestamp
+
+    "killed by #{killer} #{distance_of_time_in_words(at - blow.story_timestamp)} ago"
+  end
 
   def names(people) = people.map(&:fullname).join(", ")
   def item_names(items) = items.map(&:name).join(", ").presence || "nothing"

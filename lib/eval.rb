@@ -108,6 +108,8 @@ module Eval
     test/lib/eval/arrival/stage_test.rb
     db/eval/arrival-branches/arrival.json
     db/eval/arrival-first-visit-2026-09-28/arrival.json
+    db/eval/arrival-body-before-2026-10-02/arrival.json
+    db/eval/arrival-body-after-2026-10-02/arrival.json
     db/eval/arrival-reactions-2026-09-28/arrival.json
     db/eval/arrival-reactions-2026-09-28/README.md
     db/eval/adversarial-20260909/arrival-before.json
@@ -239,6 +241,10 @@ module Eval
     test/fixtures/files/prompt_branches_corpus.yml
     db/eval/prompt-branches-2026-09-10/prompt.json
     db/eval/prompt-branches-2026-09-10/receipts.json
+    db/eval/prompt-branches-body-before-2026-10-02/prompt.json
+    db/eval/prompt-branches-body-before-2026-10-02/receipts.json
+    db/eval/prompt-branches-body-after-2026-10-02/prompt.json
+    db/eval/prompt-branches-body-after-2026-10-02/receipts.json
     lib/eval/realization.rb
     lib/eval/realization/admissions.rb
     lib/eval/realization/branches.rb

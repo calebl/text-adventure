@@ -77,6 +77,10 @@ class Eval::Arrival::Stage
     case kase["state"]
     when "dead"
       game.vitals.find_by!(character: resident).update!(hp_current: 0, provoked_at: story.start_time)
+    when "killed"
+      game.vitals.find_by!(character: resident).update!(hp_current: 0, provoked_at: story.start_time + 1.hour)
+      game.blows.create!(attacker: player, target: resident, location: room, damage: 4, hp_after: 0, round: 1,
+        sequence: 0, story_timestamp: story.start_time + 1.hour)
     when "wounded"
       game.vitals.find_by!(character: resident).update!(hp_current: 3)
     when "carried", "inventory"
@@ -118,7 +122,7 @@ class Eval::Arrival::Stage
   end
 
   def facts
-    context = game && Scene::ArrivalContext.new(game, location: room)
+    context = game && Scene::ArrivalContext.new(game, location: room, at: generator.story_timestamp)
     floor = context ? context.floor.map(&:name) : []
     { "room" => room.name, "moved" => !kase["opening"], "protagonist" => [ player.fullname, player.nickname ],
       "places" => story.locations.pluck(:name).index_with(&:itself), "exits" => room.exits.pluck(:name),

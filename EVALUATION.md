@@ -2338,9 +2338,9 @@ DATABASE_URL=sqlite3:tmp/arrival/bench.sqlite3 bundle exec rake ruby_llm:load_mo
 DATABASE_URL=sqlite3:tmp/arrival/bench.sqlite3 bundle exec rake eval:estimate
 DATABASE_URL=sqlite3:tmp/arrival/bench.sqlite3 EVAL_LIVE=1 \
   EVAL_BUDGET_FILE=tmp/arrival/budget.json SET=my-arrival bundle exec rake eval:arrival
-bundle exec rake eval:arrival_score SET=arrival-first-visit-2026-09-28
-bundle exec rake eval:arrival_board SET=arrival-first-visit-2026-09-28
-bundle exec rake eval:arrival_compare BEFORE=arrival-first-visit-2026-09-28 AFTER=my-arrival
+bundle exec rake eval:arrival_score SET=arrival-body-after-2026-10-02
+bundle exec rake eval:arrival_board SET=arrival-body-after-2026-10-02
+bundle exec rake eval:arrival_compare BEFORE=arrival-body-after-2026-10-02 AFTER=my-arrival
 bundle exec rake eval:arrival_digest
 ```
 
@@ -2369,11 +2369,19 @@ fixture readings, when present, contribute to spend and not to baseline scores.
 thing" -- the stock opener the discovery line invited while it read "what
 catches them first on the way in". Arrival sets keep their rows, so it re-scores
 every kept set offline. `arrival-branches`, bought before the line lost its
-"first", reads 22 of 36; `arrival-first-visit-2026-09-28`, the baseline since,
+"first", reads 22 of 36; `arrival-first-visit-2026-09-28`, the baseline until 2026-10-02,
 reads 14 of 36, a real difference with every other reading noise. It counts one
 phrase and says nothing about how varied the openings are. That set's one
 superseded row is a call the receipt halted because it could not read RubyLLM
 2's usage fields; its charge is on the ledger.
+
+**Who killed a body** is the `killed_resident` case: Maren Vosk, killed by the
+player's blow an hour before the party walks in, so the arrival's dead line
+carries "killed by Iri Calder about 1 hour ago". `arrival-body-before-2026-10-02`
+and `arrival-body-after-2026-10-02` are the same corpus either side of that
+clause, every figure noise; no reading on either side names a killer or
+invents another cause, so the clause measured harmless rather than helpful
+here. The after set is `Eval::Arrival::BASELINE`.
 
 **The room reacting to the arrival** is its own corpus on the same bench,
 `CORPUS=reactions` on `eval:arrival` and `eval:arrival_digest`
@@ -2403,9 +2411,18 @@ bin/rails eval:estimate
 bin/rails eval:prompt CORPUS=branches MODELS=mistralai/mistral-medium-3.1 SET=my-branches
 bin/rails eval:prompt_score SET=my-branches
 bin/rails eval:prompt_board SETS=my-branches
-bin/rails eval:prompt_compare BEFORE=prompt-branches-2026-09-10 AFTER=my-branches
-bin/rails eval:prompt_digest CORPUS=branches SET=prompt-branches-2026-09-10
+bin/rails eval:prompt_compare BEFORE=prompt-branches-body-after-2026-10-02 AFTER=my-branches
+bin/rails eval:prompt_digest CORPUS=branches SET=prompt-branches-body-after-2026-10-02
 ```
+
+The `dead_body_later` case is a body inspected once the fight that killed it
+has closed and slid into the recap, where only the body's own dead line still
+says who killed it. `prompt-branches-body-before-2026-10-02` and
+`prompt-branches-body-after-2026-10-02` are the same corpus either side of that
+line, every check noise. Read by hand, two of the four before readings of that
+case invent a cause ("whatever dragged him", "the iron gate's teeth"); after,
+two name the player's blow and none invents another. The after set is
+`Eval::Prompt::Branches::BASELINE`.
 
 The lowest case ID in each shape designates the assembled request. Its system
 message, user message and null streaming schema form a versioned

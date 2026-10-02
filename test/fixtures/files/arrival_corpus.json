@@ -9,6 +9,7 @@
     {"id":"wounded_resident", "why":"Living resident has a per-game wound.", "state":"wounded", "facts":["wound"]},
     {"id":"floor_and_carried", "why":"Floor ledger and already-carried brass key are distinct copies.", "state":"inventory", "facts":["key","floor"]},
     {"id":"no_exits", "why":"Destination has no outgoing edges: fallback wording.", "state":"no_exits", "facts":[]},
-    {"id":"pending_toll", "why":"An untold directed crossing toll reaches Moment#one_toll.", "state":"toll", "facts":["toll"]}
+    {"id":"pending_toll", "why":"An untold directed crossing toll reaches Moment#one_toll.", "state":"toll", "facts":["toll"]},
+    {"id":"killed_resident", "why":"A resident this game killed an hour before the party walks in: the dead line names who struck the blow.", "state":"killed", "facts":["body"]}
   ]
 }

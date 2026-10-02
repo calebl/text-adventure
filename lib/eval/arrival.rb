@@ -10,9 +10,11 @@ module Eval::Arrival
   CORPUS = Rails.root.join("test/fixtures/files/arrival_corpus.json")
   STUDY = Rails.root.join("db/eval/adversarial-20260909")
   RESULTS = "arrival.json".freeze
-  # The set bought after the discovery line lost its "first" (2026-09-28);
-  # `arrival-branches` is the set before it, kept as history.
-  BASELINE = Rails.root.join("db/eval/arrival-first-visit-2026-09-28")
+  # The set bought after the dead line learned who killed a body
+  # (2026-10-02), judged against `arrival-body-before-2026-10-02` on the same
+  # corpus; `arrival-first-visit-2026-09-28` and `arrival-branches` before it
+  # are kept as history.
+  BASELINE = Rails.root.join("db/eval/arrival-body-after-2026-10-02")
 
   def self.cases = JSON.parse(CORPUS.read).fetch("cases")
   def self.stage = Stage
