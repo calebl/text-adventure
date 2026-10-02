@@ -1,5 +1,6 @@
-# THE ENDING'S OWN CASES: five single-turn cases across three positions, every
-# one of them staged one beat from the end of the one arc in this repository.
+# THE ENDING'S OWN CASES: six single-turn cases across four positions, every
+# one of them staged one beat from the end of an arc -- five in The Iron Gate
+# Descends and one in The Unrecorded Hour (see its position).
 #
 # WHY THIS IS A SECOND FILE AND NOT FIVE MORE CASES IN `prompt_corpus.yml`.
 # `Eval::Prompt.digest` is a fingerprint of the cases, and the checked-in
@@ -100,6 +101,27 @@ positions:
   - go to Blackfang Tunnel
   - go to Blackfang Warren room 1
 
+- id: rowe-dead-in-the-ward-office
+  story: The Unrecorded Hour
+  room: Ward Office 12
+  why: |-
+    SOMEBODY DEAD IN THE ROOM THE STORY ENDS IN, which no other position has.
+    Halkett Rowe is killed in Ward Office 12, then the closet and the
+    index are taken in the arc's order, and the player comes back. One blow
+    does it: the stage pins every id, so the dice are the same on every stage,
+    and a second `attack` would be refused -- which the stager refuses too.
+    The `mend` puts the player back to full so the ending is not also told
+    about a wound. Without the ending's `Dead here:` line, nothing in the
+    ending's facts says a body is lying in the room, only "Nobody else is
+    here". It stands in for the owner's Lunar Cartographer game, whose world
+    this bench does not play (`Eval::Prompt::STORIES`).
+  setup:
+  - attack Halkett Rowe
+  - mend 20
+  - go to the Supply Closet
+  - take the private index
+  - go to Ward Office 12
+
 cases:
 - id: ending-take-the-ring
   position: back-at-the-gate
@@ -166,3 +188,18 @@ cases:
     ending that has the player carrying it out is `item_not_held` and an ending
     that has them pick it up first is `pickup_invented`. Both checks are live
     over the last paragraph in the game.
+
+- id: ending-take-the-writ-over-the-dead
+  position: rowe-dead-in-the-ward-office
+  typed: take the writ
+  act: take
+  target: blank closure writ
+  shape: ending
+  why: |-
+    THE ONE CASE WITH SOMEBODY DEAD IN THE ROOM, which is the only case the
+    ending's `Dead here:` line renders in: the Iron Gate's five have nobody
+    dead, so their requests are byte-for-byte what they were. The beats were
+    reached in order, so the ending is the default `query-answered`. An ending
+    that has Rowe standing, moving or speaking is the failure this case exists
+    to catch. His nickname goes in the line too, "Sub-Inspector Rowe", which is
+    what the world's prose calls him.
