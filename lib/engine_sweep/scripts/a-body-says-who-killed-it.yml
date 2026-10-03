@@ -1,0 +1,216 @@
+# A BODY THE PLAYER MADE STILL SAYS WHO MADE IT, TURNS AFTER THE FIGHT.
+#
+# The owner killed Marek Sollen in the bell chamber, looked round the room,
+# then inspected the body, and the narrator wrote that there was "no sign of
+# what struck him down". The game had it on record: the last blow, the
+# player's, took him to nothing. But the narrator hears the blows only while
+# the fight is open, and the closing scene only on the next turn, as what
+# just happened; one turn later the fight is a recap line that names the dead
+# and not the killer, and the room's people are the living alone. So the
+# narrator was asked to describe a body it had not been told was there.
+#
+# `Moment#dead_fact` is the body's own line: it is in every narrator request
+# made in the room, and it carries the killing blow's record -- who struck it,
+# and how long ago by the story's clock.
+#
+# WHAT EACH STEP IS FOR:
+#
+#   the fight   `a-fight-the-player-wins.yml`'s: a blow at a time with a free
+#               mend between, so he is dead by the last round whatever the
+#               dice say and the player never is.
+#   looking     the turn right after the fight, the one where the closing
+#               scene is what just happened. The body's line is there too.
+#   the body    the owner's own line a turn later, read by the classifier as a
+#               targetless examine as it was in their game. The fight is only
+#               in the recap by now, and the body's line still names the
+#               killer.
+#   coming back out to the stair and in again: the arrival's own dead line
+#               names the killer too, and the room's description, which
+#               still has the Ringer standing by the rope, is all it has
+#               otherwise.
+#
+# WHAT IS DELIBERATELY NOT ASSERTED: how long ago. The rounds are the dice's
+# business, and so is the story time they bought; the goldens pin it.
+story: The Lunar Cartographer
+why: a body the player killed is told to the narrator with its killer on every later turn, not only the next one
+steps:
+- id: up-the-stairs
+  type: go to the hallway
+  expect:
+    changed: true
+    location: Grenn's Boarding House hallway (stub)
+
+- id: into-the-tower
+  type: go to the bell
+  expect:
+    changed: true
+    location: The Bell of Saint Aravel (realized)
+    present: [Marek Sollen]
+    foes: [Marek Sollen]
+
+- id: round-1
+  type: attack Marek Sollen
+  expect:
+    understood: attack -> Marek Sollen
+    blows: 2
+    dead: false
+
+- id: patched-up-1
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-2
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-2
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-3
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-3
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-4
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-4
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-5
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-5
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-6
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-6
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-7
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-7
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-8
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-8
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-9
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-9
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-10
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-10
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: he-is-dead-and-out-of-the-cast
+  type: look
+  why: ten blows of at least one cannot leave his ten hit points standing
+  expect:
+    present: []
+    foes: []
+    dead: false
+
+- id: looking-round-the-room-the-turn-after
+  type: /examine climbers' bearing book
+  why: the closing scene is what just happened on this turn, and the body's own line is told beside it
+  browser:
+    token: look-round
+    replies:
+    - purpose: narration
+      content: You kneel by the bearing book under the south louvre.
+      prompt_includes:
+      - 'Nobody else is alive here.'
+      - 'Dead here: Marek Sollen (the Ringer), killed by Isbet Marrow'
+  expect:
+    changed: true
+    present: []
+
+- id: the-body-a-turn-later
+  type: /inspect mareks body
+  why: THE OWNER'S LINE -- the fight has slid into the recap, and the narrator is still told who killed him
+  browser:
+    token: the-body
+    replies:
+    - purpose: classifier
+      content: {intent: examine, target: nothing, also_named: nothing}
+    - purpose: narration
+      content: Marek Sollen lies where he fell by the rope.
+      prompt_includes:
+      - 'Nobody else is alive here.'
+      - 'Dead here: Marek Sollen (the Ringer), killed by Isbet Marrow'
+  expect:
+    resolved_by: model
+    changed: true
+    present: []
+
+- id: out-to-the-stair
+  type: go to the hallway
+  expect:
+    changed: true
+    location: Grenn's Boarding House hallway (stub)
+
+- id: back-in-to-the-body
+  type: /go The Bell of Saint Aravel
+  why: the arrival is written on the way in, and its dead line says who killed him
+  browser:
+    token: back-in
+    replies:
+    - purpose: arrival
+      content:
+        description: The bell chamber is as you left it, and Marek Sollen lies where he fell by the rope.
+        summary: The player comes back up into the bell chamber, where Marek Sollen lies dead.
+      prompt_includes:
+      - 'Nobody else is alive here.'
+      - 'Dead here: Marek Sollen, killed by Isbet Marrow'
+  expect:
+    changed: true
+    location: The Bell of Saint Aravel (realized)
+    present: []

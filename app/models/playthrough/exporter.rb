@@ -231,7 +231,10 @@ class Playthrough::Exporter
       "inscription" => item.inscription,
       "combustible" => item.combustible? || nil,
       "disposition" => item.disposition,
-      "bulk" => item.bulk
+      "bulk" => item.bulk,
+      "holds" => item.holds,
+      "within" => item.within&.name,
+      "kit_key" => item.kit_key
     }.compact
   end
 

@@ -1096,15 +1096,14 @@ class Playthrough::Turn
   # is read in the plane of the room a thing is LYING in (`Location::Spot`), so
   # a thing in a hand has no frame and carries no position -- `Item` refuses the
   # alternative, which is what makes forgetting this line impossible rather
-  # than invisible. `Location::Placement.unplaced` is the named pair rather than
-  # two literals, so nothing can clear half of it.
+  # than invisible. `Item.lifted` is the named set rather than literals -- the
+  # position and the fixture the thing lay on -- so nothing can clear half of it.
   #
   # IT DOES NOT REMEMBER WHERE IT WAS, and it is not meant to: `#put_down!`
   # rolls a fresh one, because a thing set down is set down where the person
   # setting it down was standing rather than where it was found.
   def carry!(item)
-    item.update!(playthrough: playthrough, character: nil, location: nil,
-                 **Location::Placement.unplaced)
+    item.update!(playthrough: playthrough, character: nil, location: nil, **Item.lifted)
   end
 
   # AND BACK ONTO THE FLOOR OF THIS GAME. `playthrough` is deliberately NOT

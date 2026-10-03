@@ -12,6 +12,7 @@
 # WHAT IT READS, and only lines a check here needs:
 #
 #   Dead here: A, B. They cannot speak or act.     -> #dead
+#   Dead here: A, killed by C 5 minutes ago; B. ... -> #dead
 #   Also here: A, B. Nobody else is alive here.    -> #living
 #   Lying here: a, b.                              -> #lying
 #   You are carrying: a, b.                        -> #carried
@@ -38,6 +39,9 @@ class Story::Audit::Receipt
   LYING = /\ALying here: (?<names>.+)\.\z/
   CARRIED = /\AYou are carrying: (?<names>.+)\.\z/
   BROKE = /\bBROKE\b/
+  # The clause a dead line carries where a blow killed them, and the "; "
+  # that then joins the bodies, because the clause may hold a ", " of its own.
+  KILLED = /, killed by .+\z/
 
   # The two receipts that say, in words, that no possession moved: a character
   # who chose no effect, and a proposed effect the engine refused.
@@ -67,7 +71,14 @@ class Story::Audit::Receipt
     @text = text.to_s
   end
 
-  def dead = names_on(DEAD)
+  def dead
+    lines.filter_map { |line| line.match(DEAD)&.[](:names) }
+         .flat_map { |names| names.split("; ") }
+         .flat_map { |part| part.match?(KILLED) ? [ part.sub(KILLED, "") ] : part.split(", ") }
+         .map(&:strip)
+         .reject(&:blank?)
+         .uniq
+  end
 
   def living = names_on(ALSO_HERE)
 

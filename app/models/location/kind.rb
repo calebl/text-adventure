@@ -4,9 +4,9 @@
 # THE OWNER'S DECISION OF 2026-09-27: rooms become dense with things --
 # fixtures, containers whose contents are made once on the first search, and
 # portable things -- and every one of them is an engine record the narrator is
-# told. What a room holds will be rolled from a table keyed on what sort of
-# place it is, so the sort has to be a word the engine can key on. This file is
-# that word and nothing that is built on it yet.
+# told. What a room holds is rolled from a table keyed on what sort of place it
+# is, so the sort has to be a word the engine can key on. This file is that
+# word; `Item::Kit` is what is built on it.
 #
 # THE WORDS ARE FOR ANY SETTING, and each names one sort of place. A story may
 # be a walled town, a modern city or a ship between planets, so the lists are
@@ -44,11 +44,12 @@
 # NOBODY PICKED, and nothing is rolled in its place: what a room with no word
 # holds is the engine's quietest answer, not a guess at a word.
 #
-# NOTHING READS EITHER COLUMN YET, and that is the rule that a parameter ships
-# inert rather than an unfinished thought: the words are on the rows first, so
-# the tables that furnish a room can be built over rows that already carry
-# them, and not one stored world changes how it plays on the day the columns
-# arrive. `Story::Doctor` has nothing to report about them for the same reason.
+# ONE READER, AND ONLY WHEN THE ENGINE WRITES A ROOM. `Item::Kit` furnishes a
+# stub from its two words as it is realized, before its writer describes it; a
+# room already written -- every seeded room, every row older than the columns --
+# is never furnished, which is the rule that a parameter ships inert: not one
+# stored world changes how it plays on the day the tables arrive.
+# `Story::Doctor` has nothing to report about the words themselves.
 module Location::Kind
   TABLES = EngineData.fetch("location/kind")
 

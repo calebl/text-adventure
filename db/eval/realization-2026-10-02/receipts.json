@@ -1,0 +1,22 @@
+{
+  "source": "doc/evidence/dense-rooms-furnished/credit-readings.log",
+  "calls": 188,
+  "warmup_realizations": 1,
+  "failures": 0,
+  "registry_priced_usd": 0.3509,
+  "credits_before_usd": 63.689451943,
+  "credits_after_usd": 64.107418783,
+  "credits_delta_usd": 0.417967,
+  "before_side": {
+    "set": "realization-before-2026-10-02",
+    "registry_priced_usd": 0.317,
+    "credits_delta_usd": 0.335127
+  },
+  "first_after_side": {
+    "set": "realization-first-after-2026-09-28",
+    "registry_priced_usd": 0.301,
+    "credits_delta_usd": 0.323956
+  },
+  "all_three_runs_credits_delta_usd": 1.07705,
+  "cap_usd": 1.2
+}

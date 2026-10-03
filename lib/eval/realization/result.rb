@@ -56,6 +56,9 @@ class Eval::Realization::Result
                     "side of that ruling is not comparing the same quantity",
     people_take_up: "people written over slots offered",
     items_named: "mean things one realization put on the floor",
+    things_furnished: "mean rows the room's kit wrote before the call, read off the records -- the " \
+                      "furniture and small stuff `items_named` never sees, so a furnished room is not " \
+                      "read as the sparse one it was",
     exits_named: "mean ways out one realization named",
     new_places_opened: "mean places this realization brought into existence -- read off the RECORDS " \
                        "afterwards, so it is what the room really opened",
@@ -97,7 +100,7 @@ class Eval::Realization::Result
 
   # THE FIGURES PRINTED AS A PLAIN MEAN rather than as a rate -- counts of
   # things a room contains, which have no denominator and are not defects.
-  MEANS = %i[people_named people_offered items_named exits_named new_places_opened new_places_named
+  MEANS = %i[people_named people_offered items_named things_furnished exits_named new_places_opened new_places_named
              rooms_laid_out storeys_below_ground].freeze
 
   # EVERY FIGURE OF ONE PASS, FROM ITS ROWS -- the one place a figure is

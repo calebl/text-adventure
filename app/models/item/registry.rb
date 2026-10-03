@@ -121,8 +121,14 @@ class Item::Registry
   # room and a story contain -- and every playthrough holds its own copy of all
   # of it (`Item::Snapshot`), so counting instances would spend a room's budget
   # of three on one thing three players had each seen once.
+  #
+  # AND THE ROOM WRITER'S OWN THINGS, NOT A KIT'S (`Item.bespoke`). A kit's
+  # desk and the pen on it are the engine's closed list, rolled before the
+  # writer is asked (`Item::Kit`) and bounded by `Item::Kit::VISIBLE`; these
+  # two caps bound what a model may propose, and a furnished room still has its
+  # three.
   def room_for_items
-    [ MAX_PER_ROOM - Item.lying_in(location).templates.count, 0 ].max
+    [ MAX_PER_ROOM - Item.lying_in(location).templates.bespoke.count, 0 ].max
   end
 
   # Whether this world has room for another thing at all.
@@ -146,13 +152,21 @@ class Item::Registry
     Item.in_story(story).templates
   end
 
+  # THE NAMES THE WORLD HAS SPOKEN FOR, which a new thing may not take: every
+  # one of its own rows but a kit's. A kit's names repeat from room to room by
+  # design -- every study has a desk -- so they are spoken for only in the room
+  # they stand in, which `#refusal` asks separately.
+  def named_things
+    story_items.where(kit_key: nil)
+  end
+
   private
 
   # BY NAME, not by row. `MAX_PER_STORY` bounds the ONTOLOGY -- how many
   # distinct things this world contains -- and a name is what the classifier
   # resolves a typed line against, so two rows of one name are one thing to a
   # player however they came to exist.
-  def story_item_count = story_items.distinct.count(:name)
+  def story_item_count = story_items.bespoke.distinct.count(:name)
 
   def admit_one(attributes, created)
     name = sanitize_string(attributes["name"].to_s)
@@ -268,7 +282,8 @@ class Item::Registry
     return "the room is already holding #{MAX_PER_ROOM}" if room_for_items.zero?
     return "the world is already holding #{MAX_PER_STORY}" if world_for_items.zero?
     return "this call already named it" if created.any? { |item| SameName.same?(item.name, name) }
-    return "the story already has one" if SameName.any?(story_items, name, :name)
+    return "the story already has one" if SameName.any?(named_things, name, :name)
+    return "the room already has one" if SameName.any?(Item.lying_in(location).templates, name, :name)
     return "a person in this story is called that" if person_named?(name)
     return "a place in this story is called that" if place_named?(name)
 

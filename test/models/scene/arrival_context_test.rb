@@ -31,6 +31,17 @@ class Scene::ArrivalContextTest < ActiveSupport::TestCase
     assert_equal @destination, person.reload.location
   end
 
+  test "a body killed by a blow is told with who struck it and how long before the party walks in" do
+    person = create(:character, story: @game.story, location: @destination, fullname: "Maren Vosk")
+    turn = Playthrough::Turn.new(@game)
+    turn.harm!(person, person.max_hp - 1)
+    blow = turn.strike!(@game.character, person, round: 1, damage: 1)
+    context = Scene::ArrivalContext.new(@game, location: @destination, at: blow.story_timestamp + 20.minutes)
+
+    assert_includes context.facts,
+                    "Dead here: Maren Vosk, killed by #{@game.character.fullname} 20 minutes ago. They cannot speak or act."
+  end
+
   test "arrival toll IDs are the frozen supplied set and exclude already told tolls" do
     pending = create(:playthrough_toll, playthrough: @game, location: @destination)
     told = create(:playthrough_toll, :told, playthrough: @game, location: @destination)

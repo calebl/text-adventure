@@ -12,7 +12,7 @@ class Eval::Prompt::BranchesKeptSetTest < ActiveSupport::TestCase
     assert_equal [ "mistralai/mistral-medium-3.1" ], kept.arms
     assert_equal kept.arms, kept.answered_by
     assert kept.prompt_stable
-    assert_equal "780ae0948949c3d9", kept.prompt_digest
+    assert_equal "dd1b600a0f165b6d", kept.prompt_digest
     assert_equal captured.keys, kept.prompt_shapes.keys
     assert_equal Eval::Prompt.corpus("branches").size * kept.reps, kept.rows.size
     kept.rows.each do |row|
@@ -60,7 +60,7 @@ class Eval::Prompt::BranchesKeptSetTest < ActiveSupport::TestCase
     assert_operator actual, :<=, receipts.fetch("authorized_usd")
     assert_operator receipts.fetch("estimate_usd"), :<=, receipts.fetch("authorized_usd")
     assert receipts.fetch("includes_warmup")
-    assert_equal 0.0181444, actual
+    assert_equal 0.0206992, actual
   end
 
   test "the manifest includes the producer instrumentation and kept evidence" do

@@ -171,6 +171,26 @@ class Story::Audit::ReceiptTest < ActiveSupport::TestCase
     assert_not receipt.states?(:handover_invented)
   end
 
+  test "an arrival receipt that says who killed each body still reads back as their names" do
+    story = create(:story)
+    game = create(:playthrough, :started, story: story)
+    destination = create(:location, story: story)
+    maren = create(:character, story: story, location: destination, fullname: "Maren Vosk")
+    rowe = create(:character, story: story, location: destination, fullname: "Halkett Rowe")
+    turn = Playthrough::Turn.new(game)
+    turn.harm!(maren, maren.max_hp - 1)
+    turn.strike!(game.character, maren, round: 1, damage: 1)
+    turn.harm!(rowe, rowe.max_hp)
+
+    scene = BaseAgent.stub(:new, FakeAgent.new("description" => "You come in.", "summary" => "Arrived.")) do
+      Scene::Generator.new(destination, playthrough: game).generate!
+    end
+    receipt = Receipt.for(scene)
+
+    assert_match(/Dead here: Maren Vosk, killed by #{game.character.fullname} .+ ago; Halkett Rowe\./, receipt.text)
+    assert_equal [ "Maren Vosk", "Halkett Rowe" ], receipt.dead
+  end
+
   test "the NPC receipts for no effect and a refused effect both read as nothing moved" do
     story = create(:story)
     here = create(:location, story: story)

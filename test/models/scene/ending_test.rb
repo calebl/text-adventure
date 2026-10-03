@@ -194,10 +194,21 @@ class Scene::EndingTest < ActiveSupport::TestCase
     create(:playthrough_vitals, :dead, playthrough: @game, character: ringer)
     conclude!
 
-    assert_includes EngineMoment.new(@game.reload, ending: @outcome).narration_context,
-                    "Dead here: Marek Sollen (the Ringer). They cannot speak or act."
-    assert_not_includes EngineMoment.new(@game.reload).narration_context, "Dead here",
-                        "the narrator's own turns are told nothing new"
+    ending = EngineMoment.new(@game.reload, ending: @outcome).narration_context
+    assert_includes ending, "Dead here: Marek Sollen (the Ringer). They cannot speak or act."
+    assert_includes ending, "Nobody else is here.", "the ending's pass keeps the words its sets were bought on"
+  end
+
+  # The narrator's own turns are told the body too, and, where a blow killed
+  # it, who struck it (`Playthrough::MomentTest`); the ending's pass alone
+  # keeps the sentence it was measured with.
+  test "the narrator's own turns are told who lies dead here as well" do
+    ringer = create(:character, story: @story, fullname: "Marek Sollen", nickname: "the Ringer", location: @cell)
+    create(:playthrough_vitals, :dead, playthrough: @game, character: ringer)
+
+    context = EngineMoment.new(@game.reload).narration_context
+    assert_includes context, "Nobody else is alive here."
+    assert_includes context, "Dead here: Marek Sollen (the Ringer). They cannot speak or act."
   end
 
   test "an ending with nobody dead in the room is told nothing about the dead" do

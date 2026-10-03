@@ -165,6 +165,45 @@ class Item::SnapshotTest < ActiveSupport::TestCase
     assert_empty playing.carried
   end
 
+  # --- what it lies on comes along as this game's own copy of it -------------
+
+  test "a thing on the world's desk is copied onto this game's copy of the desk" do
+    desk = create(:item, :fixture, location: @office)
+    stamp = create(:item, :lying, location: @office, name: "ward stamp", within: desk, how: "on")
+
+    game = playing
+    copies = game.items_lying_in(@office).index_by(&:template)
+
+    assert_equal copies.fetch(desk), copies.fetch(stamp).within
+    assert_equal "on", copies.fetch(stamp).how
+    assert_equal desk, stamp.reload.within, "the world's own row still lies on the world's desk"
+  end
+
+  test "the fixtures are copied first, whatever order the rows were written in" do
+    shelf = create(:item, :fixture, :top, location: @office, name: "shelf")
+    jar = create(:item, :lying, location: @office, name: "jar", within: shelf, how: "on")
+    shelf.update_columns(id: jar.id + 100)
+    jar.update_columns(within_id: shelf.id)
+
+    copy = playing.items_lying_in(@office).find { |item| item.name == "jar" }
+
+    assert_equal "shelf", copy.within.name
+    assert_predicate copy.within, :instance?
+  end
+
+  test "a thing whose fixture this game has no copy of standing here goes on the floor" do
+    desk = create(:item, :fixture, location: @office)
+    stamp = create(:item, :lying, location: @office, name: "ward stamp", within: desk, how: "on")
+    game = playing
+    game.items.where(template: stamp).delete_all
+    game.items.find_by(template: desk).update_columns(disposition: "broken", location_id: nil)
+
+    copy = Item::Snapshot.new(game).of_the_room!(@office).sole
+
+    assert_nil copy.within
+    assert_nil copy.how
+  end
+
   # --- the template's position is the initial snapshot ----------------------
 
   # THE CAPTAIN'S RULING OF 2026-09-04, READ ONE PAIR OF COLUMNS FURTHER: *"If a

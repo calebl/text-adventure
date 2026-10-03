@@ -310,6 +310,28 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_equal Item::STURDY, Item.in_story(reloaded).templates.find_by(name: "A Pewter Mug").fragility
   end
 
+  # WHAT STANDS IN A ROOM AND WHAT LIES ON IT, a kit's rows among them, and back
+  # again whole: a generated world exported is a world file (`rake game:export`).
+  test "exports fixtures, what lies on them and a kit's rows, and a world with them round-trips" do
+    create(:character, :protagonist, story: @story, fullname: "Isbet Marrow")
+    desk = create(:item, :fixture, location: @opening)
+    create(:item, :lying, location: @opening, name: "ward stamp", within: desk, how: "on")
+    create(:item, :lying, location: @opening, name: "coin", kit_key: "study/loose/coin")
+
+    items = WorldSeed::Exporter.new(@story).document["locations"].first["items"].index_by { |item| item["name"] }
+    assert_equal "closed", items["desk"]["holds"]
+    assert_not items["desk"].key?("bulk"), "a fixture's bulk goes without saying"
+    assert_equal "desk", items["ward stamp"]["within"]
+    assert_equal "study/loose/coin", items["coin"]["kit_key"]
+    assert_not items["coin"].key?("holds")
+
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(WorldSeed::Exporter.new(@story).document))).load!
+    templates = Item.in_story(reloaded).templates.index_by(&:name)
+    assert_predicate templates["desk"], :fixture?
+    assert_equal templates["desk"], templates["ward stamp"].within
+    assert_equal "study/loose/coin", templates["coin"].kit_key
+  end
+
   # AND HOW POPULATED IT IS, WHEN SOMEBODY PICKED A WORD. Quiet about a room
   # nobody picked for, which is not `danger`'s omission one test up: there the
   # absent key means the column's default, here it means *nobody picked*, and

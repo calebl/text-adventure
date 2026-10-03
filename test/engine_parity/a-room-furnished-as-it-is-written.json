@@ -1,0 +1,527 @@
+{
+  "script": "a-room-furnished-as-it-is-written",
+  "story": "The Furnished Rooms",
+  "steps": [
+    {
+      "step": "step 1 into-the-reading-room",
+      "player": "first",
+      "typed": "/move The Reading Room",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "The Reading Room",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Clerk's Study",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000034,
+            "name": "atlas"
+          },
+          {
+            "id": 1000000029,
+            "name": "bookcase"
+          },
+          {
+            "id": 1000000036,
+            "name": "brass letter knife"
+          },
+          {
+            "id": 1000000030,
+            "name": "chair"
+          },
+          {
+            "id": 1000000028,
+            "name": "desk"
+          },
+          {
+            "id": 1000000033,
+            "name": "journal"
+          },
+          {
+            "id": 1000000031,
+            "name": "lamp"
+          },
+          {
+            "id": 1000000032,
+            "name": "ledger"
+          },
+          {
+            "id": 1000000035,
+            "name": "letter opener"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000034,
+            "name": "atlas",
+            "text": null
+          },
+          {
+            "id": 1000000033,
+            "name": "journal",
+            "text": null
+          },
+          {
+            "id": 1000000032,
+            "name": "ledger",
+            "text": null
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "The browser turn completed.",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Reading Room",
+        "resolved_by": "grammar",
+        "note": "first-entry: completed",
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 1.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 a-ledger-off-the-desk",
+      "player": "first",
+      "typed": "take the ledger",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "The Reading Room",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Clerk's Study",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000034,
+            "name": "atlas"
+          },
+          {
+            "id": 1000000029,
+            "name": "bookcase"
+          },
+          {
+            "id": 1000000036,
+            "name": "brass letter knife"
+          },
+          {
+            "id": 1000000030,
+            "name": "chair"
+          },
+          {
+            "id": 1000000028,
+            "name": "desk"
+          },
+          {
+            "id": 1000000033,
+            "name": "journal"
+          },
+          {
+            "id": 1000000031,
+            "name": "lamp"
+          },
+          {
+            "id": 1000000035,
+            "name": "letter opener"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000032,
+            "name": "ledger"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000034,
+            "name": "atlas",
+            "text": null
+          },
+          {
+            "id": 1000000033,
+            "name": "journal",
+            "text": null
+          },
+          {
+            "id": 1000000032,
+            "name": "ledger",
+            "text": null
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: ledger (was lying in The Reading Room, now carried by Mira Vell)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> ledger",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 the-kits-desk-does-not-move",
+      "player": "first",
+      "typed": "take the desk",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "The Reading Room",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Clerk's Study",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000034,
+            "name": "atlas"
+          },
+          {
+            "id": 1000000029,
+            "name": "bookcase"
+          },
+          {
+            "id": 1000000036,
+            "name": "brass letter knife"
+          },
+          {
+            "id": 1000000030,
+            "name": "chair"
+          },
+          {
+            "id": 1000000028,
+            "name": "desk"
+          },
+          {
+            "id": 1000000033,
+            "name": "journal"
+          },
+          {
+            "id": 1000000031,
+            "name": "lamp"
+          },
+          {
+            "id": 1000000035,
+            "name": "letter opener"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000032,
+            "name": "ledger"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000034,
+            "name": "atlas",
+            "text": null
+          },
+          {
+            "id": 1000000033,
+            "name": "journal",
+            "text": null
+          },
+          {
+            "id": 1000000032,
+            "name": "ledger",
+            "text": null
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "The desk is immovable and does not move for anybody: it cannot be picked up. Nothing has changed.",
+        "understood": "take -> desk",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 out-and-back",
+      "player": "first",
+      "typed": "go to The Clerk's Study",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Clerk's Study",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Cinder Lane Stall",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Beech Clearing",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Reading Room",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000015,
+            "name": "coal scuttle"
+          },
+          {
+            "id": 1000000013,
+            "name": "desk"
+          },
+          {
+            "id": 1000000018,
+            "name": "lump of coal"
+          },
+          {
+            "id": 1000000017,
+            "name": "potted fern"
+          },
+          {
+            "id": 1000000016,
+            "name": "ward stamp"
+          },
+          {
+            "id": 1000000014,
+            "name": "windowsill"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000032,
+            "name": "ledger"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000032,
+            "name": "ledger",
+            "text": null
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Reading Room -> The Clerk's Study",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Clerk's Study",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 nothing-furnished-twice",
+      "player": "first",
+      "typed": "go to The Reading Room",
+      "dump": {
+        "location": {
+          "id": 1000000004,
+          "name": "The Reading Room",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Clerk's Study",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000034,
+            "name": "atlas"
+          },
+          {
+            "id": 1000000029,
+            "name": "bookcase"
+          },
+          {
+            "id": 1000000036,
+            "name": "brass letter knife"
+          },
+          {
+            "id": 1000000030,
+            "name": "chair"
+          },
+          {
+            "id": 1000000028,
+            "name": "desk"
+          },
+          {
+            "id": 1000000033,
+            "name": "journal"
+          },
+          {
+            "id": 1000000031,
+            "name": "lamp"
+          },
+          {
+            "id": 1000000035,
+            "name": "letter opener"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000032,
+            "name": "ledger"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [
+          {
+            "id": 1000000034,
+            "name": "atlas",
+            "text": null
+          },
+          {
+            "id": 1000000033,
+            "name": "journal",
+            "text": null
+          },
+          {
+            "id": 1000000032,
+            "name": "ledger",
+            "text": null
+          }
+        ],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Clerk's Study -> The Reading Room",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Reading Room",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

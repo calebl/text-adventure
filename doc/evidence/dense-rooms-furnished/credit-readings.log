@@ -1,0 +1,12 @@
+# OpenRouter /api/v1/credits total_usage, read around the three realization runs of dense rooms stage 1.
+# The account is shared, so a delta is this run's spend only if nothing else spent; between
+# 2026-09-28T21:37 and 2026-10-02T13:28 other work spent $0.132, which is in no delta below.
+2026-09-28T20:59:10Z 62.898355049 before the before side
+2026-09-28T20:59:21Z 62.898355049 
+2026-09-28T21:18:28Z 63.233482001 after the before side
+2026-09-28T21:18:56Z 63.233482001 before the after side
+2026-09-28T21:36:27Z 63.547636041 after the after side
+2026-09-28T21:37:13Z 63.557437801 
+2026-10-02T13:28:36Z 63.689451943 before the second after side
+2026-10-02T13:47:42Z 64.100882943 after the second after side
+2026-10-02T13:50:00Z 64.107418783 settled (read by the spend guard as the run exited)

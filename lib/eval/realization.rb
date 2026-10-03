@@ -67,7 +67,7 @@ module Eval::Realization
   # while legacy prompt designation stays fixed; BranchRequests separately
   # checks the full requests, including restored history. KeptSetTest holds
   # both identities to HEAD. Historical sets remain unchanged before sides.
-  BASELINE = "realization-2026-09-28".freeze
+  BASELINE = "realization-2026-10-02".freeze
 
   # WHERE A CASE'S WORLD IS READ FROM, IN ORDER. The seeded worlds first, so a
   # case against `The Salt Assizes` measures the file every other instrument in
@@ -240,7 +240,8 @@ module Eval::Realization
           kase.expects_danger_at_least.inspect, kase.expectation_line,
           kase.also_reaches.join("|"),
           kase.absent.join("|"), kase.unwritten.join("|") ].join(" ") +
-          (kase.staging.empty? ? "" : " #{JSON.generate(kase.staging)}")
+          (kase.staging.empty? ? "" : " #{JSON.generate(kase.staging)}") +
+          (kase.kind.blank? && kase.density.blank? ? "" : " kind=#{kase.kind} density=#{kase.density}")
       }.join("\n")
     ).first(16)
   end
