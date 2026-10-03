@@ -1,0 +1,980 @@
+{
+  "script": "a-desk-and-what-lies-on-it",
+  "story": "The Furnished Rooms",
+  "steps": [
+    {
+      "step": "step 1 in-the-study",
+      "player": "first",
+      "typed": "look",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Clerk's Study",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Cinder Lane Stall",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Beech Clearing",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Reading Room",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000015,
+            "name": "coal scuttle"
+          },
+          {
+            "id": 1000000013,
+            "name": "desk"
+          },
+          {
+            "id": 1000000018,
+            "name": "lump of coal"
+          },
+          {
+            "id": 1000000017,
+            "name": "potted fern"
+          },
+          {
+            "id": 1000000016,
+            "name": "ward stamp"
+          },
+          {
+            "id": 1000000014,
+            "name": "windowsill"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": false,
+        "offers": null,
+        "understood": null,
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 2 a-look-at-the-desk-is-a-look-at-a-record",
+      "player": "first",
+      "typed": "/inspect the desk",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Clerk's Study",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Cinder Lane Stall",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Beech Clearing",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Reading Room",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000015,
+            "name": "coal scuttle"
+          },
+          {
+            "id": 1000000013,
+            "name": "desk"
+          },
+          {
+            "id": 1000000018,
+            "name": "lump of coal"
+          },
+          {
+            "id": 1000000017,
+            "name": "potted fern"
+          },
+          {
+            "id": 1000000016,
+            "name": "ward stamp"
+          },
+          {
+            "id": 1000000014,
+            "name": "windowsill"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "there is nothing written on the desk. Looking at something that has no writing on it is prose, and this mode writes none. Nothing changed.",
+        "understood": "examine -> desk",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 3 the-desk-does-not-move",
+      "player": "first",
+      "typed": "take the desk",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Clerk's Study",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Cinder Lane Stall",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Beech Clearing",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Reading Room",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000015,
+            "name": "coal scuttle"
+          },
+          {
+            "id": 1000000013,
+            "name": "desk"
+          },
+          {
+            "id": 1000000018,
+            "name": "lump of coal"
+          },
+          {
+            "id": 1000000017,
+            "name": "potted fern"
+          },
+          {
+            "id": 1000000016,
+            "name": "ward stamp"
+          },
+          {
+            "id": 1000000014,
+            "name": "windowsill"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "The desk is immovable and does not move for anybody: it cannot be picked up. Nothing has changed.",
+        "understood": "take -> desk",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 4 the-stamp-comes-off-the-desk",
+      "player": "first",
+      "typed": "take the ward stamp",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Clerk's Study",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Cinder Lane Stall",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Beech Clearing",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Reading Room",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000015,
+            "name": "coal scuttle"
+          },
+          {
+            "id": 1000000013,
+            "name": "desk"
+          },
+          {
+            "id": 1000000018,
+            "name": "lump of coal"
+          },
+          {
+            "id": 1000000017,
+            "name": "potted fern"
+          },
+          {
+            "id": 1000000014,
+            "name": "windowsill"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000016,
+            "name": "ward stamp"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: ward stamp (was lying in The Clerk's Study, now carried by Mira Vell)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> ward stamp",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 5 and-down-onto-the-floor",
+      "player": "first",
+      "typed": "drop the ward stamp",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Clerk's Study",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Cinder Lane Stall",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Beech Clearing",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Reading Room",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000015,
+            "name": "coal scuttle"
+          },
+          {
+            "id": 1000000013,
+            "name": "desk"
+          },
+          {
+            "id": 1000000018,
+            "name": "lump of coal"
+          },
+          {
+            "id": 1000000017,
+            "name": "potted fern"
+          },
+          {
+            "id": 1000000016,
+            "name": "ward stamp"
+          },
+          {
+            "id": 1000000014,
+            "name": "windowsill"
+          }
+        ],
+        "carrying": [],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "dropped: ward stamp (was carried by Mira Vell, now lying in The Clerk's Study)",
+        "refused": false,
+        "offers": null,
+        "understood": "drop -> ward stamp",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 6 out-of-the-scuttle",
+      "player": "first",
+      "typed": "take the lump of coal",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Clerk's Study",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Cinder Lane Stall",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Beech Clearing",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Reading Room",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000015,
+            "name": "coal scuttle"
+          },
+          {
+            "id": 1000000013,
+            "name": "desk"
+          },
+          {
+            "id": 1000000017,
+            "name": "potted fern"
+          },
+          {
+            "id": 1000000016,
+            "name": "ward stamp"
+          },
+          {
+            "id": 1000000014,
+            "name": "windowsill"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000018,
+            "name": "lump of coal"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: lump of coal (was lying in The Clerk's Study, now carried by Mira Vell)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> lump of coal",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 7 to-the-stall",
+      "player": "first",
+      "typed": "go to Cinder Lane Stall",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Cinder Lane Stall",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Clerk's Study",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000021,
+            "name": "apple"
+          },
+          {
+            "id": 1000000020,
+            "name": "crate"
+          },
+          {
+            "id": 1000000019,
+            "name": "market stall"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000018,
+            "name": "lump of coal"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Clerk's Study -> Cinder Lane Stall",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> Cinder Lane Stall",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 8 an-apple-off-the-counter",
+      "player": "first",
+      "typed": "take the apple",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Cinder Lane Stall",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Clerk's Study",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000020,
+            "name": "crate"
+          },
+          {
+            "id": 1000000019,
+            "name": "market stall"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000021,
+            "name": "apple"
+          },
+          {
+            "id": 1000000018,
+            "name": "lump of coal"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: apple (was lying in Cinder Lane Stall, now carried by Mira Vell)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> apple",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 9 the-crate-does-not-move-either",
+      "player": "first",
+      "typed": "take the crate",
+      "dump": {
+        "location": {
+          "id": 1000000003,
+          "name": "Cinder Lane Stall",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Clerk's Study",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000020,
+            "name": "crate"
+          },
+          {
+            "id": 1000000019,
+            "name": "market stall"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000021,
+            "name": "apple"
+          },
+          {
+            "id": 1000000018,
+            "name": "lump of coal"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": false,
+        "change": null,
+        "refused": true,
+        "offers": "The crate is immovable and does not move for anybody: it cannot be picked up. Nothing has changed.",
+        "understood": "take -> crate",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 10 back-through-the-study-to-the-clearing",
+      "player": "first",
+      "typed": "go to The Clerk's Study",
+      "dump": {
+        "location": {
+          "id": 1000000001,
+          "name": "The Clerk's Study",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000003,
+            "name": "Cinder Lane Stall",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000002,
+            "name": "The Beech Clearing",
+            "detail": "realized"
+          },
+          {
+            "id": 1000000004,
+            "name": "The Reading Room",
+            "detail": "stub"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000015,
+            "name": "coal scuttle"
+          },
+          {
+            "id": 1000000013,
+            "name": "desk"
+          },
+          {
+            "id": 1000000017,
+            "name": "potted fern"
+          },
+          {
+            "id": 1000000016,
+            "name": "ward stamp"
+          },
+          {
+            "id": 1000000014,
+            "name": "windowsill"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000021,
+            "name": "apple"
+          },
+          {
+            "id": 1000000018,
+            "name": "lump of coal"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: Cinder Lane Stall -> The Clerk's Study",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Clerk's Study",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 11 into-the-clearing",
+      "player": "first",
+      "typed": "go to The Beech Clearing",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Beech Clearing",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Clerk's Study",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000023,
+            "name": "fallen log"
+          },
+          {
+            "id": 1000000022,
+            "name": "old beech"
+          },
+          {
+            "id": 1000000024,
+            "name": "pine cone"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000021,
+            "name": "apple"
+          },
+          {
+            "id": 1000000018,
+            "name": "lump of coal"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "moved: The Clerk's Study -> The Beech Clearing",
+        "refused": false,
+        "offers": null,
+        "understood": "move -> The Beech Clearing",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    },
+    {
+      "step": "step 12 a-cone-off-the-log",
+      "player": "first",
+      "typed": "take the pine cone",
+      "dump": {
+        "location": {
+          "id": 1000000002,
+          "name": "The Beech Clearing",
+          "detail": "realized"
+        },
+        "storey": null,
+        "exits": [
+          {
+            "id": 1000000001,
+            "name": "The Clerk's Study",
+            "detail": "realized"
+          }
+        ],
+        "here": [
+          {
+            "id": 1000000023,
+            "name": "fallen log"
+          },
+          {
+            "id": 1000000022,
+            "name": "old beech"
+          }
+        ],
+        "carrying": [
+          {
+            "id": 1000000021,
+            "name": "apple"
+          },
+          {
+            "id": 1000000018,
+            "name": "lump of coal"
+          },
+          {
+            "id": 1000000024,
+            "name": "pine cone"
+          }
+        ],
+        "present": [],
+        "foes": [],
+        "inscription": [],
+        "hp": 18,
+        "hp_of": {},
+        "abilities": {
+          "strength": 10,
+          "dexterity": 12,
+          "will": 12
+        },
+        "dead": false,
+        "changed": true,
+        "change": "took: pine cone (was lying in The Beech Clearing, now carried by Mira Vell)",
+        "refused": false,
+        "offers": null,
+        "understood": "take -> pine cone",
+        "resolved_by": "grammar",
+        "note": null,
+        "drifts": 0,
+        "blows": 0,
+        "hazards": 0,
+        "quest": {},
+        "volitions": 0,
+        "acts": 0,
+        "ending": "none",
+        "ending_words": null,
+        "scheduled": 0,
+        "fired": 0,
+        "elapsed_minutes": 0.0,
+        "shown": null
+      }
+    }
+  ]
+}

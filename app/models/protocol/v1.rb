@@ -82,7 +82,11 @@ module Protocol::V1
       people: glance.people.map do |person|
         { name: person.name, condition: person.condition, foe: person.foe, provoked: person.provoked }
       end,
-      lying_here: glance.lying_here.map { |item| { name: item.name } },
+      fixtures: glance.fixtures.map do |fixture|
+        { name: fixture.name, holds: fixture.holds, state: fixture.state, searched: fixture.searched, on: fixture.on }
+      end,
+      lying_here: glance.lying_here.map { |item| { name: item.name, on: item.on } },
+      counts: { visible: glance.counts.visible, unsearched: glance.counts.unsearched },
       carrying: glance.carrying.map { |item| { name: item.name } },
       condition: glance.condition,
       sheet: glance.sheet,

@@ -408,16 +408,25 @@ class EngineSweep::Invariants
   # and it is the invariant the captain's ruling of 2026-09-04 turned from a
   # wish into a statement -- before it, `take` moved the world's only row and
   # this could not have been written.
+  #
+  # AND ON WHAT IT LIES. A row the file lays `within:` a fixture is still
+  # within it, and one it does not lay on anything is on nothing. A kit's rows
+  # are not the file's at all -- the engine wrote them as a room was realized --
+  # and a fixture is the file's in its own room, since two rooms may each have
+  # a desk; both are the loader's own rule (`WorldSeed::Loader`).
   def world_items_unmoved
     moved = story.locations.flat_map { |room| Item.lying_in(room).templates.to_a }.filter_map do |item|
-      wanted = items_in_file_by_name[item.name]
+      next if item.kit_key.present?
+
+      wanted = item.fixture? ? fixtures_in_file[[ item.location&.name, item.name ]] : items_in_file_by_name[item.name]
       next if wanted.nil?
 
-      room, seat = wanted
-      next if room == item.location&.name && seat == item.position
+      room, seat, within = wanted
+      next if room == item.location&.name && seat == item.position && within == item.within&.name
 
-      "#{item.name} is #{item.whereabouts}#{" #{item.position}" if item.position} and the file says " \
-        "in #{room}#{" #{seat}" if seat}"
+      "#{item.name} is #{item.whereabouts}#{" #{item.position}" if item.position}" \
+        "#{" on #{item.within.name}" if item.within} and the file says " \
+        "in #{room}#{" #{seat}" if seat}#{" on #{within}" if within}"
     end
     return nil if moved.empty?
 
@@ -435,7 +444,17 @@ class EngineSweep::Invariants
   # during a walk fails as loudly as one that lost the cell it was written with.
   def items_in_file_by_name
     @items_in_file_by_name ||= Array(seed["locations"]).flat_map do |room|
-      Array(room["items"]).map { |item| [ item["name"], [ room["name"], Location::Spot.of(item) ] ] }
+      Array(room["items"]).reject { |item| item["holds"].present? }
+                          .map { |item| [ item["name"], [ room["name"], Location::Spot.of(item), item["within"] ] ] }
+    end.to_h
+  end
+
+  # `{ [ room, name ] => the same triple }` for the fixtures the file stands in
+  # rooms, which are matched in their room rather than by name alone.
+  def fixtures_in_file
+    @fixtures_in_file ||= Array(seed["locations"]).flat_map do |room|
+      Array(room["items"]).select { |item| item["holds"].present? }
+                          .map { |item| [ [ room["name"], item["name"] ], [ room["name"], Location::Spot.of(item), nil ] ] }
     end.to_h
   end
 

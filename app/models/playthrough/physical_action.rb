@@ -107,7 +107,7 @@ class Playthrough::PhysicalAction
   private
 
   def spend!(item, disposition)
-    item.update!(disposition: disposition, character: nil, location: nil, **Location::Placement.unplaced)
+    item.update!(disposition: disposition, character: nil, location: nil, **Item.lifted)
   end
 
   def open_passage!(choice)

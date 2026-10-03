@@ -346,6 +346,11 @@ class Eval::Realization::Bench
       "rooms" => standing.rooms_laid_out,
       "people" => Character.present_in(room).pluck(:fullname),
       "items" => room.items.pluck(:name),
+      # WHAT THE ROOM'S KIT PUT IN IT, which the detail answer's `items` never
+      # carries: furnishing happens before the call and writes rows, not an
+      # answer. Without it a furnished room reads as the sparse one it always
+      # was (`Scorer#reported`'s `things_furnished`).
+      "furnished" => room.items.where.not(kit_key: nil).order(:id).pluck(:name),
       "exits" => room.exits.order(:id).pluck(:name),
       "new_places" => standing.story.locations.pluck(:name) - before }
   rescue ActiveRecord::RecordNotFound

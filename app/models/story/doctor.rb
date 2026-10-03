@@ -1085,7 +1085,12 @@ class Story::Doctor
     findings = []
     items = story_items.includes(:location, :character, :playthrough).order(:id).to_a
     templates = items.select(&:template?)
-    names = templates.map { |item| item.name.to_s.downcase }.uniq.size
+    # A KIT'S ROWS ARE NOT THE CAPS' BUSINESS, and its names repeat from room
+    # to room by design -- every study has a desk (`Item::Kit`). So the caps and
+    # the story-wide duplicates read the other rows, and a kit row is held to
+    # one of a name in its own room and to the visible cap instead.
+    written = templates.reject(&:kit_key)
+    names = written.select { |item| item.tier == Item::PORTABLE }.map { |item| item.name.to_s.downcase }.uniq.size
 
     findings.concat(items_nowhere)
     findings.concat(items_in_several_places(items))
@@ -1093,13 +1098,17 @@ class Story::Doctor
     findings.concat(copies_without_a_template(items))
     # Fold proven duplicate templates before a missing-copy repair can create
     # a second instance of the same object beside a consumed tombstone.
-    findings.concat(duplicate_items(templates))
+    findings.concat(duplicate_items(written))
+    findings.concat(duplicate_items_in_a_room(templates))
     findings.concat(missing_copies)
     findings.concat(copies_lagging_their_template)
     findings.concat(touched_copies_lagging)
     findings.concat(rooms_over_the_item_cap)
     findings.concat(items_colliding_with_a_name(templates))
     findings.concat(items_with_an_unknown_bulk(items))
+    findings.concat(fixtures_not_fixed(items))
+    findings.concat(things_on_no_fixture(items))
+    findings.concat(rooms_over_the_visible_cap(items))
 
     if names > Item::Registry::MAX_PER_STORY
       findings << finding(:story_over_item_cap, :warning,
@@ -1369,7 +1378,7 @@ class Story::Doctor
   # A PARTY DROPPING FOUR THINGS ON THIS FLOOR IS NOT THIS. Those are that
   # game's own copies and they bound nothing; the cap is on the world.
   def rooms_over_the_item_cap
-    counts = Item.templates.where(location: story.locations, character_id: nil).group(:location_id).count
+    counts = Item.templates.bespoke.where(location: story.locations, character_id: nil).group(:location_id).count
 
     counts.filter_map do |location_id, count|
       next if count <= Item::Registry::MAX_PER_ROOM
@@ -1377,6 +1386,99 @@ class Story::Doctor
       finding(:room_over_item_cap, :warning,
               "#{story.locations.find(location_id).name.inspect} has #{count} of the world's own items lying in it, "               "past the #{Item::Registry::MAX_PER_ROOM} one room may have (Item::Registry::MAX_PER_ROOM)",
               :manual, subject: story.locations.find(location_id))
+    end
+  end
+
+  # TWO THINGS OF ONE NAME IN ONE ROOM, one of them a kit's. `Item::Kit` never
+  # draws a name twice in a room and `Item::Registry` refuses one the room
+  # already holds, so this is a seed file or raw SQL; the classifier then
+  # resolves the word by an ordering accident, as `duplicate_items` says of the
+  # rest. `manual` for its reason: which one the player meant is not derivable.
+  def duplicate_items_in_a_room(templates)
+    templates.select(&:lying?)
+             .group_by { |item| [ item.location_id, WorldSeed.natural_key(item.name) ] }
+             .filter_map do |(_, key), group|
+      next if group.one? || key.blank? || group.none?(&:kit_key)
+
+      finding(:duplicate_items_in_a_room, :warning,
+              "#{group.size} of the world's own items in #{group.first.location.name.inspect} are one name " \
+              "(#{group.map { |item| "##{item.id} #{item.name.inspect}" }.join("; ")}), at least one of them a " \
+              "kit's; the classifier resolves a take or a look by name, so which one the player gets is an " \
+              "ordering accident",
+              :manual, subject: group.last)
+    end
+  end
+
+  # A FIXTURE THAT IS NOT FIXED. `Item#a_fixture_is_fixed` refuses to save one
+  # that could move, holds a word `Item::HOLDS` does not have, or stands nowhere
+  # -- so this is raw SQL or a schema older than the rule. What it costs: a
+  # fixture that moves is a desk somebody can pocket, and one standing nowhere
+  # is a thing no closed set offers. Both layers, since a copy carries the
+  # columns too. `manual`: nothing on record says which half is wrong.
+  def fixtures_not_fixed(items)
+    items.select(&:fixture?).filter_map do |item|
+      problem = if item.bulk != Item::IMMOVABLE then "has bulk #{item.bulk.inspect} rather than #{Item::IMMOVABLE}"
+      elsif !Item::HOLDS.include?(item.holds) then "holds #{item.holds.inspect}, which is not one of #{Item::HOLDS.join(", ")}"
+      elsif item.intact? && !item.lying? then "is not standing in any room"
+      end
+      next if problem.nil?
+
+      finding(:fixture_not_fixed, :warning,
+              "the fixture #{item.name.inspect} -- #{item.whereabouts} -- #{problem}; a fixture is fixed in place, " \
+              "immovable and standing in a room",
+              :manual, subject: item)
+    end
+  end
+
+  # A THING THAT SAYS IT LIES ON A FIXTURE AND DOES NOT. `Item#a_within_is_whole`
+  # refuses half of the pair, a fixture that is not one, one in another room or
+  # another layer, and a `how` the fixture cannot take -- so like the findings
+  # above it arrives through raw SQL, or through a fixture deleted out from
+  # under a row by something that skipped `Item`'s own callback. The thing is
+  # still in its room; only where in it is wrong, and a panel grouping the room
+  # by fixture puts it under the wrong one or none. `manual`, because whether it
+  # belongs on the floor or on some other fixture is not on record.
+  def things_on_no_fixture(items)
+    by_id = items.index_by(&:id)
+    items.filter_map do |item|
+      next if item.within_id.nil? && item.how.nil?
+
+      fixture = by_id[item.within_id] || (Item.find_by(id: item.within_id) if item.within_id)
+      problem = if item.within_id.nil? || item.how.nil? then "carries one of within and how and not the other"
+      elsif fixture.nil? then "names item ##{item.within_id}, which is not there"
+      elsif !fixture.fixture? then "names #{fixture.name.inspect}, which is not a fixture"
+      elsif fixture.location_id != item.location_id || fixture.playthrough_id != item.playthrough_id
+        "names #{fixture.name.inspect}, which is #{fixture.whereabouts}"
+      elsif !Item::HOWS.fetch(item.how, []).include?(fixture.holds)
+        "lies #{item.how} #{fixture.name.inspect}, which holds #{fixture.holds}"
+      end
+      next if problem.nil?
+
+      finding(:thing_on_no_fixture, :warning,
+              "#{item.name.inspect} -- #{item.whereabouts} -- #{problem}, so nothing in its room is what it lies " \
+              "on or in",
+              :manual, subject: item)
+    end
+  end
+
+  # A ROOM SHOWING MORE THAN THE GAME'S CAP ON ONE ROOM, in either layer:
+  # its fixtures and everything lying in it, together. `Item::Kit` rolls at most
+  # `Item::Kit::VISIBLE` and the writer adds at most
+  # `Item::Registry::MAX_PER_ROOM`, so the world's own rows reach this only from
+  # a seed file; a game's copies reach it when a player carries enough in and
+  # sets it down. Nothing breaks: every name past it is one more a turn's
+  # closed sets list (the owner's decision D6). `manual`: nothing says which
+  # thing is the surplus.
+  def rooms_over_the_visible_cap(items)
+    items.select(&:lying?).group_by { |item| [ item.location_id, item.playthrough_id ] }.filter_map do |(_, game), group|
+      next if group.size <= Item::Kit::MAX_VISIBLE_PER_ROOM
+
+      layer = game ? "playthrough ##{game}'s copies" : "the world's own rows"
+      finding(:room_over_visible_cap, :warning,
+              "#{group.first.location.name.inspect} shows #{group.size} things in #{layer}, past the " \
+              "#{Item::Kit::MAX_VISIBLE_PER_ROOM} one room may show (Item::Kit::MAX_VISIBLE_PER_ROOM); every one " \
+              "past it is one more name a turn's closed sets list",
+              :manual, subject: group.first.location)
     end
   end
 

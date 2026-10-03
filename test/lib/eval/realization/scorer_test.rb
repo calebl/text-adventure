@@ -315,6 +315,18 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     assert_equal 1.0, scorer.reported["new_places_opened"]
     assert_equal 1.0, scorer.reported["new_places_named"]
     assert_in_delta 0.5, scorer.reported["exits_restating"], 0.001
+    assert_equal 0.0, scorer.reported["things_furnished"], "a set bought before any kit has no key"
+  end
+
+  # A KIT'S ROWS ARE NOT THE ANSWER'S: they are written before the call, so only
+  # the records afterwards can count them.
+  test "what a room was furnished with is counted off the records, apart from what it named" do
+    scorer = scored(items: [ { "name" => "a folder" } ],
+                    after: { "items" => [ "desk", "windowsill", "pen", "a folder" ],
+                             "furnished" => [ "desk", "windowsill", "pen" ] })
+
+    assert_equal 1.0, scorer.reported["items_named"]
+    assert_equal 3.0, scorer.reported["things_furnished"]
   end
 
   # THE TWO NEW-PLACE FIGURES ARE NOT THE SAME FIGURE, and this is the case that

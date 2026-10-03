@@ -67,6 +67,27 @@ FactoryBot.define do
       bulk { "immovable" }
     end
 
+    # FIXED IN PLACE in a room: a desk with a top and a shut inside, which is the
+    # fullest a fixture gets. `Item#a_fixture_is_fixed` wants it `immovable` and
+    # lying in a room, so the trait brings both. `:top` and `:hollow` are the
+    # other shapes of what it holds.
+    trait :fixture do
+      character { nil }
+      association :location
+      name { "desk" }
+      tier { Item::FIXTURE }
+      holds { "closed" }
+      bulk { Item::IMMOVABLE }
+    end
+
+    trait :top do
+      holds { "top" }
+    end
+
+    trait :hollow do
+      holds { "hollow" }
+    end
+
     # Readable and nobody has read it yet -- a seeded note whose file did not
     # spell the words out, or a row older than the columns. `Item::Inscriber`
     # writes them on the first read, once.

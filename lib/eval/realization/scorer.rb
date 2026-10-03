@@ -269,6 +269,9 @@ class Eval::Realization::Scorer
 
     def people = Array(detail["people"])
     def items = Array(detail["items"])
+    # A set stored before rooms were furnished has no key, and reads as the
+    # nothing its rooms held.
+    def furnished = Array(after["furnished"])
     def exits = Array(exits_answer["exits"])
     def exit_names = exits.filter_map { |exit| exit["name"].presence }
     def asked_for_exits? = row["answers"].is_a?(Hash) && row["answers"].key?("exits")
@@ -468,6 +471,7 @@ class Eval::Realization::Scorer
       "people_offered" => Eval.mean(readings.map { |r| r.people_allowance }),
       "people_take_up" => share(readings.sum { |r| r.people.size }, readings.sum { |r| r.people_allowance }),
       "items_named" => Eval.mean(readings.map { |r| r.items.size }),
+      "things_furnished" => Eval.mean(readings.map { |r| r.furnished.size }),
       "exits_named" => Eval.mean(readings.select(&:asked_for_exits?).map { |r| r.exit_names.size }),
       "new_places_opened" => Eval.mean(readings.select(&:asked_for_exits?).map { |r| r.new_places.size }),
       "new_places_named" => Eval.mean(readings.select(&:asked_for_exits?).map { |r| new_ground(r).size }),

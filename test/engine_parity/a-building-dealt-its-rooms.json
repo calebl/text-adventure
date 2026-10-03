@@ -87,7 +87,60 @@
             "detail": "realized"
           }
         ],
-        "here": [],
+        "here": [
+          {
+            "id": 1000000020,
+            "name": "coil of wire"
+          },
+          {
+            "id": 1000000016,
+            "name": "crate"
+          },
+          {
+            "id": 1000000017,
+            "name": "forge"
+          },
+          {
+            "id": 1000000021,
+            "name": "mallet"
+          },
+          {
+            "id": 1000000025,
+            "name": "nail"
+          },
+          {
+            "id": 1000000023,
+            "name": "rag"
+          },
+          {
+            "id": 1000000026,
+            "name": "rivet"
+          },
+          {
+            "id": 1000000018,
+            "name": "stool"
+          },
+          {
+            "id": 1000000024,
+            "name": "stub of chalk"
+          },
+          {
+            "id": 1000000019,
+            "name": "tin of grease"
+          },
+          {
+            "id": 1000000015,
+            "name": "tool rack"
+          },
+          {
+            "id": 1000000022,
+            "name": "wood shaving"
+          },
+          {
+            "id": 1000000014,
+            "name": "workbench"
+          }
+        ],
         "carrying": [],
         "present": [],
         "foes": [],

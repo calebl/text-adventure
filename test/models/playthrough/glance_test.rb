@@ -48,6 +48,30 @@ class Playthrough::GlanceTest < ActiveSupport::TestCase
     assert_equal [ "Ward Office 12 daybook" ], g.carrying.map(&:name)
   end
 
+  # A FIXTURE IS NEVER LYING HERE: it stands, it is listed apart with what lies
+  # on it, and a thing on it says which. The closed sets still hold it -- a take
+  # of the desk is refused as the filing press's is -- so the `take` verb's
+  # targets leave it out by the engine's own check.
+  test "the things panel lists what stands here apart, with what lies on it" do
+    desk = lying_here(@playthrough, @office, name: "desk", tier: Item::FIXTURE, holds: "closed", bulk: Item::IMMOVABLE)
+    @stamp.update!(within: desk, how: "on")
+
+    g = glance
+    assert_equal [ [ "desk", "closed", "shut", false, [ "ward stamp" ] ] ],
+                 g.fixtures.map { |fixture| [ fixture.name, fixture.holds, fixture.state, fixture.searched, fixture.on ] }
+    assert_equal [ [ "ward stamp", "desk" ], [ "filing press", nil ] ], g.lying_here.map { |thing| [ thing.name, thing.on ] }
+    assert_equal [ 3, 1 ], [ g.counts.visible, g.counts.unsearched ]
+    assert_not_includes g.verb("take").targets.map(&:name), "desk"
+    assert_includes g.to_s, "things      desk (shut, unsearched): ward stamp"
+  end
+
+  test "a room with nothing fixed in it says so" do
+    g = glance
+    assert_empty g.fixtures
+    assert_equal [ 2, 0 ], [ g.counts.visible, g.counts.unsearched ]
+    assert_includes g.to_s, "things      nothing fixed here"
+  end
+
   test "a foe is marked as one on the people panel" do
     @rowe.update!(hostile: true)
     assert glance.people.first.foe

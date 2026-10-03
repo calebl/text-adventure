@@ -450,6 +450,18 @@ class Eval::Realization::CorpusTest < ActiveSupport::TestCase
                                                         "population: teeming")
   end
 
+  test "a `kind` or a `density` the lists do not have is refused, on either kind of case" do
+    assert_problem "kind \"ballroom\" is not one of Location::Kind::KINDS",
+                   TYPED.sub("population: a person or two", "population: a person or two\n  kind: ballroom")
+    assert_problem "density \"heaving\"",
+                   TYPED.sub("population: a person or two", "population: a person or two\n  density: heaving")
+  end
+
+  test "every case the bench stages says what sort of place its room is" do
+    assert Eval::Realization.corpus.cases.reject { |kase| kase.shape == "place" }.all? { |kase| kase.kind.present? },
+           "a case with no kind stages a room no kit furnishes, and the bench cannot see a kit"
+  end
+
   # THE EXPECTATION'S OWN VALIDATION, and it is
   # `Lab::Realization::Kind#expectations_are_labels_the_model_is_offered`'s rule
   # one level up: the model cannot answer a word its schema's enum does not

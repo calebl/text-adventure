@@ -276,11 +276,11 @@ class Playthrough::Volition
         walk_to!(Regexp.last_match(1))
       when TAKE
         item = playthrough.items_lying_in(location).find(Regexp.last_match(1))
-        item.update!(character: character, location: nil, **Location::Placement.unplaced)
+        item.update!(character: character, location: nil, **Item.lifted)
         "#{character.fullname} picked up #{item.name} in #{location.name} and now holds it."
       when GIVE
         item = playthrough.items_held_by(character).find(Regexp.last_match(1))
-        item.update!(character: nil, location: nil, **Location::Placement.unplaced)
+        item.update!(character: nil, location: nil, **Item.lifted)
         "#{character.fullname} handed #{item.name} to #{playthrough.character.fullname}; the player now carries it."
       when "follow"
         state!.update!(following: true, location: playthrough.current_location)

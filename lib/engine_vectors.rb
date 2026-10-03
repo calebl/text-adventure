@@ -64,6 +64,7 @@ module EngineVectors
     "spot" => "EngineVectors::Spots",
     "placement" => "EngineVectors::Placements",
     "population" => "EngineVectors::Population",
+    "kits" => "EngineVectors::Kits",
     "danger" => "EngineVectors::Danger",
     "parameters" => "EngineVectors::Parameters",
     "box" => "EngineVectors::Boxes",
