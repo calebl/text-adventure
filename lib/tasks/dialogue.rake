@@ -1,10 +1,11 @@
 # Same named-set vocabulary as the other benches. Paid runs require an explicit
 # scratch DATABASE_URL and durable EVAL_BUDGET_FILE; reads and replay are free.
 namespace :eval do
-  desc "Run the fixed NPC study; SET=name CORPUS=main|bystander EVAL_LIVE=1 EVAL_BUDGET_FILE=path"
+  desc "Run the fixed NPC study; SET=name CORPUS=main|bystander EVAL_LIVE=1 EVAL_BUDGET_FILE=path, TRIAL=1 for one repetition read by hand"
   task dialogue: :environment do
+    trial = ENV["TRIAL"] == "1"
     Eval::Dialogue::Bench.new(corpus: ENV.fetch("CORPUS", "main"))
-                         .run(Eval.root.join(ENV.fetch("SET")), reps: ENV.fetch("REPS", Eval::Noise::MIN_RUNS).to_i)
+                         .run(Eval.root.join(ENV.fetch("SET")), reps: ENV.fetch("REPS", trial ? 1 : Eval::Noise::MIN_RUNS).to_i, trial: trial)
   end
 
   %w[score board].each do |verb|

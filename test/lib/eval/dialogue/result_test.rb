@@ -38,6 +38,36 @@ class Eval::Dialogue::ResultTest < ActiveSupport::TestCase
     assert_raises(ArgumentError) { left.compare(left) }
   end
 
+  def bystander_row(narration, rep: 1)
+    { "id" => "bystander-greets-over-a-promise", "rep" => rep, "expected" => {}, "facts" => {},
+      "narration" => narration, "calls" => [] }
+  end
+
+  test "a bystander case counts the narrations that name the bystander, and only a bystander set has the figure" do
+    rows = [ bystander_row("Maren hands you the key while Tobin nods to you."), bystander_row("Maren hands you the key.") ]
+    result = Eval::Dialogue::Result.new({ "corpus" => "bystander", "rows" => rows })
+    assert_equal 0.5, result.passes.first["bystander_named"]
+    assert_includes result.metrics, "bystander_named"
+    assert_equal 0.0, Eval::Dialogue::Result.new({ "corpus" => "bystander", "rows" => [ bystander_row("Tobinesque light.") ] })
+                                           .passes.first["bystander_named"]
+
+    main = Eval::Dialogue::Result.new({ "rows" => [ row ] })
+    assert_not main.passes.first.key?("bystander_named")
+    assert_equal Eval::Dialogue::Result::METRICS, main.metrics
+  end
+
+  test "the kept bystander set named its bystander in no narration" do
+    kept = Eval::Dialogue::Result.load(Eval.kept_root.join("dialogue-bystander-2026-09-28"))
+    assert_equal [ 0.0 ] * kept.data.fetch("reps"), kept.passes.map { |p| p["bystander_named"] }
+  end
+
+  test "a trial set is never compared" do
+    data = { "rows" => [ row ], "model" => "pinned", "corpus_digest" => "fixed", "reps" => 1, "trial" => true }
+    trial = Eval::Dialogue::Result.new(data)
+    error = assert_raises(ArgumentError) { trial.compare(trial) }
+    assert_match(/trial/, error.message)
+  end
+
   # The owner's ruling: `none` changes nothing, so a follower asked to stay who
   # picks it has refused and keeps following. Only `stop_following` is staying.
   def stay(status, following:, npc_room:)

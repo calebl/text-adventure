@@ -3,7 +3,7 @@
 # On a talk line the speech die is thrown between the person's answer and the
 # exchange's narrator, so a bystander may interject and the interaction
 # narrator is told it through the "What else happened here" line of its
-# moment. The person spoken to is left out of the throw: they have just
+# moment, and asked by name to narrate it as part of the exchange. The person spoken to is left out of the throw: they have just
 # answered in their own words, and a second, unasked line from them would be
 # the engine talking over the character pass.
 #
@@ -31,6 +31,7 @@ steps:
       content: Tamsin opens the ticket book for you, and behind her Rowe holds out his hand.
       prompt_includes:
       - 'What else happened here, recorded by the game: Rowe Harker spoke up unasked and demanded pawn ticket from Ansel Mott. Nothing changed hands.'
+      - 'Rowe Harker also spoke up unasked, as "What else happened here" above records. Narrate that too, as part of this exchange, in a sentence or two of its own. Nothing Rowe Harker said changes what is recorded above.'
       prompt_excludes:
       - Tamsin Gale spoke up unasked
   expect:

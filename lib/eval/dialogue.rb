@@ -19,7 +19,7 @@ module Eval::Dialogue
   STUDY = Rails.root.join("db/eval/adversarial-20260909")
   RESULTS = "dialogue.json".freeze
   BASELINE = "desires-dialogue-20260919".freeze
-  BYSTANDER_BASELINE = "dialogue-bystander-2026-09-28".freeze
+  BYSTANDER_BASELINE = "dialogue-bystander-2026-10-02".freeze
 
   def self.cases(corpus = "main") = JSON.parse(CORPORA.fetch(corpus).read).fetch("cases")
   def self.model = JSON.parse(STUDY.join("npc-after.json").read).fetch("model")

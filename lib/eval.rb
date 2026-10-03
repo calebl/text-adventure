@@ -185,6 +185,10 @@ module Eval
     db/eval/dialogue-bystander-2026-09-28/dialogue.json
     db/eval/dialogue-bystander-2026-09-28/halted-budget.json
     db/eval/dialogue-bystander-2026-09-28/README.md
+    db/eval/dialogue-bystander-2026-10-02/dialogue.json
+    db/eval/dialogue-bystander-2026-10-02/trial.json
+    db/eval/dialogue-bystander-2026-10-02/aborted-budget.json
+    db/eval/dialogue-bystander-2026-10-02/README.md
     db/eval/dialogue-2026-09-10/dialogue.json
     db/eval/physical-dialogue-20260910/dialogue.json
     db/eval/physical-dialogue-20260910/before-board.json
